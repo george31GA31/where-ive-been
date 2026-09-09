@@ -2,247 +2,213 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#111827" />
-  <title>Where I've Been — Travel Day Tracker</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffe100" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta
+    name="description"
+    content="Plot sightings of Nett hier. Aber waren Sie schon mal in Baden-Württemberg? stickers around the world."
+  />
+  <title>Nett hier. Sticker Map</title>
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin />
+  <link rel="preconnect" href="https://nominatim.openstreetmap.org" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">◎</div>
-        <div><strong>Where I've Been</strong><span>Travel day tracker</span></div>
+  <header class="site-header">
+    <button class="brand" id="brandHome" type="button" aria-label="Open map">
+      <img
+        src="nett-hier-sticker.webp"
+        alt="Nett hier. Aber waren Sie schon mal in Baden-Württemberg?"
+      />
+    </button>
+
+    <div class="header-actions">
+      <div class="spot-count" aria-live="polite">
+        <strong id="spotCount">0</strong>
+        <span>sightings</span>
       </div>
+      <button id="addButton" class="primary-button" type="button">
+        <span class="plus" aria-hidden="true">+</span>
+        <span class="add-label">Add a sighting</span>
+      </button>
+    </div>
+  </header>
 
-      <nav class="nav" aria-label="Primary navigation">
-        <button class="nav-item active" data-view="dashboard"><span>⌂</span>Dashboard</button>
-        <button class="nav-item" data-view="calendar"><span>▦</span>Calendar</button>
-        <button class="nav-item" data-view="map"><span>◉</span>Map & timeline</button>
-        <button class="nav-item" data-view="countries"><span>◎</span>Countries</button>
-        <button class="nav-item" data-view="schengen"><span>◌</span>Schengen</button>
-        <button class="nav-item" data-view="planner"><span>↗</span>Trip planner</button>
-        <button class="nav-item" data-view="rules"><span>⌕</span>Visa checker</button>
-        <button class="nav-item" data-view="stays"><span>≡</span>All stays</button>
-        <button class="nav-item" data-view="profiles"><span>♙</span>Profiles & sync</button>
-      </nav>
+  <nav class="tab-bar" aria-label="Main sections">
+    <button class="tab-button active" type="button" data-view="map" aria-selected="true">
+      <span aria-hidden="true">◉</span> Map
+    </button>
+    <button class="tab-button" type="button" data-view="stats" aria-selected="false">
+      <span aria-hidden="true">▥</span> Stats
+    </button>
+    <button class="tab-button" type="button" data-view="stickers" aria-selected="false">
+      <span aria-hidden="true">●</span> Stickers
+    </button>
+  </nav>
 
-      <div class="sidebar-footer">
-        <button class="secondary full" id="exportBtn">Export data</button>
-        <label class="secondary full file-label">Import data<input id="importInput" type="file" accept="application/json" hidden /></label>
-        <p>Local-first. Cloud sync is optional.</p>
+  <main class="app-main">
+    <section id="mapView" class="view map-view active" aria-label="Sticker map">
+      <div class="map-shell">
+        <div id="map" aria-label="Interactive world map of sticker sightings"></div>
+
+        <section class="map-intro" id="mapIntro">
+          <strong>Seen one?</strong>
+          <span>Tap “Add a sighting” and then tap the exact spot — or use your current location.</span>
+        </section>
+
+        <button id="myLocationButton" class="location-button" type="button">
+          <span class="location-dot" aria-hidden="true"></span>
+          Plot my location
+        </button>
+
+        <section id="addModeNotice" class="add-mode-notice" hidden>
+          <span>Tap the map where you found the sticker.</span>
+          <button id="cancelAddMode" type="button">Cancel</button>
+        </section>
+
+        <div id="modeBadge" class="mode-badge" role="status" aria-live="polite">
+          Loading sightings…
+        </div>
       </div>
-    </aside>
+    </section>
 
-    <main class="main">
-      <header class="topbar">
+    <section id="statsView" class="view content-view" hidden aria-label="Sticker statistics">
+      <div class="content-wrap">
+        <div class="page-heading">
+          <p class="eyebrow">GLOBAL SIGHTINGS</p>
+          <h1>Stats</h1>
+          <p>Where in the world are these stickers turning up?</p>
+        </div>
+
+        <div class="stat-cards">
+          <article class="stat-card">
+            <span>Total sightings</span>
+            <strong id="statsTotal">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>Countries</span>
+            <strong id="statsCountries">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>Top country</span>
+            <strong id="statsTopCountry">—</strong>
+          </article>
+        </div>
+
+        <section class="ranking-section">
+          <div class="section-heading">
+            <h2>Most sightings by country</h2>
+            <p>Based on the location automatically detected when each sighting is added.</p>
+          </div>
+          <div id="countryRanking" class="country-ranking">
+            <p class="empty-state">No sightings yet.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="stickersView" class="view content-view" hidden aria-label="Allowed sticker types">
+      <div class="content-wrap stickers-wrap">
+        <div class="page-heading">
+          <p class="eyebrow">WHAT TO PLOT</p>
+          <h1>Stickers</h1>
+          <p>This page sets out which sticker sightings belong on the map.</p>
+        </div>
+
+        <article class="sticker-guide-card">
+          <img src="nett-hier-sticker.webp" alt="Yellow Nett hier sticker" />
+          <div>
+            <span class="accepted-pill">Accepted</span>
+            <h2>Nett hier.</h2>
+            <p>
+              For now, plot sightings of the yellow
+              “Nett hier. Aber waren Sie schon mal in Baden-Württemberg?”
+              sticker shown here.
+            </p>
+            <p class="muted-copy">
+              We can add more recognised sticker designs and clearer rules here later.
+            </p>
+          </div>
+        </article>
+
+        <aside class="disclaimer-card">
+          <h2>A quick note</h2>
+          <p>
+            This site is just a bit of fun for documenting stickers that are already out in the world.
+            We do not condone or endorse vandalism, trespassing, fly-posting, or defacing public or
+            private property. Please only photograph stickers safely and lawfully, and do not place
+            stickers anywhere you do not have permission to put them.
+          </p>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="sightingDialog" class="sighting-dialog">
+    <form id="sightingForm">
+      <div class="dialog-header">
         <div>
-          <p class="eyebrow">PERSONAL TRAVEL LOG</p>
-          <h1 id="pageTitle">Dashboard</h1>
+          <p class="eyebrow">NEW SIGHTING</p>
+          <h1>Add this sticker</h1>
         </div>
-        <button class="primary" id="addStayBtn">＋ Add stay</button>
-      </header>
-
-      <section id="dashboardView" class="view active">
-        <div class="stats-grid">
-          <article class="stat-card"><span class="stat-label">Countries logged</span><strong id="countriesLogged">0</strong><small>Actual + planned records</small></article>
-          <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique calendar days</small></article>
-          <article class="stat-card schengen-card">
-            <div class="stat-row"><span class="stat-label">Schengen use</span><span id="schengenBadge" class="status-badge good">OK</span></div>
-            <strong><span id="schengenUsed">0</span><span class="muted-number"> / 90</span></strong>
-            <div class="progress"><span id="schengenProgress"></span></div>
-            <small id="schengenSummary">0 days used in the current 180-day window</small>
-          </article>
-          <article class="stat-card"><span class="stat-label">Schengen days remaining</span><strong id="schengenRemaining">90</strong><small id="remainingSummary">As of today</small></article>
-        </div>
-
-        <div class="two-col">
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">THIS MONTH</p><h2 id="miniCalendarTitle">Calendar</h2></div><button class="text-btn" data-go-view="calendar">Open calendar →</button></div>
-            <div id="miniCalendar" class="mini-calendar"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">RECENT</p><h2>Latest stays</h2></div><button class="text-btn" data-go-view="stays">See all →</button></div>
-            <div id="recentStays" class="stay-list empty-state">No stays added yet.</div>
-          </article>
-        </div>
-
-        <article class="panel warning-panel" id="schengenAlertPanel">
-          <div class="warning-icon">!</div>
-          <div><p class="eyebrow">SCHENGEN WATCH</p><h2 id="alertTitle">You're comfortably within the limit</h2><p id="alertBody">Add your travel dates and this will automatically warn you as your rolling allowance gets tight.</p></div>
-          <button class="secondary" data-go-view="planner">Plan a Schengen entry</button>
-        </article>
-
-        <article class="panel" id="dashboardGapPanel">
-          <div class="panel-head"><div><p class="eyebrow">DATA CHECK</p><h2>Unlogged gaps</h2></div><button class="text-btn" data-go-view="stays">Review gaps →</button></div>
-          <div id="dashboardGaps" class="gap-list empty-state">No gaps detected between your recorded stays.</div>
-        </article>
-      </section>
-
-      <section id="calendarView" class="view">
-        <article class="panel calendar-panel">
-          <div class="calendar-toolbar">
-            <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
-            <div class="calendar-toolbar-actions"><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button><button class="secondary" id="todayBtn">Today</button></div>
-          </div>
-          <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Click a date to add a stay</strong><span>Pick the first day, then the last day. Click the same day twice for a day trip.</span></div>
-          <div id="calendar" class="calendar"></div>
-          <p class="helper">You can still add stays using the Add stay button. Calendar selection stays active if you cancel the pop-up, and Clear selection removes it.</p>
-        </article>
-      </section>
-
-      <section id="mapView" class="view">
-        <article class="panel map-panel">
-          <div class="panel-head"><div><p class="eyebrow">WORLD MAP</p><h2>Countries visited</h2></div><div class="map-legend"><span><i class="legend-dot visited-dot"></i>Visited</span><span><i class="legend-dot planned-dot"></i>Planned</span></div></div>
-          <div class="map-wrap"><svg id="worldMap" viewBox="0 0 1000 500" role="img" aria-label="World map showing countries visited"></svg><div id="mapFallback" class="map-fallback hidden">The interactive map needs an internet connection the first time it loads. Everything else still works offline.</div></div>
-          <div id="mapSelectionSummary" class="map-selection-summary">Drag the timeline below to see your travel history at any point.</div>
-        </article>
-
-        <article class="panel timeline-panel">
-          <div class="panel-head"><div><p class="eyebrow">DRAG THROUGH TIME</p><h2 id="timelineTitle">Travel timeline</h2></div><button class="secondary compact" id="timelineTodayBtn">Today</button></div>
-          <div id="timelineEmpty" class="empty-state">Add a stay to start your timeline.</div>
-          <div id="timelineContent" class="hidden">
-            <div class="timeline-date-card"><span>Selected date</span><strong id="timelineDateLabel">—</strong><small id="timelineLocationLabel">No stay recorded</small></div>
-            <div class="timeline-chart-wrap"><div id="timelineBars" class="timeline-bars"></div><input id="timelineSlider" class="timeline-slider" type="range" min="0" max="0" value="0" aria-label="Travel timeline date" /></div>
-            <div class="timeline-axis"><span id="timelineStartLabel">—</span><span id="timelineEndLabel">—</span></div>
-            <div class="timeline-schengen"><span>Schengen use on this date</span><strong id="timelineSchengenLabel">0 / 90</strong></div>
-          </div>
-        </article>
-      </section>
-
-      <section id="countriesView" class="view">
-        <article class="panel"><div class="panel-head"><div><p class="eyebrow">COUNTRY TOTALS</p><h2>Time spent by country</h2></div></div><div id="countryTotals" class="country-totals empty-state">No country data yet.</div></article>
-      </section>
-
-      <section id="schengenView" class="view">
-        <div class="schengen-layout">
-          <article class="panel calculator-card">
-            <p class="eyebrow">ROLLING WINDOW</p><h2>Schengen 90/180 calculator</h2>
-            <p class="panel-copy" id="schengenProfileNote">Choose any date to see how many countable Schengen days fall within that date and the previous 179 days.</p>
-            <label class="field"><span>Check date</span><input type="date" id="checkDate" /></label>
-            <div class="big-meter">
-              <div class="ring" id="schengenRing"><span id="ringUsed">0</span><small>/ 90 days</small></div>
-              <div class="meter-copy"><div><span>Used</span><strong id="calcUsed">0 days</strong></div><div><span>Remaining</span><strong id="calcRemaining">90 days</strong></div><div><span>180-day window</span><strong id="windowDates">—</strong></div></div>
-            </div>
-            <div id="forecastBox" class="forecast-box good-box"><strong id="forecastTitle">No recorded overstay</strong><span id="forecastText">Planned stays currently stay within the 90/180 rule.</span></div>
-          </article>
-          <article class="panel">
-            <p class="eyebrow">WHAT COUNTS</p><h2>Schengen days in this window</h2><div id="schengenBreakdown" class="breakdown empty-state">No Schengen days in this period.</div>
-            <div class="legal-note"><strong>Planning aid only</strong><p>The calculator follows the normal short-stay 90/180 method. Residence permits, long-stay visas, nationality and other arrangements can change what counts.</p><a href="https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en" target="_blank" rel="noreferrer">European Commission official calculator ↗</a></div>
-          </article>
-        </div>
-      </section>
-
-      <section id="plannerView" class="view">
-        <div class="planner-layout">
-          <article class="panel planner-card">
-            <p class="eyebrow">BEFORE YOU BOOK</p><h2>Trip planner</h2><p class="panel-copy">Pick a destination and entry date. For Schengen, the planner tells you the maximum continuous stay, your safe departure date and when a one-day re-entry becomes possible after using the full allowance.</p>
-            <label class="field"><span>Traveller</span><select id="plannerProfile"></select></label>
-            <label class="field"><span>Destination country</span><input id="plannerCountry" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
-            <div class="form-grid"><label class="field"><span>Entry date</span><input type="date" id="plannerEntry" /></label><label class="field"><span>Planned departure <em>optional</em></span><input type="date" id="plannerExit" /></label></div>
-            <button class="primary wide" id="runPlannerBtn" type="button">Calculate trip</button>
-          </article>
-          <article class="panel planner-result" id="plannerResultPanel">
-            <p class="eyebrow">RESULT</p><h2 id="plannerResultTitle">Choose a trip to calculate</h2><div id="plannerResultBody" class="planner-placeholder">Your visa-day result will appear here.</div><button id="addPlannedTripBtn" class="secondary hidden" type="button">＋ Add this as a planned trip</button>
-          </article>
-        </div>
-      </section>
-
-      <section id="rulesView" class="view">
-        <div class="visa-check-layout">
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">ENTRY REQUIREMENTS</p><h2>Do I need a visa?</h2><p class="panel-copy">Choose the passport you will travel on and where you are going. This gives you a quick tourism visa check instead of tracking UK, Canada and US visitor-day templates.</p></div></div>
-            <label class="field"><span>Passport / nationality</span><input id="visaPassport" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
-            <label class="field"><span>Travelling to</span><input id="visaDestination" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
-            <div class="visa-profile-hint" id="visaProfileHint"></div>
-            <button class="primary wide" id="runVisaCheckBtn" type="button">Check visa requirement</button>
-          </article>
-          <article class="panel visa-result-panel">
-            <p class="eyebrow">RESULT</p>
-            <h2 id="visaResultTitle">Choose a passport and destination</h2>
-            <div id="visaResultBody" class="planner-placeholder">Your visa result will appear here.</div>
-          </article>
-        </div>
-        <article class="panel visa-source-panel">
-          <div class="panel-head"><div><p class="eyebrow">BEFORE YOU TRAVEL</p><h2>Always verify the live rule</h2></div><a class="secondary" href="https://apply.joinsherpa.com/visa" target="_blank" rel="noreferrer">Open live requirements ↗</a></div>
-          <p class="panel-copy">The quick answer uses an open visa-policy dataset and is useful for planning, but entry rules can change and may depend on trip purpose, residence, transit route, passport validity and other circumstances. Use the live requirements link or the destination government's immigration/embassy site before booking or travelling.</p>
-          <div id="visaDataStatus" class="visa-data-status">Visa data loads when you open this page.</div>
-        </article>
-      </section>
-
-      <section id="staysView" class="view">
-        <div class="two-col stays-layout">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">＋ Add stay</button></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">GAP DETECTOR</p><h2>Dates with no country</h2></div></div><p class="panel-copy">When there is a hole between two recorded stays, you can fill the whole missing range in one click.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></article>
-        </div>
-      </section>
-
-      <section id="profilesView" class="view">
-        <div class="two-col profiles-layout">
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">PASSPORTS</p><h2>Traveller profiles</h2></div><button class="primary compact" id="addProfileBtn">＋ Add profile</button></div>
-            <p class="panel-copy">Profiles let the app apply the right Schengen logic to different travellers. Add every citizenship/passport a traveller can use.</p>
-            <div id="profileList" class="profile-list"></div>
-          </article>
-          <article class="panel cloud-panel">
-            <div class="panel-head"><div><p class="eyebrow">OPTIONAL</p><h2>Cloud sync</h2></div><span id="cloudStatusBadge" class="status-badge neutral">Local only</span></div>
-            <p class="panel-copy">The app works locally without an account. To sync the same data across your phone and laptop, connect your own free Supabase project. Your password is never stored by this app.</p>
-            <details class="setup-details"><summary>One-time Supabase setup</summary><ol><li>Create a Supabase project.</li><li>Run the included <code>supabase-setup.sql</code> in its SQL editor.</li><li>Paste the project URL and public anon key below.</li></ol></details>
-            <label class="field"><span>Supabase project URL</span><input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co" /></label>
-            <label class="field"><span>Public anon key</span><input type="password" id="supabaseKey" placeholder="eyJ…" /></label>
-            <button class="secondary wide" id="saveCloudConfigBtn" type="button">Save cloud settings</button>
-            <div class="cloud-auth-grid"><label class="field"><span>Email</span><input type="email" id="cloudEmail" autocomplete="email" /></label><label class="field"><span>Password</span><input type="password" id="cloudPassword" autocomplete="current-password" /></label></div>
-            <div class="button-row"><button class="secondary" id="cloudSignUpBtn" type="button">Create account</button><button class="primary" id="cloudSignInBtn" type="button">Sign in</button><button class="secondary hidden" id="cloudSignOutBtn" type="button">Sign out</button></div>
-            <div class="sync-actions"><button class="secondary" id="cloudPullBtn" type="button" disabled>↓ Pull from cloud</button><button class="secondary" id="cloudPushBtn" type="button" disabled>↑ Push to cloud</button><label class="switch-row"><input type="checkbox" id="autoSyncToggle" /><span>Auto-sync changes</span></label></div>
-            <div id="cloudMessage" class="form-message"></div>
-          </article>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <dialog id="stayDialog" class="dialog">
-    <form method="dialog" id="stayForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="eyebrow">TRAVEL RECORD</p><h2 id="dialogTitle">Add a stay</h2></div><button type="button" class="icon-btn" id="closeDialog" aria-label="Close">×</button></div>
-      <input type="hidden" id="stayId" />
-      <label class="field"><span>Country</span><div class="country-input-wrap"><input id="countryInput" list="countryList" autocomplete="off" placeholder="Start typing a country…" required /><span id="countryFlag" class="country-flag"></span></div><datalist id="countryList"></datalist></label>
-      <div class="field"><div class="field-heading"><span>Date ranges</span><button type="button" class="text-btn" id="addDateRangeBtn">＋ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">You can enter the From and To dates in either order. The other date will not be reset while you are editing.</small></div>
-      <label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label>
-      <div class="form-grid">
-        <label class="field"><span>Record type</span><select id="stayStatus"><option value="actual">Actual / confirmed</option><option value="planned">Planned trip</option></select></label>
-        <label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label>
+        <button class="icon-button" id="closeDialog" type="button" aria-label="Close">×</button>
       </div>
-      <label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label>
-      <div id="formError" class="form-error" role="alert"></div>
-      <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteStayBtn">Delete stay</button><div class="spacer"></div><button type="button" class="secondary" id="cancelDialog">Cancel</button><button type="submit" class="primary">Save stay</button></div>
+
+      <div class="coordinates" id="coordinateText"></div>
+
+      <div class="detected-location">
+        <span>Location</span>
+        <strong id="detectedLocation">Finding location…</strong>
+        <small>Detected automatically from the map point using OpenStreetMap data.</small>
+      </div>
+
+      <label class="field">
+        <span>Photo <b>*</b></span>
+        <input id="photoInput" name="photo" type="file" accept="image/*" required />
+        <small>Take a photo or choose one from your phone/tablet.</small>
+      </label>
+
+      <div id="photoPreviewWrap" class="photo-preview-wrap" hidden>
+        <img id="photoPreview" alt="Photo preview" />
+      </div>
+
+      <label class="field">
+        <span>Date spotted</span>
+        <input id="dateInput" name="spotted_on" type="date" required />
+      </label>
+
+      <label class="field">
+        <span>Note</span>
+        <textarea
+          id="noteInput"
+          name="note"
+          maxlength="500"
+          rows="3"
+          placeholder="Optional — lamp post, hostel bathroom, mountain hut…"
+        ></textarea>
+      </label>
+
+      <p id="formMessage" class="form-message" aria-live="polite"></p>
+
+      <div class="dialog-actions">
+        <button id="cancelDialog" class="secondary-button" type="button">Cancel</button>
+        <button id="submitButton" class="primary-button" type="submit">Add to the map</button>
+      </div>
     </form>
   </dialog>
 
-  <dialog id="profileDialog" class="dialog small-dialog">
-    <form method="dialog" id="profileForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="eyebrow">TRAVELLER</p><h2 id="profileDialogTitle">Add profile</h2></div><button type="button" class="icon-btn" id="closeProfileDialog" aria-label="Close">×</button></div>
-      <input type="hidden" id="profileId" />
-      <label class="field"><span>Name</span><input type="text" id="profileName" placeholder="e.g. Me, Brandi" required maxlength="40" /></label>
-      <div class="field"><span>Citizenship / passports</span><div class="inline-input"><input type="text" id="citizenshipInput" list="countryList" placeholder="Add a country…" /><button type="button" class="secondary" id="addCitizenshipBtn">Add</button></div><div id="citizenshipChips" class="chips"></div></div>
-      <div id="profileError" class="form-error"></div>
-      <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteProfileBtn">Delete profile</button><div class="spacer"></div><button type="button" class="secondary" id="cancelProfileDialog">Cancel</button><button type="submit" class="primary">Save profile</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="gapDialog" class="dialog small-dialog">
-    <form method="dialog" id="gapForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="eyebrow">FILL THE GAP</p><h2>Add missing country</h2></div><button type="button" class="icon-btn" id="closeGapDialog" aria-label="Close">×</button></div>
-      <input type="hidden" id="gapStart" /><input type="hidden" id="gapEnd" />
-      <p id="gapDateSummary" class="panel-copy"></p>
-      <label class="field"><span>Country</span><input type="text" id="gapCountry" list="countryList" placeholder="Start typing a country…" required /></label>
-      <div id="gapError" class="form-error"></div>
-      <div class="dialog-actions"><div class="spacer"></div><button type="button" class="secondary" id="cancelGapDialog">Cancel</button><button type="submit" class="primary">Fill gap</button></div>
-    </form>
-  </dialog>
-
-  <script async src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
