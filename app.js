@@ -75,15 +75,175 @@ function findGaps(){let source=staysForProfile(state.activeProfileId);if(source.
 function cacheEls(){
 ['countriesLogged','daysLogged','schengenBadge','schengenUsed','schengenProgress','schengenSummary','schengenRemaining','remainingSummary','miniCalendarTitle','miniCalendar','recentStays','schengenAlertPanel','alertTitle','alertBody','dashboardGaps','calendarTitle','calendar','calendarSelectionInfo','clearCalendarSelectionBtn','countryTotals','checkDate','schengenProfileNote','ringUsed','calcUsed','calcRemaining','windowDates','schengenRing','forecastBox','forecastTitle','forecastText','schengenBreakdown','allStays','gapList','pageTitle','stayDialog','stayForm','stayId','countryInput','countryFlag','dateRanges','notesInput','stayStatus','stayProfile','schengenExempt','schengenExemptRow','formError','dialogTitle','deleteStayBtn','worldMap','mapFallback','mapSelectionSummary','timelineEmpty','timelineContent','timelineSlider','timelineDateLabel','timelineLocationLabel','timelineStartLabel','timelineEndLabel','timelineBars','timelineSchengenLabel','plannerProfile','plannerCountry','plannerEntry','plannerExit','plannerResultTitle','plannerResultBody','addPlannedTripBtn','visaPassport','visaDestination','visaProfileHint','runVisaCheckBtn','visaResultTitle','visaResultBody','visaDataStatus','profileDialog','profileForm','profileId','profileName','citizenshipInput','citizenshipChips','profileError','profileDialogTitle','deleteProfileBtn','profileList','gapDialog','gapForm','gapStart','gapEnd','gapDateSummary','gapCountry','gapError','supabaseUrl','supabaseKey','cloudEmail','cloudPassword','cloudStatusBadge','cloudMessage','cloudPullBtn','cloudPushBtn','cloudSignInBtn','cloudSignOutBtn','autoSyncToggle','localSaveBadge','localSaveDetail','createTransferBtn','transferCodeArea','transferCodeValue','copyTransferCodeBtn','transferExpiry','transferCodeInput','claimTransferBtn','transferMessage','dataBackupBtn','dataRestoreBtn'].forEach(id=>els[id]=$(id))
 }
+function installCalendarJumpUI(){
 
-function init(){installDataTransferUI();cacheEls();$('countryList').innerHTML=COUNTRIES.map(c=>`<option value="${esc(c.name)}"></option>`).join('');els.checkDate.value=isoDate(new Date());els.plannerEntry.value=isoDate(new Date());bindEvents();populateProfileSelects();renderAll();updateLocalSaveIndicator();initCloudFromConfig()}
+  if($('calendarMonthJump')) return;
+
+  const prev=$('prevMonth'),
+        next=$('nextMonth');
+
+  if(!prev||!next) return;
+
+  const host=prev.parentElement;
+
+  const wrapper=document.createElement('div');
+
+  wrapper.className='calendar-jump-controls';
+
+  const monthNames=[
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+  ];
+
+  wrapper.innerHTML=`
+    <select
+      id="calendarMonthJump"
+      class="calendar-jump-select"
+      aria-label="Choose month"
+    >
+      ${monthNames.map((month,index)=>
+        `<option value="${index}">${month}</option>`
+      ).join('')}
+    </select>
+
+    <select
+      id="calendarYearJump"
+      class="calendar-jump-select year"
+      aria-label="Choose year"
+    >
+      ${Array.from(
+        {length:201},
+        (_,i)=>1900+i
+      ).map(year=>
+        `<option value="${year}">${year}</option>`
+      ).join('')}
+    </select>
+  `;
+
+  host.insertBefore(wrapper,next);
+
+
+  const monthSelect=
+    wrapper.querySelector('#calendarMonthJump');
+
+  const yearSelect=
+    wrapper.querySelector('#calendarYearJump');
+
+
+  function jumpCalendar(){
+
+    const month=
+      Number(monthSelect.value);
+
+    const year=
+      Number(yearSelect.value);
+
+    calendarCursor=
+      new Date(
+        Date.UTC(
+          year,
+          month,
+          1
+        )
+      );
+
+    renderCalendar();
+  }
+
+
+  monthSelect.addEventListener(
+    'change',
+    jumpCalendar
+  );
+
+  yearSelect.addEventListener(
+    'change',
+    jumpCalendar
+  );
+
+
+  const style=
+    document.createElement('style');
+
+  style.textContent=`
+    .calendar-jump-controls{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .calendar-jump-select{
+      appearance:none;
+      background:#fff;
+      border:1px solid #dfe4ea;
+      border-radius:10px;
+      padding:9px 34px 9px 12px;
+      font:inherit;
+      font-size:14px;
+      font-weight:600;
+      color:#172033;
+      cursor:pointer;
+      background-image:
+        linear-gradient(45deg,transparent 50%,#657083 50%),
+        linear-gradient(135deg,#657083 50%,transparent 50%);
+      background-position:
+        calc(100% - 16px) 50%,
+        calc(100% - 11px) 50%;
+      background-size:5px 5px,5px 5px;
+      background-repeat:no-repeat;
+    }
+
+    .calendar-jump-select.year{
+      min-width:90px;
+    }
+
+    .calendar-jump-select:hover{
+      border-color:#bfc7d2;
+    }
+
+    .calendar-jump-select:focus{
+      outline:none;
+      border-color:#172033;
+    }
+
+    @media(max-width:700px){
+      .calendar-jump-controls{
+        width:100%;
+      }
+
+      .calendar-jump-select{
+        flex:1;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+function init(){installDataTransferUI();installCalendarJumpUI();cacheEls();$('countryList').innerHTML=COUNTRIES.map(c=>`<option value="${esc(c.name)}"></option>`).join('');els.checkDate.value=isoDate(new Date());els.plannerEntry.value=isoDate(new Date());bindEvents();populateProfileSelects();renderAll();updateLocalSaveIndicator();initCloudFromConfig()}
 function bindEvents(){document.querySelectorAll('.nav-item').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('[data-go-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.goView));$('addStayBtn').onclick=()=>openStayDialog();$('addStayFromListBtn').onclick=()=>openStayDialog();$('closeDialog').onclick=$('cancelDialog').onclick=()=>els.stayDialog.close();$('addDateRangeBtn').onclick=()=>addDateRange();els.stayForm.onsubmit=saveStay;$('deleteStayBtn').onclick=deleteStay;els.countryInput.oninput=updateStayCountry;document.addEventListener('click',handleDelegatedClick);$('prevMonth').onclick=()=>{calendarCursor=new Date(Date.UTC(calendarCursor.getUTCFullYear(),calendarCursor.getUTCMonth()-1,1));renderCalendar()};$('nextMonth').onclick=()=>{calendarCursor=new Date(Date.UTC(calendarCursor.getUTCFullYear(),calendarCursor.getUTCMonth()+1,1));renderCalendar()};$('todayBtn').onclick=()=>{calendarCursor=startOfMonth(new Date());renderCalendar()};els.clearCalendarSelectionBtn.onclick=clearCalendarSelection;els.checkDate.onchange=renderSchengen;$('timelineTodayBtn').onclick=()=>setTimelineDate(isoDate(new Date()));els.timelineSlider.oninput=()=>setTimelineFromSlider();$('runPlannerBtn').onclick=runPlanner;if(els.runVisaCheckBtn)els.runVisaCheckBtn.onclick=runVisaCheck;if(els.visaPassport)els.visaPassport.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runVisaCheck()}});if(els.visaDestination)els.visaDestination.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runVisaCheck()}});els.addPlannedTripBtn.onclick=addPlannerTrip;$('addProfileBtn').onclick=()=>openProfileDialog();$('closeProfileDialog').onclick=$('cancelProfileDialog').onclick=()=>els.profileDialog.close();$('addCitizenshipBtn').onclick=addCitizenship;els.profileForm.onsubmit=saveProfile;els.deleteProfileBtn.onclick=deleteProfile;els.gapForm.onsubmit=saveGap;$('closeGapDialog').onclick=$('cancelGapDialog').onclick=()=>els.gapDialog.close();$('exportBtn').onclick=exportData;$('importInput').onchange=importData;$('saveCloudConfigBtn').onclick=saveCloudConfig;$('cloudSignUpBtn').onclick=cloudSignUp;$('cloudSignInBtn').onclick=cloudSignIn;els.cloudSignOutBtn.onclick=cloudSignOut;els.cloudPushBtn.onclick=()=>cloudPush(false);els.cloudPullBtn.onclick=cloudPull;els.autoSyncToggle.onchange=()=>{let c=getCloudConfig();c.autoSync=els.autoSyncToggle.checked;localStorage.setItem(CLOUD_KEY,JSON.stringify(c))};if(els.createTransferBtn)els.createTransferBtn.onclick=createTransferCode;if(els.claimTransferBtn)els.claimTransferBtn.onclick=claimTransferCode;if(els.copyTransferCodeBtn)els.copyTransferCodeBtn.onclick=copyTransferCode;if(els.transferCodeInput)els.transferCodeInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();claimTransferCode()}});if(els.dataBackupBtn)els.dataBackupBtn.onclick=exportData;if(els.dataRestoreBtn)els.dataRestoreBtn.onclick=()=>$('importInput').click()}
 function handleDelegatedClick(e){let go=e.target.closest('[data-go-view]');if(go){switchView(go.dataset.goView);return}let b=e.target.closest('[data-action]');if(b){let a=b.dataset.action;if(a==='edit-stay')openStayDialog(b.dataset.id);if(a==='remove-range')b.closest('.date-range-row').remove();if(a==='fill-gap')openGapDialog(b.dataset.start,b.dataset.end,b.dataset.country||'');if(a==='exclude-country'){let code=b.dataset.country;state.excludedCountryCodes=Array.from(new Set([...(state.excludedCountryCodes||[]),code]));persist();renderDashboard();renderCountries();updateMapColors()}if(a==='include-country'){let code=b.dataset.country;state.excludedCountryCodes=(state.excludedCountryCodes||[]).filter(c=>c!==code);persist();renderDashboard();renderCountries();updateMapColors()}if(a==='set-profile'){state.activeProfileId=b.dataset.id;persist();populateProfileSelects();renderAll()}if(a==='edit-profile')openProfileDialog(b.dataset.id);if(a==='use-profile-passport'){let c=countryByCode(b.dataset.country);if(c){els.visaPassport.value=c.name;runVisaCheck()}}return}let day=e.target.closest('[data-calendar-date]');if(day)handleCalendarDateClick(day.dataset.calendarDate)}
 function switchView(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));$(`${v}View`).classList.add('active');document.querySelector(`.nav-item[data-view="${v}"]`)?.classList.add('active');let t={dashboard:'Dashboard',calendar:'Calendar',map:'Map & timeline',countries:'Countries',schengen:'Schengen 90/180',planner:'Trip planner',rules:'Visa checker',stays:'All stays',profiles:'Profiles & data'};els.pageTitle.textContent=t[v]||'Travel tracker';if(v==='map')renderMapTimeline();if(v==='schengen')renderSchengen();if(v==='planner')populateProfileSelects();if(v==='rules')renderVisaChecker();if(v==='stays')renderStayLists();if(v==='profiles')renderProfiles();window.scrollTo({top:0,behavior:'smooth'})}
 function renderAll(){renderDashboard();renderMiniCalendar();renderCalendar();renderCountries();renderSchengen();renderStayLists();renderVisaChecker();renderProfiles();renderMapTimeline()}
 function renderDashboard(){let p=activeProfile(),today=isoDate(new Date()),r=rollingStatus(today),st=statusForUsed(r.used),exempt=isSchengenExemptProfile(p),excluded=new Set(state.excludedCountryCodes||[]);els.countriesLogged.textContent=new Set(state.stays.map(s=>s.countryCode).filter(code=>!excluded.has(code))).size;els.daysLogged.textContent=travelDaySet().size;if(exempt){els.schengenUsed.textContent='—';els.schengenRemaining.textContent='—';els.schengenBadge.className='status-badge good';els.schengenBadge.textContent='EXEMPT';els.schengenProgress.style.width='0';els.schengenSummary.textContent=`${p.name} has an EU/EEA/Swiss citizenship recorded`;els.remainingSummary.textContent='90/180 short-stay rule not applied';els.alertTitle.textContent='Schengen 90/180 is not applied to this profile';els.alertBody.textContent='EU/EEA/Swiss citizens use free-movement rules instead. Local registration/residence rules can still apply.';els.schengenAlertPanel.className='panel warning-panel'}else{els.schengenUsed.textContent=r.used;els.schengenRemaining.textContent=Math.max(0,r.remaining);els.schengenProgress.style.width=`${Math.min(100,r.used/90*100)}%`;els.schengenProgress.style.background=st.kind==='bad'?'var(--red)':st.kind==='warn'?'var(--amber)':'var(--green)';els.schengenBadge.className=`status-badge ${st.kind}`;els.schengenBadge.textContent=st.label;els.schengenSummary.textContent=`${plural(r.used,'day')} used from ${fmtObj(r.start,{day:'numeric',month:'short'})} to ${fmtObj(r.end,{day:'numeric',month:'short'})}`;els.remainingSummary.textContent=`As of ${fmtObj(r.end)}`;els.schengenAlertPanel.className=`panel warning-panel ${st.kind==='good'?'':st.kind}`;els.alertTitle.textContent=st.kind==='good'?"You're comfortably within the limit":st.kind==='warn'?'Your Schengen allowance is getting tight':r.used>90?'Your records show a possible overstay':'You are very close to the limit';els.alertBody.textContent=st.text}let gaps=findGaps().slice(0,3);els.dashboardGaps.className=gaps.length?'gap-list':'gap-list empty-state';els.dashboardGaps.innerHTML=gaps.length?gaps.map(g=>gapCard(g,true)).join(''):'No gaps detected between your recorded stays.';renderStayList(els.recentStays,[...state.stays].sort((a,b)=>b.start.localeCompare(a.start)).slice(0,6))}
 function renderMiniCalendar(){let c=startOfMonth(new Date()),first=(c.getUTCDay()+6)%7,start=addDays(c,-first),today=isoDate(new Date());els.miniCalendarTitle.textContent=c.toLocaleDateString(undefined,{month:'long',year:'numeric',timeZone:'UTC'});let h=['M','T','W','T','F','S','S'].map(d=>`<div class="mini-weekday">${d}</div>`).join('');for(let i=0;i<42;i++){let d=addDays(start,i),k=dayKey(d),has=state.stays.some(s=>s.start<=k&&s.end>=k);h+=`<div class="mini-day ${d.getUTCMonth()===c.getUTCMonth()?'':'muted'} ${k===today?'today':''} ${has?'has-stay':''}">${d.getUTCDate()}</div>`}els.miniCalendar.innerHTML=h}
-function renderCalendar(){let c=calendarCursor,first=(c.getUTCDay()+6)%7,start=addDays(c,-first),today=isoDate(new Date());els.calendarTitle.textContent=c.toLocaleDateString(undefined,{month:'long',year:'numeric',timeZone:'UTC'});let h=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="calendar-weekday">${d}</div>`).join('');for(let i=0;i<42;i++){let d=addDays(start,i),k=dayKey(d),on=state.stays.filter(s=>s.start<=k&&s.end>=k),selRange=calendarSelectionStart&&calendarSelectionEnd&&k>=calendarSelectionStart&&k<=calendarSelectionEnd,selStart=k===calendarSelectionStart,selEnd=k===calendarSelectionEnd;h+=`<div class="calendar-day ${d.getUTCMonth()===c.getUTCMonth()?'':'outside'} ${k===today?'today':''} ${selRange?'selection-range':''} ${selStart?'selection-start':''} ${selEnd?'selection-end':''}" data-calendar-date="${k}" role="button" tabindex="0" aria-label="${fmt(k)}"><div class="day-number">${d.getUTCDate()}</div>${on.slice(0,4).map(s=>`<div class="day-stay ${SCHENGEN.has(s.countryCode)&&!s.schengenExempt?'schengen':''} ${s.status==='planned'?'planned':''}">${flagHtml(s.countryCode,'flag-img flag-sm')} ${esc(s.countryName)}</div>`).join('')}${on.length>4?`<div class="day-stay">+${on.length-4} more</div>`:''}</div>`}els.calendar.innerHTML=h;els.calendar.querySelectorAll('[data-calendar-date]').forEach(day=>day.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();handleCalendarDateClick(day.dataset.calendarDate)}});updateCalendarSelectionUI()}
+function renderCalendar(){let c=calendarCursor,first=(c.getUTCDay()+6)%7,start=addDays(c,-first),today=isoDate(new Date());els.calendarTitle.textContent=c.toLocaleDateString(undefined,{month:'long',year:'numeric',timeZone:'UTC'});let monthJump=$('calendarMonthJump'),
+    yearJump=$('calendarYearJump');
+
+if(monthJump)
+  monthJump.value=String(c.getUTCMonth());
+
+if(yearJump)
+  yearJump.value=String(c.getUTCFullYear());let h=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="calendar-weekday">${d}</div>`).join('');for(let i=0;i<42;i++){let d=addDays(start,i),k=dayKey(d),on=state.stays.filter(s=>s.start<=k&&s.end>=k),selRange=calendarSelectionStart&&calendarSelectionEnd&&k>=calendarSelectionStart&&k<=calendarSelectionEnd,selStart=k===calendarSelectionStart,selEnd=k===calendarSelectionEnd;h+=`<div class="calendar-day ${d.getUTCMonth()===c.getUTCMonth()?'':'outside'} ${k===today?'today':''} ${selRange?'selection-range':''} ${selStart?'selection-start':''} ${selEnd?'selection-end':''}" data-calendar-date="${k}" role="button" tabindex="0" aria-label="${fmt(k)}"><div class="day-number">${d.getUTCDate()}</div>${on.slice(0,4).map(s=>`<div class="day-stay ${SCHENGEN.has(s.countryCode)&&!s.schengenExempt?'schengen':''} ${s.status==='planned'?'planned':''}">${flagHtml(s.countryCode,'flag-img flag-sm')} ${esc(s.countryName)}</div>`).join('')}${on.length>4?`<div class="day-stay">+${on.length-4} more</div>`:''}</div>`}els.calendar.innerHTML=h;els.calendar.querySelectorAll('[data-calendar-date]').forEach(day=>day.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();handleCalendarDateClick(day.dataset.calendarDate)}});updateCalendarSelectionUI()}
 function updateCalendarSelectionUI(){if(!els.calendarSelectionInfo||!els.clearCalendarSelectionBtn)return;let info=els.calendarSelectionInfo,btn=els.clearCalendarSelectionBtn;if(!calendarSelectionStart){info.className='calendar-selection-info';info.innerHTML='<strong>Click a date to add a stay</strong><span>Pick the first day, then the last day. Click the same day twice for a day trip.</span>';btn.disabled=true;return}btn.disabled=false;if(!calendarSelectionEnd){info.className='calendar-selection-info active';info.innerHTML=`<strong>${fmt(calendarSelectionStart)} selected</strong><span>Now choose the last day — or click ${fmt(calendarSelectionStart,{day:'numeric',month:'short'})} again for a one-day trip.</span>`;return}let days=daysInclusive(calendarSelectionStart,calendarSelectionEnd);info.className='calendar-selection-info complete';info.innerHTML=`<strong>${fmt(calendarSelectionStart)} – ${fmt(calendarSelectionEnd)}</strong><span>${plural(days,'day')} selected. Cancel the pop-up to keep this selection, or clear it here.</span>`}
 function clearCalendarSelection(){calendarSelectionStart=null;calendarSelectionEnd=null;renderCalendar()}
 function handleCalendarDateClick(k){if(!calendarSelectionStart){calendarSelectionStart=k;calendarSelectionEnd=null;renderCalendar();return}if(calendarSelectionEnd){if(k>=calendarSelectionStart&&k<=calendarSelectionEnd){clearCalendarSelection();return}calendarSelectionStart=k;calendarSelectionEnd=null;renderCalendar();return}let a=calendarSelectionStart,b=k;calendarSelectionStart=a<=b?a:b;calendarSelectionEnd=a<=b?b:a;renderCalendar();setTimeout(()=>openStayDialog(null,{start:calendarSelectionStart,end:calendarSelectionEnd,source:'calendar'}),0)}
