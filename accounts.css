@@ -1,0 +1,18 @@
+[hidden] { display: none !important; }
+.account-page { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
+.account-page .topbar { margin-bottom: 28px; gap: 18px; }
+.account-page .brand { margin-bottom: 24px; }
+.account-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.account-card { max-width: 520px; margin: 16px auto; }
+.account-page .field { margin: 18px 0; }
+.account-page input { font-size: 16px; }
+.account-page .panel-copy { line-height: 1.6; }
+.account-links { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 24px; }
+.account-page a:not(.primary):not(.secondary) { color: var(--text); text-decoration: underline; }
+.account-page .form-message { min-height: 24px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.account-conflicts { max-height: 85vh; max-width: 700px; }
+.account-conflicts fieldset { margin: 20px 0; border: 1px solid var(--border); border-radius: 12px; overflow-wrap: anywhere; }
+.account-conflicts select { width: 100%; padding: 12px; }
+.account-load-error { position: fixed; inset: 20px 20px auto; z-index: 1000; padding: 20px; background: var(--panel, white); border: 2px solid var(--red); border-radius: 12px; }
+.sidebar-footer [data-sync-status] { white-space: normal; line-height: 1.5; }
+@media (max-width: 700px) { .account-grid { grid-template-columns: 1fr; } .account-page { padding: 20px 16px; } .account-page .topbar { align-items: flex-start; flex-wrap: wrap; } }

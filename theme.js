@@ -3,7 +3,7 @@
   'use strict';
 
   const THEME_KEY = 'whereIveBeen.theme.v1';
-  const BRAND_MARK = 'assets/wib-logo-mark.png';
+  const BRAND_MARK = new URL('assets/wib-logo-mark.png', document.currentScript.src).href;
 
   function getTheme() {
     const saved = localStorage.getItem(THEME_KEY);
@@ -62,7 +62,7 @@
   function installThemeToggle() {
     if (document.getElementById('themeToggleBtn')) return;
 
-    const addStay = document.getElementById('addStayBtn');
+    const addStay = document.getElementById('addStayBtn') || document.getElementById('backToTracker');
     const topbar = addStay?.closest('.topbar');
     if (!addStay || !topbar) return;
 

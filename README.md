@@ -1,3 +1,7 @@
+## Account system
+
+See [ACCOUNT-SETUP.md](ACCOUNT-SETUP.md) for account setup, safe migration and validation. The account UI replaces the former manual backup/transfer workflow.
+
 # Where I've Been
 
 A local-first travel-day, country and Schengen 90/180 tracker published as a static GitHub Pages site.
