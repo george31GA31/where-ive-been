@@ -66,26 +66,19 @@
     const label = card.querySelector('.stat-label')?.textContent?.trim() || '';
 
     if (card.querySelector('#countriesLogged')) {
-      const visited = new Set(
-        state.stays
-          .filter(stay => stay.start <= today)
-          .map(stay => stay.countryCode)
-          .filter(code => code && code !== 'SEA')
-      );
-      const excluded = new Set(state.countryCountExcludedCodes || []);
-      const excludedVisited = [...visited].filter(code => excluded.has(code)).length;
-      const futureOnly = new Set(
-        state.stays
-          .filter(stay => stay.start > today && stay.countryCode && stay.countryCode !== 'SEA' && !visited.has(stay.countryCode))
-          .map(stay => stay.countryCode)
-      );
+      const model = window.WIBCountryCount;
+      const visited = model?.visitedCodesAsOf
+        ? model.visitedCodesAsOf(today)
+        : new Set(state.stays.filter(stay => stay.start <= today).map(stay => stay.countryCode).filter(code => code && code !== 'SEA'));
+      const counted = [...visited].filter(code => model?.isCounted ? model.isCounted(code) : !(state.countryCountExcludedCodes || []).includes(code));
+      const other = [...visited].filter(code => !counted.includes(code));
       return {
         title: 'Your personal country count',
-        text: 'This headline counts only places you have actually entered by today. Unticking a dependent territory or another place changes only your personal country count — its dates, map colour and travel history stay intact.',
+        text: 'This counts only places you have actually entered by today. The 193 UN member states plus Vatican City and Palestine are counted by default; dependent territories and other countries can be included if you choose.',
         pills: [
-          `${visited.size} visited so far`,
-          `${excludedVisited} Dependent territory & other countries`,
-          `${futureOnly.size} future planned`
+          `${counted.length} countries`,
+          `${other.length} Dependent territory & other countries`,
+          `${visited.size} places visited`
         ]
       };
     }
