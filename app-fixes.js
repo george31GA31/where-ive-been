@@ -34,18 +34,108 @@
     return coreFlagHtml(code, cls);
   };
 
-  // "Countries logged" is a personal count. Removing a country from the ranking/map
-  // is deliberately separate from unticking it here.
+  function hasBeenEnteredBy(code, date = isoDate(new Date())) {
+    return state.stays.some(stay => stay.countryCode === code && stay.start <= date);
+  }
+
+  function visitedCountryCodesAsOf(date = isoDate(new Date())) {
+    return new Set(
+      state.stays
+        .filter(stay => stay.start <= date)
+        .map(stay => stay.countryCode)
+        .filter(code => code && code !== 'SEA')
+    );
+  }
+
+  // "Countries logged" is a personal count of places actually entered by today.
+  // Future planned destinations stay out of the headline until their entry date arrives.
   const coreRenderDashboard = renderDashboard;
   renderDashboard = function () {
     coreRenderDashboard();
+    const today = isoDate(new Date());
     const notCounted = new Set(state.countryCountExcludedCodes || []);
-    const counted = new Set(
-      state.stays
-        .map(stay => stay.countryCode)
-        .filter(code => code && code !== 'SEA' && !notCounted.has(code))
-    );
-    if (els.countriesLogged) els.countriesLogged.textContent = counted.size;
+    const visited = visitedCountryCodesAsOf(today);
+    const counted = [...visited].filter(code => !notCounted.has(code));
+
+    if (els.countriesLogged) {
+      els.countriesLogged.textContent = counted.length;
+      const card = els.countriesLogged.closest('.stat-card');
+      const note = card?.querySelector('small');
+      if (note) note.textContent = 'Visited countries as of today';
+    }
+  };
+
+  // Country totals are historical-to-today only. Future planned days and destinations
+  // do not inflate either the list or the bars; they appear once the entry date arrives.
+  renderCountries = function () {
+    const today = isoDate(new Date());
+    const map = new Map();
+
+    state.stays.forEach(stay => {
+      if (stay.start > today) return;
+      const days = datesForStay(stay).filter(day => day <= today);
+      if (!days.length) return;
+
+      if (!map.has(stay.countryCode)) {
+        map.set(stay.countryCode, {
+          name: stay.countryName,
+          days: new Set()
+        });
+      }
+
+      const record = map.get(stay.countryCode);
+      days.forEach(day => record.days.add(day));
+    });
+
+    if (!map.size) {
+      els.countryTotals.className = 'country-totals empty-state';
+      els.countryTotals.textContent = 'No country data yet.';
+      return;
+    }
+
+    const allRows = [...map].map(([code, record]) => ({
+      code,
+      name: record.name,
+      total: record.days.size
+    })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
+    const excluded = new Set(state.excludedCountryCodes || []);
+    const rows = allRows.filter(row => !excluded.has(row.code));
+    const hidden = allRows.filter(row => excluded.has(row.code));
+    const max = rows.length ? Math.max(...rows.map(row => row.total)) : 1;
+
+    els.countryTotals.className = 'country-totals';
+
+    const visibleHtml = rows.length
+      ? rows.map(row => `
+        <div class="country-row">
+          <div class="flag">${flagHtml(row.code)}</div>
+          <div class="country-name">
+            <strong>${esc(row.name)}</strong>
+            <span>${row.total} actual</span>
+            <button
+              type="button"
+              class="country-remove-btn"
+              data-action="exclude-country"
+              data-country="${row.code}"
+              aria-label="Remove ${esc(row.name)} from country totals"
+            >Remove</button>
+          </div>
+          <div class="country-bar"><span style="width:${Math.max(0, Math.min(100, row.total / max * 100))}%"></span></div>
+          <div class="country-count"><strong>${row.total}</strong><span>days</span></div>
+        </div>
+      `).join('')
+      : '<div class="empty-state">All visited countries are currently removed from this list.</div>';
+
+    const hiddenHtml = hidden.length
+      ? `<div class="gap-card removed-country-card" style="margin-top:14px">
+          <div class="gap-card-head"><strong>Removed from country totals</strong><span class="status-badge neutral">${hidden.length}</span></div>
+          <p>These stays are still saved in your calendar and travel history. Re-add a country at any time.</p>
+          <div class="gap-actions">${hidden.map(row => `<button type="button" class="tiny-btn" data-action="include-country" data-country="${row.code}">${flagHtml(row.code, 'flag-img flag-sm')} Re-add ${esc(row.name)}</button>`).join('')}</div>
+        </div>`
+      : '';
+
+    els.countryTotals.innerHTML = visibleHtml + hiddenHtml;
   };
 
   // Replace the calendar renderer so each country chip is a real edit control.
@@ -150,7 +240,7 @@
           </div>
           <button type="button" id="closeCountryCountDialog" class="icon-btn" aria-label="Close">×</button>
         </div>
-        <p class="country-count-help">Untick anywhere you've visited that you personally don't want included in <strong>Countries logged</strong>. This does not remove any dates, travel days, map history or country totals.</p>
+        <p class="country-count-help">Untick dependent territories or any other places you personally don't count as countries. Only places you have actually entered by today appear here. Nothing is removed from your dates, travel history or map.</p>
         <div id="countryCountEditorList" class="country-count-editor-list"></div>
         <div class="dialog-actions">
           <div class="spacer"></div>
@@ -168,14 +258,10 @@
     const list = $('countryCountEditorList');
     if (!dialog || !list) return;
 
-    const recorded = [...new Set(
-      state.stays
-        .map(stay => stay.countryCode)
-        .filter(code => code && code !== 'SEA')
-    )].sort((a, b) =>
+    const today = isoDate(new Date());
+    const recorded = [...visitedCountryCodesAsOf(today)].sort((a, b) =>
       (countryByCode(a)?.name || a).localeCompare(countryByCode(b)?.name || b)
     );
-
     const excluded = new Set(state.countryCountExcludedCodes || []);
 
     list.innerHTML = recorded.length
@@ -188,7 +274,7 @@
             <input type="checkbox" data-country-count-code="${code}" ${excluded.has(code) ? '' : 'checked'} aria-label="Count ${esc(name)} as a country">
           </label>`;
         }).join('')
-      : '<div class="empty-state">No countries have been recorded yet.</div>';
+      : '<div class="empty-state">No countries have been visited yet.</div>';
 
     list.querySelectorAll('[data-country-count-code]').forEach(input => {
       input.addEventListener('change', () => {
@@ -210,8 +296,8 @@
     const style = document.createElement('style');
     style.id = 'wibResponsiveFixes';
     style.textContent = `
-      .country-count-edit-btn{position:absolute;top:18px;right:18px;border:0;background:transparent;color:#657083;font:inherit;font-size:13px;font-weight:800;cursor:pointer;padding:6px 9px;border-radius:8px}
-      .country-count-edit-btn:hover{background:#f1f3f6}
+      .country-count-edit-btn{position:absolute;top:18px;right:18px;z-index:4;border:0;background:transparent;color:var(--gold,#b8860b);font:inherit;font-size:13px;font-weight:800;cursor:pointer;padding:6px 9px;border-radius:8px}
+      .country-count-edit-btn:hover{background:rgba(184,134,11,.09)}
       .country-count-card{max-width:650px}
       .country-count-help{color:#687386;line-height:1.55;margin:0 0 18px}
       .country-count-editor-list{display:flex;flex-direction:column;max-height:55vh;overflow:auto;border:1px solid #e4e8ee;border-radius:14px}
@@ -220,6 +306,13 @@
       .country-count-choice:hover{background:#f8f9fb}
       .country-count-choice strong{flex:1;min-width:0}
       .country-count-choice input{width:18px;height:18px;margin-left:auto;flex:0 0 auto;cursor:pointer}
+
+      .country-name{align-items:flex-start!important}
+      .country-remove-btn{display:block;margin:5px 0 0;padding:0;border:0;background:transparent;color:var(--muted);font:inherit;font-size:11px;font-weight:800;line-height:1.25;cursor:pointer;text-align:left}
+      .country-remove-btn:hover{color:var(--gold,#b8860b);text-decoration:underline;text-underline-offset:2px}
+      [data-theme="dark"] .country-count-help{color:var(--muted)}
+      [data-theme="dark"] .country-count-choice{border-color:var(--line)}
+      [data-theme="dark"] .country-count-choice:hover{background:rgba(255,255,255,.035)}
 
       .calendar-stay-button{appearance:none;-webkit-appearance:none;border:0!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;gap:6px!important;text-align:left!important;cursor:pointer!important;font:inherit!important;color:inherit!important;overflow:hidden!important}
       .calendar-stay-button:hover{filter:brightness(.97)}
@@ -254,6 +347,7 @@
       : [];
     installCountryCountEditorFix();
     renderDashboard();
+    renderCountries();
     renderCalendar();
   });
 })();
