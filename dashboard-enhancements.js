@@ -26,13 +26,14 @@
         border-radius:17px!important;box-shadow:0 28px 70px rgba(15,23,42,.18)!important;
         transition:left .26s cubic-bezier(.2,.8,.2,1),top .26s cubic-bezier(.2,.8,.2,1),width .26s cubic-bezier(.2,.8,.2,1),box-shadow .26s ease!important
       }
-      .stat-expand-overlay .stat-expanded-summary{min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:7px}
+      .stat-expand-overlay .stat-expanded-summary{position:relative;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:7px;padding-right:58px}
       .stat-expand-overlay .stat-expanded-summary>.stat-label{display:block}
       .stat-expand-overlay .stat-expanded-summary>strong{font-size:36px;letter-spacing:-.04em}
       .stat-expand-overlay .stat-expanded-summary .stat-row{display:flex;justify-content:space-between;align-items:center}
       .stat-expand-overlay .stat-expanded-summary small{font-size:10px;color:var(--muted)}
       .stat-expand-overlay .stat-expanded-summary .progress{width:100%}
-      .stat-expand-overlay .country-count-edit-btn{display:none!important}
+      .stat-overlay-edit-btn{position:absolute;top:-2px;right:0;border:0;background:transparent;color:var(--gold,#b8860b);font:inherit;font-size:12px;font-weight:850;cursor:pointer;padding:6px 8px;border-radius:8px;z-index:4}
+      .stat-overlay-edit-btn:hover{background:rgba(184,134,11,.10)}
       .stat-expanded-detail{
         min-width:0;align-self:center;border-left:1px solid var(--line);padding-left:24px;
         opacity:0;transform:translateX(-8px);transition:opacity .16s ease .08s,transform .18s ease .08s
@@ -65,16 +66,27 @@
     const label = card.querySelector('.stat-label')?.textContent?.trim() || '';
 
     if (card.querySelector('#countriesLogged')) {
-      const recorded = new Set(state.stays.map(stay => stay.countryCode).filter(code => code && code !== 'SEA'));
-      const notCounted = new Set(state.countryCountExcludedCodes || []);
-      const plannedOnly = [...recorded].filter(code => {
-        const visits = state.stays.filter(stay => stay.countryCode === code);
-        return visits.length && visits.every(stay => stay.status === 'planned');
-      }).length;
+      const visited = new Set(
+        state.stays
+          .filter(stay => stay.start <= today)
+          .map(stay => stay.countryCode)
+          .filter(code => code && code !== 'SEA')
+      );
+      const excluded = new Set(state.countryCountExcludedCodes || []);
+      const excludedVisited = [...visited].filter(code => excluded.has(code)).length;
+      const futureOnly = new Set(
+        state.stays
+          .filter(stay => stay.start > today && stay.countryCode && stay.countryCode !== 'SEA' && !visited.has(stay.countryCode))
+          .map(stay => stay.countryCode)
+      );
       return {
         title: 'Your personal country count',
-        text: 'This headline is deliberately separate from your travel history. Unticking a place changes only this number — its dates, map colour and country history stay intact.',
-        pills: [`${recorded.size} recorded`, `${notCounted.size} not counted`, `${plannedOnly} planned-only`]
+        text: 'This headline counts only places you have actually entered by today. Unticking a dependent territory or another place changes only your personal country count — its dates, map colour and travel history stay intact.',
+        pills: [
+          `${visited.size} visited so far`,
+          `${excludedVisited} Dependent territory & other countries`,
+          `${futureOnly.size} future planned`
+        ]
       };
     }
 
@@ -134,6 +146,15 @@
     if (root.id) root.removeAttribute('id');
     root.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
     root.querySelectorAll('button').forEach(button => {
+      if (button.classList.contains('country-count-edit-btn')) {
+        button.classList.remove('country-count-edit-btn');
+        button.classList.add('stat-overlay-edit-btn');
+        button.tabIndex = 0;
+        button.removeAttribute('aria-hidden');
+        button.setAttribute('aria-label', 'Edit personal country count');
+        button.dataset.overlayCountryEdit = '1';
+        return;
+      }
       button.tabIndex = -1;
       button.setAttribute('aria-hidden', 'true');
     });
@@ -216,6 +237,17 @@
     source.style.visibility = 'hidden';
     activeOverlay = overlay;
     activeSource = source;
+
+    const overlayEdit = summary.querySelector('[data-overlay-country-edit]');
+    if (overlayEdit) {
+      overlayEdit.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const sourceEdit = source.querySelector('#editCountryCountBtn');
+        closeOverlay(true);
+        window.setTimeout(() => sourceEdit?.click(), 0);
+      });
+    }
 
     overlay.addEventListener('mouseleave', () => closeOverlay());
 
