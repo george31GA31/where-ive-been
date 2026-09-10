@@ -6,8 +6,10 @@
   <meta name="theme-color" content="#111827" />
   <title>Where I've Been — Travel Day Tracker</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="accounts.css" />
 </head>
 <body>
+  <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
@@ -28,9 +30,9 @@
       </nav>
 
       <div class="sidebar-footer">
-        <button class="secondary full" id="exportBtn">Save backup</button>
-        <label class="secondary full file-label">Restore backup<input id="importInput" type="file" accept=".travel,.json,application/json" hidden /></label>
-        <p>Your travel data is automatically saved on this device.</p>
+        <a class="secondary full" id="accountLink" href="profile/">Log in / Create account</a>
+        <p data-sync-status role="status" aria-live="polite">Connecting to your account…</p>
+        <button class="text-btn" id="retrySaveBtn" type="button">Retry save / connection</button>
       </div>
     </aside>
 
@@ -184,17 +186,12 @@
             <p class="panel-copy">Profiles let the app apply the right Schengen logic to different travellers. Add every citizenship/passport a traveller can use.</p>
             <div id="profileList" class="profile-list"></div>
           </article>
-          <article class="panel cloud-panel">
-            <div class="panel-head"><div><p class="eyebrow">OPTIONAL</p><h2>Cloud sync</h2></div><span id="cloudStatusBadge" class="status-badge neutral">Local only</span></div>
-            <p class="panel-copy">The app works locally without an account. To sync the same data across your phone and laptop, connect your own free Supabase project. Your password is never stored by this app.</p>
-            <details class="setup-details"><summary>One-time Supabase setup</summary><ol><li>Create a Supabase project.</li><li>Run the included <code>supabase-setup.sql</code> in its SQL editor.</li><li>Paste the project URL and public anon key below.</li></ol></details>
-            <label class="field"><span>Supabase project URL</span><input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co" /></label>
-            <label class="field"><span>Public anon key</span><input type="password" id="supabaseKey" placeholder="eyJ…" /></label>
-            <button class="secondary wide" id="saveCloudConfigBtn" type="button">Save cloud settings</button>
-            <div class="cloud-auth-grid"><label class="field"><span>Email</span><input type="email" id="cloudEmail" autocomplete="email" /></label><label class="field"><span>Password</span><input type="password" id="cloudPassword" autocomplete="current-password" /></label></div>
-            <div class="button-row"><button class="secondary" id="cloudSignUpBtn" type="button">Create account</button><button class="primary" id="cloudSignInBtn" type="button">Sign in</button><button class="secondary hidden" id="cloudSignOutBtn" type="button">Sign out</button></div>
-            <div class="sync-actions"><button class="secondary" id="cloudPullBtn" type="button" disabled>↓ Pull from cloud</button><button class="secondary" id="cloudPushBtn" type="button" disabled>↑ Push to cloud</button><label class="switch-row"><input type="checkbox" id="autoSyncToggle" /><span>Auto-sync changes</span></label></div>
-            <div id="cloudMessage" class="form-message"></div>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">YOUR ACCOUNT</p><h2>Saved wherever you go</h2></div></div>
+            <p class="panel-copy">Sign in to save your travel history automatically and access it on another device. Traveller profiles and home history are included.</p>
+            <a class="primary" href="profile/">Open my profile</a>
+            <p class="panel-copy">Already recorded travels on this device? Sign in, then import them into your account. Identical records will be skipped.</p>
+            <button class="secondary" id="importDeviceBtn" type="button" hidden>Import existing device data</button>
           </article>
         </div>
       </section>
@@ -242,7 +239,11 @@
 
   <script async src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script src="app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script src="account-config.js"></script>
+  <script src="account-model.js"></script>
+  <script src="account-client.js"></script>
+  <script src="account-sync.js"></script>
+  <script src="app.js?v=accounts-1"></script>
 </body>
 </html>

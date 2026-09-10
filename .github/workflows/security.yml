@@ -20,11 +20,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check account sync and migration
+        run: node --test tests/account-sync.test.cjs
       - name: Check JavaScript syntax
         shell: bash
         run: |
           set -euo pipefail
-          for file in app.js app-core.js app-fixes.js theme.js security-runtime.js map-enhancements.js country-count-model.js dashboard-enhancements.js; do
+          for file in app.js app-core.js app-fixes.js theme.js security-runtime.js map-enhancements.js country-count-model.js dashboard-enhancements.js account-config.js account-client.js account-model.js account-sync.js account-tracker.js account-pages.js; do
             node --check "$file"
           done
 
