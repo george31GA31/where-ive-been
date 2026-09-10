@@ -1,13 +1,14 @@
 -- ============================================================
--- Where I've Been — Supabase setup
--- Run this once in Supabase > SQL Editor.
+-- Where I've Been — Supabase production setup
+-- Run this in Supabase > SQL Editor for a new project.
 --
--- This file supports:
---   1) optional account-based cloud sync (legacy/optional)
+-- Supports:
+--   1) optional account-based cloud sync
 --   2) no-login encrypted device-transfer codes
 --
--- The website must use ONLY the publishable/anon key.
--- Never place a secret/service-role key in app.js or GitHub.
+-- IMPORTANT:
+--   Browser code must use ONLY the publishable/anon key.
+--   Never place a secret/service-role key in JavaScript or GitHub.
 -- ============================================================
 
 
@@ -54,7 +55,7 @@ for delete
 to authenticated
 using (auth.uid() = user_id);
 
-revoke all on table public.travel_tracker_data from anon;
+revoke all on table public.travel_tracker_data from public, anon;
 grant select, insert, update, delete on table public.travel_tracker_data to authenticated;
 
 
@@ -67,13 +68,27 @@ create table if not exists public.travel_device_transfers (
   encrypted_payload text not null,
   iv text not null,
   created_at timestamptz not null default now(),
-  expires_at timestamptz not null
+  expires_at timestamptz not null,
+  constraint travel_device_transfers_code_hash_format_chk
+    check (code_hash ~ '^[0-9a-f]{64}$'),
+  constraint travel_device_transfers_iv_format_chk
+    check (iv ~ '^[A-Za-z0-9+/]{16}$'),
+  constraint travel_device_transfers_payload_size_chk
+    check (
+      char_length(encrypted_payload) between 24 and 1000000
+      and encrypted_payload ~ '^[A-Za-z0-9+/=]+$'
+    ),
+  constraint travel_device_transfers_expiry_chk
+    check (
+      expires_at > created_at
+      and expires_at <= created_at + interval '60 minutes'
+    )
 );
 
 alter table public.travel_device_transfers enable row level security;
 
--- The browser never gets direct table access. It can only call the
--- two SECURITY DEFINER functions below.
+-- Browser clients never get direct table access. They can only call the
+-- SECURITY DEFINER RPCs below.
 revoke all on table public.travel_device_transfers from public, anon, authenticated;
 
 
@@ -87,20 +102,35 @@ create or replace function public.create_travel_device_transfer(
 returns timestamptz
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_expires timestamptz;
   v_minutes integer;
 begin
-  -- Clear expired records whenever somebody creates a new transfer.
+  if p_code_hash is null or p_code_hash !~ '^[0-9a-f]{64}$' then
+    raise exception 'Invalid transfer code hash';
+  end if;
+
+  if p_iv is null or p_iv !~ '^[A-Za-z0-9+/]{16}$' then
+    raise exception 'Invalid transfer IV';
+  end if;
+
+  if p_encrypted_payload is null
+     or char_length(p_encrypted_payload) < 24
+     or char_length(p_encrypted_payload) > 1000000
+     or p_encrypted_payload !~ '^[A-Za-z0-9+/=]+$' then
+    raise exception 'Invalid transfer payload';
+  end if;
+
+  -- Opportunistic cleanup keeps expired transfer rows short-lived.
   delete from public.travel_device_transfers
   where expires_at <= now();
 
-  -- Keep expiry between 5 minutes and 24 hours.
+  -- A caller cannot extend a public transfer beyond one hour.
   v_minutes := least(
     greatest(coalesce(p_expires_minutes, 60), 5),
-    1440
+    60
   );
 
   v_expires := now() + (v_minutes * interval '1 minute');
@@ -109,19 +139,21 @@ begin
     code_hash,
     encrypted_payload,
     iv,
+    created_at,
     expires_at
   )
   values (
     p_code_hash,
     p_encrypted_payload,
     p_iv,
+    now(),
     v_expires
   )
   on conflict (code_hash)
   do update set
     encrypted_payload = excluded.encrypted_payload,
     iv = excluded.iv,
-    created_at = now(),
+    created_at = excluded.created_at,
     expires_at = excluded.expires_at;
 
   return v_expires;
@@ -129,8 +161,8 @@ end;
 $$;
 
 
--- Claim a transfer once.
--- DELETE ... RETURNING makes a successful code single-use.
+-- Claim a transfer once. DELETE ... RETURNING makes a successful claim
+-- atomic and single-use.
 create or replace function public.claim_travel_device_transfer(
   p_code_hash text
 )
@@ -138,41 +170,30 @@ returns table (
   encrypted_payload text,
   iv text
 )
-language sql
+language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
-  delete from public.travel_device_transfers
-  where code_hash = p_code_hash
-    and expires_at > now()
-  returning encrypted_payload, iv;
+begin
+  if p_code_hash is null or p_code_hash !~ '^[0-9a-f]{64}$' then
+    return;
+  end if;
+
+  return query
+  delete from public.travel_device_transfers t
+  where t.code_hash = p_code_hash
+    and t.expires_at > now()
+  returning t.encrypted_payload, t.iv;
+end;
 $$;
 
+revoke all on function public.create_travel_device_transfer(text, text, text, integer) from public;
+revoke all on function public.claim_travel_device_transfer(text) from public;
 
-revoke all on function public.create_travel_device_transfer(
-  text,
-  text,
-  text,
-  integer
-) from public;
+grant execute on function public.create_travel_device_transfer(text, text, text, integer)
+  to anon, authenticated;
+grant execute on function public.claim_travel_device_transfer(text)
+  to anon, authenticated;
 
-revoke all on function public.claim_travel_device_transfer(
-  text
-) from public;
-
-
-grant execute on function public.create_travel_device_transfer(
-  text,
-  text,
-  text,
-  integer
-) to anon, authenticated;
-
-grant execute on function public.claim_travel_device_transfer(
-  text
-) to anon, authenticated;
-
-
--- Helpful index for expired-transfer cleanup.
 create index if not exists travel_device_transfers_expires_at_idx
 on public.travel_device_transfers (expires_at);

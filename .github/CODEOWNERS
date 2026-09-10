@@ -1,0 +1,10 @@
+# Default owner for all repository files.
+* @george31GA31
+
+# Security-sensitive areas.
+/.github/ @george31GA31
+/app.js @george31GA31
+/app-core.js @george31GA31
+/app-fixes.js @george31GA31
+/supabase-setup.sql @george31GA31
+/supabase-hardening.sql @george31GA31

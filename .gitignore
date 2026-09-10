@@ -1,0 +1,21 @@
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+
+# Private keys / certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Common local/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dependency/build output if tooling is added later
+node_modules/
+dist/
+coverage/
