@@ -102,10 +102,17 @@
     const next = session?.user?.id || null;
     if (next === userId && engine?.ready) return;
     lock(true);
+    if (next !== userId) {
+      engine.stop();
+      userId = null;
+      apply(empty());
+      lock(true);
+    }
     userId = next; cloudSession = null;
     document.querySelectorAll('dialog[open]').forEach(d => d.close());
     if (next) {
       await engine.start(next, empty());
+      if (userId !== next) return;
       $('accountLink').textContent = 'My profile';
     } else {
       engine.stop(); apply(localStorage.getItem(OWNER_KEY) ? guestState() : loadState());
