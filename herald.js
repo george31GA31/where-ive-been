@@ -90,6 +90,11 @@
     throw Error('Your account changed on another device while importing. The imported copy is still preserved in this browser; press Import Data again to retry.');
   }
   function status(el,text,kind='neutral'){if(el){el.textContent=text;el.dataset.kind=kind}}
+  function exportGuestBackup(){
+    const backup={format:'where-ive-been-backup',version:1,createdAt:new Date().toISOString(),data:guestState()};
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=`Herald Voyages Backup - ${new Date().toISOString().slice(0,10)}.travel`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),0);
+  }
 
   async function guestPanel(){
     if(!$('profilesView')||$('heraldGuestTransferPanel'))return;
@@ -97,9 +102,10 @@
     if(session)return;
     const panel=document.createElement('article');
     panel.className='herald-transfer-panel';panel.id='heraldGuestTransferPanel';
-    panel.innerHTML=`<div class="feature-head"><div><p class="eyebrow">GUEST DATA TRANSFER</p><h2>Move this guest history into Herald Voyages</h2></div><span class="status-badge neutral">Guest data</span></div><p class="panel-copy">Your guest travel history is stored in this browser. Create a secure one-use code, then log in to your Herald Voyages account and paste that code into the recovery section on your Profile page.</p><div class="herald-transfer-card"><h3>Create a transfer code</h3><p>The encrypted copy includes trips, traveller profiles, home history and tracker preferences.</p><button class="primary" id="heraldCreateTransferBtn" type="button">Create transfer code</button><div id="heraldTransferCodeWrap" class="herald-code-wrap" hidden><span>Your transfer code</span><strong id="heraldTransferCode"></strong><button class="secondary compact" id="heraldCopyTransferBtn" type="button">Copy code</button><small id="heraldTransferExpiry">Valid for one hour and one use.</small></div></div><p id="heraldGuestTransferStatus" class="herald-transfer-status" role="status" aria-live="polite"></p>`;
+    panel.innerHTML=`<div class="feature-head"><div><p class="eyebrow">GUEST DATA</p><h2>Keep a copy or move this history into Herald Voyages</h2></div><span class="status-badge neutral">Guest data</span></div><p class="panel-copy">Your guest travel history is stored in this browser. Download a permanent backup whenever you like, or create a secure one-use code to merge this history into your Herald Voyages account.</p><div class="herald-transfer-card"><h3>Guest history</h3><p>A backup contains your trips, traveller profiles, home history and tracker preferences. A transfer code carries an encrypted copy of the same data and expires after one hour.</p><div class="account-actions-row"><button class="secondary" id="heraldExportGuestBtn" type="button">Download backup</button><button class="primary" id="heraldCreateTransferBtn" type="button">Create transfer code</button></div><div id="heraldTransferCodeWrap" class="herald-code-wrap" hidden><span>Your transfer code</span><strong id="heraldTransferCode"></strong><button class="secondary compact" id="heraldCopyTransferBtn" type="button">Copy code</button><small id="heraldTransferExpiry">Valid for one hour and one use.</small></div></div><p id="heraldGuestTransferStatus" class="herald-transfer-status" role="status" aria-live="polite"></p>`;
     $('profilesView').append(panel);
     const btn=$('heraldCreateTransferBtn'),out=$('heraldGuestTransferStatus');let latest='';
+    $('heraldExportGuestBtn').onclick=()=>{try{exportGuestBackup();status(out,'Backup downloaded. Keep it somewhere safe.','good')}catch(e){status(out,e.message||'Could not create the backup file.','bad')}};
     btn.onclick=async()=>{btn.disabled=true;status(out,'Creating your secure transfer code…');try{const r=await createTransfer();latest=r.code;$('heraldTransferCode').textContent=r.code;$('heraldTransferCodeWrap').hidden=false;$('heraldTransferExpiry').textContent=r.expires?`Valid until ${new Date(r.expires).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}. It can only be used once.`:'Valid for one hour and one use.';status(out,'Transfer code ready. Copy it before logging in.','good')}catch(e){status(out,e.message||'Could not create a transfer code.','bad')}finally{btn.disabled=false}};
     $('heraldCopyTransferBtn').onclick=async()=>{if(!latest)return;try{await navigator.clipboard.writeText(latest);status(out,'Transfer code copied.','good')}catch{window.prompt('Copy this transfer code:',latest)}};
   }
