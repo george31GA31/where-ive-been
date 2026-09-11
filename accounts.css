@@ -1,18 +1,16 @@
-[hidden] { display: none !important; }
-.account-page { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
-.account-page .topbar { margin-bottom: 28px; gap: 18px; }
-.account-page .brand { margin-bottom: 24px; }
-.account-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.account-card { max-width: 520px; margin: 16px auto; }
-.account-page .field { margin: 18px 0; }
-.account-page input { font-size: 16px; }
-.account-page .panel-copy { line-height: 1.6; }
-.account-links { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 24px; }
-.account-page a:not(.primary):not(.secondary) { color: var(--text); text-decoration: underline; }
-.account-page .form-message { min-height: 24px; white-space: pre-wrap; overflow-wrap: anywhere; }
-.account-conflicts { max-height: 85vh; max-width: 700px; }
-.account-conflicts fieldset { margin: 20px 0; border: 1px solid var(--border); border-radius: 12px; overflow-wrap: anywhere; }
-.account-conflicts select { width: 100%; padding: 12px; }
-.account-load-error { position: fixed; inset: 20px 20px auto; z-index: 1000; padding: 20px; background: var(--panel, white); border: 2px solid var(--red); border-radius: 12px; }
-.sidebar-footer [data-sync-status] { white-space: normal; line-height: 1.5; }
-@media (max-width: 700px) { .account-grid { grid-template-columns: 1fr; } .account-page { padding: 20px 16px; } .account-page .topbar { align-items: flex-start; flex-wrap: wrap; } }
+[hidden]{display:none!important}
+.account-page{min-height:100vh;max-width:1280px;margin:0 auto;padding:28px clamp(18px,5vw,72px) 60px}
+.account-page .brand{display:inline-flex;color:var(--text);border:0;padding:0;text-decoration:none}.account-page .brand-mark{width:42px;height:42px;flex-basis:42px}.account-page .brand-logo-mark{width:42px;height:42px}.account-page .brand strong{font-size:18px}.account-page .brand span{color:var(--muted);font-size:9px;display:block}
+.account-brand-row{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-bottom:24px;border-bottom:1px solid var(--line)}
+.account-utility{display:flex;gap:8px;align-items:center}.account-utility a{text-decoration:none}
+.account-layout{display:grid;grid-template-columns:minmax(0,.9fr) minmax(420px,.72fr);gap:clamp(40px,8vw,120px);align-items:start;padding-top:clamp(42px,7vw,90px)}
+.account-intro{padding-top:12px}.account-intro .editorial-kicker{margin-bottom:10px}.account-intro h1{margin:0;font-family:var(--serif);font-size:clamp(44px,6vw,76px);font-weight:500;line-height:.98;letter-spacing:-.045em;max-width:680px}.account-intro h1 em{font-style:normal;color:var(--oxblood)}.account-intro>p{max-width:540px;color:var(--muted);font-size:13px;line-height:1.7;margin:18px 0 0}.account-proof{display:grid;gap:12px;margin-top:34px;max-width:500px}.account-proof>div{display:grid;grid-template-columns:auto 1fr;gap:10px;padding-top:11px;border-top:1px solid var(--line)}.account-proof i{font-family:var(--serif);font-style:normal;color:var(--gold-deep);font-size:18px}.account-proof strong{display:block;font-size:10px}.account-proof span{display:block;margin-top:2px;color:var(--muted);font-size:9px;line-height:1.45}
+.account-panel{border-top:4px solid var(--oxblood);background:var(--surface);padding:26px 28px;box-shadow:var(--shadow)}.account-panel h2{margin:0;font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.03em}.account-panel>.panel-copy{margin-top:8px}.account-page .field{margin-top:17px}.account-page input{font-size:16px}.account-page .primary.wide{margin-top:22px}.account-links{display:flex;gap:16px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}.account-links a:not(.primary):not(.secondary){font-size:10px;font-weight:800;text-decoration:none;border-bottom:1px solid var(--line-strong)}.account-links a:hover{border-bottom-color:var(--oxblood)}
+.account-message-wrap{min-height:30px;margin:10px 0 0}.account-page .form-message{margin:0;min-height:20px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px;line-height:1.5}
+.account-profile-layout{padding-top:45px}.profile-hero{display:flex;justify-content:space-between;align-items:end;gap:24px;padding-bottom:24px;border-bottom:1px solid var(--line)}.profile-hero h1{margin:0;font-family:var(--serif);font-size:clamp(38px,5vw,60px);font-weight:500;letter-spacing:-.04em}.profile-hero p{margin:9px 0 0;color:var(--muted);font-size:11px}.profile-summary{font-size:10px!important;color:var(--muted)!important;text-align:right}
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:30px}.account-grid .account-panel{box-shadow:none;border-top-width:3px}.account-data-section{margin-top:28px;border-top:1px solid var(--line);padding-top:22px}.account-data-section h2{font-family:var(--serif);font-size:25px;margin:0}.account-data-section p{max-width:720px}.account-actions-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.account-page #logoutBtn{margin-top:28px}
+.account-conflicts{max-height:85vh;max-width:700px}.account-conflicts fieldset{margin:18px 0;border:1px solid var(--line);padding:14px}.account-conflicts legend{font-size:10px;font-weight:800}.account-conflicts select{width:100%;padding:10px;margin-top:8px}.account-conflicts p{font-size:9px;color:var(--muted);overflow-wrap:anywhere}
+.account-load-error{position:fixed;inset:18px 18px auto;z-index:1000;padding:16px;background:var(--surface);border-top:3px solid var(--danger);box-shadow:var(--shadow-strong)}
+.account-page .herald-recovery-panel{margin-top:30px}.account-page .herald-recovery-panel .panel-head h2{font-family:var(--serif);font-size:26px;margin:0}.account-page .herald-recovery-panel{border-top:3px solid var(--gold);padding-top:20px}.account-page .herald-recovery-steps{margin-top:18px}.account-page .herald-import-note{font-size:9px;color:var(--muted);line-height:1.55}
+@media(max-width:900px){.account-layout{grid-template-columns:1fr;gap:34px;padding-top:40px}.account-intro{max-width:720px}.account-panel{max-width:620px;width:100%}.account-grid{grid-template-columns:1fr}.profile-summary{text-align:left}}
+@media(max-width:620px){.account-page{padding:18px 15px 42px}.account-brand-row{align-items:flex-start}.account-utility .secondary{font-size:9px;padding:8px}.account-page .brand span{display:none}.account-intro h1{font-size:43px}.account-panel{padding:20px}.account-proof{margin-top:24px}.profile-hero{display:block}.profile-summary{margin-top:12px}.account-grid{gap:18px;margin-top:22px}.account-links{display:grid;gap:10px}.herald-recovery-steps{grid-template-columns:1fr!important}}
