@@ -1,8 +1,8 @@
-/* Herald account forms. Auth provider owns password storage and email verification. */
+/* Herald Voyages account forms. Auth provider owns password storage and email verification. */
 (() => {
   'use strict';
 
-  function loadHerald() {
+  function loadGuestTransfer() {
     const base = window.WIBAuth?.base || new URL('.', document.currentScript?.src || location.href);
     const loadScript = (path, done) => {
       const script = document.createElement('script');
@@ -10,17 +10,17 @@
       script.onload = done || null;
       document.head.appendChild(script);
     };
-    const loadBrand = () => {
-      if (document.querySelector('script[data-herald-ui]')) return;
+    const loadTransfer = () => {
+      if (document.querySelector('script[data-herald-transfer]')) return;
       const script = document.createElement('script');
-      script.dataset.heraldUi = 'true';
-      script.src = new URL('herald.js?v=herald-1', base).href;
+      script.dataset.heraldTransfer = 'true';
+      script.src = new URL('herald.js?v=voyages-v2', base).href;
       document.head.appendChild(script);
     };
-    if (window.WIBModel) loadBrand();
-    else loadScript('account-model.js', loadBrand);
+    if (window.WIBModel) loadTransfer();
+    else loadScript('account-model.js', loadTransfer);
   }
-  loadHerald();
+  loadGuestTransfer();
 
   document.addEventListener('DOMContentLoaded', async () => {
     const $ = id => document.getElementById(id), page = document.body.dataset.accountPage;
@@ -38,7 +38,9 @@
           $('email').value = user.email || '';
         }
         $('profileSummary').textContent = 'Signed in as ' + user.email;
-      } else { $('displayName').value = ''; $('email').value = ''; $('profileSummary').textContent = ''; $('passwordForm').reset(); }
+      } else {
+        $('displayName').value = ''; $('email').value = ''; $('profileSummary').textContent = ''; $('passwordForm').reset();
+      }
     };
     function newPassword() {
       if ($('newPassword').value !== $('confirmPassword').value) throw new Error('The passwords do not match.');
@@ -55,7 +57,6 @@
     }
     function checked(result) { if (result.error) throw result.error; return result.data; }
     try {
-      // Capture recovery type before the SDK removes tokens from the URL.
       const isRecovery = new URLSearchParams(location.hash.slice(1)).get('type') === 'recovery';
       const authError = new URLSearchParams(location.hash.slice(1)).get('error_description');
       client = WIBAuth.client();
@@ -68,21 +69,23 @@
       if (isRecovery && session) recovery();
       if (authError) { message('This email link has expired or is invalid. Request a new link.', true); history.replaceState(null, '', location.pathname); }
     } catch (error) { message(error.message, true); return; }
+
     form('loginForm', async () => {
       checked(await client.auth.signInWithPassword({email: $('email').value.trim(), password: $('password').value}));
       $('password').value = ''; location.assign(WIBAuth.url(''));
     });
     form('registerForm', async () => {
-      const data = checked(await client.auth.signUp({email: $('email').value.trim(), password: newPassword(), options: {
-        data: {display_name: $('displayName').value.trim()}, emailRedirectTo: WIBAuth.url('profile/')
-      }}));
+      const data = checked(await client.auth.signUp({
+        email: $('email').value.trim(), password: newPassword(),
+        options: {data: {display_name: $('displayName').value.trim()}, emailRedirectTo: WIBAuth.url('profile/')}
+      }));
       $('registerForm').reset();
       if (data.session) location.assign(WIBAuth.url(''));
-      else message('Check your email to confirm your Herald account, then log in. Your existing guest data is still safe.');
+      else message('Check your email to confirm your Herald Voyages account, then log in. Your existing guest data is still safe.');
     });
     form('resetForm', async () => {
       checked(await client.auth.resetPasswordForEmail($('email').value.trim(), {redirectTo: WIBAuth.url('reset-password/')}));
-      message('If an account exists for that email, you’ll receive a password reset link.');
+      message('If a Herald Voyages account exists for that email, you’ll receive a password reset link.');
     });
     form('recoveryForm', async () => {
       checked(await client.auth.updateUser({password: newPassword()}));
