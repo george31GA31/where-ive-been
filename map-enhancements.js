@@ -56,7 +56,7 @@
       }
 
       /* Keep only the slider from the old dense timeline, but make its dates useful. */
-      .timeline-date-card,.timeline-bars,.timeline-schengen{display:none!important}
+      .timeline-date-card,.timeline-schengen{display:none!important}
       .timeline-panel{padding-bottom:17px}
       .timeline-chart-wrap{position:relative!important;min-height:58px;padding:28px 0 18px!important;overflow:visible!important}
       .timeline-slider{position:absolute!important;left:0!important;right:0!important;bottom:7px!important;width:100%!important}
@@ -223,7 +223,7 @@
     updateTimelineDateBubble();
   };
 
-  // Keep slider/date calculations, remove the old trip-bar strip, and show date endpoints.
+  // Keep slider/date calculations and show date endpoints; journeys.js renders the shared timeline bars.
   renderMapTimeline = function () {
     const list = state.stays;
 
