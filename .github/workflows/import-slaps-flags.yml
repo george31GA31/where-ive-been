@@ -6,13 +6,15 @@ on:
     branches: [main]
     paths:
       - .github/workflows/import-slaps-flags.yml
+  issues:
+    types: [opened]
 
 permissions:
   contents: write
 
 jobs:
   import-flags:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && (github.event_name != 'issues' || github.event.issue.title == '[automation] Import SlapsGame flags')
     runs-on: ubuntu-latest
     steps:
       - name: Check out Where I've Been
