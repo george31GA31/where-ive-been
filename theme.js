@@ -21,7 +21,6 @@
     const page=document.body?.dataset?.accountPage;
     document.title=`${titles[page]||'Account'} — Herald Voyages`;
     document.querySelectorAll('.brand strong').forEach(el=>el.textContent='Herald Voyages');
-    document.querySelectorAll('.brand span:not(.brand-mark)').forEach(el=>el.textContent='Where you’ve been. Where you’re going.');
     document.querySelectorAll('.brand-mark').forEach(mark=>{mark.innerHTML=`<img class="brand-logo-mark" src="${LOGO}" alt="">`});
     let icon=document.querySelector('link[rel="icon"]');if(!icon){icon=document.createElement('link');icon.rel='icon';document.head.appendChild(icon)}icon.href=LOGO;icon.type='image/png';
     document.getElementById('accountThemeToggle')?.addEventListener('click',()=>apply(document.documentElement.dataset.theme==='dark'?'light':'dark'));
