@@ -20,12 +20,19 @@
     const score = document.querySelector('button.world-score');
     if (!score) return;
     const replacement = document.createElement('article');
-    for (const {name, value} of [...score.attributes]) if (name !== 'type') replacement.setAttribute(name, value);
+    for (const {name, value} of [...score.attributes]) {
+      if (name !== 'type' && name !== 'data-expand-widget') replacement.setAttribute(name, value);
+    }
     replacement.setAttribute('role', 'button');
     replacement.tabIndex = 0;
     while (score.firstChild) replacement.appendChild(score.firstChild);
     replacement.addEventListener('click', event => {
       if (event.target.closest('#editCountryCountBtn')) event.stopImmediatePropagation();
+    });
+    replacement.addEventListener('keydown', event => {
+      if ((event.key === 'Enter' || event.key === ' ') && event.target === replacement) {
+        event.preventDefault(); replacement.click();
+      }
     });
     score.replaceWith(replacement);
   });
