@@ -11,6 +11,24 @@
     marker.id = 'wibMapEnhancementStyles';
     document.head.appendChild(marker);
   }
+
+  // The established country-count module adds its Edit control into the element
+  // containing the headline number. Convert that interactive dashboard block from
+  // a button to an article before any renderer boots, so the edit control remains
+  // valid, accessible markup rather than a button nested inside another button.
+  document.addEventListener('DOMContentLoaded', () => {
+    const score = document.querySelector('button.world-score');
+    if (!score) return;
+    const replacement = document.createElement('article');
+    for (const {name, value} of [...score.attributes]) if (name !== 'type') replacement.setAttribute(name, value);
+    replacement.setAttribute('role', 'button');
+    replacement.tabIndex = 0;
+    while (score.firstChild) replacement.appendChild(score.firstChild);
+    replacement.addEventListener('click', event => {
+      if (event.target.closest('#editCountryCountBtn')) event.stopImmediatePropagation();
+    });
+    score.replaceWith(replacement);
+  });
 })();
 
 document.write(
