@@ -1,6 +1,6 @@
-/* Herald bootstrap — core travel app, account sync, security, map and presentation layers. */
+/* Herald Voyages bootstrap — core travel app, account sync, security, map and presentation layers. */
 (() => {
   const savedTheme = localStorage.getItem('whereIveBeen.theme.v1');
   document.documentElement.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
 })();
-document.write('<script src="app-core.js?v=accounts-1"><\/script><script src="app-fixes.js?v=accounts-1"><\/script><script src="theme.js?v=accounts-1"><\/script><script src="security-runtime.js?v=accounts-1"><\/script><script src="map-enhancements.js?v=accounts-1"><\/script><script src="country-count-model.js?v=accounts-1"><\/script><script src="dashboard-enhancements.js?v=accounts-1"><\/script><script src="account-tracker.js?v=accounts-1"><\/script><script src="herald.js?v=herald-1"><\/script>');
+document.write('<script src="app-core.js?v=accounts-1"><\/script><script src="app-fixes.js?v=accounts-1"><\/script><script src="theme.js?v=accounts-1"><\/script><script src="security-runtime.js?v=accounts-1"><\/script><script src="map-enhancements.js?v=accounts-1"><\/script><script src="country-count-model.js?v=accounts-1"><\/script><script src="dashboard-enhancements.js?v=accounts-1"><\/script><script src="account-tracker.js?v=accounts-1"><\/script><script src="herald.js?v=herald-1"><\/script><script src="voyages.js?v=voyages-2"><\/script><script src="voyages-final.js?v=voyages-2"><\/script>');
