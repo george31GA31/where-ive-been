@@ -3,7 +3,14 @@
   'use strict';
 
   const THEME_KEY = 'whereIveBeen.theme.v1';
-  const BRAND_MARK = new URL('assets/herald-trumpet.png', document.currentScript.src).href;
+  const ASSET_ROOT = new URL('./', document.currentScript.src);
+  const FAVICON = new URL('assets/herald-favicon.png', ASSET_ROOT).href;
+  const brandMark = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png' : 'assets/herald-logo-dark.png', ASSET_ROOT).href;
+  function updateLogos() {
+    const images = new Set(document.querySelectorAll('.brand-logo-mark, .atlas-masthead-art img'));
+    window.HVPages?.get('dashboardView')?.querySelectorAll('.atlas-masthead-art img').forEach(img=>images.add(img));
+    images.forEach(img=>{img.src=brandMark();});
+  }
 
   function getTheme() {
     const saved = localStorage.getItem(THEME_KEY);
@@ -24,6 +31,7 @@
     }
     meta.content = next === 'dark' ? '#0b1018' : '#f4f5f7';
 
+    updateLogos();
     const button = document.getElementById('themeToggleBtn');
     if (button) {
       const dark = next === 'dark';
@@ -41,7 +49,7 @@
       document.head.appendChild(favicon);
     }
     favicon.type = 'image/png';
-    favicon.href = BRAND_MARK;
+    favicon.href = FAVICON;
 
     let apple = document.querySelector('link[rel="apple-touch-icon"]');
     if (!apple) {
@@ -49,12 +57,12 @@
       apple.rel = 'apple-touch-icon';
       document.head.appendChild(apple);
     }
-    apple.href = BRAND_MARK;
+    apple.href = FAVICON;
 
 
     const mark = document.querySelector('.brand-mark');
     if (mark) {
-      mark.innerHTML = `<img src="${BRAND_MARK}" alt="Herald Voyages logo" class="brand-logo-mark">`;
+      mark.innerHTML = `<img src="${brandMark()}" alt="Herald Voyages logo" class="brand-logo-mark">`;
       mark.classList.add('has-logo');
     }
   }

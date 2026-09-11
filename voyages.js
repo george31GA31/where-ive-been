@@ -47,12 +47,12 @@
     const link = document.createElement('link');
     link.id = 'heraldVoyagesStyles';
     link.rel = 'stylesheet';
-    link.href = new URL('voyages.css?v=atlas-3', rootUrl).href;
+    link.href = new URL('voyages.css?v=flags-4', rootUrl).href;
     document.head.append(link);
   }
   installStyles();
 
-  const brandAssetUrl = () => new URL('assets/herald-trumpet.png', rootUrl).href;
+  const brandAssetUrl = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png' : 'assets/herald-logo-dark.png', rootUrl).href;
 
   function replaceText(root, re, replacement) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);

@@ -2175,3 +2175,11 @@ hr {
   .sidebar .brand-mark { width: 100px; flex-basis: 100px; height: 40px; }
   .sidebar .brand-logo-mark { width: 100px; height: 56px; transform: translateY(-8px); }
 }
+/* Unframed countries and transparent artwork. */
+#countriesView > .panel { background: transparent; border: 0; border-radius: 0; box-shadow: none; padding-inline: 0; }
+.flag-box, .country-row .flag, .breakdown-row .flag { background: transparent; border: 0; box-shadow: none; border-radius: 0; }
+.flag-img, .flag-img.flag-sm, .flag-img.flag-lg { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.calendar-stay-button .flag-img, .calendar-day .flag-img { object-fit: contain!important; border-radius: 0!important; }
+.brand-mark, .brand-mark.has-logo, .atlas-masthead-art { background: transparent; }
+.atlas-masthead-art { background: var(--hv-surface); }
+.atlas-masthead-art > span { color: var(--hv-ink); }

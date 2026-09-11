@@ -1,0 +1,17 @@
+{
+  "slapsGame": "https://github.com/george31GA31/SlapsGame/tree/main/assets/flags",
+  "external": {
+    "BQ": "https://flagcdn.com/w160/bq.png",
+    "BOU": "https://commons.wikimedia.org/wiki/File:Flag_of_Bougainville.svg",
+    "BV": "https://flagcdn.com/w160/bv.png",
+    "IO": "https://flagcdn.com/w160/io.png",
+    "TF": "https://flagcdn.com/w160/tf.png",
+    "HM": "https://flagcdn.com/w160/hm.png",
+    "SH": "https://flagcdn.com/w160/sh.png",
+    "PM": "https://flagcdn.com/w160/pm.png",
+    "GS": "https://flagcdn.com/w160/gs.png",
+    "SJ": "https://flagcdn.com/w160/sj.png",
+    "UM": "https://flagcdn.com/w160/um.png"
+  },
+  "bougainvilleCredit": "Aliasd, public domain, Wikimedia Commons"
+}

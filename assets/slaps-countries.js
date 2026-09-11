@@ -26,7 +26,7 @@ window.ISFCountries = [
   },
   {
     "code": "ASM",
-    "flag": "assets/flags/AmericanSamoa.png",
+    "flag": "assets/flags/American Samoa.png",
     "name": "American Samoa"
   },
   {
@@ -46,7 +46,7 @@ window.ISFCountries = [
   },
   {
     "code": "ATG",
-    "flag": "assets/flags/AntiguaandBarbuda.png",
+    "flag": "assets/flags/Antigua and Barbuda.png",
     "name": "Antigua and Barbuda"
   },
   {
@@ -146,7 +146,7 @@ window.ISFCountries = [
   },
   {
     "code": "BIH",
-    "flag": "assets/flags/BosniaandHerzegovina.png",
+    "flag": "assets/flags/Bosnia and Herzegovina.png",
     "name": "Bosnia and Herzegovina"
   },
   {
@@ -176,7 +176,7 @@ window.ISFCountries = [
   },
   {
     "code": "BFA",
-    "flag": "assets/flags/BurkinaFaso.png",
+    "flag": "assets/flags/Burkina Faso.png",
     "name": "Burkina Faso"
   },
   {
