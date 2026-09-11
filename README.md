@@ -4,21 +4,26 @@ A local-first personal travel atlas for trips, countries, travel days, home peri
 
 ## Product architecture
 
-- `index.html` — stable application/data hooks and the core view structure
-- `styles.css` — legacy/base styles required by existing components
-- `voyages.css` — Herald Voyages design tokens, responsive product UI and component overrides
-- `app.js` — bootstrap loader
-- `app-core.js` — travel state, calculations, rendering and data-entry logic
+- `index.html` — semantic application shell and route-specific page structures
+- `styles.css` — the single Herald Voyages design system, responsive layouts and component styling
+- `ui-shell.js` — branding, hash routing, responsive navigation, dashboard statistics, interactive widgets and map/country presentation
+- `app.js` — small bootstrap loader
+- `app-core.js` — established travel state, calculations, rendering and data-entry logic
 - `app-fixes.js` — focused compatibility/UI fixes
-- `voyages.js` — Herald Voyages shell, routing, navigation, map interactions and progressive-disclosure UI
-- `dashboard-enhancements.js` — interactive dashboard-stat expansion
-- `country-count-model.js` — personal country-count model
-- `map-enhancements.js` — map behavior
-- `account-*.js` — authentication, account storage and synchronization
-- `herald.js` — encrypted guest-to-account transfer and safe merge flow
+- `country-count-model.js` — personal country-count rules
+- `map-enhancements.js` — zoom, hover and time-map behavior
+- `account-*.js` — authentication, private account storage and synchronization
+- `herald.js` — encrypted guest-to-account transfer and safe merge flow only
+- `theme.js` — lightweight shared branding/appearance support for standalone account pages
 - `assets/` — site artwork. The current logo asset is intentionally unchanged pending the final Herald Voyages logo.
 
-The app keeps its existing data model and storage keys. The redesign is a presentation/routing layer over the proven travel and account logic rather than a backend rewrite.
+The redesign keeps the existing travel data model, storage keys, account schema and Supabase persistence boundary intact. UI changes are separated from those data services so the product can evolve without risking recorded journeys.
+
+## Navigation and pages
+
+Herald Voyages is a routed single-page application suitable for GitHub Pages. Major features have distinct route/page structures such as `#/dashboard`, `#/map`, `#/trips`, `#/countries`, `#/calendar`, `#/stats`, `#/schengen`, `#/planner`, `#/visa` and `#/lived`. Shared data and rendering logic is not duplicated between routes.
+
+Desktop uses a dedicated navigation rail. Tablet and mobile use deliberately different layouts, including a bottom navigation bar and a mobile More sheet.
 
 ## Account system and guest migration
 
