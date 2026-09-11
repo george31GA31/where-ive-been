@@ -34,7 +34,7 @@
   async function hex(text){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return Array.from(new Uint8Array(h),x=>x.toString(16).padStart(2,'0')).join('')}
   async function key(c){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(`where-ive-been-transfer:v1:${code(c)}`));return crypto.subtle.importKey('raw',h,{name:'AES-GCM'},false,['encrypt','decrypt'])}
   async function encrypt(c,state){const iv=crypto.getRandomValues(new Uint8Array(12)),k=await key(c),plain=new TextEncoder().encode(JSON.stringify({format:FORMAT,version:1,createdAt:new Date().toISOString(),state})),cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,plain);return{payload:b64(new Uint8Array(cipher)),iv:b64(iv)}}
-  async function decrypt(c,payload,iv){const k=await key(c),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(iv)},bytes(payload)),p=JSON.parse(new TextDecoder().decode(plain));if(p?.format!==FORMAT||!p.state)throw Error('This transfer code could not be read.');return normalize(p.state)}
+  async function decrypt(c,payload,iv){const k=await key(c),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(iv)},k,bytes(payload)),p=JSON.parse(new TextDecoder().decode(plain));if(p?.format!==FORMAT||!p.state)throw Error('This transfer code could not be read.');return normalize(p.state)}
   function transferClient(){if(!window.supabase||!window.WIB_CONFIG)throw Error('The secure transfer service is unavailable. Refresh and try again.');return supabase.createClient(WIB_CONFIG.url,WIB_CONFIG.key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}})}
   async function createTransfer(){
     if(!crypto?.subtle)throw Error('Secure data transfer requires HTTPS.');
@@ -57,7 +57,7 @@
   function safeSource(target,source){
     const incoming=normalize(source),used=new Set([...target.profiles,...target.stays,...target.residences,...incoming.profiles,...incoming.stays,...incoming.residences].map(x=>x.id).filter(Boolean));
     let n=0;
-    const unique=old=>{let id;do{id=`${old||'record'}-voyages-${Date.now().toString(36)}-${(++n).toString(36)}`}while(used.has(id));used.add(id);return id};
+    const unique=old=>{let id;do{id=`${old||'record'}-herald-${Date.now().toString(36)}-${(++n).toString(36)}`}while(used.has(id));used.add(id);return id};
     const pm=new Map(),sm=new Map(),rp=new Map(target.profiles.map(x=>[x.id,x])),rs=new Map(target.stays.map(x=>[x.id,x])),rr=new Map(target.residences.map(x=>[x.id,x]));
     incoming.profiles.forEach(p=>{const x=rp.get(p.id);if(x&&sig(x)!==sig(p)){const old=p.id;p.id=unique(old);pm.set(old,p.id)}});
     incoming.stays.forEach(s=>{if(s.profileId&&pm.has(s.profileId))s.profileId=pm.get(s.profileId);const x=rs.get(s.id);if(x&&sig(x)!==sig(s)){const old=s.id;s.id=unique(old);sm.set(old,s.id)}});
@@ -75,7 +75,7 @@
     return normalize(result.data);
   }
   async function readAccount(client,id){const{data,error}=await client.from('travel_tracker_data').select('payload,revision').eq('user_id',id).maybeSingle();if(error)throw error;return{payload:data?.payload||{},revision:Number(data?.revision||0)}}
-  const pendingKey=id=>`heraldVoyages.pendingImport.v1.${id}`;
+  const pendingKey=id=>`herald.pendingImport.v1.${id}`;
   function preserve(id,state){const s=normalize(state),raw=JSON.stringify(s);pendingMemory.set(id,copy(s));try{localStorage.setItem(pendingKey(id),raw);return}catch{}try{sessionStorage.setItem(pendingKey(id),raw)}catch{}}
   function pending(id){if(pendingMemory.has(id))return copy(pendingMemory.get(id));for(const store of [localStorage,sessionStorage])try{const raw=store.getItem(pendingKey(id));if(raw)return normalize(JSON.parse(raw))}catch{}return null}
   function clearPending(id){pendingMemory.delete(id);try{localStorage.removeItem(pendingKey(id))}catch{}try{sessionStorage.removeItem(pendingKey(id))}catch{}}
