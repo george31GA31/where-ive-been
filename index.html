@@ -2,240 +2,247 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#111827" />
-  <title>Where I've Been — Travel Day Tracker</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="accounts.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2b1c20" />
+  <meta name="description" content="Herald Voyages — a private travel journal, country tracker and practical travel-day toolkit." />
+  <meta name="application-name" content="Herald Voyages" />
+  <meta name="apple-mobile-web-app-title" content="Herald Voyages" />
+  <title>Herald Voyages — Your world, remembered</title>
+  <link rel="stylesheet" href="styles.css?v=voyages-v2" />
+  <link rel="stylesheet" href="accounts.css?v=voyages-v2" />
 </head>
 <body>
-  <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">◎</div>
-        <div><strong>Where I've Been</strong><span>Travel day tracker</span></div>
-      </div>
+  <div id="accountLoadError" class="account-load-error" role="alert" hidden>
+    <strong>We couldn’t reach your account.</strong>
+    <span>Your travel data on this device is safe.</span>
+    <button id="retryAccountLoadBtn" class="secondary">Retry</button>
+    <a href="profile/">Account settings</a>
+  </div>
+
+  <div class="app-shell" id="heraldApp">
+    <aside class="sidebar" aria-label="Herald Voyages navigation">
+      <a class="brand" href="#/dashboard" aria-label="Herald Voyages dashboard">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div class="brand-wordmark"><strong>Herald Voyages</strong><span>Where you’ve been. Where you’re going.</span></div>
+      </a>
 
       <nav class="nav" aria-label="Primary navigation">
-        <button class="nav-item active" data-view="dashboard"><span>⌂</span>Dashboard</button>
-        <button class="nav-item" data-view="calendar"><span>▦</span>Calendar</button>
-        <button class="nav-item" data-view="map"><span>◉</span>Map & timeline</button>
-        <button class="nav-item" data-view="countries"><span>◎</span>Countries</button>
-        <button class="nav-item" data-view="schengen"><span>◌</span>Schengen</button>
-        <button class="nav-item" data-view="planner"><span>↗</span>Trip planner</button>
-        <button class="nav-item" data-view="rules"><span>⌕</span>Visa checker</button>
-        <button class="nav-item" data-view="stays"><span>≡</span>All stays</button>
-        <button class="nav-item" data-view="profiles"><span>♙</span>Profiles & data</button>
+        <div class="nav-group">
+          <span class="nav-heading">Explore</span>
+          <button class="nav-item active" data-view="dashboard" data-route="dashboard"><span class="nav-icon" data-icon="compass"></span><span>Dashboard</span></button>
+          <button class="nav-item" data-view="map" data-route="map"><span class="nav-icon" data-icon="map"></span><span>Map</span></button>
+          <button class="nav-item" data-view="stays" data-route="trips"><span class="nav-icon" data-icon="route"></span><span>Trips</span></button>
+          <button class="nav-item" data-view="countries" data-route="countries"><span class="nav-icon" data-icon="globe"></span><span>Countries</span></button>
+          <button class="nav-item" data-view="calendar" data-route="calendar"><span class="nav-icon" data-icon="calendar"></span><span>Calendar</span></button>
+          <button class="nav-item" data-view="stats" data-route="stats"><span class="nav-icon" data-icon="chart"></span><span>Statistics</span></button>
+        </div>
+        <div class="nav-group">
+          <span class="nav-heading">Travel tools</span>
+          <button class="nav-item" data-view="schengen" data-route="schengen"><span class="nav-icon" data-icon="timer"></span><span>Schengen</span></button>
+          <button class="nav-item" data-view="planner" data-route="planner"><span class="nav-icon" data-icon="spark"></span><span>Trip planner</span></button>
+          <button class="nav-item" data-view="rules" data-route="visa"><span class="nav-icon" data-icon="passport"></span><span>Visa tools</span></button>
+          <button class="nav-item" data-view="lived" data-route="lived"><span class="nav-icon" data-icon="home"></span><span>Lived in</span></button>
+        </div>
       </nav>
 
       <div class="sidebar-footer">
-        <a class="secondary full" id="accountLink" href="profile/">Log in / Create account</a>
-        <p data-sync-status role="status" aria-live="polite">Connecting to your account…</p>
-        <button class="text-btn" id="retrySaveBtn" type="button">Retry save / connection</button>
+        <a class="profile-link" id="accountLink" href="profile/"><span class="profile-avatar" aria-hidden="true" data-icon="user"></span><span><strong>Profile & account</strong><small data-sync-status role="status" aria-live="polite">Connecting…</small></span></a>
+        <button class="text-btn retry-save" id="retrySaveBtn" type="button">Retry save / connection</button>
       </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">PERSONAL TRAVEL LOG</p>
+        <div class="topbar-copy">
+          <p class="eyebrow" id="pageEyebrow">YOUR TRAVEL ATLAS</p>
           <h1 id="pageTitle">Dashboard</h1>
+          <p id="pageSubtitle" class="page-subtitle">A living record of the world you’ve explored.</p>
         </div>
-        <button class="primary" id="addStayBtn">＋ Add stay</button>
+        <div class="topbar-actions">
+          <button class="icon-btn theme-toggle" id="themeToggleBtn" type="button" aria-label="Switch appearance" title="Switch appearance"><span data-icon="moon"></span></button>
+          <button class="primary add-trip-button" id="addStayBtn"><span data-icon="plus"></span><span>Add trip</span></button>
+        </div>
       </header>
 
-      <section id="dashboardView" class="view active">
-        <div class="stats-grid">
-          <article class="stat-card"><span class="stat-label">Countries logged</span><strong id="countriesLogged">0</strong><small>Actual + planned records</small></article>
-          <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique days away from recorded homes</small></article>
-          <article class="stat-card schengen-card">
-            <div class="stat-row"><span class="stat-label">Schengen use</span><span id="schengenBadge" class="status-badge good">OK</span></div>
-            <strong><span id="schengenUsed">0</span><span class="muted-number"> / 90</span></strong>
-            <div class="progress"><span id="schengenProgress"></span></div>
-            <small id="schengenSummary">0 days used in the current 180-day window</small>
-          </article>
-          <article class="stat-card"><span class="stat-label">Schengen days remaining</span><strong id="schengenRemaining">90</strong><small id="remainingSummary">As of today</small></article>
-        </div>
-
-        <div class="two-col">
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">THIS MONTH</p><h2 id="miniCalendarTitle">Calendar</h2></div><button class="text-btn" data-go-view="calendar">Open calendar →</button></div>
-            <div id="miniCalendar" class="mini-calendar"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">RECENT</p><h2>Latest stays</h2></div><button class="text-btn" data-go-view="stays">See all →</button></div>
-            <div id="recentStays" class="stay-list empty-state">No stays added yet.</div>
-          </article>
-        </div>
-
-        <article class="panel warning-panel" id="schengenAlertPanel">
-          <div class="warning-icon">!</div>
-          <div><p class="eyebrow">SCHENGEN WATCH</p><h2 id="alertTitle">You're comfortably within the limit</h2><p id="alertBody">Add your travel dates and this will automatically warn you as your rolling allowance gets tight.</p></div>
-          <button class="secondary" data-go-view="planner">Plan a Schengen entry</button>
-        </article>
-
-        <article class="panel" id="dashboardGapPanel">
-          <div class="panel-head"><div><p class="eyebrow">DATA CHECK</p><h2>Unlogged gaps</h2></div><button class="text-btn" data-go-view="stays">Review gaps →</button></div>
-          <div id="dashboardGaps" class="gap-list empty-state">No gaps detected between your recorded stays.</div>
-        </article>
-      </section>
-
-      <section id="calendarView" class="view">
-        <article class="panel calendar-panel">
-          <div class="calendar-toolbar">
-            <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
-            <div class="calendar-toolbar-actions"><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button><button class="secondary" id="todayBtn">Today</button></div>
-          </div>
-          <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Click a date to add a stay</strong><span>Pick the first day, then the last day. Click the same day twice for a day trip.</span></div>
-          <div id="calendar" class="calendar"></div>
-          <p class="helper">You can still add stays using the Add stay button. Calendar selection stays active if you cancel the pop-up, and Clear selection removes it.</p>
-        </article>
-      </section>
-
-      <section id="mapView" class="view">
-        <article class="panel map-panel">
-          <div class="panel-head"><div><p class="eyebrow">WORLD MAP</p><h2>Countries visited</h2></div><div class="map-legend"><span><i class="legend-dot visited-dot"></i>Visited</span><span><i class="legend-dot planned-dot"></i>Planned</span></div></div>
-          <div class="map-wrap"><svg id="worldMap" viewBox="0 0 1000 500" role="img" aria-label="World map showing countries visited"></svg><div id="mapFallback" class="map-fallback hidden">The interactive map needs an internet connection the first time it loads. Everything else still works offline.</div></div>
-          <div id="mapSelectionSummary" class="map-selection-summary">Drag the timeline below to see your travel history at any point.</div>
-        </article>
-
-        <article class="panel timeline-panel">
-          <div class="panel-head"><div><p class="eyebrow">DRAG THROUGH TIME</p><h2 id="timelineTitle">Travel timeline</h2></div><button class="secondary compact" id="timelineTodayBtn">Today</button></div>
-          <div id="timelineEmpty" class="empty-state">Add a stay to start your timeline.</div>
-          <div id="timelineContent" class="hidden">
-            <div class="timeline-date-card"><span>Selected date</span><strong id="timelineDateLabel">—</strong><small id="timelineLocationLabel">No stay recorded</small></div>
-            <div class="timeline-chart-wrap"><div id="timelineBars" class="timeline-bars"></div><input id="timelineSlider" class="timeline-slider" type="range" min="0" max="0" value="0" aria-label="Travel timeline date" /></div>
-            <div class="timeline-axis"><span id="timelineStartLabel">—</span><span id="timelineEndLabel">—</span></div>
-            <div class="timeline-schengen"><span>Schengen use on this date</span><strong id="timelineSchengenLabel">0 / 90</strong></div>
-          </div>
-        </article>
-      </section>
-
-      <section id="countriesView" class="view">
-        <article class="panel"><div class="panel-head"><div><p class="eyebrow">COUNTRY TOTALS</p><h2>Time spent by country / location</h2></div></div><div id="countryTotals" class="country-totals empty-state">No country data yet.</div></article>
-      </section>
-
-      <section id="schengenView" class="view">
-        <div class="schengen-layout">
-          <article class="panel calculator-card">
-            <p class="eyebrow">ROLLING WINDOW</p><h2>Schengen 90/180 calculator</h2>
-            <p class="panel-copy" id="schengenProfileNote">Choose any date to see how many countable Schengen days fall within that date and the previous 179 days.</p>
-            <label class="field"><span>Check date</span><input type="date" id="checkDate" /></label>
-            <div class="big-meter">
-              <div class="ring" id="schengenRing"><span id="ringUsed">0</span><small>/ 90 days</small></div>
-              <div class="meter-copy"><div><span>Used</span><strong id="calcUsed">0 days</strong></div><div><span>Remaining</span><strong id="calcRemaining">90 days</strong></div><div><span>180-day window</span><strong id="windowDates">—</strong></div></div>
+      <div class="route-stage" id="routeStage">
+        <section id="dashboardView" class="view route-page active" data-page="dashboard" aria-labelledby="pageTitle">
+          <div class="dashboard-masthead">
+            <div class="dashboard-intro">
+              <p class="editorial-kicker">YOUR WORLD SO FAR</p>
+              <h2>Every border crossed.<br><em>One story.</em></h2>
+              <p>See the shape of your travels at a glance, then open any detail to explore the story behind the number.</p>
             </div>
-            <div id="forecastBox" class="forecast-box good-box"><strong id="forecastTitle">No recorded overstay</strong><span id="forecastText">Planned stays currently stay within the 90/180 rule.</span></div>
-          </article>
-          <article class="panel">
-            <p class="eyebrow">WHAT COUNTS</p><h2>Schengen days in this window</h2><div id="schengenBreakdown" class="breakdown empty-state">No Schengen days in this period.</div>
-            <div class="legal-note"><strong>Planning aid only</strong><p>The calculator follows the normal short-stay 90/180 method. Residence permits, long-stay visas, nationality and other arrangements can change what counts.</p><a href="https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en" target="_blank" rel="noreferrer">European Commission official calculator ↗</a></div>
-          </article>
-        </div>
-      </section>
+            <button class="world-score" type="button" data-expand-widget="countries" aria-expanded="false">
+              <span class="world-score-label">Countries visited</span>
+              <strong id="countriesLogged">0</strong>
+              <span class="world-score-progress"><i id="worldVisitedProgress"></i></span>
+              <span class="world-score-caption"><b id="worldVisitedPercent">0%</b> of the 195-country world count</span>
+              <span class="world-score-more"><span id="continentsVisited">0</span> continents · <span id="countriesThisYear">0</span> this year</span>
+            </button>
+          </div>
 
-      <section id="plannerView" class="view">
-        <div class="planner-layout">
-          <article class="panel planner-card">
-            <p class="eyebrow">BEFORE YOU BOOK</p><h2>Trip planner</h2><p class="panel-copy">Pick a destination and entry date. For Schengen, the planner tells you the maximum continuous stay, your safe departure date and when a one-day re-entry becomes possible after using the full allowance.</p>
-            <label class="field"><span>Traveller</span><select id="plannerProfile"></select></label>
-            <label class="field"><span>Destination country</span><input id="plannerCountry" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
-            <div class="form-grid"><label class="field"><span>Entry date</span><input type="date" id="plannerEntry" /></label><label class="field"><span>Planned departure <em>optional</em></span><input type="date" id="plannerExit" /></label></div>
-            <button class="primary wide" id="runPlannerBtn" type="button">Calculate trip</button>
-          </article>
-          <article class="panel planner-result" id="plannerResultPanel">
-            <p class="eyebrow">RESULT</p><h2 id="plannerResultTitle">Choose a trip to calculate</h2><div id="plannerResultBody" class="planner-placeholder">Your visa-day result will appear here.</div><button id="addPlannedTripBtn" class="secondary hidden" type="button">＋ Add this as a planned trip</button>
-          </article>
-        </div>
-      </section>
+          <div class="dashboard-grid">
+            <article class="dashboard-map-feature" data-expand-widget="map">
+              <div class="feature-head">
+                <div><p class="eyebrow">TRAVEL MAP</p><h2>Your world, mapped</h2></div>
+                <button class="text-link" type="button" data-go-view="map">Explore map <span aria-hidden="true">↗</span></button>
+              </div>
+              <div class="dashboard-map-canvas" aria-hidden="true"><svg id="dashboardWorldMap" viewBox="0 0 1000 500"></svg></div>
+              <div class="map-feature-footer"><span id="dashboardMapCaption">Your visited countries will appear here.</span><span class="map-key"><i></i> Visited</span></div>
+            </article>
 
-      <section id="rulesView" class="view">
-        <div class="visa-check-layout">
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">ENTRY REQUIREMENTS</p><h2>Do I need a visa?</h2><p class="panel-copy">Choose the passport you will travel on and where you are going. This gives you a quick tourism visa check instead of tracking UK, Canada and US visitor-day templates.</p></div></div>
-            <label class="field"><span>Passport / nationality</span><input id="visaPassport" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
-            <label class="field"><span>Travelling to</span><input id="visaDestination" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
-            <div class="visa-profile-hint" id="visaProfileHint"></div>
-            <button class="primary wide" id="runVisaCheckBtn" type="button">Check visa requirement</button>
-          </article>
-          <article class="panel visa-result-panel">
-            <p class="eyebrow">RESULT</p>
-            <h2 id="visaResultTitle">Choose a passport and destination</h2>
-            <div id="visaResultBody" class="planner-placeholder">Your visa result will appear here.</div>
-          </article>
-        </div>
-        <article class="panel visa-source-panel">
-          <div class="panel-head"><div><p class="eyebrow">BEFORE YOU TRAVEL</p><h2>Always verify the live rule</h2></div><a class="secondary" href="https://apply.joinsherpa.com/visa" target="_blank" rel="noreferrer">Open live requirements ↗</a></div>
-          <p class="panel-copy">The quick answer uses an open visa-policy dataset and is useful for planning, but entry rules can change and may depend on trip purpose, residence, transit route, passport validity and other circumstances. Use the live requirements link or the destination government's immigration/embassy site before booking or travelling.</p>
-          <div id="visaDataStatus" class="visa-data-status">Visa data loads when you open this page.</div>
-        </article>
-      </section>
+            <article class="metric-feature travel-days-feature" data-expand-widget="days" tabindex="0" role="button" aria-expanded="false">
+              <span class="metric-icon" data-icon="footsteps"></span>
+              <span class="metric-label">Travel days logged</span>
+              <strong id="daysLogged">0</strong>
+              <span class="metric-note">days away from recorded homes</span>
+              <div class="widget-reveal" id="daysReveal"><span id="loggedDateSpan">Build your timeline by adding stays.</span></div>
+            </article>
 
-      <section id="staysView" class="view">
-        <div class="two-col stays-layout">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">＋ Add stay</button></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">GAP DETECTOR</p><h2>Dates with no country / location</h2></div></div><p class="panel-copy">When there is a hole between two recorded stays, you can fill the whole missing range in one click.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></article>
-        </div>
-      </section>
+            <article class="journey-feature" id="journeyFeature">
+              <p class="eyebrow">NOW / NEXT</p>
+              <div id="currentJourneyCard" class="journey-state"><span class="journey-marker"></span><div><small>Most recent journey</small><strong>Nothing recorded yet</strong><span>Add your first trip to begin your atlas.</span></div></div>
+              <div id="upcomingJourneyCard" class="journey-state secondary-journey" hidden></div>
+              <button class="text-link" type="button" data-go-view="stays">Open journeys →</button>
+            </article>
 
-      <section id="profilesView" class="view">
-        <div class="two-col profiles-layout">
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">PASSPORTS</p><h2>Traveller profiles</h2></div><button class="primary compact" id="addProfileBtn">＋ Add profile</button></div>
-            <p class="panel-copy">Profiles let the app apply the right Schengen logic to different travellers. Add every citizenship/passport a traveller can use.</p>
-            <div id="profileList" class="profile-list"></div>
+            <article class="schengen-feature" id="schengenAlertPanel" data-expand-widget="schengen" tabindex="0" role="button" aria-expanded="false">
+              <div class="schengen-feature-head"><div><p class="eyebrow">SCHENGEN 90 / 180</p><h2 id="alertTitle">Allowance at a glance</h2></div><span id="schengenBadge" class="status-badge good">OK</span></div>
+              <div class="schengen-number-line"><strong><span id="schengenUsed">0</span><small> / 90 used</small></strong><span><b id="schengenRemaining">90</b> remaining</span></div>
+              <div class="progress"><span id="schengenProgress"></span></div>
+              <p id="schengenSummary">0 days used in the current rolling window</p>
+              <p id="remainingSummary" class="sr-only">As of today</p>
+              <div class="widget-reveal"><p id="alertBody">Your upcoming Schengen picture will appear here.</p><button class="text-link" type="button" data-go-view="schengen">Open Schengen tracker →</button></div>
+            </article>
+
+            <article class="calendar-feature">
+              <div class="feature-head"><div><p class="eyebrow">THIS MONTH</p><h2 id="miniCalendarTitle">Calendar</h2></div><button class="icon-link" type="button" data-go-view="calendar" aria-label="Open calendar">↗</button></div>
+              <div id="miniCalendar" class="mini-calendar"></div>
+            </article>
+
+            <article class="recent-feature">
+              <div class="feature-head"><div><p class="eyebrow">RECENTLY LOGGED</p><h2>Latest journeys</h2></div><button class="text-link" type="button" data-go-view="stays">All trips →</button></div>
+              <div id="recentStays" class="stay-list empty-state">No journeys yet.</div>
+            </article>
+
+            <article class="ranking-feature">
+              <div class="feature-head"><div><p class="eyebrow">MOST TIME SPENT</p><h2>Your places</h2></div><button class="text-link" type="button" data-go-view="stats">More stats →</button></div>
+              <div id="topCountries" class="compact-ranking empty-state">Your most-visited places will appear here.</div>
+            </article>
+
+            <article class="milestone-feature">
+              <p class="eyebrow">TRAVEL MILESTONES</p>
+              <div id="travelMilestones" class="milestone-list"><div><strong>Start logging</strong><span>Your travel milestones will build automatically.</span></div></div>
+            </article>
+          </div>
+
+          <article class="data-check" id="dashboardGapPanel">
+            <div><span class="data-check-icon" data-icon="alert"></span><div><p class="eyebrow">DATA CHECK</p><h2>Unlogged gaps</h2></div></div>
+            <div id="dashboardGaps" class="gap-list empty-state">No gaps detected between your recorded stays.</div>
+            <button class="secondary compact" type="button" data-go-view="stays">Review</button>
           </article>
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">YOUR ACCOUNT</p><h2>Saved wherever you go</h2></div></div>
-            <p class="panel-copy">Sign in to save your travel history automatically and access it on another device. Traveller profiles and home history are included.</p>
-            <a class="primary" href="profile/">Open my profile</a>
-            <p class="panel-copy">Already recorded travels on this device? Sign in, then import them into your account. Identical records will be skipped.</p>
-            <button class="secondary" id="importDeviceBtn" type="button" hidden>Import existing device data</button>
+        </section>
+
+        <section id="mapView" class="view route-page" data-page="map">
+          <div class="page-intro"><div><p class="editorial-kicker">THE ATLAS</p><h2>See your travels take shape.</h2><p>Move through time, zoom into regions and select a country to open its travel record.</p></div><div class="page-intro-stat"><span>Visited</span><strong id="mapVisitedCount">0</strong></div></div>
+          <article class="map-experience">
+            <div class="map-toolbar"><div class="map-legend"><span><i class="legend-dot visited-dot"></i>Visited</span><span><i class="legend-dot planned-dot"></i>Planned</span><span><i class="legend-dot current-dot"></i>Current</span></div><button id="mapFullscreenBtn" class="secondary compact" type="button"><span data-icon="expand"></span> Full screen</button></div>
+            <div class="map-wrap"><svg id="worldMap" viewBox="0 0 1000 500" role="img" aria-label="Interactive world map showing visited countries"></svg><div id="mapFallback" class="map-fallback hidden">The interactive atlas needs an internet connection the first time it loads.</div><aside id="mapCountryDrawer" class="map-country-drawer" hidden></aside></div>
+            <div id="mapSelectionSummary" class="map-selection-summary">Drag the timeline to revisit your travel history at any point.</div>
           </article>
-        </div>
-      </section>
+          <article class="timeline-panel">
+            <div class="feature-head"><div><p class="eyebrow">TRAVEL THROUGH TIME</p><h2 id="timelineTitle">Your timeline</h2></div><button class="secondary compact" id="timelineTodayBtn">Today</button></div>
+            <div id="timelineEmpty" class="empty-state">Add a trip to start your timeline.</div>
+            <div id="timelineContent" class="hidden">
+              <div class="timeline-date-card"><span>Selected date</span><strong id="timelineDateLabel">—</strong><small id="timelineLocationLabel">No stay recorded</small></div>
+              <div class="timeline-chart-wrap"><div id="timelineBars" class="timeline-bars"></div><input id="timelineSlider" class="timeline-slider" type="range" min="0" max="0" value="0" aria-label="Travel timeline date" /></div>
+              <div class="timeline-axis"><span id="timelineStartLabel">—</span><span id="timelineEndLabel">—</span></div>
+              <div class="timeline-schengen"><span>Schengen use on this date</span><strong id="timelineSchengenLabel">0 / 90</strong></div>
+            </div>
+          </article>
+        </section>
+
+        <section id="countriesView" class="view route-page" data-page="countries">
+          <div class="page-intro countries-intro"><div><p class="editorial-kicker">WORLD COVERAGE</p><h2>Your countries, not a checklist.</h2><p>Search your travel history, compare time spent and understand how your personal world is growing.</p></div><div class="coverage-summary"><div><strong id="countriesSummaryCount">0</strong><span>visited</span></div><div><strong id="countriesSummaryPercent">0%</strong><span>of world</span></div></div></div>
+          <div class="country-toolbar"><label class="search-control"><span data-icon="search"></span><input id="countrySearch" type="search" placeholder="Search countries" autocomplete="off" /></label><div class="segmented" id="countryFilter" aria-label="Country filters"><button class="active" data-country-filter="all">All visited</button><button data-country-filter="recent">Recent</button><button data-country-filter="most">Most days</button></div></div>
+          <article class="country-ledger"><div class="country-ledger-head"><span>Country</span><span>Time</span><span>Days</span></div><div id="countryTotals" class="country-totals empty-state">No country data yet.</div></article>
+        </section>
+
+        <section id="calendarView" class="view route-page" data-page="calendar">
+          <div class="page-intro"><div><p class="editorial-kicker">TRAVEL CALENDAR</p><h2>Your year, coloured by place.</h2><p>Browse the month, select a range to add a journey, or open an existing trip directly from a date.</p></div></div>
+          <article class="calendar-panel">
+            <div class="calendar-toolbar"><div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month"><span aria-hidden="true">←</span></button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month"><span aria-hidden="true">→</span></button></div><div class="calendar-toolbar-actions"><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button><button class="secondary" id="todayBtn">Today</button></div></div>
+            <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Select a date to add a trip</strong><span>Choose the first day, then the last. Choose the same day twice for a day trip.</span></div>
+            <div id="calendar" class="calendar"></div>
+            <p class="helper">Home periods are excluded from travel-day totals when they are the only recorded location for a date.</p>
+          </article>
+        </section>
+
+        <section id="staysView" class="view route-page" data-page="trips">
+          <div class="page-intro"><div><p class="editorial-kicker">JOURNEYS</p><h2>Travel memories, in order.</h2><p>Every recorded stay remains editable. Planned journeys sit alongside your history until their dates pass.</p></div><button class="primary" id="addStayFromListBtn"><span data-icon="plus"></span> Add journey</button></div>
+          <div class="trips-layout"><article class="trip-ledger"><div class="section-heading"><p class="eyebrow">TRAVEL HISTORY</p><h2>All journeys</h2></div><div id="allStays" class="stay-list empty-state">No journeys added yet.</div></article><aside class="gap-sidebar"><div class="section-heading"><p class="eyebrow">GAP DETECTOR</p><h2>Missing dates</h2></div><p class="panel-copy">Gaps between recorded journeys can be filled without re-entering every date.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></aside></div>
+        </section>
+
+        <section id="statsView" class="view route-page" data-page="stats">
+          <div class="page-intro"><div><p class="editorial-kicker">THE NUMBERS BEHIND THE JOURNEYS</p><h2>Statistics with a sense of place.</h2><p>A quieter view of how far, how often and where your travel history has taken you.</p></div></div>
+          <div class="stats-editorial-grid"><article class="big-stat"><span>Countries visited</span><strong id="statsCountries">0</strong><small id="statsWorldPercent">0% of the world</small></article><article class="big-stat"><span>Travel days</span><strong id="statsDays">0</strong><small>unique days away from home</small></article><article class="big-stat"><span>Continents</span><strong id="statsContinents">0</strong><small>with recorded visits</small></article><article class="big-stat"><span>This year</span><strong id="statsThisYear">0</strong><small>countries entered</small></article></div>
+          <div class="stats-columns"><article class="stats-section"><div class="section-heading"><p class="eyebrow">MOST VISITED</p><h2>Where you spend your time</h2></div><div id="statsTopCountries" class="compact-ranking"></div></article><article class="stats-section"><div class="section-heading"><p class="eyebrow">MILESTONES</p><h2>Your travel markers</h2></div><div id="statsMilestones" class="milestone-list"></div></article></div>
+        </section>
+
+        <section id="schengenView" class="view route-page" data-page="schengen">
+          <div class="page-intro"><div><p class="editorial-kicker">90 DAYS IN ANY 180</p><h2>Know exactly where you stand.</h2><p>The tracker uses your recorded dates to show the rolling window clearly. It is a planning aid, not immigration advice.</p></div><div class="schengen-hero-number"><span>Remaining today</span><strong id="schengenHeroRemaining">90</strong><small>days</small></div></div>
+          <div class="schengen-layout"><article class="calculator-card"><div class="section-heading"><p class="eyebrow">ROLLING WINDOW</p><h2>Schengen calculator</h2></div><p class="panel-copy" id="schengenProfileNote">Choose any date to see how many countable Schengen days fall within that date and the previous 179 days.</p><label class="field"><span>Check date</span><input type="date" id="checkDate" /></label><div class="big-meter"><div class="ring" id="schengenRing"><span id="ringUsed">0</span><small>/ 90 days</small></div><div class="meter-copy"><div><span>Used</span><strong id="calcUsed">0 days</strong></div><div><span>Remaining</span><strong id="calcRemaining">90 days</strong></div><div><span>180-day window</span><strong id="windowDates">—</strong></div></div></div><div id="forecastBox" class="forecast-box good-box"><strong id="forecastTitle">No recorded overstay</strong><span id="forecastText">Planned stays currently stay within the 90/180 rule.</span></div></article><article class="schengen-breakdown-card"><div class="section-heading"><p class="eyebrow">WHAT COUNTS</p><h2>Days in this window</h2></div><div id="schengenBreakdown" class="breakdown empty-state">No Schengen days in this period.</div><div class="legal-note"><strong>Planning aid only</strong><p>Residence permits, long-stay visas, nationality and other arrangements can change what counts.</p><a href="https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en" target="_blank" rel="noreferrer">European Commission calculator ↗</a></div></article></div>
+        </section>
+
+        <section id="plannerView" class="view route-page" data-page="planner">
+          <div class="page-intro"><div><p class="editorial-kicker">BEFORE YOU BOOK</p><h2>Pressure-test your next trip.</h2><p>Use your existing history to see how a proposed journey fits your current travel-day allowance.</p></div></div>
+          <div class="planner-layout"><article class="planner-card form-surface"><div class="section-heading"><p class="eyebrow">TRIP DETAILS</p><h2>Plan a journey</h2></div><label class="field"><span>Traveller</span><select id="plannerProfile"></select></label><label class="field"><span>Destination country</span><input id="plannerCountry" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label><div class="form-grid"><label class="field"><span>Entry date</span><input type="date" id="plannerEntry" /></label><label class="field"><span>Planned departure <em>optional</em></span><input type="date" id="plannerExit" /></label></div><button class="primary wide" id="runPlannerBtn" type="button">Calculate trip</button></article><article class="planner-result" id="plannerResultPanel"><p class="eyebrow">RESULT</p><h2 id="plannerResultTitle">Choose a trip to calculate</h2><div id="plannerResultBody" class="planner-placeholder">Your visa-day result will appear here.</div><button id="addPlannedTripBtn" class="secondary hidden" type="button">Add this as a planned trip</button></article></div>
+        </section>
+
+        <section id="rulesView" class="view route-page" data-page="visa">
+          <div class="page-intro"><div><p class="editorial-kicker">ENTRY REQUIREMENTS</p><h2>A quick visa sense-check.</h2><p>Use the built-in dataset for planning, then verify the live government or official rule before travel.</p></div></div>
+          <div class="visa-check-layout"><article class="form-surface"><div class="section-heading"><p class="eyebrow">PASSPORT + DESTINATION</p><h2>Do I need a visa?</h2></div><label class="field"><span>Passport / nationality</span><input id="visaPassport" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label><label class="field"><span>Travelling to</span><input id="visaDestination" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label><div class="visa-profile-hint" id="visaProfileHint"></div><button class="primary wide" id="runVisaCheckBtn" type="button">Check visa requirement</button></article><article class="visa-result-panel"><p class="eyebrow">RESULT</p><h2 id="visaResultTitle">Choose a passport and destination</h2><div id="visaResultBody" class="planner-placeholder">Your result will appear here.</div></article></div><article class="source-note"><div><p class="eyebrow">BEFORE YOU TRAVEL</p><h2>Always verify the live rule</h2><p>The quick answer can’t account for every residence status, transit route, passport condition or trip purpose.</p></div><a class="secondary" href="https://apply.joinsherpa.com/visa" target="_blank" rel="noreferrer">Open live requirements ↗</a><div id="visaDataStatus" class="visa-data-status">Visa data loads when you open this page.</div></article>
+        </section>
+
+        <section id="livedView" class="view route-page" data-page="lived">
+          <div class="page-intro"><div><p class="editorial-kicker">HOME, OVER TIME</p><h2>Travel makes more sense when home is known.</h2><p>Record the places you lived so Herald Voyages can distinguish ordinary days at home from genuine travel days.</p></div></div><div id="residencePageMount" class="residence-page-mount"></div>
+        </section>
+
+        <section id="profilesView" class="view route-page" data-page="profile">
+          <div class="page-intro"><div><p class="editorial-kicker">TRAVELLERS + DATA</p><h2>Your travel identity.</h2><p>Manage traveller profiles here. Account security, sync and guest-data recovery live in your dedicated Profile page.</p></div><a class="primary" href="profile/">Open account profile ↗</a></div>
+          <div class="profiles-layout"><article class="profile-surface"><div class="feature-head"><div><p class="eyebrow">PASSPORTS</p><h2>Traveller profiles</h2></div><button class="secondary compact" id="addProfileBtn">Add traveller</button></div><p class="panel-copy">Profiles help the app apply the right Schengen logic to different travellers and passports.</p><div id="profileList" class="profile-list"></div></article><article class="account-surface"><p class="eyebrow">ACCOUNT</p><h2>Saved wherever you go</h2><p>Sign in to sync your private travel history across devices. Guest transfers merge safely with account data rather than replacing it.</p><a class="secondary" href="profile/">Profile & data recovery</a><button class="secondary" id="importDeviceBtn" type="button" hidden>Import existing device data</button></article></div>
+        </section>
+      </div>
     </main>
   </div>
 
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
+    <button data-mobile-route="dashboard"><span data-icon="compass"></span><small>Home</small></button>
+    <button data-mobile-route="map"><span data-icon="map"></span><small>Map</small></button>
+    <button data-mobile-route="trips"><span data-icon="route"></span><small>Trips</small></button>
+    <button data-mobile-route="calendar"><span data-icon="calendar"></span><small>Calendar</small></button>
+    <button data-mobile-more><span data-icon="menu"></span><small>More</small></button>
+  </nav>
+  <div class="mobile-more-backdrop" id="mobileMoreBackdrop" hidden></div>
+  <aside class="mobile-more-sheet" id="mobileMoreSheet" aria-hidden="true"><div class="sheet-handle"></div><div class="sheet-heading"><div><p class="eyebrow">HERALD VOYAGES</p><h2>More</h2></div><button class="icon-btn" id="closeMobileMore" aria-label="Close">×</button></div><div id="mobileMoreLinks" class="mobile-more-links"></div><a class="mobile-profile-link" href="profile/"><span data-icon="user"></span><span>Profile & account</span></a></aside>
+
   <dialog id="stayDialog" class="dialog">
     <form method="dialog" id="stayForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="eyebrow">TRAVEL RECORD</p><h2 id="dialogTitle">Add a stay</h2></div><button type="button" class="icon-btn" id="closeDialog" aria-label="Close">×</button></div>
+      <div class="dialog-head"><div><p class="eyebrow">JOURNEY</p><h2 id="dialogTitle">Add a trip</h2><p>Add the destination and dates. You can attach another date range to the same record when needed.</p></div><button type="button" class="icon-btn" id="closeDialog" aria-label="Close">×</button></div>
       <input type="hidden" id="stayId" />
       <label class="field"><span>Country / location</span><div class="country-input-wrap"><input id="countryInput" list="countryList" autocomplete="off" placeholder="Start typing a country…" required /><span id="countryFlag" class="country-flag"></span></div><datalist id="countryList"></datalist></label>
-      <div class="field"><div class="field-heading"><span>Date ranges</span><button type="button" class="text-btn" id="addDateRangeBtn">＋ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">You can enter the From and To dates in either order. The other date will not be reset while you are editing.</small></div>
-      <label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label>
-      <div class="form-grid">
-        <label class="field"><span>Record type</span><select id="stayStatus"><option value="actual">Actual / confirmed</option><option value="planned">Planned trip</option></select></label>
-        <label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label>
-      </div>
-      <label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label>
+      <div class="field"><div class="field-heading"><span>Date ranges</span><button type="button" class="text-btn" id="addDateRangeBtn">+ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">From and To can be entered in either order.</small></div>
+      <label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="Hiking tour, Lisbon, visiting family…" maxlength="120" /></label>
+      <div class="form-grid"><label class="field"><span>Record type</span><select id="stayStatus"><option value="actual">Actual / confirmed</option><option value="planned">Planned trip</option></select></label><label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label></div>
+      <label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen total</strong><small>For dates covered by a qualifying residence permit or long-stay visa.</small></span></label>
       <div id="formError" class="form-error" role="alert"></div>
-      <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteStayBtn">Delete stay</button><div class="spacer"></div><button type="button" class="secondary" id="cancelDialog">Cancel</button><button type="submit" class="primary">Save stay</button></div>
+      <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteStayBtn">Delete trip</button><div class="spacer"></div><button type="button" class="secondary" id="cancelDialog">Cancel</button><button type="submit" class="primary">Save trip</button></div>
     </form>
   </dialog>
 
-  <dialog id="profileDialog" class="dialog small-dialog">
-    <form method="dialog" id="profileForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="eyebrow">TRAVELLER</p><h2 id="profileDialogTitle">Add profile</h2></div><button type="button" class="icon-btn" id="closeProfileDialog" aria-label="Close">×</button></div>
-      <input type="hidden" id="profileId" />
-      <label class="field"><span>Name</span><input type="text" id="profileName" placeholder="e.g. Me, Brandi" required maxlength="40" /></label>
-      <div class="field"><span>Citizenship / passports</span><div class="inline-input"><input type="text" id="citizenshipInput" list="countryList" placeholder="Add a country…" /><button type="button" class="secondary" id="addCitizenshipBtn">Add</button></div><div id="citizenshipChips" class="chips"></div></div>
-      <div id="profileError" class="form-error"></div>
-      <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteProfileBtn">Delete profile</button><div class="spacer"></div><button type="button" class="secondary" id="cancelProfileDialog">Cancel</button><button type="submit" class="primary">Save profile</button></div>
-    </form>
-  </dialog>
+  <dialog id="profileDialog" class="dialog small-dialog"><form method="dialog" id="profileForm" class="dialog-card"><div class="dialog-head"><div><p class="eyebrow">TRAVELLER</p><h2 id="profileDialogTitle">Add traveller</h2></div><button type="button" class="icon-btn" id="closeProfileDialog" aria-label="Close">×</button></div><input type="hidden" id="profileId" /><label class="field"><span>Name</span><input type="text" id="profileName" placeholder="e.g. Me, Brandi" required maxlength="40" /></label><div class="field"><span>Citizenship / passports</span><div class="inline-input"><input type="text" id="citizenshipInput" list="countryList" placeholder="Add a country…" /><button type="button" class="secondary" id="addCitizenshipBtn">Add</button></div><div id="citizenshipChips" class="chips"></div></div><div id="profileError" class="form-error"></div><div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteProfileBtn">Delete traveller</button><div class="spacer"></div><button type="button" class="secondary" id="cancelProfileDialog">Cancel</button><button type="submit" class="primary">Save traveller</button></div></form></dialog>
 
-  <dialog id="gapDialog" class="dialog small-dialog">
-    <form method="dialog" id="gapForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="eyebrow">FILL THE GAP</p><h2>Add missing country</h2></div><button type="button" class="icon-btn" id="closeGapDialog" aria-label="Close">×</button></div>
-      <input type="hidden" id="gapStart" /><input type="hidden" id="gapEnd" />
-      <p id="gapDateSummary" class="panel-copy"></p>
-      <label class="field"><span>Country / location</span><input type="text" id="gapCountry" list="countryList" placeholder="Start typing a country…" required /></label>
-      <div id="gapError" class="form-error"></div>
-      <div class="dialog-actions"><div class="spacer"></div><button type="button" class="secondary" id="cancelGapDialog">Cancel</button><button type="submit" class="primary">Fill gap</button></div>
-    </form>
-  </dialog>
+  <dialog id="gapDialog" class="dialog small-dialog"><form method="dialog" id="gapForm" class="dialog-card"><div class="dialog-head"><div><p class="eyebrow">FILL THE GAP</p><h2>Add missing location</h2></div><button type="button" class="icon-btn" id="closeGapDialog" aria-label="Close">×</button></div><input type="hidden" id="gapStart" /><input type="hidden" id="gapEnd" /><p id="gapDateSummary" class="panel-copy"></p><label class="field"><span>Country / location</span><input type="text" id="gapCountry" list="countryList" placeholder="Start typing a country…" required /></label><div id="gapError" class="form-error"></div><div class="dialog-actions"><div class="spacer"></div><button type="button" class="secondary" id="cancelGapDialog">Cancel</button><button type="submit" class="primary">Fill gap</button></div></form></dialog>
 
   <script async src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
@@ -244,6 +251,6 @@
   <script src="account-model.js"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=accounts-1"></script>
+  <script src="app.js?v=voyages-v2"></script>
 </body>
 </html>
