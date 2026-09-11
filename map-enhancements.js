@@ -296,6 +296,7 @@
     const collection = { type: 'FeatureCollection', features: worldFeatures };
     const projection = d3.geoNaturalEarth1().fitExtent([[8, 8], [992, 492]], collection);
     const path = d3.geoPath(projection);
+    window.HVMapProjection=projection;
     const viewport = svg.append('g').attr('class', 'map-viewport');
 
     viewport
@@ -318,8 +319,8 @@
         if (event.defaultPrevented) return;
         const code = this.dataset.code;
         if (!code) return;
-        showMapTooltip(event, code);
-        hideMapTooltip(1800);
+        hideMapTooltip();
+        window.HVJourneys?.openCountry(code);
       });
 
     mapZoomBehavior = d3.zoom()
@@ -336,6 +337,7 @@
         viewport.attr('transform', event.transform);
       });
 
+    window.HVJourneys?.renderMap();
     svg.call(mapZoomBehavior);
     svg.on('dblclick.zoom', null);
 

@@ -1,0 +1,2014 @@
+{
+  "version": 1,
+  "source": "Tallest Buildings.xlsx — supplied by site owner",
+  "items": [
+    {
+      "id": "buildings:AE",
+      "countryCodes": [
+        "AE"
+      ],
+      "name": "Burj Khalifa",
+      "heightMeters": 828.0
+    },
+    {
+      "id": "buildings:MY",
+      "countryCodes": [
+        "MY"
+      ],
+      "name": "Merdeka 118",
+      "heightMeters": 678.9
+    },
+    {
+      "id": "buildings:CN",
+      "countryCodes": [
+        "CN"
+      ],
+      "name": "Shanghai Tower",
+      "heightMeters": 632.0
+    },
+    {
+      "id": "buildings:SA",
+      "countryCodes": [
+        "SA"
+      ],
+      "name": "Abraj Al Bait",
+      "heightMeters": 601.0
+    },
+    {
+      "id": "buildings:KR",
+      "countryCodes": [
+        "KR"
+      ],
+      "name": "Lotte World Tower",
+      "heightMeters": 554.5
+    },
+    {
+      "id": "buildings:US",
+      "countryCodes": [
+        "US"
+      ],
+      "name": "One World Trade Center",
+      "heightMeters": 541.3
+    },
+    {
+      "id": "buildings:TW",
+      "countryCodes": [
+        "TW"
+      ],
+      "name": "Taipei 101",
+      "heightMeters": 508.0
+    },
+    {
+      "id": "buildings:HK",
+      "countryCodes": [
+        "HK"
+      ],
+      "name": "International Commerce Centre",
+      "heightMeters": 484.0
+    },
+    {
+      "id": "buildings:RU",
+      "countryCodes": [
+        "RU"
+      ],
+      "name": "Lakhta Center",
+      "heightMeters": 462.0
+    },
+    {
+      "id": "buildings:VN",
+      "countryCodes": [
+        "VN"
+      ],
+      "name": "Landmark 81",
+      "heightMeters": 461.2
+    },
+    {
+      "id": "buildings:CI",
+      "countryCodes": [
+        "CI"
+      ],
+      "name": "Tour F",
+      "heightMeters": 421.0
+    },
+    {
+      "id": "buildings:KW",
+      "countryCodes": [
+        "KW"
+      ],
+      "name": "Al Hamra Tower",
+      "heightMeters": 412.6
+    },
+    {
+      "id": "buildings:EG",
+      "countryCodes": [
+        "EG"
+      ],
+      "name": "Iconic Tower",
+      "heightMeters": 393.8
+    },
+    {
+      "id": "buildings:ID",
+      "countryCodes": [
+        "ID"
+      ],
+      "name": "Autograph Tower",
+      "heightMeters": 382.9
+    },
+    {
+      "id": "buildings:TR",
+      "countryCodes": [
+        "TR"
+      ],
+      "name": "IFC Central Bank Tower",
+      "heightMeters": 352.0
+    },
+    {
+      "id": "buildings:CA",
+      "countryCodes": [
+        "CA"
+      ],
+      "name": "SkyTower at Pinnacle One Yonge",
+      "heightMeters": 351.4
+    },
+    {
+      "id": "buildings:KP",
+      "countryCodes": [
+        "KP"
+      ],
+      "name": "Ryugyong Hotel",
+      "heightMeters": 330.0
+    },
+    {
+      "id": "buildings:JP",
+      "countryCodes": [
+        "JP"
+      ],
+      "name": "Azabudai Hills Mori JP Tower",
+      "heightMeters": 325.2
+    },
+    {
+      "id": "buildings:AU",
+      "countryCodes": [
+        "AU"
+      ],
+      "name": "Q1",
+      "heightMeters": 322.5
+    },
+    {
+      "id": "buildings:IN",
+      "countryCodes": [
+        "IN"
+      ],
+      "name": "Palais Royale, Mumbai",
+      "heightMeters": 320.0
+    },
+    {
+      "id": "buildings:PH",
+      "countryCodes": [
+        "PH"
+      ],
+      "name": "Metrobank Center",
+      "heightMeters": 318.0
+    },
+    {
+      "id": "buildings:TH",
+      "countryCodes": [
+        "TH"
+      ],
+      "name": "Iconsiam",
+      "heightMeters": 315.0
+    },
+    {
+      "id": "buildings:KZ",
+      "countryCodes": [
+        "KZ"
+      ],
+      "name": "Abu Dhabi Plaza",
+      "heightMeters": 310.8
+    },
+    {
+      "id": "buildings:PL",
+      "countryCodes": [
+        "PL"
+      ],
+      "name": "Varso Tower",
+      "heightMeters": 310.0
+    },
+    {
+      "id": "buildings:GB",
+      "countryCodes": [
+        "GB"
+      ],
+      "name": "The Shard",
+      "heightMeters": 309.6
+    },
+    {
+      "id": "buildings:IL",
+      "countryCodes": [
+        "IL"
+      ],
+      "name": "Beyond Office Tower",
+      "heightMeters": 308.3
+    },
+    {
+      "id": "buildings:MX",
+      "countryCodes": [
+        "MX"
+      ],
+      "name": "T.Op Torre 1",
+      "heightMeters": 305.3
+    },
+    {
+      "id": "buildings:QA",
+      "countryCodes": [
+        "QA"
+      ],
+      "name": "Lusail Plaza Tower 3 & 4",
+      "heightMeters": 300.7
+    },
+    {
+      "id": "buildings:CL",
+      "countryCodes": [
+        "CL"
+      ],
+      "name": "Gran Torre Costanera",
+      "heightMeters": 300.0
+    },
+    {
+      "id": "buildings:BR",
+      "countryCodes": [
+        "BR"
+      ],
+      "name": "Yachthouse Residence Club",
+      "heightMeters": 294.1
+    },
+    {
+      "id": "buildings:PA",
+      "countryCodes": [
+        "PA"
+      ],
+      "name": "JW Marriott Panama",
+      "heightMeters": 284.0
+    },
+    {
+      "id": "buildings:SG",
+      "countryCodes": [
+        "SG"
+      ],
+      "name": "Guoco Tower",
+      "heightMeters": 283.7
+    },
+    {
+      "id": "buildings:AZ",
+      "countryCodes": [
+        "AZ"
+      ],
+      "name": "Baku Tower",
+      "heightMeters": 276.3
+    },
+    {
+      "id": "buildings:PK",
+      "countryCodes": [
+        "PK"
+      ],
+      "name": "Bahria Icon Tower",
+      "heightMeters": 273.0
+    },
+    {
+      "id": "buildings:BH",
+      "countryCodes": [
+        "BH"
+      ],
+      "name": "Four Seasons Hotel",
+      "heightMeters": 269.7
+    },
+    {
+      "id": "buildings:UZ",
+      "countryCodes": [
+        "UZ"
+      ],
+      "name": "Nest One",
+      "heightMeters": 266.5
+    },
+    {
+      "id": "buildings:DZ",
+      "countryCodes": [
+        "DZ"
+      ],
+      "name": "Great Mosque of Algiers Tower",
+      "heightMeters": 265.0
+    },
+    {
+      "id": "buildings:KH",
+      "countryCodes": [
+        "KH"
+      ],
+      "name": "KBX Universal Financial Center",
+      "heightMeters": 264.6
+    },
+    {
+      "id": "buildings:DE",
+      "countryCodes": [
+        "DE"
+      ],
+      "name": "Commerzbank Tower",
+      "heightMeters": 259.0
+    },
+    {
+      "id": "buildings:MO",
+      "countryCodes": [
+        "MO"
+      ],
+      "name": "Grand Lisboa",
+      "heightMeters": 258.0
+    },
+    {
+      "id": "buildings:MA",
+      "countryCodes": [
+        "MA"
+      ],
+      "name": "Mohammed VI Tower",
+      "heightMeters": 250.0
+    },
+    {
+      "id": "buildings:ES",
+      "countryCodes": [
+        "ES"
+      ],
+      "name": "Torre de Cristal",
+      "heightMeters": 249.0
+    },
+    {
+      "id": "buildings:SE",
+      "countryCodes": [
+        "SE"
+      ],
+      "name": "Karlatornet",
+      "heightMeters": 246.0
+    },
+    {
+      "id": "buildings:VE",
+      "countryCodes": [
+        "VE"
+      ],
+      "name": "Isla Multiespacio",
+      "heightMeters": 243.8
+    },
+    {
+      "id": "buildings:MN",
+      "countryCodes": [
+        "MN"
+      ],
+      "name": "Eco Tower One",
+      "heightMeters": 243.0
+    },
+    {
+      "id": "buildings:FR",
+      "countryCodes": [
+        "FR"
+      ],
+      "name": "The Link",
+      "heightMeters": 241.6
+    },
+    {
+      "id": "buildings:LK",
+      "countryCodes": [
+        "LK"
+      ],
+      "name": "Altair",
+      "heightMeters": 240.0
+    },
+    {
+      "id": "buildings:AR",
+      "countryCodes": [
+        "AR"
+      ],
+      "name": "Alvear Tower",
+      "heightMeters": 235.2
+    },
+    {
+      "id": "buildings:IR",
+      "countryCodes": [
+        "IR"
+      ],
+      "name": "Fereshteh Pasargad Hotel",
+      "heightMeters": 235.0
+    },
+    {
+      "id": "buildings:ZA",
+      "countryCodes": [
+        "ZA"
+      ],
+      "name": "The Leonardo",
+      "heightMeters": 234.0
+    },
+    {
+      "id": "buildings:AT",
+      "countryCodes": [
+        "AT"
+      ],
+      "name": "DC Tower 1",
+      "heightMeters": 220.0
+    },
+    {
+      "id": "buildings:IT",
+      "countryCodes": [
+        "IT"
+      ],
+      "name": "Unicredit Tower",
+      "heightMeters": 217.7
+    },
+    {
+      "id": "buildings:CO",
+      "countryCodes": [
+        "CO"
+      ],
+      "name": "BD Bacatá Torre Sur",
+      "heightMeters": 216.0
+    },
+    {
+      "id": "buildings:NL",
+      "countryCodes": [
+        "NL"
+      ],
+      "name": "De Zalmhaven",
+      "heightMeters": 215.0
+    },
+    {
+      "id": "buildings:GE",
+      "countryCodes": [
+        "GE"
+      ],
+      "name": "Alliance Centropolis Tower C",
+      "heightMeters": 210.0
+    },
+    {
+      "id": "buildings:ET",
+      "countryCodes": [
+        "ET"
+      ],
+      "name": "Commercial Bank of Ethiopia Headquarters",
+      "heightMeters": 209.3
+    },
+    {
+      "id": "buildings:CH",
+      "countryCodes": [
+        "CH"
+      ],
+      "name": "Roche Tower 2",
+      "heightMeters": 205.0
+    },
+    {
+      "id": "buildings:BG",
+      "countryCodes": [
+        "BG"
+      ],
+      "name": "Sky Fort",
+      "heightMeters": 202.2
+    },
+    {
+      "id": "buildings:KE",
+      "countryCodes": [
+        "KE"
+      ],
+      "name": "Britam Tower",
+      "heightMeters": 200.1
+    },
+    {
+      "id": "buildings:GR",
+      "countryCodes": [
+        "GR"
+      ],
+      "name": "Riviera Tower",
+      "heightMeters": 200.0
+    },
+    {
+      "id": "buildings:JO",
+      "countryCodes": [
+        "JO"
+      ],
+      "name": "Jordan Gate North Tower",
+      "heightMeters": 200.0
+    },
+    {
+      "id": "buildings:LB",
+      "countryCodes": [
+        "LB"
+      ],
+      "name": "Sama Beirut",
+      "heightMeters": 195.2
+    },
+    {
+      "id": "buildings:NZ",
+      "countryCodes": [
+        "NZ"
+      ],
+      "name": "Seascape",
+      "heightMeters": 187.2
+    },
+    {
+      "id": "buildings:FI",
+      "countryCodes": [
+        "FI"
+      ],
+      "name": "Prysmian Pikkala Cable Tower",
+      "heightMeters": 185.0
+    },
+    {
+      "id": "buildings:EC",
+      "countryCodes": [
+        "EC"
+      ],
+      "name": "Maxximus Guayaquil",
+      "heightMeters": 184.0
+    },
+    {
+      "id": "buildings:IQ",
+      "countryCodes": [
+        "IQ"
+      ],
+      "name": "E1 Tower",
+      "heightMeters": 180.0
+    },
+    {
+      "id": "buildings:TM",
+      "countryCodes": [
+        "TM"
+      ],
+      "name": "Turkmenistan Tower",
+      "heightMeters": 173.0
+    },
+    {
+      "id": "buildings:BA",
+      "countryCodes": [
+        "BA"
+      ],
+      "name": "Avaz Twist Tower",
+      "heightMeters": 172.0
+    },
+    {
+      "id": "buildings:PY",
+      "countryCodes": [
+        "PY"
+      ],
+      "name": "Petra Tower",
+      "heightMeters": 172.0
+    },
+    {
+      "id": "buildings:BY",
+      "countryCodes": [
+        "BY"
+      ],
+      "name": "International Finance Center",
+      "heightMeters": 170.0
+    },
+    {
+      "id": "buildings:CY",
+      "countryCodes": [
+        "CY"
+      ],
+      "name": "One Limassol",
+      "heightMeters": 170.0
+    },
+    {
+      "id": "buildings:MC",
+      "countryCodes": [
+        "MC"
+      ],
+      "name": "Tour Odéon",
+      "heightMeters": 170.0
+    },
+    {
+      "id": "buildings:RS",
+      "countryCodes": [
+        "RS"
+      ],
+      "name": "Belgrade Tower",
+      "heightMeters": 168.0
+    },
+    {
+      "id": "buildings:SK",
+      "countryCodes": [
+        "SK"
+      ],
+      "name": "Eurovea Tower",
+      "heightMeters": 168.0
+    },
+    {
+      "id": "buildings:UA",
+      "countryCodes": [
+        "UA"
+      ],
+      "name": "Klovski Descent 7",
+      "heightMeters": 168.0
+    },
+    {
+      "id": "buildings:BO",
+      "countryCodes": [
+        "BO"
+      ],
+      "name": "Green Tower",
+      "heightMeters": 163.4
+    },
+    {
+      "id": "buildings:DO",
+      "countryCodes": [
+        "DO"
+      ],
+      "name": "Anacaona 27 Tower",
+      "heightMeters": 161.0
+    },
+    {
+      "id": "buildings:NG",
+      "countryCodes": [
+        "NG"
+      ],
+      "name": "NECOM House",
+      "heightMeters": 160.3
+    },
+    {
+      "id": "buildings:PT",
+      "countryCodes": [
+        "PT"
+      ],
+      "name": "Torre Vasco da Gama",
+      "heightMeters": 160.0
+    },
+    {
+      "id": "buildings:TZ",
+      "countryCodes": [
+        "TZ"
+      ],
+      "name": "PPF Tower II",
+      "heightMeters": 160.0
+    },
+    {
+      "id": "buildings:UY",
+      "countryCodes": [
+        "UY"
+      ],
+      "name": "Torre Antel",
+      "heightMeters": 157.6
+    },
+    {
+      "id": "buildings:UG",
+      "countryCodes": [
+        "UG"
+      ],
+      "name": "NSSF Pension Towers",
+      "heightMeters": 155.0
+    },
+    {
+      "id": "buildings:CU",
+      "countryCodes": [
+        "CU"
+      ],
+      "name": "La Torre López-Callejas",
+      "heightMeters": 154.0
+    },
+    {
+      "id": "buildings:NO",
+      "countryCodes": [
+        "NO"
+      ],
+      "name": "Nexans Halden Extrusion Tower 2",
+      "heightMeters": 152.9
+    },
+    {
+      "id": "buildings:BD",
+      "countryCodes": [
+        "BD"
+      ],
+      "name": "Pinnacle",
+      "heightMeters": 152.3
+    },
+    {
+      "id": "buildings:AL",
+      "countryCodes": [
+        "AL"
+      ],
+      "name": "Downtown One",
+      "heightMeters": 150.0
+    },
+    {
+      "id": "buildings:BE",
+      "countryCodes": [
+        "BE"
+      ],
+      "name": "Tour du Midi",
+      "heightMeters": 150.0
+    },
+    {
+      "id": "buildings:LA",
+      "countryCodes": [
+        "LA"
+      ],
+      "name": "Xinyue City Center",
+      "heightMeters": 146.0
+    },
+    {
+      "id": "buildings:DK",
+      "countryCodes": [
+        "DK"
+      ],
+      "name": "Mindet 6",
+      "heightMeters": 145.35
+    },
+    {
+      "id": "buildings:AO",
+      "countryCodes": [
+        "AO"
+      ],
+      "name": "IMOB Business Tower",
+      "heightMeters": 145.0
+    },
+    {
+      "id": "buildings:LY",
+      "countryCodes": [
+        "LY"
+      ],
+      "name": "Burj Bulaya Office Tower 1",
+      "heightMeters": 144.0
+    },
+    {
+      "id": "buildings:HU",
+      "countryCodes": [
+        "HU"
+      ],
+      "name": "MOL Campus",
+      "heightMeters": 143.0
+    },
+    {
+      "id": "buildings:CR",
+      "countryCodes": [
+        "CR"
+      ],
+      "name": "Leumi Business Center",
+      "heightMeters": 141.0
+    },
+    {
+      "id": "buildings:PE",
+      "countryCodes": [
+        "PE"
+      ],
+      "name": "Torre Banco de la Nación",
+      "heightMeters": 140.1
+    },
+    {
+      "id": "buildings:RO",
+      "countryCodes": [
+        "RO"
+      ],
+      "name": "Floreasca City Sky Tower",
+      "heightMeters": 137.0
+    },
+    {
+      "id": "buildings:VA",
+      "countryCodes": [
+        "VA"
+      ],
+      "name": "St. Peter's Basilica",
+      "heightMeters": 136.5
+    },
+    {
+      "id": "buildings:HN",
+      "countryCodes": [
+        "HN"
+      ],
+      "name": "Torre Atlas",
+      "heightMeters": 136.0
+    },
+    {
+      "id": "buildings:CG",
+      "countryCodes": [
+        "CG"
+      ],
+      "name": "Tours Mpila",
+      "heightMeters": 135.0
+    },
+    {
+      "id": "buildings:HR",
+      "countryCodes": [
+        "HR"
+      ],
+      "name": "Dalmatia Tower",
+      "heightMeters": 135.0
+    },
+    {
+      "id": "buildings:AM",
+      "countryCodes": [
+        "AM"
+      ],
+      "name": "Renaissance Premium Home",
+      "heightMeters": 130.0
+    },
+    {
+      "id": "buildings:MZ",
+      "countryCodes": [
+        "MZ"
+      ],
+      "name": "Banco de Moçambique Tower 1",
+      "heightMeters": 130.0
+    },
+    {
+      "id": "buildings:MK",
+      "countryCodes": [
+        "MK"
+      ],
+      "name": "Cevahir Towers",
+      "heightMeters": 130.0
+    },
+    {
+      "id": "buildings:SD",
+      "countryCodes": [
+        "SD"
+      ],
+      "name": "NTC Tower",
+      "heightMeters": 130.0
+    },
+    {
+      "id": "buildings:ZM",
+      "countryCodes": [
+        "ZM"
+      ],
+      "name": "Pyramid Continental Hotel",
+      "heightMeters": 130.0
+    },
+    {
+      "id": "buildings:LT",
+      "countryCodes": [
+        "LT"
+      ],
+      "name": "Europa Tower",
+      "heightMeters": 129.0
+    },
+    {
+      "id": "buildings:SV",
+      "countryCodes": [
+        "SV"
+      ],
+      "name": "Torre Millennium",
+      "heightMeters": 125.0
+    },
+    {
+      "id": "buildings:XK",
+      "countryCodes": [
+        "XK"
+      ],
+      "name": "Pristina City Center",
+      "heightMeters": 125.0
+    },
+    {
+      "id": "buildings:MG",
+      "countryCodes": [
+        "MG"
+      ],
+      "name": "Orange Telecommunication Tower",
+      "heightMeters": 125.0
+    },
+    {
+      "id": "buildings:SY",
+      "countryCodes": [
+        "SY"
+      ],
+      "name": "Skaya Tower",
+      "heightMeters": 125.0
+    },
+    {
+      "id": "buildings:MU",
+      "countryCodes": [
+        "MU"
+      ],
+      "name": "Bank of Mauritius Building",
+      "heightMeters": 124.0
+    },
+    {
+      "id": "buildings:EE",
+      "countryCodes": [
+        "EE"
+      ],
+      "name": "St. Olaf's Church",
+      "heightMeters": 123.7
+    },
+    {
+      "id": "buildings:LV",
+      "countryCodes": [
+        "LV"
+      ],
+      "name": "Zunda Towers",
+      "heightMeters": 123.0
+    },
+    {
+      "id": "buildings:TJ",
+      "countryCodes": [
+        "TJ"
+      ],
+      "name": "Communications Service Building",
+      "heightMeters": 123.0
+    },
+    {
+      "id": "buildings:MM",
+      "countryCodes": [
+        "MM"
+      ],
+      "name": "Diamond Inya Palace",
+      "heightMeters": 122.0
+    },
+    {
+      "id": "buildings:BN",
+      "countryCodes": [
+        "BN"
+      ],
+      "name": "Ministry of Finance Building",
+      "heightMeters": 120.0
+    },
+    {
+      "id": "buildings:ZW",
+      "countryCodes": [
+        "ZW"
+      ],
+      "name": "New Reserve Bank Tower",
+      "heightMeters": 120.0
+    },
+    {
+      "id": "buildings:LU",
+      "countryCodes": [
+        "LU"
+      ],
+      "name": "Palais de la Cour de Justice, Tower C",
+      "heightMeters": 118.0
+    },
+    {
+      "id": "buildings:TT",
+      "countryCodes": [
+        "TT"
+      ],
+      "name": "International Waterfront Tower D",
+      "heightMeters": 114.0
+    },
+    {
+      "id": "buildings:FJ",
+      "countryCodes": [
+        "FJ"
+      ],
+      "name": "WG Friendship Plaza Suva",
+      "heightMeters": 112.0
+    },
+    {
+      "id": "buildings:GT",
+      "countryCodes": [
+        "GT"
+      ],
+      "name": "Altaire",
+      "heightMeters": 112.0
+    },
+    {
+      "id": "buildings:MT",
+      "countryCodes": [
+        "MT"
+      ],
+      "name": "Mercury Tower",
+      "heightMeters": 112.0
+    },
+    {
+      "id": "buildings:CZ",
+      "countryCodes": [
+        "CZ"
+      ],
+      "name": "AZ Tower",
+      "heightMeters": 111.0
+    },
+    {
+      "id": "buildings:KG",
+      "countryCodes": [
+        "KG"
+      ],
+      "name": "Gravity",
+      "heightMeters": 110.0
+    },
+    {
+      "id": "buildings:BW",
+      "countryCodes": [
+        "BW"
+      ],
+      "name": "iTowers",
+      "heightMeters": 105.0
+    },
+    {
+      "id": "buildings:CD",
+      "countryCodes": [
+        "CD"
+      ],
+      "name": "Tour Gélineau",
+      "heightMeters": 103.0
+    },
+    {
+      "id": "buildings:PR",
+      "countryCodes": [
+        "PR"
+      ],
+      "name": "Caribbean Sea View Tower",
+      "heightMeters": 102.0
+    },
+    {
+      "id": "buildings:TG",
+      "countryCodes": [
+        "TG"
+      ],
+      "name": "2 Fevrier Sofitel Hotel",
+      "heightMeters": 102.0
+    },
+    {
+      "id": "buildings:AF",
+      "countryCodes": [
+        "AF"
+      ],
+      "name": "Mohib Towers",
+      "heightMeters": 101.0
+    },
+    {
+      "id": "buildings:GU",
+      "countryCodes": [
+        "GU"
+      ],
+      "name": "Dusit Thani Guam Resort",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:GH",
+      "countryCodes": [
+        "GH"
+      ],
+      "name": "The Bank Square",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:GN",
+      "countryCodes": [
+        "GN"
+      ],
+      "name": "Kakimbo Towers",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:JM",
+      "countryCodes": [
+        "JM"
+      ],
+      "name": "The Pinnacle",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:MV",
+      "countryCodes": [
+        "MV"
+      ],
+      "name": "Dharumavantha Hospital",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:NA",
+      "countryCodes": [
+        "NA"
+      ],
+      "name": "Old Mutual Namibia Headquarters",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:NP",
+      "countryCodes": [
+        "NP"
+      ],
+      "name": "Damak Tower",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:PG",
+      "countryCodes": [
+        "PG"
+      ],
+      "name": "Noble Center",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:SO",
+      "countryCodes": [
+        "SO"
+      ],
+      "name": "Dahab Tower",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:YE",
+      "countryCodes": [
+        "YE"
+      ],
+      "name": "Al Saleh Mosque",
+      "heightMeters": 100.0
+    },
+    {
+      "id": "buildings:IE",
+      "countryCodes": [
+        "IE"
+      ],
+      "name": "St Colman's Cathedral, Cobh",
+      "heightMeters": 95.3
+    },
+    {
+      "id": "buildings:BS",
+      "countryCodes": [
+        "BS"
+      ],
+      "name": "Atlantis Royal Tower East",
+      "heightMeters": 93.0
+    },
+    {
+      "id": "buildings:CM",
+      "countryCodes": [
+        "CM"
+      ],
+      "name": "Prime Ministry Building",
+      "heightMeters": 90.0
+    },
+    {
+      "id": "buildings:RW",
+      "countryCodes": [
+        "RW"
+      ],
+      "name": "Kigali City Tower",
+      "heightMeters": 90.0
+    },
+    {
+      "id": "buildings:SI",
+      "countryCodes": [
+        "SI"
+      ],
+      "name": "Crystal Palace (Ljubljana)",
+      "heightMeters": 89.0
+    },
+    {
+      "id": "buildings:AD",
+      "countryCodes": [
+        "AD"
+      ],
+      "name": "Caldea",
+      "heightMeters": 80.0
+    },
+    {
+      "id": "buildings:ML",
+      "countryCodes": [
+        "ML"
+      ],
+      "name": "BCEAO Tower",
+      "heightMeters": 80.0
+    },
+    {
+      "id": "buildings:TN",
+      "countryCodes": [
+        "TN"
+      ],
+      "name": "Tour de la nation",
+      "heightMeters": 80.0
+    },
+    {
+      "id": "buildings:BF",
+      "countryCodes": [
+        "BF"
+      ],
+      "name": "National Monument of Heroes",
+      "heightMeters": 78.0
+    },
+    {
+      "id": "buildings:IS",
+      "countryCodes": [
+        "IS"
+      ],
+      "name": "Smáratorg Office Tower",
+      "heightMeters": 77.6
+    },
+    {
+      "id": "buildings:MD",
+      "countryCodes": [
+        "MD"
+      ],
+      "name": "Romashka Tower",
+      "heightMeters": 77.0
+    },
+    {
+      "id": "buildings:SN",
+      "countryCodes": [
+        "SN"
+      ],
+      "name": "Immeuble Kébé",
+      "heightMeters": 76.2
+    },
+    {
+      "id": "buildings:PS",
+      "countryCodes": [
+        "PS"
+      ],
+      "name": "Palestine Trade Tower",
+      "heightMeters": 76.0
+    },
+    {
+      "id": "buildings:TD",
+      "countryCodes": [
+        "TD"
+      ],
+      "name": "SHT Tower",
+      "heightMeters": 75.0
+    },
+    {
+      "id": "buildings:NE",
+      "countryCodes": [
+        "NE"
+      ],
+      "name": "Ministère des Finances",
+      "heightMeters": 75.0
+    },
+    {
+      "id": "buildings:MQ",
+      "countryCodes": [
+        "MQ"
+      ],
+      "name": "Tour Lumina",
+      "heightMeters": 70.0
+    },
+    {
+      "id": "buildings:GA",
+      "countryCodes": [
+        "GA"
+      ],
+      "name": "Banque des États de l'Afrique Centrale",
+      "heightMeters": 70.0
+    },
+    {
+      "id": "buildings:GI",
+      "countryCodes": [
+        "GI"
+      ],
+      "name": "E1 Building",
+      "heightMeters": 68.0
+    },
+    {
+      "id": "buildings:BJ",
+      "countryCodes": [
+        "BJ"
+      ],
+      "name": "BCEAO building",
+      "heightMeters": 64.0
+    },
+    {
+      "id": "buildings:SL",
+      "countryCodes": [
+        "SL"
+      ],
+      "name": "Sam Bangura Building",
+      "heightMeters": 64.0
+    },
+    {
+      "id": "buildings:NI",
+      "countryCodes": [
+        "NI"
+      ],
+      "name": "Banco de America",
+      "heightMeters": 61.0
+    },
+    {
+      "id": "buildings:GM",
+      "countryCodes": [
+        "GM"
+      ],
+      "name": "Bitcoin Tower",
+      "heightMeters": 60.0
+    },
+    {
+      "id": "buildings:MP",
+      "countryCodes": [
+        "MP"
+      ],
+      "name": "Pacific Islands Club",
+      "heightMeters": 60.0
+    },
+    {
+      "id": "buildings:RE",
+      "countryCodes": [
+        "RE"
+      ],
+      "name": "Tour Cadjee",
+      "heightMeters": 60.0
+    },
+    {
+      "id": "buildings:GQ",
+      "countryCodes": [
+        "GQ"
+      ],
+      "name": "Gepetrol Building",
+      "heightMeters": 58.0
+    },
+    {
+      "id": "buildings:NC",
+      "countryCodes": [
+        "NC"
+      ],
+      "name": "Tour Pacific",
+      "heightMeters": 55.0
+    },
+    {
+      "id": "buildings:BT",
+      "countryCodes": [
+        "BT"
+      ],
+      "name": "Sangye Migyur Ling Lhakhang",
+      "heightMeters": 55.0
+    },
+    {
+      "id": "buildings:SR",
+      "countryCodes": [
+        "SR"
+      ],
+      "name": "Assuria Hermitage Highrise",
+      "heightMeters": 55.0
+    },
+    {
+      "id": "buildings:MR",
+      "countryCodes": [
+        "MR"
+      ],
+      "name": "Immeuble SNIM",
+      "heightMeters": 54.0
+    },
+    {
+      "id": "buildings:OM",
+      "countryCodes": [
+        "OM"
+      ],
+      "name": "Sheraton Oman Hotel",
+      "heightMeters": 53.0
+    },
+    {
+      "id": "buildings:GW",
+      "countryCodes": [
+        "GW"
+      ],
+      "name": "Bissau Cathedral",
+      "heightMeters": 52.0
+    },
+    {
+      "id": "buildings:ME",
+      "countryCodes": [
+        "ME"
+      ],
+      "name": "Bulevar Mitra Bakića",
+      "heightMeters": 51.2
+    },
+    {
+      "id": "buildings:DJ",
+      "countryCodes": [
+        "DJ"
+      ],
+      "name": "Mezz Tower",
+      "heightMeters": 51.0
+    },
+    {
+      "id": "buildings:TL",
+      "countryCodes": [
+        "TL"
+      ],
+      "name": "Ministry of Finance Tower",
+      "heightMeters": 50.0
+    },
+    {
+      "id": "buildings:GP",
+      "countryCodes": [
+        "GP"
+      ],
+      "name": "Tours Gabarre",
+      "heightMeters": 50.0
+    },
+    {
+      "id": "buildings:BB",
+      "countryCodes": [
+        "BB"
+      ],
+      "name": "Central Bank of Barbados",
+      "heightMeters": 50.0
+    },
+    {
+      "id": "buildings:CW",
+      "countryCodes": [
+        "CW"
+      ],
+      "name": "Plaza Hotel Curaçao",
+      "heightMeters": 50.0
+    },
+    {
+      "id": "buildings:HT",
+      "countryCodes": [
+        "HT"
+      ],
+      "name": "Digicel Turgeau",
+      "heightMeters": 49.0
+    },
+    {
+      "id": "buildings:KY",
+      "countryCodes": [
+        "KY"
+      ],
+      "name": "60 Nexus Way",
+      "heightMeters": 47.2
+    },
+    {
+      "id": "buildings:CV",
+      "countryCodes": [
+        "CV"
+      ],
+      "name": "Edificio Verde Cara",
+      "heightMeters": 46.6
+    },
+    {
+      "id": "buildings:SS",
+      "countryCodes": [
+        "SS"
+      ],
+      "name": "Equatoria Tower",
+      "heightMeters": 46.0
+    },
+    {
+      "id": "buildings:SX",
+      "countryCodes": [
+        "SX"
+      ],
+      "name": "The Cliff at Cupecoy Beach",
+      "heightMeters": 45.0
+    },
+    {
+      "id": "buildings:CF",
+      "countryCodes": [
+        "CF"
+      ],
+      "name": "Ouday Skaiky Tower",
+      "heightMeters": 44.0
+    },
+    {
+      "id": "buildings:BZ",
+      "countryCodes": [
+        "BZ"
+      ],
+      "name": "Caana",
+      "heightMeters": 43.0
+    },
+    {
+      "id": "buildings:MW",
+      "countryCodes": [
+        "MW"
+      ],
+      "name": "President Walmont Hotel",
+      "heightMeters": 43.0
+    },
+    {
+      "id": "buildings:VC",
+      "countryCodes": [
+        "VC"
+      ],
+      "name": "St. George's Anglican Cathedral",
+      "heightMeters": 43.0
+    },
+    {
+      "id": "buildings:FO",
+      "countryCodes": [
+        "FO"
+      ],
+      "name": "Vesturkirkjan",
+      "heightMeters": 42.0
+    },
+    {
+      "id": "buildings:GL",
+      "countryCodes": [
+        "GL"
+      ],
+      "name": "Nuuk Center Tower",
+      "heightMeters": 40.0
+    },
+    {
+      "id": "buildings:TC",
+      "countryCodes": [
+        "TC"
+      ],
+      "name": "The Ritz-Carlton",
+      "heightMeters": 40.0
+    },
+    {
+      "id": "buildings:BI",
+      "countryCodes": [
+        "BI"
+      ],
+      "name": "Toha Hotel",
+      "heightMeters": 40.0
+    },
+    {
+      "id": "buildings:GY",
+      "countryCodes": [
+        "GY"
+      ],
+      "name": "Pegasus Hotel & Suites",
+      "heightMeters": 39.5
+    },
+    {
+      "id": "buildings:ER",
+      "countryCodes": [
+        "ER"
+      ],
+      "name": "NICE Building",
+      "heightMeters": 39.0
+    },
+    {
+      "id": "buildings:SZ",
+      "countryCodes": [
+        "SZ"
+      ],
+      "name": "Mona Residence",
+      "heightMeters": 39.0
+    },
+    {
+      "id": "buildings:LS",
+      "countryCodes": [
+        "LS"
+      ],
+      "name": "Standard Lesotho Bank Building",
+      "heightMeters": 39.0
+    },
+    {
+      "id": "buildings:LR",
+      "countryCodes": [
+        "LR"
+      ],
+      "name": "Central Bank of Liberia",
+      "heightMeters": 39.0
+    },
+    {
+      "id": "buildings:LI",
+      "countryCodes": [
+        "LI"
+      ],
+      "name": "Schwefelstrasse 25",
+      "heightMeters": 39.0
+    },
+    {
+      "id": "buildings:SM",
+      "countryCodes": [
+        "SM"
+      ],
+      "name": "World Trade Center",
+      "heightMeters": 39.0
+    },
+    {
+      "id": "buildings:BM",
+      "countryCodes": [
+        "BM"
+      ],
+      "name": "Gibbs Hill Lighthouse",
+      "heightMeters": 36.0
+    },
+    {
+      "id": "buildings:KM",
+      "countryCodes": [
+        "KM"
+      ],
+      "name": "Badjanani Mosque",
+      "heightMeters": 36.0
+    },
+    {
+      "id": "buildings:GF",
+      "countryCodes": [
+        "GF"
+      ],
+      "name": "Kourou Space Centre Control Center",
+      "heightMeters": 35.0
+    },
+    {
+      "id": "buildings:UM",
+      "countryCodes": [
+        "UM"
+      ],
+      "name": "Midway Island Hangar Structure",
+      "heightMeters": 35.0
+    },
+    {
+      "id": "buildings:IM",
+      "countryCodes": [
+        "IM"
+      ],
+      "name": "Mount Murray Hotel Tower",
+      "heightMeters": 35.0
+    },
+    {
+      "id": "buildings:WS",
+      "countryCodes": [
+        "WS"
+      ],
+      "name": "Samoan Government Building",
+      "heightMeters": 34.0
+    },
+    {
+      "id": "buildings:JE",
+      "countryCodes": [
+        "JE"
+      ],
+      "name": "Castle Quay Residential Towers",
+      "heightMeters": 32.0
+    },
+    {
+      "id": "buildings:AG",
+      "countryCodes": [
+        "AG"
+      ],
+      "name": "Royalton Antigua",
+      "heightMeters": 31.0
+    },
+    {
+      "id": "buildings:EH",
+      "countryCodes": [
+        "EH"
+      ],
+      "name": "El Aaiún Administrative Complex",
+      "heightMeters": 30.0
+    },
+    {
+      "id": "buildings:AW",
+      "countryCodes": [
+        "AW"
+      ],
+      "name": "Renaissance Wind Creek Aruba Resort",
+      "heightMeters": 30.0
+    },
+    {
+      "id": "buildings:LC",
+      "countryCodes": [
+        "LC"
+      ],
+      "name": "Courtyard By Marriott Hotel",
+      "heightMeters": 30.0
+    },
+    {
+      "id": "buildings:SC",
+      "countryCodes": [
+        "SC"
+      ],
+      "name": "Le Chantier Mall",
+      "heightMeters": 30.0
+    },
+    {
+      "id": "buildings:PF",
+      "countryCodes": [
+        "PF"
+      ],
+      "name": "Papeete Waterfront Residential Complex",
+      "heightMeters": 28.0
+    },
+    {
+      "id": "buildings:DM",
+      "countryCodes": [
+        "DM"
+      ],
+      "name": "Financial Centre",
+      "heightMeters": 26.0
+    },
+    {
+      "id": "buildings:KN",
+      "countryCodes": [
+        "KN"
+      ],
+      "name": "St. George's Anglican Church",
+      "heightMeters": 26.0
+    },
+    {
+      "id": "buildings:GG",
+      "countryCodes": [
+        "GG"
+      ],
+      "name": "Royal Court House",
+      "heightMeters": 25.0
+    },
+    {
+      "id": "buildings:AX",
+      "countryCodes": [
+        "AX"
+      ],
+      "name": "Strandgatan High-Rise Complex",
+      "heightMeters": 25.0
+    },
+    {
+      "id": "buildings:PW",
+      "countryCodes": [
+        "PW"
+      ],
+      "name": "Palasia Hotel",
+      "heightMeters": 25.0
+    },
+    {
+      "id": "buildings:GD",
+      "countryCodes": [
+        "GD"
+      ],
+      "name": "Waldorf Apartments",
+      "heightMeters": 23.0
+    },
+    {
+      "id": "buildings:TO",
+      "countryCodes": [
+        "TO"
+      ],
+      "name": "St George's Palace",
+      "heightMeters": 23.0
+    },
+    {
+      "id": "buildings:MF",
+      "countryCodes": [
+        "MF"
+      ],
+      "name": "Orient Beach Resort Complexes",
+      "heightMeters": 22.0
+    },
+    {
+      "id": "buildings:VU",
+      "countryCodes": [
+        "VU"
+      ],
+      "name": "Grand Hotel and Casino Vanuatu",
+      "heightMeters": 22.0
+    },
+    {
+      "id": "buildings:ST",
+      "countryCodes": [
+        "ST"
+      ],
+      "name": "Monte Palácio",
+      "heightMeters": 21.0
+    },
+    {
+      "id": "buildings:SB",
+      "countryCodes": [
+        "SB"
+      ],
+      "name": "Anthony Saru Building",
+      "heightMeters": 21.0
+    },
+    {
+      "id": "buildings:VG",
+      "countryCodes": [
+        "VG"
+      ],
+      "name": "BVI Government Administration Complex",
+      "heightMeters": 20.0
+    },
+    {
+      "id": "buildings:CX",
+      "countryCodes": [
+        "CX"
+      ],
+      "name": "Christmas Island Resort",
+      "heightMeters": 20.0
+    },
+    {
+      "id": "buildings:YT",
+      "countryCodes": [
+        "YT"
+      ],
+      "name": "Conseil Départemental Administrative Complex",
+      "heightMeters": 20.0
+    },
+    {
+      "id": "buildings:AS",
+      "countryCodes": [
+        "AS"
+      ],
+      "name": "Executive Office Building",
+      "heightMeters": 20.0
+    },
+    {
+      "id": "buildings:WF",
+      "countryCodes": [
+        "WF"
+      ],
+      "name": "Mata-Utu Cathedral",
+      "heightMeters": 20.0
+    },
+    {
+      "id": "buildings:SH",
+      "countryCodes": [
+        "SH"
+      ],
+      "name": "St. James' Church",
+      "heightMeters": 20.0
+    },
+    {
+      "id": "buildings:FK",
+      "countryCodes": [
+        "FK"
+      ],
+      "name": "Christ Church Cathedral",
+      "heightMeters": 18.0
+    },
+    {
+      "id": "buildings:AI",
+      "countryCodes": [
+        "AI"
+      ],
+      "name": "Four Seasons Resort Anguilla",
+      "heightMeters": 18.0
+    },
+    {
+      "id": "buildings:SJ",
+      "countryCodes": [
+        "SJ"
+      ],
+      "name": "Longyearbyen Radisson Blu",
+      "heightMeters": 18.0
+    },
+    {
+      "id": "buildings:PM",
+      "countryCodes": [
+        "PM"
+      ],
+      "name": "Saint-Pierre Cathedral",
+      "heightMeters": 18.0
+    },
+    {
+      "id": "buildings:NR",
+      "countryCodes": [
+        "NR"
+      ],
+      "name": "OD-N-Aiwo Hotel",
+      "heightMeters": 17.0
+    },
+    {
+      "id": "buildings:TV",
+      "countryCodes": [
+        "TV"
+      ],
+      "name": "Tuvalu Government Building",
+      "heightMeters": 16.0
+    },
+    {
+      "id": "buildings:KI",
+      "countryCodes": [
+        "KI"
+      ],
+      "name": "Kiribati Parliament Building",
+      "heightMeters": 15.5
+    },
+    {
+      "id": "buildings:BQ",
+      "countryCodes": [
+        "BQ"
+      ],
+      "name": "Courtyard by Marriott Bonaire",
+      "heightMeters": 15.0
+    },
+    {
+      "id": "buildings:VI",
+      "countryCodes": [
+        "VI"
+      ],
+      "name": "Frenchman's Reef Marriott Resort",
+      "heightMeters": 15.0
+    },
+    {
+      "id": "buildings:FM",
+      "countryCodes": [
+        "FM"
+      ],
+      "name": "FSM National Capitol Complex",
+      "heightMeters": 15.0
+    },
+    {
+      "id": "buildings:AQ",
+      "countryCodes": [
+        "AQ"
+      ],
+      "name": "McMurdo Station Building 155",
+      "heightMeters": 15.0
+    },
+    {
+      "id": "buildings:MH",
+      "countryCodes": [
+        "MH"
+      ],
+      "name": "Republic of the Marshall Islands Capitol Building",
+      "heightMeters": 15.0
+    },
+    {
+      "id": "buildings:BOU",
+      "countryCodes": [
+        "BOU"
+      ],
+      "name": "Autonomous Bougainville Government House",
+      "heightMeters": 12.0
+    },
+    {
+      "id": "buildings:MS",
+      "countryCodes": [
+        "MS"
+      ],
+      "name": "Government Headquarters",
+      "heightMeters": 12.0
+    },
+    {
+      "id": "buildings:BL",
+      "countryCodes": [
+        "BL"
+      ],
+      "name": "Gustavia Public Complex",
+      "heightMeters": 12.0
+    },
+    {
+      "id": "buildings:NF",
+      "countryCodes": [
+        "NF"
+      ],
+      "name": "Kingston Quality Row Historic Buildings",
+      "heightMeters": 12.0
+    },
+    {
+      "id": "buildings:CK",
+      "countryCodes": [
+        "CK"
+      ],
+      "name": "Rarotongan Beach Resort",
+      "heightMeters": 12.0
+    },
+    {
+      "id": "buildings:GS",
+      "countryCodes": [
+        "GS"
+      ],
+      "name": "Shackleton House",
+      "heightMeters": 12.0
+    },
+    {
+      "id": "buildings:IO",
+      "countryCodes": [
+        "IO"
+      ],
+      "name": "Support Facility Buildings",
+      "heightMeters": 12.0
+    },
+    {
+      "id": "buildings:TF",
+      "countryCodes": [
+        "TF"
+      ],
+      "name": "Alfred Faure Research Station Main Building",
+      "heightMeters": 10.0
+    },
+    {
+      "id": "buildings:NU",
+      "countryCodes": [
+        "NU"
+      ],
+      "name": "Fonuakula Government Centre",
+      "heightMeters": 10.0
+    },
+    {
+      "id": "buildings:PN",
+      "countryCodes": [
+        "PN"
+      ],
+      "name": "Adamstown Public Hall",
+      "heightMeters": 8.0
+    },
+    {
+      "id": "buildings:TK",
+      "countryCodes": [
+        "TK"
+      ],
+      "name": "Atafu School Facilities",
+      "heightMeters": 8.0
+    },
+    {
+      "id": "buildings:CC",
+      "countryCodes": [
+        "CC"
+      ],
+      "name": "West Island Airport & Administrative Complex",
+      "heightMeters": 8.0
+    },
+    {
+      "id": "buildings:BV",
+      "countryCodes": [
+        "BV"
+      ],
+      "name": "Norwegian Weather Shelter",
+      "heightMeters": 3.0
+    },
+    {
+      "id": "buildings:HM",
+      "countryCodes": [
+        "HM"
+      ],
+      "name": "Uninhabited / No permanent buildings",
+      "heightMeters": 0.0
+    }
+  ]
+}

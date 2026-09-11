@@ -9,7 +9,7 @@
   }
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
-  const collections = new Set(['stays', 'profiles', 'residences']);
+  const collections = new Set(['stays', 'profiles', 'residences', 'transports', 'placeVisits']);
   function merge(base, local, remote, resolve) {
     const conflicts = [];
     function field(b, l, r, path) {
@@ -44,7 +44,7 @@
       if (r.enabledRules) r.enabledRules.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'stays', 'residences']) {
+    for (const key of ['profiles', 'stays', 'residences', 'transports', 'placeVisits']) {
       result[key] ||= [];
       for (const original of source[key] || []) {
         const record = copy(original);

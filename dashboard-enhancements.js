@@ -3,7 +3,7 @@
 'use strict';
   function uniqueLoggedDays() {
     const days = new Set();
-    state.stays.forEach(stay => datesForStay(stay).forEach(day => days.add(day)));
+    staysForProfile().filter(s=>s.status!=='planned').forEach(stay => datesForStay(stay,null,isoDate(new Date())).forEach(day => days.add(day)));
     return days.size;
   }
 
@@ -36,7 +36,7 @@
       const homes = (state.residences || []).filter(r => !r.profileId || r.profileId === state.activeProfileId).length;
       return {
         title: 'How travel days are calculated',
-        text: 'Each calendar date is counted once, even if you cross borders that day. A date is excluded when your only recorded location is somewhere you were living at the time.',
+        text: 'Each calendar date is counted once, even if you cross borders that day. A date is excluded when your only recorded location is a designated home country or somewhere you were living at the time.',
         pills: [`${travel} travel days`, `${homeOnly} home-only days`, `${homes} home period${homes === 1 ? '' : 's'}`]
       };
     }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#8d2637" />
   <meta name="description" content="Herald Voyages — your personal atlas of countries, journeys and travel days." />
-  <link rel="stylesheet" href="voyages.css?v=flags-4" />
+  <link rel="stylesheet" href="voyages.css?v=journeys-1" />
   <title>Dashboard — Herald Voyages</title>
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
@@ -121,6 +121,7 @@
         </article>
       </section>
 
+      <section id="countryView" class="view" aria-label="Country details"><div id="countryDetails"></div></section>
       <section id="countriesView" class="view">
         <article class="panel"><div class="panel-head"><div><p class="eyebrow">COUNTRY TOTALS</p><h2>Time spent by country / location</h2></div></div><div id="countryTotals" class="country-totals empty-state">No country data yet.</div></article>
       </section>
@@ -250,9 +251,9 @@
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="account-config.js"></script>
-  <script src="account-model.js"></script>
+  <script src="account-model.js?v=journeys-1"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=flags-4"></script>
+  <script src="app.js?v=journeys-1"></script>
 </body>
 </html>

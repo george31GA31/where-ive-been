@@ -97,8 +97,8 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
     const today = isoDate(new Date());
     const totals = new Map();
 
-    state.stays.forEach(stay => {
-      if (stay.start > today) return;
+    staysForProfile().forEach(stay => {
+      if (stay.start > today || stay.status === 'planned') return;
       const days = datesForStay(stay).filter(day => day <= today);
       if (!days.length) return;
 
@@ -115,7 +115,8 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
     const allRows = [...totals].map(([code, record]) => ({
       code,
       name: countryByCode(code)?.name || state.stays.find(stay => stay.countryCode === code)?.countryName || code,
-      total: record.days.size
+      total: record.days.size,
+      home: [...record.days].filter(d => HVJourney.isHome(state,code,d)).length
     })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
 
     const hiddenCodes = new Set(state.excludedCountryCodes || []);
@@ -128,8 +129,8 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
       <div class="country-row">
         <div class="flag">${flagHtml(row.code)}</div>
         <div class="country-name">
-          <strong>${esc(row.name)}</strong>
-          <span>${row.total} actual</span>
+          <a href="#/country/${row.code}"><strong>${esc(row.name)}</strong></a>
+          <span>${row.total-row.home} travel · ${row.home} home days</span>
           <button type="button" class="country-remove-btn" data-action="exclude-country" data-country="${row.code}" aria-label="Remove ${esc(row.name)} from country totals">Remove</button>
         </div>
         <div class="country-bar"><span style="width:${Math.max(0, Math.min(100, row.total / max * 100))}%"></span></div>

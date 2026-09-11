@@ -81,7 +81,7 @@
     if (userId !== importingUser) return;
     const beforeImport = M.copy(state);
     let target = M.copy(state);
-    if (!target.stays.length && !target.residences.length && target.profiles.length === 1 && target.profiles[0].name === 'Me' && !target.profiles[0].citizenships.length) {
+    if (!target.stays.length && !target.residences.length && !target.transports?.length && !target.placeVisits?.length && target.profiles.length === 1 && target.profiles[0].name === 'Me' && !target.profiles[0].citizenships.length) {
       target.profiles = []; target.activeProfileId = null;
     }
     let result = M.importData(target, source);
