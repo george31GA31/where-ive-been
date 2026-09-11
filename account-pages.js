@@ -1,6 +1,27 @@
-/* Account forms. Auth provider owns password storage and email verification. */
+/* Herald account forms. Auth provider owns password storage and email verification. */
 (() => {
   'use strict';
+
+  function loadHerald() {
+    const base = window.WIBAuth?.base || new URL('.', document.currentScript?.src || location.href);
+    const loadScript = (path, done) => {
+      const script = document.createElement('script');
+      script.src = new URL(path, base).href;
+      script.onload = done || null;
+      document.head.appendChild(script);
+    };
+    const loadBrand = () => {
+      if (document.querySelector('script[data-herald-ui]')) return;
+      const script = document.createElement('script');
+      script.dataset.heraldUi = 'true';
+      script.src = new URL('herald.js?v=herald-1', base).href;
+      document.head.appendChild(script);
+    };
+    if (window.WIBModel) loadBrand();
+    else loadScript('account-model.js', loadBrand);
+  }
+  loadHerald();
+
   document.addEventListener('DOMContentLoaded', async () => {
     const $ = id => document.getElementById(id), page = document.body.dataset.accountPage;
     const message = (text, bad = false) => { $('accountMessage').textContent = text; $('accountMessage').style.color = bad ? 'var(--red)' : 'var(--text)'; };
@@ -57,7 +78,7 @@
       }}));
       $('registerForm').reset();
       if (data.session) location.assign(WIBAuth.url(''));
-      else message('Check your email to confirm your account, then log in. Your existing device data is still safe.');
+      else message('Check your email to confirm your Herald account, then log in. Your existing guest data is still safe.');
     });
     form('resetForm', async () => {
       checked(await client.auth.resetPasswordForEmail($('email').value.trim(), {redirectTo: WIBAuth.url('reset-password/')}));
@@ -83,7 +104,7 @@
       $('logoutBtn').disabled = true;
       try {
         checked(await client.auth.signOut({scope: 'local'}));
-        render(null); message('Logged out. Any unsent changes remain on their device and will retry when you log in there.');
+        render(null); message('Logged out. Any unsent changes remain on this device and will retry when you log in again.');
       } catch (error) { message(error.message, true); }
       finally { $('logoutBtn').disabled = false; }
     };
