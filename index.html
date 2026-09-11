@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#111827" />
-  <title>Where I've Been — Travel Day Tracker</title>
+  <meta name="theme-color" content="#8d2637" />
+  <meta name="description" content="Herald Voyages — your personal atlas of countries, journeys and travel days." />
+  <link rel="stylesheet" href="voyages.css?v=atlas-3" />
+  <title>Dashboard — Herald Voyages</title>
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
 </head>
@@ -14,7 +16,7 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark">◎</div>
-        <div><strong>Where I've Been</strong><span>Travel day tracker</span></div>
+        <div><strong>Herald Voyages</strong><span>Personal travel atlas</span></div>
       </div>
 
       <nav class="nav" aria-label="Primary navigation">
@@ -39,13 +41,17 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <p class="eyebrow">PERSONAL TRAVEL LOG</p>
+          <p class="eyebrow">HERALD VOYAGES</p>
           <h1 id="pageTitle">Dashboard</h1>
         </div>
-        <button class="primary" id="addStayBtn">＋ Add stay</button>
+        <button class="primary" id="addStayBtn">Add trip</button>
       </header>
 
-      <section id="dashboardView" class="view active">
+      <section id="dashboardView" class="view active" aria-label="Dashboard">
+        <div class="atlas-masthead">
+          <div class="atlas-masthead-copy"><p class="eyebrow">YOUR PERSONAL ATLAS</p><h2>Where you’ve been.<br><em>Where you’re going.</em></h2><a href="#/trips" class="atlas-text-link">Explore your journeys <span aria-hidden="true">↗</span></a></div>
+          <div class="atlas-masthead-art"><img src="assets/herald-trumpet.png" alt="Herald trumpet travel mark" width="1672" height="941"><span>HERALD VOYAGES</span></div>
+        </div>
         <div class="stats-grid">
           <article class="stat-card"><span class="stat-label">Countries logged</span><strong id="countriesLogged">0</strong><small>Actual + planned records</small></article>
           <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique days away from recorded homes</small></article>
@@ -81,6 +87,9 @@
         </article>
       </section>
 
+      <section id="statsView" class="view" aria-label="Statistics"><div id="atlasStatistics"></div></section>
+      <section id="homesView" class="view" aria-label="Lived In"></section>
+      <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">Open profile</a></article></section>
       <section id="calendarView" class="view">
         <article class="panel calendar-panel">
           <div class="calendar-toolbar">
@@ -174,7 +183,7 @@
 
       <section id="staysView" class="view">
         <div class="two-col stays-layout">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">＋ Add stay</button></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">Add trip</button></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
           <article class="panel"><div class="panel-head"><div><p class="eyebrow">GAP DETECTOR</p><h2>Dates with no country / location</h2></div></div><p class="panel-copy">When there is a hole between two recorded stays, you can fill the whole missing range in one click.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></article>
         </div>
       </section>
@@ -244,6 +253,6 @@
   <script src="account-model.js"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=slaps-flags-1"></script>
+  <script src="app.js?v=atlas-3"></script>
 </body>
 </html>

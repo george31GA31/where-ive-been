@@ -1,60 +1,6 @@
-/* Where I've Been — expanding dashboard stat cards with contextual detail. */
+/* Accessible, click-to-expand dashboard widgets. Shared native dialog supports touch and keyboard. */
 (() => {
-  'use strict';
-
-  let activeOverlay = null;
-  let activeSource = null;
-  let closing = false;
-
-  function installStyles() {
-    if (document.getElementById('wibDashboardEnhancementStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'wibDashboardEnhancementStyles';
-    style.textContent = `
-      .stats-grid{position:relative}
-      .stats-grid>.stat-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
-      @media(hover:hover) and (pointer:fine){
-        .stats-grid>.stat-card{cursor:default}
-        .stats-grid>.stat-card:hover{transform:translateY(-2px);box-shadow:0 22px 48px rgba(17,24,39,.10);border-color:rgba(184,134,11,.35)}
-      }
-
-      .stat-expand-overlay{
-        position:absolute!important;z-index:50!important;margin:0!important;overflow:hidden!important;
-        display:grid!important;grid-template-columns:minmax(190px,.8fr) minmax(0,1.55fr)!important;
-        align-items:stretch!important;gap:24px!important;padding:18px!important;
-        background:var(--panel)!important;color:var(--text)!important;border:1px solid rgba(184,134,11,.38)!important;
-        border-radius:17px!important;box-shadow:0 28px 70px rgba(15,23,42,.18)!important;
-        transition:left .26s cubic-bezier(.2,.8,.2,1),top .26s cubic-bezier(.2,.8,.2,1),width .26s cubic-bezier(.2,.8,.2,1),box-shadow .26s ease!important
-      }
-      .stat-expand-overlay .stat-expanded-summary{position:relative;min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:7px;padding-right:58px}
-      .stat-expand-overlay .stat-expanded-summary>.stat-label{display:block}
-      .stat-expand-overlay .stat-expanded-summary>strong{font-size:36px;letter-spacing:-.04em}
-      .stat-expand-overlay .stat-expanded-summary .stat-row{display:flex;justify-content:space-between;align-items:center}
-      .stat-expand-overlay .stat-expanded-summary small{font-size:10px;color:var(--muted)}
-      .stat-expand-overlay .stat-expanded-summary .progress{width:100%}
-      .stat-overlay-edit-btn{position:absolute;top:-2px;right:0;border:0;background:transparent;color:var(--gold,#b8860b);font:inherit;font-size:12px;font-weight:850;cursor:pointer;padding:6px 8px;border-radius:8px;z-index:4}
-      .stat-overlay-edit-btn:hover{background:rgba(184,134,11,.10)}
-      .stat-expanded-detail{
-        min-width:0;align-self:center;border-left:1px solid var(--line);padding-left:24px;
-        opacity:0;transform:translateX(-8px);transition:opacity .16s ease .08s,transform .18s ease .08s
-      }
-      .stat-expand-overlay.expanded .stat-expanded-detail{opacity:1;transform:translateX(0)}
-      .stat-expanded-detail .eyebrow{margin-bottom:5px}
-      .stat-expanded-detail h3{margin:0 0 7px;font-size:15px;letter-spacing:-.02em}
-      .stat-expanded-detail p{margin:0;color:var(--muted);font-size:11px;line-height:1.55}
-      .stat-expanded-detail .stat-detail-pills{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
-      .stat-detail-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:9px;font-weight:800;color:var(--text)}
-
-      [data-theme="dark"] .stat-expand-overlay{box-shadow:0 28px 70px rgba(0,0,0,.40)!important}
-
-      @media(max-width:1050px){
-        .stat-expand-overlay{gap:16px!important;grid-template-columns:minmax(165px,.75fr) minmax(0,1.25fr)!important}
-        .stat-expanded-detail{padding-left:16px}
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
+'use strict';
   function uniqueLoggedDays() {
     const days = new Set();
     state.stays.forEach(stay => datesForStay(stay).forEach(day => days.add(day)));
@@ -104,9 +50,11 @@
         };
       }
       const rolling = rollingStatus(today);
+      const oldest=[...schengenDaySet(dayKey(rolling.start),today)].sort()[0];
+      const release=oldest?fmt(dayKey(addDays(parseDate(oldest),180)),{day:'numeric',month:'short',year:'numeric'}):null;
       return {
         title: 'Your rolling 180-day window',
-        text: 'Schengen counts unique calendar days, not border crossings. Visiting two Schengen countries on the same day still uses only one day of the 90-day allowance.',
+        text: 'Schengen counts each calendar date once. '+(release?`The oldest counted day leaves the window on ${release}. Any further Schengen travel also uses allowance.`:'No recorded days currently use your allowance.'),
         pills: [`${rolling.used} used`, `${Math.max(0, rolling.remaining)} remaining`, `${fmtObj(rolling.start, {day:'numeric',month:'short'})} → ${fmtObj(rolling.end, {day:'numeric',month:'short'})}`]
       };
     }
@@ -135,142 +83,14 @@
     };
   }
 
-  function stripDuplicateIds(root) {
-    if (root.id) root.removeAttribute('id');
-    root.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
-    root.querySelectorAll('button').forEach(button => {
-      if (button.classList.contains('country-count-edit-btn')) {
-        button.classList.remove('country-count-edit-btn');
-        button.classList.add('stat-overlay-edit-btn');
-        button.tabIndex = 0;
-        button.removeAttribute('aria-hidden');
-        button.setAttribute('aria-label', 'Edit personal country count');
-        button.dataset.overlayCountryEdit = '1';
-        return;
-      }
-      button.tabIndex = -1;
-      button.setAttribute('aria-hidden', 'true');
-    });
-  }
 
-  function closeOverlay(immediate = false) {
-    if (!activeOverlay || !activeSource) return;
-    if (closing) return;
-    closing = true;
-
-    const overlay = activeOverlay;
-    const source = activeSource;
-    const grid = source.closest('.stats-grid');
-    if (!grid) {
-      overlay.remove();
-      activeOverlay = activeSource = null;
-      closing = false;
-      return;
-    }
-
-    const gridRect = grid.getBoundingClientRect();
-    const sourceRect = source.getBoundingClientRect();
-    const finish = () => {
-      overlay.remove();
-      source.style.visibility = '';
-      activeOverlay = null;
-      activeSource = null;
-      closing = false;
-    };
-
-    overlay.classList.remove('expanded');
-
-    if (immediate) {
-      finish();
-      return;
-    }
-
-    overlay.style.left = `${sourceRect.left - gridRect.left}px`;
-    overlay.style.top = `${sourceRect.top - gridRect.top}px`;
-    overlay.style.width = `${sourceRect.width}px`;
-    overlay.style.boxShadow = '0 18px 45px rgba(17,24,39,.06)';
-    window.setTimeout(finish, 275);
-  }
-
-  function openOverlay(source) {
-    if (!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
-    if (activeSource === source || closing) return;
-    if (activeOverlay) closeOverlay(true);
-
-    const grid = source.closest('.stats-grid');
-    if (!grid) return;
-
-    const gridRect = grid.getBoundingClientRect();
-    const sourceRect = source.getBoundingClientRect();
-    const detail = dashboardDetail(source);
-    const overlay = document.createElement('article');
-    overlay.className = 'stat-card stat-expand-overlay';
-
-    const summary = document.createElement('div');
-    summary.className = 'stat-expanded-summary';
-    summary.innerHTML = source.innerHTML;
-    stripDuplicateIds(summary);
-
-    const info = document.createElement('div');
-    info.className = 'stat-expanded-detail';
-    info.innerHTML = `
-      <p class="eyebrow">MORE INFORMATION</p>
-      <h3>${esc(detail.title)}</h3>
-      <p>${esc(detail.text)}</p>
-      ${detail.pills?.length ? `<div class="stat-detail-pills">${detail.pills.map(pill => `<span class="stat-detail-pill">${esc(pill)}</span>`).join('')}</div>` : ''}
-    `;
-
-    overlay.append(summary, info);
-    overlay.style.left = `${sourceRect.left - gridRect.left}px`;
-    overlay.style.top = `${sourceRect.top - gridRect.top}px`;
-    overlay.style.width = `${sourceRect.width}px`;
-    overlay.style.height = `${sourceRect.height}px`;
-
-    grid.appendChild(overlay);
-    source.style.visibility = 'hidden';
-    activeOverlay = overlay;
-    activeSource = source;
-
-    const overlayEdit = summary.querySelector('[data-overlay-country-edit]');
-    if (overlayEdit) {
-      overlayEdit.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        const sourceEdit = source.querySelector('#editCountryCountBtn');
-        closeOverlay(true);
-        window.setTimeout(() => sourceEdit?.click(), 0);
-      });
-    }
-
-    overlay.addEventListener('mouseleave', () => closeOverlay());
-
-    requestAnimationFrame(() => {
-      if (activeOverlay !== overlay) return;
-      overlay.classList.add('expanded');
-      overlay.style.left = '0px';
-      overlay.style.width = `${grid.clientWidth}px`;
-    });
-  }
-
-  function bindCards() {
-    document.querySelectorAll('#dashboardView .stats-grid > .stat-card').forEach(card => {
-      if (card.dataset.wibStatHoverBound) return;
-      card.dataset.wibStatHoverBound = '1';
-      card.addEventListener('mouseenter', () => openOverlay(card));
-    });
-  }
-
-  const previousRenderDashboard = renderDashboard;
-  renderDashboard = function () {
-    previousRenderDashboard();
-    bindCards();
-  };
-
-  installStyles();
-
-  document.addEventListener('DOMContentLoaded', () => {
-    installStyles();
-    bindCards();
-    window.addEventListener('resize', () => closeOverlay(true), { passive: true });
-  });
+function install(){
+ const dialog=document.createElement('dialog');dialog.className='dialog atlas-widget-dialog';dialog.id='atlasWidgetDialog';document.body.append(dialog);
+ const routes=['countries','stats','schengen','planner'];
+ document.querySelectorAll('#dashboardView .stats-grid > .stat-card').forEach((card,index)=>{
+   const button=document.createElement('button');button.className='stat-detail-trigger';button.type='button';button.textContent='Explore details +';button.setAttribute('aria-haspopup','dialog');card.append(button);
+   button.addEventListener('click',()=>{const detail=dashboardDetail(card);dialog.innerHTML=`<div class="dialog-card"><div class="dialog-head"><p class="eyebrow">YOUR TRAVEL RECORD</p><button type="button" class="icon-btn" data-close aria-label="Close details">×</button></div><h3 id="widgetTitle">${esc(detail.title)}</h3><p>${esc(detail.text)}</p><div class="stat-detail-pills">${detail.pills.map(p=>`<span class="stat-detail-pill">${esc(p)}</span>`).join('')}</div><button class="primary" data-open>Open ${index===0?'countries':index===1?'statistics':index===2?'Schengen':'trip planner'}</button></div>`;dialog.setAttribute('aria-labelledby','widgetTitle');dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.querySelector('[data-open]').onclick=()=>{dialog.close();switchView(routes[index]);};dialog.showModal();});
+ });
+}
+document.addEventListener('DOMContentLoaded',install);
 })();

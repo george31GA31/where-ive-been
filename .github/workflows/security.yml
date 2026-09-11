@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in app.js app-core.js app-fixes.js theme.js security-runtime.js map-enhancements.js country-count-model.js dashboard-enhancements.js account-config.js account-client.js account-model.js account-sync.js account-tracker.js account-pages.js herald.js; do
+          for file in app.js app-core.js app-fixes.js theme.js security-runtime.js map-enhancements.js country-count-model.js dashboard-enhancements.js account-config.js account-client.js account-model.js account-sync.js account-tracker.js account-pages.js herald.js voyages.js atlas-model.js; do
             node --check "$file"
           done
 

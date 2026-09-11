@@ -23,7 +23,7 @@ let state=loadState(),calendarCursor=startOfMonth(new Date()),timelineDate=null,
 let visaDataset=null,visaDatasetPromise=null;
 let cloudClient=null,cloudSession=null,cloudTimer=null,lastPlannerTrip=null;
 let transferClient=null,lastTransferCode='';
-const $=id=>document.getElementById(id),els={};
+const $=id=>document.getElementById(id)||window.HVPages?.get(id),els={};
 function defaultState(){return{version:2,stays:[],residences:[],profiles:[{id:uid(),name:'Me',citizenships:[],enabledRules:['schengen']}],activeProfileId:null,excludedCountryCodes:[]};}
 function loadState(){try{let v=JSON.parse(localStorage.getItem(APP_KEY));if(v){normalizeState(v);return v}}catch{};let d=defaultState();try{let legacy=JSON.parse(localStorage.getItem(LEGACY_KEY))||[];d.stays=legacy.map(s=>({...s,status:s.status||'actual',profileId:s.profileId||null}))}catch{};d.activeProfileId=d.profiles[0].id;return d}
 function normalizeState(v){v.version=2;v.stays=Array.isArray(v.stays)?v.stays:[];v.residences=Array.isArray(v.residences)?v.residences:[];v.profiles=Array.isArray(v.profiles)&&v.profiles.length?v.profiles:defaultState().profiles;v.activeProfileId=v.activeProfileId||v.profiles[0].id;v.excludedCountryCodes=Array.isArray(v.excludedCountryCodes)?v.excludedCountryCodes:[];v.profiles.forEach(p=>{p.citizenships=p.citizenships||[];p.enabledRules=p.enabledRules||['schengen']});v.stays.forEach(s=>{s.status=s.status||'actual';if(s.profileId===undefined)s.profileId=null});v.residences.forEach(r=>{if(r.profileId===undefined)r.profileId=null;if(r.end===undefined)r.end=null})}
