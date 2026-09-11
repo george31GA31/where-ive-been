@@ -1,9 +1,19 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#2a2023"><meta name="description" content="Log in to Herald Voyages to sync your private travel history across devices."><title>Log in — Herald Voyages</title>
-<link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../accounts.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
-<script defer src="../account-config.js"></script><script defer src="../account-client.js"></script><script defer src="../theme.js"></script><script defer src="../account-pages.js"></script><script defer src="../voyages.js?v=voyages-2"></script><script defer src="../voyages-final.js?v=voyages-2"></script></head>
-<body data-account-page="login"><main class="account-page"><div class="brand"><div class="brand-mark"></div><div><strong>Herald Voyages</strong><span>Where you’ve been. Where you’re going.</span></div></div>
-<header class="topbar"><h1>Log in</h1><a id="backToTracker" class="secondary" href="../">Back to dashboard</a></header>
-<p id="accountMessage" class="form-message" role="status" aria-live="polite"></p>
-<section class="panel account-card"><form id="loginForm"><label class="field" for="email"><span>Email</span><input id="email" type="email" autocomplete="username" required maxlength="254"></label><label class="field" for="password"><span>Password</span><input id="password" type="password" autocomplete="current-password" required></label><button class="primary wide">Log in</button></form><div class="account-links"><a href="../register/">Create account</a><a href="../reset-password/">Forgot password?</a></div></section></main></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#2d1b21"><meta name="description" content="Log in to Herald Voyages and sync your private travel history across devices.">
+  <title>Log in — Herald Voyages</title>
+  <link rel="stylesheet" href="../styles.css?v=voyages-v2"><link rel="stylesheet" href="../accounts.css?v=voyages-v2">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script defer src="../account-config.js"></script><script defer src="../account-client.js"></script><script defer src="../theme.js?v=voyages-v2"></script><script defer src="../account-pages.js?v=voyages-v2"></script>
+</head>
+<body data-account-page="login">
+<main class="account-page">
+  <header class="account-brand-row"><a class="brand" href="../"><span class="brand-mark"></span><span><strong>Herald Voyages</strong><span>Where you’ve been. Where you’re going.</span></span></a><div class="account-utility"><button id="accountThemeToggle" class="secondary compact" type="button">Dark</button><a class="secondary compact" href="../">Back to atlas</a></div></header>
+  <div class="account-layout">
+    <section class="account-intro"><p class="editorial-kicker">WELCOME BACK</p><h1>Your world,<br><em>wherever you are.</em></h1><p>Sign in to continue with the same private travel history on this device or another one.</p><div class="account-proof"><div><i>01</i><div><strong>Automatic sync</strong><span>Changes save to your account while you use the tracker.</span></div></div><div><i>02</i><div><strong>Guest history stays recoverable</strong><span>Trips created before an account can still be transferred and merged safely.</span></div></div></div></section>
+    <section class="account-panel"><p class="eyebrow">HERALD VOYAGES ACCOUNT</p><h2>Log in</h2><p class="panel-copy">Use the email and password linked to your Herald Voyages account.</p><div class="account-message-wrap"><p id="accountMessage" class="form-message" role="status" aria-live="polite"></p></div><form id="loginForm"><label class="field" for="email"><span>Email</span><input id="email" type="email" autocomplete="username" required maxlength="254"></label><label class="field" for="password"><span>Password</span><input id="password" type="password" autocomplete="current-password" required></label><button class="primary wide" type="submit">Log in</button></form><div class="account-links"><a href="../register/">Create an account</a><a href="../reset-password/">Forgot password?</a></div></section>
+  </div>
+</main>
+</body>
+</html>
