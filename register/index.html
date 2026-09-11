@@ -1,9 +1,19 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#2a2023"><meta name="description" content="Create a Herald Voyages account to keep your private travel history synced across devices."><title>Create account — Herald Voyages</title>
-<link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="../accounts.css">
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
-<script defer src="../account-config.js"></script><script defer src="../account-client.js"></script><script defer src="../theme.js"></script><script defer src="../account-pages.js"></script><script defer src="../voyages.js?v=voyages-2"></script><script defer src="../voyages-final.js?v=voyages-2"></script></head>
-<body data-account-page="register"><main class="account-page"><div class="brand"><div class="brand-mark"></div><div><strong>Herald Voyages</strong><span>Where you’ve been. Where you’re going.</span></div></div>
-<header class="topbar"><h1>Create account</h1><a id="backToTracker" class="secondary" href="../">Back to dashboard</a></header>
-<p id="accountMessage" class="form-message" role="status" aria-live="polite"></p>
-<section class="panel account-card"><p class="panel-copy">Keep your travel history private and synced. If you already recorded trips as a guest, you can transfer them into your account after signing in.</p><form id="registerForm"><label class="field" for="displayName"><span>Your name</span><input id="displayName" type="text" autocomplete="name" required maxlength="80"></label><label class="field" for="email"><span>Email</span><input id="email" type="email" autocomplete="username" required maxlength="254"></label><label class="field" for="newPassword"><span>New password</span><input id="newPassword" type="password" autocomplete="new-password" required minlength="8"></label><label class="field" for="confirmPassword"><span>Confirm new password</span><input id="confirmPassword" type="password" autocomplete="new-password" required minlength="8"></label><button class="primary wide">Create account</button></form><div class="account-links"><a href="../login/">Already have an account? Log in</a></div></section></main></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#2d1b21"><meta name="description" content="Create a Herald Voyages account to keep your private travel history synced across devices.">
+  <title>Create account — Herald Voyages</title>
+  <link rel="stylesheet" href="../styles.css?v=voyages-v2"><link rel="stylesheet" href="../accounts.css?v=voyages-v2">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script defer src="../account-config.js"></script><script defer src="../account-client.js"></script><script defer src="../theme.js?v=voyages-v2"></script><script defer src="../account-pages.js?v=voyages-v2"></script>
+</head>
+<body data-account-page="register">
+<main class="account-page">
+  <header class="account-brand-row"><a class="brand" href="../"><span class="brand-mark"></span><span><strong>Herald Voyages</strong><span>Where you’ve been. Where you’re going.</span></span></a><div class="account-utility"><button id="accountThemeToggle" class="secondary compact" type="button">Dark</button><a class="secondary compact" href="../">Back to atlas</a></div></header>
+  <div class="account-layout">
+    <section class="account-intro"><p class="editorial-kicker">YOUR TRAVEL HISTORY, KEPT TOGETHER</p><h1>Take your atlas<br><em>with you.</em></h1><p>Create an account to save automatically and continue on another phone, tablet or computer without starting again.</p><div class="account-proof"><div><i>01</i><div><strong>Your existing trips stay safe</strong><span>Creating an account does not delete the travel history already stored on this device.</span></div></div><div><i>02</i><div><strong>Import without duplicates</strong><span>Guest data can be merged into the account after sign-in while identical records are skipped.</span></div></div></div></section>
+    <section class="account-panel"><p class="eyebrow">HERALD VOYAGES ACCOUNT</p><h2>Create account</h2><p class="panel-copy">Your account is for syncing your private travel data across devices.</p><div class="account-message-wrap"><p id="accountMessage" class="form-message" role="status" aria-live="polite"></p></div><form id="registerForm"><label class="field" for="displayName"><span>Your name</span><input id="displayName" type="text" autocomplete="name" required maxlength="80"></label><label class="field" for="email"><span>Email</span><input id="email" type="email" autocomplete="username" required maxlength="254"></label><label class="field" for="newPassword"><span>New password</span><input id="newPassword" type="password" autocomplete="new-password" required minlength="8"></label><label class="field" for="confirmPassword"><span>Confirm password</span><input id="confirmPassword" type="password" autocomplete="new-password" required minlength="8"></label><button class="primary wide" type="submit">Create account</button></form><div class="account-links"><a href="../login/">Already have an account? Log in</a></div></section>
+  </div>
+</main>
+</body>
+</html>
