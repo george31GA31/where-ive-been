@@ -50,7 +50,7 @@
         this.checkpoint(); this.ready = true;
         this.onData(M.copy(this.local));
         if (!M.equal(this.base, this.local)) await this.flush();
-        else this.status('Saved', 'good');
+        else this.status('Saved to account', 'good');
       } catch (error) {
         if (epoch === this.epoch) this.status('Could not load account. Your device data is safe. Retry when connected.', 'bad');
       }
@@ -85,7 +85,7 @@
           if (epoch !== this.epoch) return;
           this.base = M.copy(remote.payload); this.revision = remote.revision;
           this.checkpoint(); this.onData(M.copy(this.local));
-          if (M.equal(this.local, remote.payload)) { this.clean(); this.status('Saved', 'good'); return; }
+          if (M.equal(this.local, remote.payload)) { this.clean(); this.status('Saved to account', 'good'); return; }
           const sent = M.copy(this.local);
           this.status('Saving…');
           const {data, error} = await this.client.rpc('save_travel_account', {p_payload: sent, p_revision: remote.revision});
@@ -94,7 +94,7 @@
           if (error) throw error;
           this.base = sent; this.revision = Number(data[0].revision);
           this.checkpoint();
-          if (M.equal(this.local, sent)) { this.clean(); this.status('Saved', 'good'); return; }
+          if (M.equal(this.local, sent)) { this.clean(); this.status('Saved to account', 'good'); return; }
         }
         throw new Error('Account is changing on another device.');
       } catch (error) {
