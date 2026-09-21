@@ -42,6 +42,7 @@
       const r = copy(record); delete r.id;
       if (r.citizenships) r.citizenships.sort();
       if (r.enabledRules) r.enabledRules.sort();
+      if (r.profileIds) r.profileIds.sort();
       return canonical(r);
     };
     for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'placeVisits']) {
@@ -49,6 +50,7 @@
       for (const original of source[key] || []) {
         const record = copy(original);
         if (record.profileId) record.profileId = profileIds.get(record.profileId) || record.profileId;
+        if (Array.isArray(record.profileIds)) record.profileIds=[...new Set(record.profileIds.map(id=>profileIds.get(id)||id))].sort();
         if (record.tripId) record.tripId = tripIds.get(record.tripId) || record.tripId;
         if (record.autoFromPlannedId) record.autoFromPlannedId = stayIds.get(record.autoFromPlannedId) || record.autoFromPlannedId;
         const same = result[key].find(x => x.id === record.id);
@@ -72,6 +74,20 @@
     if (result.activeProfileId) result.activeProfileId = profileIds.get(result.activeProfileId) || result.activeProfileId;
     return {data: result, conflicts};
   }
+  function describeConflict(conflict,data={}) {
+    const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
+    const labels={stays:'Stay',trips:'Trip',transports:'Transport',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',start:'Start date',end:'End date',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
+    const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
+    const display=value=>{
+      if(value===undefined)return 'Deleted';if(value===null||value==='')return 'Not recorded';
+      if(Array.isArray(value))return value.map(display).join(', ')||'None';
+      if(typeof value==='object')return Object.entries(value).filter(([k])=>!['id','profileId','tripId'].includes(k)).map(([k,v])=>(labels[k]||k)+': '+display(v)).join(' · ');
+      if(field==='profileId'||field==='activeProfileId')return(data.profiles||[]).find(p=>p.id===value)?.name||'Traveller';
+      if(field==='tripId')return(data.trips||[]).find(t=>t.id===value)?.name||'Trip';
+      return String(value);
+    };
+    return {title:name+' · '+(labels[field]||labels[collection]||'Preference'),local:display(conflict.local),remote:display(conflict.remote)};
+  }
   function validateImport(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Choose a valid travel backup.');
     for (const key of collections) {
@@ -81,15 +97,23 @@
       for (const row of data[key]) {
         if (!row || typeof row !== 'object' || typeof row.id !== 'string' || !row.id || ids.has(row.id)) throw new Error('Invalid or duplicate record in ' + key + '.');
         ids.add(row.id);
+        if(row.profileId!=null&&typeof row.profileId!=='string')throw new Error('Invalid traveller reference in '+key+'.');
+        if(row.tripId!=null&&typeof row.tripId!=='string')throw new Error('Invalid trip reference in '+key+'.');
+        if(key==='transports'){
+          const local=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'Z'))&&new Date(v+'Z').toISOString().slice(0,16)===v;
+          if(!['flight','train','bus','boat','car','other'].includes(row.type)||!local(row.startLocal)||!local(row.endLocal))throw new Error('Check transport type and local times.');
+          for(const side of ['start','end'])if(!row[side]||typeof row[side].name!=='string'||!row[side].name.trim())throw new Error('Check transport locations.');
+        }
+        if(key==='placeVisits'&&(typeof row.category!=='string'||typeof row.itemId!=='string'||(!['want','not-recorded'].includes(row.status)&&!/^\d{4}-\d{2}-\d{2}$/.test(row.date||''))))throw new Error('Check place visit details.');
         if (key==='stays' || key==='residences') {
           const date=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
-          if (typeof row.countryCode!=='string'||!date(row.start)||(key==='stays'&&!date(row.end))||(row.end&&(!date(row.end)||row.end<row.start))) throw new Error('Check country and date ranges in ' + key + '.');
+          if (typeof row.countryCode!=='string'||!/^[A-Z]{2,3}$/.test(row.countryCode)||!date(row.start)||(key==='stays'&&!date(row.end))||(row.end&&(!date(row.end)||row.end<row.start))) throw new Error('Check country and date ranges in ' + key + '.');
         }
       }
     }
     return data;
   }
-  const api = {copy, equal, merge, importData, validateImport};
+  const api = {copy, equal, merge, importData, validateImport, describeConflict};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.WIBModel = api;
 })(typeof window !== 'undefined' ? window : globalThis);

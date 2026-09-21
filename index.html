@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#8d2637" />
   <meta name="description" content="Herald Voyages — your personal atlas of countries, journeys and travel days." />
-  <link rel="stylesheet" href="voyages.css?v=redesign-1" />
   <title>Dashboard — Herald Voyages</title>
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
-<link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4"></head>
+<link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4">
+  <link rel="stylesheet" href="voyages.css?v=completion-2" />
+</head>
 <body>
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
   <div class="app-shell">
@@ -41,7 +42,6 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <p class="eyebrow">HERALD VOYAGES</p>
           <h1 id="pageTitle">Dashboard</h1>
         </div>
         <button class="primary" id="addStayBtn">Add trip</button>
@@ -53,8 +53,9 @@
           <div class="atlas-masthead-art"><img src="assets/herald-logo-dark.png" alt="Herald trumpet travel mark" width="1672" height="941"><span>HERALD VOYAGES</span></div>
         </div>
         <div class="stats-grid">
-          <article class="stat-card"><span class="stat-label">Countries logged</span><strong id="countriesLogged">0</strong><small>Actual + planned records</small></article>
+          <article class="stat-card"><span class="stat-label">Countries visited</span><strong id="countriesLogged">0</strong><small>Confirmed visits through today</small><button type="button" id="editCountryCountBtn" class="country-count-edit-btn" aria-label="Choose which places count as countries">Edit</button></article>
           <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique days away from recorded homes</small></article>
+          <article class="stat-card"><span class="stat-label">Recorded trips</span><strong id="recordedTripCount">0</strong><small>Grouped trips and standalone stays</small></article>
           <article class="stat-card schengen-card">
             <div class="stat-row"><span class="stat-label">Schengen use</span><span id="schengenBadge" class="status-badge good">OK</span></div>
             <strong><span id="schengenUsed">0</span><span class="muted-number"> / 90</span></strong>
@@ -89,6 +90,7 @@
 
       <section id="statsView" class="view" aria-label="Statistics"><div id="atlasStatistics"></div></section>
       <section id="homesView" class="view" aria-label="Lived In"></section>
+      <section id="placesView" class="view"><article class="panel"><h2>Your places</h2><p class="helper">Individual place visits and your wish list. Country stays do not automatically imply visits to attractions.</p><div id="personalPlaces"></div></article></section>
       <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">Open profile</a></article></section>
       <section id="calendarView" class="view">
         <article class="panel calendar-panel">
@@ -98,7 +100,7 @@
           </div>
           <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Click a date to add a stay</strong><span>Pick the first day, then the last day. Click the same day twice for a day trip.</span></div>
           <div id="calendar" class="calendar"></div>
-          <p class="helper">You can still add stays using the Add stay button. Calendar selection stays active if you cancel the pop-up, and Clear selection removes it.</p>
+          <p class="helper">Select a first and last date to add a trip.</p>
         </article>
       </section>
 
@@ -184,8 +186,8 @@
 
       <section id="staysView" class="view">
         <div class="two-col stays-layout">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">Add trip</button></div><div class="trip-filters"><label class="field"><span>Search trips or destinations</span><input id="tripSearch" type="search" placeholder="Country, trip name or notes"></label><label class="field"><span>Status</span><select id="tripStatusFilter"><option value="all">All statuses</option><option value="actual">Confirmed</option><option value="planned">Planned</option><option value="unconfirmed">Needs confirmation</option><option value="cancelled">Cancelled</option></select></label><label class="field"><span>Year</span><input id="tripYearFilter" type="number" min="1900" max="2200" placeholder="All years"></label></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">GAP DETECTOR</p><h2>Dates with no country / location</h2></div></div><p class="panel-copy">When there is a hole between two recorded stays, you can fill the whole missing range in one click.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">Add trip</button></div><div class="trip-filters"><label class="field"><span>Search trips or destinations</span><input id="tripSearch" type="search" placeholder="Country, trip name or notes"></label><label class="field"><span>Status</span><select id="tripStatusFilter"><option value="all">All statuses</option><option value="actual">Confirmed</option><option value="current">Current</option><option value="completed">Completed</option><option value="upcoming">Upcoming confirmed</option><option value="planned">Planned</option><option value="unconfirmed">Needs confirmation</option><option value="cancelled">Cancelled</option></select></label><label class="field"><span>Year</span><input id="tripYearFilter" type="number" min="1900" max="2200" placeholder="All years"></label></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
+          <details class="panel journey-accordion"><summary>Check gaps in travel history</summary><div class="panel-head"><div><p class="eyebrow">GAP DETECTOR</p><h2>Dates with no country / location</h2></div></div><p class="panel-copy">When there is a hole between two recorded stays, you can fill the whole missing range in one click.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></details>
         </div>
       </section>
 
@@ -212,8 +214,8 @@
     <form method="dialog" id="stayForm" class="dialog-card">
       <div class="dialog-head"><div><p class="eyebrow">TRAVEL RECORD</p><h2 id="dialogTitle">Add a stay</h2></div><button type="button" class="icon-btn" id="closeDialog" aria-label="Close">×</button></div>
       <input type="hidden" id="stayId" />
-      <label class="field"><span>Trip name <em>optional</em></span><input type="text" id="tripNameInput" placeholder="e.g. Eastern Alps 2026" maxlength="80" /><small>Use the same name to group several country stays into one trip.</small></label>
-      <label class="field"><span>Country / location</span><div class="country-input-wrap"><input id="countryInput" list="countryList" autocomplete="off" placeholder="Start typing a country…" required /><span id="countryFlag" class="country-flag"></span></div><datalist id="countryList"></datalist></label>
+      <label class="field"><span>Trip</span><select id="stayTripSelect"><option value="">Standalone trip</option><option value="new">Create a new trip</option></select><small>Choose an existing trip to group this stay. Existing dates and records are preserved.</small></label><label class="field" id="newTripNameField" hidden><span>New trip name</span><input type="text" id="tripNameInput" placeholder="e.g. Eastern Alps 2026" maxlength="80" /></label>
+      <label class="field"><span>Country / location</span><div class="country-input-wrap"><input aria-describedby="formError" id="countryInput" list="countryList" autocomplete="off" placeholder="Start typing a country…" required /><span id="countryFlag" class="country-flag"></span></div><datalist id="countryList"></datalist></label>
       <div class="field"><div class="field-heading"><span>Date ranges</span><button type="button" class="text-btn" id="addDateRangeBtn">＋ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">You can enter the From and To dates in either order. The other date will not be reset while you are editing.</small></div>
       <label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label>
       <div class="form-grid">
@@ -221,7 +223,7 @@
         <label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label>
       </div>
       <label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label>
-      <div id="formError" class="form-error" role="alert"></div>
+      <div id="formError" role="alert" class="form-error" role="alert"></div>
       <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteStayBtn">Delete stay</button><div class="spacer"></div><button type="button" class="secondary" id="cancelDialog">Cancel</button><button type="submit" class="primary">Save stay</button></div>
     </form>
   </dialog>
@@ -230,9 +232,9 @@
     <form method="dialog" id="profileForm" class="dialog-card">
       <div class="dialog-head"><div><p class="eyebrow">TRAVELLER</p><h2 id="profileDialogTitle">Add profile</h2></div><button type="button" class="icon-btn" id="closeProfileDialog" aria-label="Close">×</button></div>
       <input type="hidden" id="profileId" />
-      <label class="field"><span>Name</span><input type="text" id="profileName" placeholder="e.g. Me, Brandi" required maxlength="40" /></label>
+      <label class="field"><span>Name</span><input type="text" aria-describedby="profileError" id="profileName" placeholder="e.g. Me, Brandi" required maxlength="40" /></label>
       <div class="field"><span>Citizenship / passports</span><div class="inline-input"><input type="text" id="citizenshipInput" list="countryList" placeholder="Add a country…" /><button type="button" class="secondary" id="addCitizenshipBtn">Add</button></div><div id="citizenshipChips" class="chips"></div></div>
-      <div id="profileError" class="form-error"></div>
+      <div id="profileError" role="alert" class="form-error"></div>
       <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteProfileBtn">Delete profile</button><div class="spacer"></div><button type="button" class="secondary" id="cancelProfileDialog">Cancel</button><button type="submit" class="primary">Save profile</button></div>
     </form>
   </dialog>
@@ -252,9 +254,9 @@
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="account-config.js"></script>
-  <script src="account-model.js?v=redesign-1"></script>
+  <script src="account-model.js?v=completion-2"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=redesign-1"></script>
+  <script src="app.js?v=completion-2"></script>
 </body>
 </html>

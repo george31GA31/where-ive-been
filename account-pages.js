@@ -100,6 +100,10 @@
     form('passwordForm', async () => {
       checked(await client.auth.updateUser({password: newPassword()})); $('passwordForm').reset(); message('Password updated.');
     });
+    if(page==='profile'){
+      const panel=document.createElement('section');panel.className='panel';panel.innerHTML='<h2>Shared-device privacy</h2><p>Logging out leaves pending changes and recovery copies in this browser. You can remove pending account changes below. Export your travel data first if any changes have not synced. Close other tracker tabs before using this control.</p><button type="button" class="secondary" id="clearPendingAccount">Log out and clear pending changes</button>';$('signedInPanel').append(panel);
+      $('clearPendingAccount').onclick=async()=>{if(!currentUser)return;const id=currentUser.id;if(!confirm('Log out and permanently remove unsent changes for this account from this browser? Saved account data will remain online.'))return;try{checked(await client.auth.signOut({scope:'local'}));for(const storage of [localStorage,sessionStorage])for(const key of Object.keys(storage))if(key.startsWith('whereIveBeen.outbox.v1.'+id+'.')||key==='herald.pendingImport.v1.'+id)storage.removeItem(key);window.dispatchEvent(new CustomEvent('hv-clear-account-pending',{detail:id}));render(null);message('Logged out. Pending account changes have been cleared from this device. Guest history and original recovery backups remain.');}catch(error){message(error.message,true);}};
+    }
     if ($('logoutBtn')) $('logoutBtn').onclick = async () => {
       $('logoutBtn').disabled = true;
       try {

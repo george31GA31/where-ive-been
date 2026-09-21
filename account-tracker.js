@@ -10,6 +10,7 @@
   function status(message, kind) {
     for (const el of document.querySelectorAll('[data-sync-status]')) {
       el.textContent = message; el.className = 'status-badge ' + (kind || 'neutral');
+      el.dataset.syncKind=kind||'neutral';
     }
   }
   function lock(value) { document.querySelector('.app-shell').inert = value; }
@@ -49,36 +50,38 @@
     const selectors = [];
     for (const c of conflicts) {
       const group = document.createElement('fieldset'), legend = document.createElement('legend');
-      legend.textContent = c.path; group.append(legend);
+      const description=M.describeConflict(c,state);legend.textContent = description.title; group.append(legend);
       const select = document.createElement('select'); select.required = true;
       for (const [value, text] of [['', 'Choose a version'], ['remote', 'Keep account version'], ['local', 'Keep this device version']]) {
         const option = document.createElement('option'); option.value = value; option.textContent = text; select.append(option);
       }
-      for (const [label, value] of [['Account', c.remote], ['This device', c.local]]) {
-        const p = document.createElement('p'); p.textContent = label + ': ' + (value === undefined ? 'Deleted' : JSON.stringify(value)); group.append(p);
+      for (const [label, value] of [['Account version', description.remote], ['This device’s version', description.local]]) {
+        const p = document.createElement('p'); p.textContent = label + ': ' + value; group.append(p);
       }
-      group.append(select); form.append(group); selectors.push([c.path, select]);
+      select.setAttribute('aria-label',description.title);group.append(select); form.append(group); selectors.push([c.path, select]);
     }
     const button = document.createElement('button'); button.className = 'primary'; button.textContent = 'Combine changes'; form.append(button);
     form.onsubmit = e => { e.preventDefault(); dialog.close(); dialog.remove(); resolve(Object.fromEntries(selectors.map(([path, el]) => [path, el.value]))); };
     // Dismissing leaves the pending data intact; require a choice before continuing.
     dialog.addEventListener('cancel', e => e.preventDefault()); dialog.append(form); document.body.append(dialog); dialog.showModal();
   });
+  function deviceSource(){const guest=localStorage.getItem('whereIveBeen.guest.v1');if(guest){const source=JSON.parse(guest);normalizeState(source);return source;}return loadState();}
   function offerImport() {
     const button = $('importDeviceBtn');
     const owner = localStorage.getItem(OWNER_KEY);
-    button.hidden = !userId || !!(owner && owner !== userId) || ![APP_KEY, LEGACY_KEY].some(k => localStorage.getItem(k));
+    button.hidden = !userId || !!(owner && owner !== userId && !localStorage.getItem('whereIveBeen.guest.v1')) || ![APP_KEY, LEGACY_KEY,'whereIveBeen.guest.v1'].some(k => localStorage.getItem(k));
     if (!button.hidden) {
-      const source = loadState();
-      button.textContent = `Add this device's ${source.stays.length} stay${source.stays.length===1?'':'s'} to my account`;
-      button.previousElementSibling && (button.previousElementSibling.textContent = `We found travel history on this device: ${source.stays.length} stay${source.stays.length===1?'':'s'}, ${source.profiles.length} traveller${source.profiles.length===1?'':'s'} and ${source.residences.length} home record${source.residences.length===1?'':'s'}. Identical records will be skipped.`);
+      const source = deviceSource();
+      button.textContent = 'Add this data to my account';
+      const preview=M.importData(state,source),added=['stays','trips','profiles','residences','transports','placeVisits'].reduce((n,key)=>n+(preview.data[key]?.length||0)-(state[key]?.length||0),0),total=['stays','trips','profiles','residences','transports','placeVisits'].reduce((n,key)=>n+(source[key]?.length||0),0),duplicates=Math.max(0,total-added-preview.conflicts.length);
+      button.previousElementSibling && (button.previousElementSibling.textContent = `We found existing travel history on this device: ${source.stays.length} stays, ${source.profiles.length} travellers, ${source.residences.length} home records and ${source.transports?.length||0} transport records. ${duplicates} likely duplicates will be skipped; ${preview.conflicts.length} conflicts need a choice. Your original copy will be kept.`);
     }
   }
   async function importDevice() {
     if (!engine?.ready) return;
     const owner = localStorage.getItem(OWNER_KEY);
-    if (owner && owner !== userId) return;
-    const source = loadState();
+    if (owner && owner !== userId && !localStorage.getItem('whereIveBeen.guest.v1')) return;
+    const source = deviceSource();
     M.validateImport(source);
     if (!confirm(`Import this device's ${source.stays.length} stays, ${source.residences.length} home records and ${source.profiles.length} traveller profiles into this account? Identical records will be skipped.`)) return;
     const importingUser = userId;
@@ -114,7 +117,7 @@
       apply(empty());
       lock(true);
     }
-    userId = next; cloudSession = null;
+    userId = next; cloudSession = null;document.querySelectorAll('[data-account-logout]').forEach(button=>button.hidden=!next);
     document.querySelectorAll('dialog[open]').forEach(d => d.close());
     if (next) {
       await engine.start(next, empty());
@@ -152,8 +155,18 @@
   }
   document.addEventListener('DOMContentLoaded', () => {
     booted = true;
+    document.addEventListener('click',async event=>{const button=event.target.closest('[data-account-logout]');if(!button)return;button.disabled=true;try{const {error}=await WIBAuth.client().auth.signOut({scope:'local'});if(error)throw error;}catch(error){status(error.message,'bad');}finally{button.disabled=false;}});
     $('importDeviceBtn').onclick = () => importDevice().catch(error => { lock(false); status(error.message, 'bad'); });
-    $('retrySaveBtn').onclick = () => userId ? engine.ready ? engine.flush() : changed({user: {id: userId}}) : startAuth();
+    $('retrySaveBtn').onclick = async () => {
+      const button=$('retrySaveBtn');button.disabled=true;
+      try{
+        if(!window.supabase){
+          status('Reconnecting account service…');
+          await new Promise((resolve,reject)=>{const script=document.createElement('script'),timer=setTimeout(()=>{script.remove();reject(new Error('Account library could not load. Your saved device data is unchanged.'));},15000);script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('Account library could not load. Check your connection and retry.'));};document.head.append(script);});
+        }
+        if(userId)await(engine.ready?engine.flush():changed({user:{id:userId}}));else await startAuth();
+      }catch(error){status(error.message,'bad');}finally{button.disabled=false;}
+    };
     $('retryAccountLoadBtn').onclick = () => changed({user: {id: userId}});
     startAuth();
     window.addEventListener('online', () => userId && (engine.ready ? engine.flush() : changed({user: {id: userId}})));

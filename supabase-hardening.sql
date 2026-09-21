@@ -57,7 +57,7 @@ create or replace function public.create_travel_device_transfer(
 returns timestamptz
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = ''
 as $$
 declare
   v_expires timestamptz;
@@ -78,9 +78,16 @@ begin
     raise exception 'Invalid transfer payload';
   end if;
 
+  -- Serialise creations before enforcing a bounded anonymous transfer budget.
+  perform pg_catalog.pg_advisory_xact_lock(866071, 1);
   -- Expired transfers do not need to remain in the database.
   delete from public.travel_device_transfers
   where expires_at <= now();
+
+  if (select count(*) from public.travel_device_transfers) >= 200
+     or (select coalesce(sum(octet_length(encrypted_payload)),0) from public.travel_device_transfers) + octet_length(p_encrypted_payload) > 40000000 then
+    raise exception 'Transfer service is busy. Try again later.';
+  end if;
 
   -- Production transfers are deliberately short-lived. The public browser
   -- cannot extend a transfer beyond one hour by altering a request.
@@ -105,12 +112,7 @@ begin
     now(),
     v_expires
   )
-  on conflict (code_hash)
-  do update set
-    encrypted_payload = excluded.encrypted_payload,
-    iv = excluded.iv,
-    created_at = excluded.created_at,
-    expires_at = excluded.expires_at;
+; -- A colliding code must never replace an existing transfer.
 
   return v_expires;
 end;
@@ -127,7 +129,7 @@ returns table (
 )
 language plpgsql
 security definer
-set search_path = pg_catalog, public
+set search_path = ''
 as $$
 begin
   if p_code_hash is null or p_code_hash !~ '^[0-9a-f]{64}$' then

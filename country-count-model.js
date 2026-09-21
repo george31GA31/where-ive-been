@@ -17,23 +17,6 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
       if (DISPLAY_NAME_OVERRIDES[country.code]) country.name = DISPLAY_NAME_OVERRIDES[country.code];
     });
 
-    let changed = false;
-    state.stays.forEach(stay => {
-      const name = DISPLAY_NAME_OVERRIDES[stay.countryCode];
-      if (name && stay.countryName !== name) {
-        stay.countryName = name;
-        changed = true;
-      }
-    });
-    (state.residences || []).forEach(residence => {
-      const name = DISPLAY_NAME_OVERRIDES[residence.countryCode];
-      if (name && residence.countryName !== name) {
-        residence.countryName = name;
-        changed = true;
-      }
-    });
-
-    if (changed) localStorage.setItem(APP_KEY, JSON.stringify(state));
   }
 
   state.countryCountExcludedCodes = Array.isArray(state.countryCountExcludedCodes)
@@ -83,71 +66,7 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
 
   applyDisplayNames();
 
-  // Final dashboard count: only places actually entered by today, filtered by the user's definition of a country.
-  const previousRenderDashboard = renderDashboard;
-  renderDashboard = function () {
-    previousRenderDashboard();
-    const visited = visitedCountryCodesAsOf();
-    const counted = [...visited].filter(isCountedCountryCode);
-    if (els.countriesLogged) els.countriesLogged.textContent = counted.length;
-  };
-
   // Country totals are actual/history-to-today only. Future planned days do not inflate the list or bars.
-  renderCountries = function () {
-    const today = isoDate(new Date());
-    const totals = new Map();
-
-    staysForProfile().forEach(stay => {
-      if (stay.start > today || stay.status !== 'actual') return;
-      const days = datesForStay(stay).filter(day => day <= today);
-      if (!days.length) return;
-
-      if (!totals.has(stay.countryCode)) totals.set(stay.countryCode, { days: new Set() });
-      days.forEach(day => totals.get(stay.countryCode).days.add(day));
-    });
-
-    if (!totals.size) {
-      els.countryTotals.className = 'country-totals empty-state';
-      els.countryTotals.textContent = 'No country data yet.';
-      return;
-    }
-
-    const allRows = [...totals].map(([code, record]) => ({
-      code,
-      name: countryByCode(code)?.name || staysForProfile().find(stay => stay.countryCode === code)?.countryName || code,
-      total: record.days.size,
-      home: [...record.days].filter(d => HVJourney.isHome(state,code,d)).length
-    })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
-
-    const hiddenCodes = new Set(state.excludedCountryCodes || []);
-    const rows = allRows.filter(row => !hiddenCodes.has(row.code));
-    const hidden = allRows.filter(row => hiddenCodes.has(row.code));
-    const max = rows.length ? Math.max(...rows.map(row => row.total)) : 1;
-
-    els.countryTotals.className = 'country-totals';
-    const visibleHtml = rows.length ? rows.map(row => `
-      <div class="country-row">
-        <div class="flag">${flagHtml(row.code)}</div>
-        <div class="country-name">
-          <a href="#/country/${row.code}"><strong>${esc(row.name)}</strong></a>
-          <span>${row.total-row.home} travel · ${row.home} home days</span>
-          <button type="button" class="country-remove-btn" data-action="exclude-country" data-country="${row.code}" aria-label="Hide ${esc(row.name)} from country totals">Hide from totals</button>
-        </div>
-        <div class="country-bar"><span style="width:${Math.max(0, Math.min(100, row.total / max * 100))}%"></span></div>
-        <div class="country-count"><strong>${row.total}</strong><span>days</span></div>
-      </div>
-    `).join('') : '<div class="empty-state">All visited countries are currently removed from this list.</div>';
-
-    const hiddenHtml = hidden.length ? `
-      <div class="gap-card removed-country-card" style="margin-top:14px">
-        <div class="gap-card-head"><strong>Removed from country totals</strong><span class="status-badge neutral">${hidden.length}</span></div>
-        <p>These stays are still saved in your calendar and travel history. Re-add a country at any time.</p>
-        <div class="gap-actions">${hidden.map(row => `<button type="button" class="tiny-btn" data-action="include-country" data-country="${row.code}">${flagHtml(row.code, 'flag-img flag-sm')} Re-add ${esc(row.name)}</button>`).join('')}</div>
-      </div>
-    ` : '';
-
-    els.countryTotals.innerHTML = visibleHtml + hiddenHtml;
-  };
 
   function checkedForEditor(code) {
     return isCountedCountryCode(code);
@@ -267,20 +186,6 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
     $('doneCountryCountBtn').addEventListener('click', () => dialog.close());
   }
 
-  function installStyles() {
-    if ($('wibCountryCountModelStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'wibCountryCountModelStyles';
-    style.textContent = `
-      .country-count-search-field{margin:0 0 12px}
-      .country-count-search-field input{width:100%}
-      .country-count-group-label{position:sticky;top:0;z-index:2;padding:9px 14px;background:var(--bg);border-bottom:1px solid var(--line);color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.11em;text-transform:uppercase}
-      [data-theme="dark"] .country-count-group-label{background:var(--bg)}
-    `;
-    document.head.appendChild(style);
-  }
-
-  installStyles();
   document.addEventListener('DOMContentLoaded', () => {
     replaceEditor();
     renderDashboard();
