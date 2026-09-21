@@ -316,6 +316,18 @@ img,svg {
 .topbar-actions {
   order:2
 }
+.global-traveller {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  order:1;
+  color:var(--hv-muted);
+  font-size:12px
+}
+.global-traveller select {
+  min-width:130px;
+  padding:9px 30px 9px 10px
+}
 .theme-toggle-btn {
   width:44px;
   height:44px;
@@ -790,6 +802,17 @@ hr {
   background:var(--hv-soft);
   color:var(--hv-muted)
 }
+.pill.actual {background:var(--green-soft);color:var(--green)}
+.pill.planned {background:var(--amber-soft);color:var(--amber)}
+.pill.unconfirmed {background:var(--amber-soft);color:var(--amber)}
+.pill.cancelled {background:var(--red-soft);color:var(--red)}
+.stay-row.cancelled {opacity:.58}
+.trip-list {display:grid;gap:14px}
+.trip-group {border:1px solid var(--hv-line);border-radius:12px;background:var(--hv-surface);overflow:hidden}
+.trip-group-head {display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px;background:var(--hv-soft)}
+.trip-group-head h3,.trip-group-head p {margin:0}
+.trip-group-head>span,.trip-group-head p {color:var(--hv-muted);font-size:12px}
+.trip-group-stays {padding:0 16px}
 .edit-btn {
   width:auto;
   border-radius:4px;
@@ -1046,7 +1069,74 @@ hr {
   padding:0 24px 12px
 }
 .atlas-calendar-switch {
-  margin-bottom:20px
+  margin-top:18px
+}
+.calendar-view-switch {
+  display:inline-flex;
+  gap:3px;
+  padding:3px;
+  margin-bottom:16px;
+  border:1px solid var(--hv-line);
+  border-radius:10px;
+  background:var(--hv-soft)
+}
+.calendar-view-switch button {
+  min-height:36px;
+  padding:7px 14px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:var(--hv-muted)
+}
+.calendar-view-switch button[aria-pressed=true] {
+  background:var(--hv-surface);
+  color:var(--hv-ink);
+  box-shadow:0 1px 3px rgba(31,42,48,.1)
+}
+.calendar-toolbar .journey-layers {
+  margin:0;
+  padding:0;
+  gap:6px
+}
+.calendar-toolbar .journey-layers legend {
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0)
+}
+.calendar-toolbar .journey-layers label {
+  min-height:36px;
+  padding:7px 10px;
+  border:1px solid var(--hv-line);
+  border-radius:8px;
+  background:var(--hv-surface);
+  font-size:12px
+}
+.calendar-toolbar .journey-layers input {
+  width:15px;
+  height:15px
+}
+.calendar-agenda {
+  display:grid;
+  gap:8px
+}
+.agenda-row {
+  display:grid;
+  grid-template-columns:minmax(180px,.7fr) auto 1fr auto;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:14px 16px;
+  border:1px solid var(--hv-line);
+  border-radius:10px;
+  background:var(--hv-surface);
+  color:var(--hv-ink);
+  text-align:left
+}
+.agenda-date {
+  color:var(--hv-muted);
+  font-size:13px
 }
 .atlas-year {
   display:grid;
@@ -1161,6 +1251,81 @@ hr {
 }
 .map-country:hover {
   fill:#456d81
+}
+.map-country:focus,
+.map-country:focus-visible {
+  outline:none
+}
+.map-country.selected {
+  stroke:var(--hv-gold);
+  stroke-width:3;
+  filter:drop-shadow(0 0 3px rgba(31,42,48,.2))
+}
+.map-country:focus-visible {
+  stroke:var(--hv-gold);
+  stroke-width:3;
+  stroke-dasharray:4 2;
+  vector-effect:non-scaling-stroke
+}
+.calendar-toolbar .calendar-view-switch { margin:0 }
+.calendar-filters { margin-left:auto }
+.calendar-filters summary { cursor:pointer; padding:10px 14px; border:1px solid var(--hv-line); border-radius:6px; font:inherit }
+.calendar-filters[open] { flex-basis:100%; display:flex; flex-wrap:wrap }
+.calendar-filters[open] .journey-layers { margin-top:10px }
+.calendar-panel .calendar-agenda,.calendar-panel .atlas-year { padding:20px }
+.calendar-panel:not([data-calendar-view=month]) .calendar-selection-info { display:none }
+body[data-current-view=calendar] #addStayBtn { display:none }
+.trip-filters { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px }
+.trip-filters .field { flex:1; min-width:140px }
+.trip-transport { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-top:1px solid var(--hv-line) }
+.trip-transport span { overflow-wrap:anywhere }
+.day-stay.unconfirmed { background:var(--amber-soft); border:1px dotted var(--amber); color:var(--amber) }
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important }
+}
+.map-country-summary {
+  margin-top:18px
+}
+.map-country-summary-head,
+.map-country-summary-head>div,
+.map-country-summary-actions {
+  display:flex;
+  align-items:center;
+  gap:14px
+}
+.map-country-summary-head {
+  justify-content:space-between
+}
+.map-country-summary-head h2 {
+  margin:0
+}
+.map-country-summary-head .eyebrow {
+  margin-bottom:4px
+}
+.map-country-summary-stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:1px;
+  margin:22px 0;
+  border:1px solid var(--hv-line);
+  background:var(--hv-line)
+}
+.map-country-summary-stats>div {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:16px;
+  background:var(--hv-surface)
+}
+.map-country-summary-stats strong {
+  font-size:20px
+}
+.map-country-summary-stats span,.map-country-next {
+  color:var(--hv-muted);
+  font-size:13px
+}
+.map-country-summary-actions {
+  margin-top:18px
 }
 .map-selection-summary {
   padding:16px 24px;
@@ -2183,3 +2348,20 @@ hr {
 .brand-mark, .brand-mark.has-logo, .atlas-masthead-art { background: transparent; }
 .atlas-masthead-art { background: var(--hv-surface); }
 .atlas-masthead-art > span { color: var(--hv-ink); }
+#dashboardView .atlas-masthead { display:none; }
+#dashboardView .stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+#dashboardView .schengen-card { display:none; }
+.sheet-section-label { margin:20px 0 8px; color:var(--hv-muted); font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+.day-stay.unconfirmed { background:var(--amber-soft); border:1px dotted var(--amber); color:var(--amber); }
+@media(max-width:760px) {
+  #dashboardView .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .agenda-row { grid-template-columns:auto 1fr auto; }
+  .agenda-date { grid-column:1/-1; }
+  .map-country-summary-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .map-country-summary-actions { align-items:stretch; flex-direction:column; }
+}
+@media(max-width:430px) {
+  #dashboardView .stats-grid { grid-template-columns:1fr; }
+  .calendar-view-switch { display:flex; width:100%; }
+  .calendar-view-switch button { flex:1; }
+}

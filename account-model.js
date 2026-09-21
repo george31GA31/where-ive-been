@@ -9,7 +9,7 @@
   }
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
-  const collections = new Set(['stays', 'profiles', 'residences', 'transports', 'placeVisits']);
+  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'placeVisits']);
   function merge(base, local, remote, resolve) {
     const conflicts = [];
     function field(b, l, r, path) {
@@ -37,22 +37,23 @@
   }
   function importData(remote, source, resolve) {
     // Compare complete records without IDs. Different notes/passports are never discarded.
-    const result = copy(remote), conflicts = [], profileIds = new Map(), stayIds = new Map();
+    const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map();
     const signature = record => {
       const r = copy(record); delete r.id;
       if (r.citizenships) r.citizenships.sort();
       if (r.enabledRules) r.enabledRules.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'stays', 'residences', 'transports', 'placeVisits']) {
+    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'placeVisits']) {
       result[key] ||= [];
       for (const original of source[key] || []) {
         const record = copy(original);
         if (record.profileId) record.profileId = profileIds.get(record.profileId) || record.profileId;
+        if (record.tripId) record.tripId = tripIds.get(record.tripId) || record.tripId;
         if (record.autoFromPlannedId) record.autoFromPlannedId = stayIds.get(record.autoFromPlannedId) || record.autoFromPlannedId;
         const same = result[key].find(x => x.id === record.id);
         const duplicate = result[key].find(x => signature(x) === signature(record));
-        const mapping = key === 'profiles' ? profileIds : key === 'stays' ? stayIds : null;
+        const mapping = key === 'profiles' ? profileIds : key === 'trips' ? tripIds : key === 'stays' ? stayIds : null;
         if (duplicate) { mapping?.set(original.id, duplicate.id); continue; }
         if (same) {
           const conflict = {path: key + '.' + record.id, local: record, remote: same};
@@ -64,13 +65,31 @@
     }
     for (const key of Object.keys(source)) {
       if (collections.has(key)) continue;
-      if (key === 'excludedCountryCodes') result[key] = [...new Set([...(remote[key] || []), ...(source[key] || [])])];
+      if (['excludedCountryCodes','countryCountExcludedCodes','countryCountIncludedExtraCodes'].includes(key)) result[key] = [...new Set([...(remote[key] || []), ...(source[key] || [])])];
+      else if (key === 'visualLayers') result[key] = Object.fromEntries([...new Set([...Object.keys(source[key] || {}),...Object.keys(remote[key] || {})])].map(view => [view,{...(source[key]?.[view] || {}),...(remote[key]?.[view] || {})}]));
       else if (result[key] === undefined || result[key] === null) result[key] = copy(source[key]);
     }
     if (result.activeProfileId) result.activeProfileId = profileIds.get(result.activeProfileId) || result.activeProfileId;
     return {data: result, conflicts};
   }
-  const api = {copy, equal, merge, importData};
+  function validateImport(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Choose a valid travel backup.');
+    for (const key of collections) {
+      if (data[key] === undefined) continue;
+      if (!Array.isArray(data[key])) throw new Error(key + ' must be a list.');
+      const ids=new Set();
+      for (const row of data[key]) {
+        if (!row || typeof row !== 'object' || typeof row.id !== 'string' || !row.id || ids.has(row.id)) throw new Error('Invalid or duplicate record in ' + key + '.');
+        ids.add(row.id);
+        if (key==='stays' || key==='residences') {
+          const date=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
+          if (typeof row.countryCode!=='string'||!date(row.start)||(key==='stays'&&!date(row.end))||(row.end&&(!date(row.end)||row.end<row.start))) throw new Error('Check country and date ranges in ' + key + '.');
+        }
+      }
+    }
+    return data;
+  }
+  const api = {copy, equal, merge, importData, validateImport};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.WIBModel = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -16,8 +16,8 @@
   };
   const ROUTE_TO_VIEW = Object.fromEntries(Object.entries(ROUTES).map(([view, route]) => [route, view]));
   const VIEW_TITLES = {
-    dashboard: 'Dashboard', map: 'Map', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
-    stats: 'Statistics', homes: 'Lived In', settings: 'Settings', schengen: 'Schengen', planner: 'Trip planner', rules: 'Visa tools', profiles: 'People & homes'
+    dashboard: 'Overview', map: 'Map', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
+    stats: 'Statistics', homes: 'Home history', settings: 'Preferences', schengen: 'Schengen', planner: 'Trip planner', rules: 'Entry requirements', profiles: 'Travellers'
   };
   const ACCOUNT_TITLES = {
     login: 'Log in', register: 'Create account', 'reset-password': 'Reset password', profile: 'My profile'
@@ -47,7 +47,7 @@
     const link = document.createElement('link');
     link.id = 'heraldVoyagesStyles';
     link.rel = 'stylesheet';
-    link.href = new URL('voyages.css?v=journeys-1', rootUrl).href;
+    link.href = new URL('voyages.css?v=redesign-1', rootUrl).href;
     document.head.append(link);
   }
   installStyles();
@@ -122,12 +122,13 @@
     });
     Object.entries(buttons).forEach(([view,b]) => {b.innerHTML=`${icon(view)}<span class="nav-label">${VIEW_TITLES[view]}</span>`;});
     nav.replaceChildren();
-    ['dashboard','map','stays','countries','calendar','schengen','stats'].forEach(view=>nav.append(buttons[view]));
-    const more=document.createElement('details');more.className='desktop-more';
-    more.innerHTML='<summary>More</summary><div class="desktop-more-links"></div>';
-    ['planner','rules','homes','profiles','settings'].forEach(view=>q('div',more).append(buttons[view]));
-    ['schengen','stats'].forEach(view=>{const b=buttons[view].cloneNode(true);b.classList.add('tablet-link');b.onclick=()=>navigateToView(view);q('div',more).prepend(b)});nav.append(more);
-    nav.addEventListener('click',e=>{if(e.target.closest('.nav-item'))more.open=false});
+    ['dashboard','stays','map','calendar'].forEach(view=>nav.append(buttons[view]));
+    const group=(label,views)=>{const details=document.createElement('details');details.className='desktop-more nav-group';details.innerHTML=`<summary>${label}</summary><div class="desktop-more-links"></div>`;views.forEach(view=>q('div',details).append(buttons[view]));nav.append(details);return details};
+    const explore=group('Explore',['countries','stats']);
+    const tools=group('Tools',['schengen','planner','rules']);
+    const preferences=group('Account',['homes','profiles','settings']);
+    nav.addEventListener('click',e=>{if(e.target.closest('.nav-item')){explore.open=false;tools.open=false;preferences.open=false}});
+    nav.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=e.target.closest('details[open]');if(open){open.open=false;open.querySelector('summary').focus();}}});
     const account=$('accountLink');if(account)account.textContent='Profile';
     const sync=q('[data-sync-status]');if(sync){q('.topbar').append(sync);sync.classList.add('header-sync');}
     const retry=$('retrySaveBtn');if(retry){$('settingsView').querySelector('.panel').append(retry);}
@@ -160,7 +161,7 @@
     nav.id = 'voyagesMobileNav';
     nav.className = 'voyages-mobile-nav';
     nav.setAttribute('aria-label', 'Mobile navigation');
-    const items = [['dashboard', 'Dashboard'], ['map', 'Map'], ['stays', 'Trips'], ['calendar', 'Calendar']];
+    const items = [['dashboard', 'Overview'], ['stays', 'Trips'], ['map', 'Map'], ['calendar', 'Calendar']];
     nav.innerHTML = items.map(([view, label]) => `<button type="button" data-mobile-view="${view}">${icon(view)}<span>${label}</span></button>`).join('') +
       `<button type="button" data-mobile-more>${icon('more')}<span>More</span></button>`;
     document.body.append(nav);
@@ -173,8 +174,12 @@
       <section class="voyages-sheet-panel" role="dialog" aria-modal="true" aria-label="More navigation">
         <div class="voyages-sheet-handle" aria-hidden="true"></div>
         <div class="voyages-sheet-head"><div><span>Herald Voyages</span><strong>More</strong></div><button type="button" class="sheet-close" aria-label="Close">${ICONS.close}</button></div>
-        <div class="voyages-sheet-grid">
-          ${['countries','schengen','stats','homes','planner','rules','profiles','settings'].map((view) => `<button type="button" data-sheet-view="${view}">${icon(view)}<span>${VIEW_TITLES[view]}</span></button>`).join('')}
+        <p class="sheet-section-label">Explore</p><div class="voyages-sheet-grid">
+          ${['countries','stats'].map((view) => `<button type="button" data-sheet-view="${view}">${icon(view)}<span>${VIEW_TITLES[view]}</span></button>`).join('')}
+        </div><p class="sheet-section-label">Tools</p><div class="voyages-sheet-grid">
+          ${['schengen','planner','rules'].map((view) => `<button type="button" data-sheet-view="${view}">${icon(view)}<span>${VIEW_TITLES[view]}</span></button>`).join('')}
+        </div><p class="sheet-section-label">Account & preferences</p><div class="voyages-sheet-grid">
+          ${['homes','profiles','settings'].map((view) => `<button type="button" data-sheet-view="${view}">${icon(view)}<span>${VIEW_TITLES[view]}</span></button>`).join('')}
         </div>
         <a class="voyages-profile-link" href="profile/">${icon('profiles')}<span><strong>Profile & account</strong><small>Login, sync and guest-data transfer</small></span></a>
       </section>`;
@@ -191,6 +196,17 @@
       const button = event.target.closest('[data-sheet-view]');
       if (button) { closeMoreSheet(); navigateToView(button.dataset.sheetView); }
     });
+  }
+
+  function installTravellerSelector() {
+    const topbar=q('.topbar');
+    if(!topbar||$('globalTraveller'))return;
+    const label=document.createElement('label');label.className='global-traveller';label.innerHTML='<span>Traveller</span><select id="globalTraveller" aria-label="Selected traveller"></select>';
+    const actions=q('.topbar-actions',topbar);topbar.insertBefore(label,actions||null);
+    const refresh=()=>{const select=$('globalTraveller');if(!select)return;select.innerHTML=(state.profiles||[]).map(p=>`<option value="${escapeHtml(p.id)}" ${p.id===state.activeProfileId?'selected':''}>${escapeHtml(p.name)}</option>`).join('');label.hidden=(state.profiles||[]).length<2;};
+    label.onchange=()=>{state.activeProfileId=$('globalTraveller').value;persist();populateProfileSelects();renderAll();window.HVJourneys?.render();};
+    const current=window.renderProfiles;if(typeof current==='function')window.renderProfiles=function(){current();refresh();};
+    refresh();
   }
 
   function routeFromHash() {
@@ -384,16 +400,24 @@
   }
 
   function installAtlasPages() {
+    for(const id of ['tripSearch','tripStatusFilter','tripYearFilter'])if($(id))$(id).addEventListener('input',renderStayLists);
     const homes=$('residencePanel');if(homes)$('homesView').append(homes);
     $('settingsTheme').onclick=()=>$('themeToggleBtn')?.click();
     $('settingsCount').onclick=()=>$('editCountryCountBtn')?.click();
+    const exportButton=document.createElement('button');exportButton.type='button';exportButton.className='secondary';exportButton.textContent='Export travel data';exportButton.onclick=()=>exportData();
+    const exportNote=document.createElement('p');exportNote.className='helper';exportNote.textContent='Download all travellers and records currently loaded in this account or guest session. Keep the file private.';
+    $('settingsView').querySelector('.panel').append(exportNote,exportButton);
     const dashboard=$('dashboardView');
     const overview=document.createElement('div');overview.id='atlasOverview';overview.className='atlas-overview';
     q('.stats-grid',dashboard).after(overview);
-    const calendar=$('calendarView');const yearTools=document.createElement('div');yearTools.className='atlas-calendar-switch';
-    yearTools.innerHTML='<button type="button" class="secondary" id="calendarYearToggle" aria-expanded="false">Year overview</button><div id="atlasYear" class="atlas-year" hidden></div>';
-    calendar.prepend(yearTools);
-    $('calendarYearToggle').onclick=()=>{const expanded=$('atlasYear').hidden;$('atlasYear').hidden=!expanded;$('calendarYearToggle').setAttribute('aria-expanded',String(expanded));renderAtlas();};
+    const calendar=$('calendarView'),calendarPanel=q('.calendar-panel',calendar),yearTools=document.createElement('div');yearTools.className='atlas-calendar-switch';
+    yearTools.innerHTML='<div class="calendar-view-switch" role="group" aria-label="Calendar view"><button type="button" data-calendar-view="month" aria-pressed="true">Month</button><button type="button" data-calendar-view="year" aria-pressed="false">Year</button><button type="button" data-calendar-view="agenda" aria-pressed="false">Agenda</button></div><div id="atlasYear" class="atlas-year" hidden></div><div id="calendarAgenda" class="calendar-agenda" hidden></div>';
+    calendarPanel.before(yearTools);
+    const viewSwitch=q('.calendar-view-switch',yearTools);q('.calendar-toolbar',calendarPanel).append(viewSwitch);
+    const showCalendarView=view=>{$('calendar').hidden=view!=='month';calendarPanel.dataset.calendarView=view;$('atlasYear').hidden=view!=='year';$('calendarAgenda').hidden=view!=='agenda';qa('[data-calendar-view]',calendar).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.calendarView===view)));renderAtlas();};
+    qa('[data-calendar-view]',calendar).forEach(button=>button.onclick=()=>showCalendarView(button.dataset.calendarView));
+    calendarPanel.append($('atlasYear'),$('calendarAgenda'));yearTools.remove();
+    const calendarAdd=document.createElement('button');calendarAdd.type='button';calendarAdd.className='primary compact';calendarAdd.textContent='+ Add trip';calendarAdd.onclick=()=>$('addStayBtn').click();q('.calendar-toolbar-actions',calendarPanel)?.append(calendarAdd);
     const countries=$('countriesView');const directory=document.createElement('article');directory.className='panel atlas-directory';
     directory.innerHTML=`<div class="panel-head"><div><p class="eyebrow">YOUR WORLD</p><h2>Country directory</h2></div></div><div class="atlas-directory-controls"><label class="field"><span>Find a country</span><input type="search" id="atlasCountrySearch" placeholder="Search countries" autocomplete="off"></label><label class="field"><span>Show</span><select id="atlasCountryFilter"><option value="visited">Visited</option><option value="all">All countries</option><option value="unvisited">Not yet visited</option><option value="planned">Planned</option></select></label></div><label class="field"><span>Continent</span><select id="atlasContinent"><option value="all">All continents</option>${['Europe','Asia','Africa','North America','South America','Oceania','Antarctica','Other locations'].map(x=>`<option>${x}</option>`).join('')}</select></label><div id="atlasCountryDirectory"></div>`;
     countries.prepend(directory);$('atlasCountrySearch').oninput=renderDirectory;$('atlasCountryFilter').onchange=renderDirectory;$('atlasContinent').onchange=renderDirectory;
@@ -403,7 +427,7 @@
 
   function atlasRecords() {
     const today=isoDate(new Date());
-    return staysForProfile().filter(s=>s.start<=today&&s.status!=='planned');
+    return staysForProfile().filter(s=>s.start<=today&&s.status==='actual');
   }
   function atlasCoverage() {
     const universe=COUNTRIES.filter(c=>c.code!=='SEA'&&WIBCountryCount.isCounted(c.code));
@@ -414,7 +438,7 @@
   function renderDirectory() {
     const el=$('atlasCountryDirectory');if(!el)return;
     const {codes}=atlasCoverage();const term=$('atlasCountrySearch').value.trim().toLocaleLowerCase(),filter=$('atlasCountryFilter').value;
-    const rows=COUNTRIES.filter(c=>c.code!=='SEA'&&c.name.toLocaleLowerCase().includes(term)&&($('atlasContinent').value==='all'||HVAtlas.region(c.code)===$('atlasContinent').value)).filter(c=>filter==='all'||filter==='visited'&&codes.has(c.code)||filter==='unvisited'&&!codes.has(c.code)||filter==='planned'&&state.stays.some(s=>s.countryCode===c.code&&s.status==='planned'));
+    const rows=COUNTRIES.filter(c=>c.code!=='SEA'&&c.name.toLocaleLowerCase().includes(term)&&($('atlasContinent').value==='all'||HVAtlas.region(c.code)===$('atlasContinent').value)).filter(c=>filter==='all'||filter==='visited'&&codes.has(c.code)||filter==='unvisited'&&!codes.has(c.code)||filter==='planned'&&staysForProfile().some(s=>s.countryCode===c.code&&s.status==='planned'));
     el.innerHTML=rows.length?rows.map(c=>{
       const records=atlasRecords().filter(s=>s.countryCode===c.code).sort((a,b)=>a.start.localeCompare(b.start));
       const days=new Set(records.flatMap(s=>datesForStay(s,null,isoDate(new Date()))));
@@ -423,21 +447,22 @@
   }
   function renderAtlas() {
     if(!$('atlasOverview'))return;
-    const {universe,visited,percent}=atlasCoverage(),records=atlasRecords();const recent=[...records].sort((a,b)=>b.start.localeCompare(a.start))[0];
+    const {universe,visited,percent}=atlasCoverage(),records=atlasRecords(),todayDate=isoDate(new Date()),all=staysForProfile().filter(countsForPlanning);const current=all.find(s=>s.start<=todayDate&&s.end>=todayDate),next=all.filter(s=>s.status==='planned'&&s.start>todayDate).sort((a,b)=>a.start.localeCompare(b.start))[0],recent=[...records].sort((a,b)=>b.start.localeCompare(a.start))[0],featured=current||next||recent,featuredLabel=current?'CURRENT TRIP':next?'NEXT TRIP':'MOST RECENT TRIP';
     const regions=HVAtlas.progress(universe,new Set(visited.map(c=>c.code))),continents=new Set(records.map(s=>HVAtlas.region(s.countryCode)).filter(r=>r!=='Other locations'));
     const today=isoDate(new Date()),year=today.slice(0,4),thisYear=new Set(records.filter(s=>s.start<=`${year}-12-31`&&s.end>=`${year}-01-01`).map(s=>s.countryCode).filter(c=>c!=='SEA'));
-    $('atlasOverview').innerHTML=`<a class="atlas-coverage" href="#/countries"><div><p class="eyebrow">WORLD COVERAGE</p><strong>${percent}<small>%</small></strong><p>${visited.length} of ${universe.length} countries in your definition · ${continents.size} continents</p></div><div class="atlas-coverage-bar" role="img" aria-label="${percent} percent visited" style="--coverage:${percent}%"></div></a><a class="atlas-current" href="#/trips"><p class="eyebrow">MOST RECENT JOURNEY</p><h2>${recent?escapeHtml(countryByCode(recent.countryCode)?.name||recent.countryName):'Your next chapter starts here'}</h2><p>${recent?`${friendlyDate(recent.start)} — ${friendlyDate(recent.end)}`:'Add a trip to start building your personal travel atlas.'}</p><span>${recent?'Open journeys':'Add your first journey'} ↗</span></a><a class="atlas-year-count" href="#/stats"><p class="eyebrow">${year} SO FAR</p><strong>${thisYear.size}</strong><p>countries with recorded visits</p></a>`;
+    $('atlasOverview').innerHTML=`<a class="atlas-current" href="#/trips"><p class="eyebrow">${featured?featuredLabel:'YOUR TRAVEL STORY'}</p><h2>${featured?escapeHtml(countryByCode(featured.countryCode)?.name||featured.countryName):'Your next chapter starts here'}</h2><p>${featured?`${friendlyDate(featured.start)} to ${friendlyDate(featured.end)}`:'Add a trip to start building your personal travel atlas.'}</p><span>${featured?'Open trips':'Add your first trip'} ↗</span></a><a class="atlas-coverage" href="#/countries"><div><p class="eyebrow">WORLD COVERAGE</p><strong>${percent}<small>%</small></strong><p>${visited.length} of ${universe.length} countries in your definition · ${continents.size} continents</p></div><div class="atlas-coverage-bar" role="img" aria-label="${percent} percent visited" style="--coverage:${percent}%"></div></a><a class="atlas-year-count" href="#/stats"><p class="eyebrow">${year} SO FAR</p><strong>${thisYear.size}</strong><p>countries with recorded visits</p></a>`;
     const counts=new Map();records.forEach(s=>{if(!counts.has(s.countryCode))counts.set(s.countryCode,{days:new Set(),trips:0});const c=counts.get(s.countryCode);datesForStay(s,null,today).filter(d=>!HVJourney.isHome(state,s.countryCode,d)).forEach(d=>c.days.add(d));c.trips++;});
     const sorted=[...counts].sort((a,b)=>b[1].days.size-a[1].days.size);const max=sorted[0]?.[1].days.size||1;
     $('atlasStatistics').innerHTML=`<div class="atlas-stats-heading"><p class="eyebrow">THE SHAPE OF YOUR TRAVELS</p><h2>${visited.length} countries.<br><em>Countless memories.</em></h2><p>${percent}% of your selected country definition · ${records.length} recorded journeys</p></div><article class="panel"><div class="panel-head"><h2>Travel days by country</h2><span>Excludes home days · overlapping dates counted once per country</span></div>${sorted.length?sorted.map(([code,c])=>`<div class="atlas-rank"><strong>${escapeHtml(countryByCode(code)?.name||code)}</strong><div><span style="width:${c.days.size/max*100}%"></span></div><span>${c.days.size} days · ${c.trips} trips</span></div>`).join(''):'<p class="empty-state">Your travel statistics will appear after you add your first trip.</p>'}</article>`;
     const regionPanel=document.createElement('article');regionPanel.className='panel atlas-region-panel';regionPanel.innerHTML=`<div class="panel-head"><h2>Continents explored</h2><span>${continents.size} visited · your country definition</span></div><div class="atlas-regions">${regions.map(r=>`<div><strong>${r.name}</strong><span>${r.visited} / ${r.total} countries</span><div class="atlas-coverage-bar" style="--coverage:${r.total?r.visited/r.total*100:0}%"></div></div>`).join('')}</div><p class="helper">Russia is grouped with Europe; Turkey, Cyprus and the Caucasus with Asia. Antarctica can be recorded as a place even when excluded from your country count.</p>`;$('atlasStatistics').append(regionPanel);
     if(!$('atlasYear').hidden){const activeYear=typeof calendarCursor!=='undefined'?calendarCursor.getUTCFullYear():Number(year);$('atlasYear').innerHTML=Array.from({length:12},(_,m)=>{const prefix=`${activeYear}-${String(m+1).padStart(2,'0')}`,days=new Set(records.flatMap(s=>datesForStay(s)).filter(d=>d.startsWith(prefix)));return `<button type="button" class="atlas-month" data-atlas-month="${m}" data-atlas-year="${activeYear}"><strong>${new Date(activeYear,m,1).toLocaleDateString(undefined,{month:'long'})}</strong><div class="atlas-month-dots">${Array.from({length:new Date(activeYear,m+1,0).getDate()},(_,d)=>`<i class="${days.has(`${prefix}-${String(d+1).padStart(2,'0')}`)?'travel':''}"></i>`).join('')}</div><small>${days.size} logged days</small></button>`}).join('');}
+    if(!$('calendarAgenda').hidden){const agenda=staysForProfile().filter(s=>s.status!=='cancelled').sort((a,b)=>a.start.localeCompare(b.start));$('calendarAgenda').innerHTML=agenda.length?agenda.map(s=>`<button type="button" class="agenda-row" data-action="edit-stay" data-id="${escapeHtml(s.id)}"><span class="agenda-date">${friendlyDate(s.start)}${s.end!==s.start?` to ${friendlyDate(s.end)}`:''}</span>${flagHtml(s.countryCode,'flag-img flag-sm')}<strong>${escapeHtml(s.countryName)}</strong><span class="status-badge ${s.status==='actual'?'good':s.status==='planned'?'neutral':'warn'}">${s.status==='actual'?'CONFIRMED':s.status.toUpperCase()}</span></button>`).join(''):'<p class="empty-state">No trips or stays to show.</p>';}
     renderDirectory();
     window.HVJourneys?.render();
   }
   document.addEventListener('click',e=>{
     const add=e.target.closest('[data-atlas-add]');if(add){$('addStayBtn').click();$('countryInput').value=countryByCode(add.dataset.atlasAdd)?.name||'';$('countryInput').dispatchEvent(new Event('input',{bubbles:true}));}
-    const month=e.target.closest('[data-atlas-month]');if(month){calendarCursor=new Date(Date.UTC(Number(month.dataset.atlasYear),Number(month.dataset.atlasMonth),1));renderCalendar();$('atlasYear').hidden=true;$('calendarYearToggle').setAttribute('aria-expanded','false');}
+    const month=e.target.closest('[data-atlas-month]');if(month){calendarCursor=new Date(Date.UTC(Number(month.dataset.atlasYear),Number(month.dataset.atlasMonth),1));renderCalendar();q('[data-calendar-view="month"]')?.click();}
   });
 
   function boot() {
@@ -445,6 +470,7 @@
     installAccountChrome();
     if (!document.body.dataset.accountPage) {
       installNavigation();
+      installTravellerSelector();
       installMobileNavigation();
       installRouting();
       polishCopy();

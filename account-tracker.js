@@ -68,12 +68,18 @@
     const button = $('importDeviceBtn');
     const owner = localStorage.getItem(OWNER_KEY);
     button.hidden = !userId || !!(owner && owner !== userId) || ![APP_KEY, LEGACY_KEY].some(k => localStorage.getItem(k));
+    if (!button.hidden) {
+      const source = loadState();
+      button.textContent = `Add this device's ${source.stays.length} stay${source.stays.length===1?'':'s'} to my account`;
+      button.previousElementSibling && (button.previousElementSibling.textContent = `We found travel history on this device: ${source.stays.length} stay${source.stays.length===1?'':'s'}, ${source.profiles.length} traveller${source.profiles.length===1?'':'s'} and ${source.residences.length} home record${source.residences.length===1?'':'s'}. Identical records will be skipped.`);
+    }
   }
   async function importDevice() {
     if (!engine?.ready) return;
     const owner = localStorage.getItem(OWNER_KEY);
     if (owner && owner !== userId) return;
     const source = loadState();
+    M.validateImport(source);
     if (!confirm(`Import this device's ${source.stays.length} stays, ${source.residences.length} home records and ${source.profiles.length} traveller profiles into this account? Identical records will be skipped.`)) return;
     const importingUser = userId;
     lock(true);
@@ -130,7 +136,7 @@
   }
   async function startAuth() {
     if (authStarting) return;
-    if (!window.supabase) { status('Account service unavailable — saved on this device only. Refresh to reconnect.', 'warn'); return; }
+    if (!window.supabase) { status('Account library could not load — changes will stay on this device. Refresh to reconnect.', 'warn'); return; }
     authStarting = true;
     try {
       const client = WIBAuth.client();
@@ -142,7 +148,7 @@
       const {data, error} = await client.auth.getSession();
       if (error) throw error;
       await changed(data.session);
-    } catch { lock(false); status('Account service unavailable. Refresh to retry.', 'bad'); authStarting = false; }
+    } catch { lock(false); status(navigator.onLine?'Account sign-in could not be checked. Refresh to retry.':'Offline — changes will stay on this device until you reconnect.', navigator.onLine?'bad':'warn'); authStarting = false; }
   }
   document.addEventListener('DOMContentLoaded', () => {
     booted = true;
