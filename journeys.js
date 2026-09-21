@@ -123,7 +123,7 @@
   function openTransport(id){
     const t=state.transports?.find(t=>t.id===id),dialog=get('transportDialog');opener=document.activeElement;
     const form=get('transportForm');form.reset();form.dataset.id=id||'';
-    form.elements.type.value=t?.type||'flight';form.elements.status.value=t?.status||'actual';form.elements.tripId.innerHTML='<option value="">No linked trip</option>'+state.trips.filter(x=>!x.profileId||x.profileId===state.activeProfileId).map(x=>`<option value="${E(x.id)}">${E(x.name)}</option>`).join('');form.elements.tripId.value=t?.tripId||'';
+    form.elements.type.value=t?.type||'flight';form.elements.status.value=t?.status||'actual';form.elements.tripId.innerHTML='<option value="">No linked trip</option>'+J.scoped(state.trips,state.activeProfileId).map(x=>`<option value="${E(x.id)}">${E(x.name)}</option>`).join('');form.elements.tripId.value=t?.tripId||'';
     for(const key of ['startLocal','endLocal','flightNumber','bookingReference'])form.elements[key].value=t?.[key]||(['startLocal','endLocal'].includes(key)?today()+'T12:00':'');
     for(const key of ['start','end'])for(const field of ['name','terminal','lat','lon'])form.elements[key+field].value=t?.[key]?.[field]??'';
     get('transportDelete').hidden=!t;get('transportError').textContent='';get('transportDialogTitle').textContent=t?'Edit transport':'Add transport';updateTransportFields();dialog.showModal();form.elements.type.focus();
