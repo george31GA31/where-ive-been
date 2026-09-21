@@ -35,13 +35,13 @@
   };
 
   function hasBeenEnteredBy(code, date = isoDate(new Date())) {
-    return state.stays.some(stay => stay.countryCode === code && stay.start <= date);
+    return staysForProfile().some(stay => stay.status === 'actual' && stay.countryCode === code && stay.start <= date);
   }
 
   function visitedCountryCodesAsOf(date = isoDate(new Date())) {
     return new Set(
-      state.stays
-        .filter(stay => stay.start <= date)
+      staysForProfile()
+        .filter(stay => stay.status === 'actual' && stay.start <= date)
         .map(stay => stay.countryCode)
         .filter(code => code && code !== 'SEA')
     );
@@ -71,8 +71,8 @@
     const today = isoDate(new Date());
     const map = new Map();
 
-    state.stays.forEach(stay => {
-      if (stay.start > today) return;
+    staysForProfile().forEach(stay => {
+      if (stay.status !== 'actual' || stay.start > today) return;
       const days = datesForStay(stay).filter(day => day <= today);
       if (!days.length) return;
 
@@ -140,74 +140,7 @@
 
   // Replace the calendar renderer so each country chip is a real edit control.
   // Direct click handling prevents the click from also selecting the calendar day.
-  renderCalendar = function () {
-    const c = calendarCursor;
-    const first = (c.getUTCDay() + 6) % 7;
-    const start = addDays(c, -first);
-    const today = isoDate(new Date());
-
-    els.calendarTitle.textContent = c.toLocaleDateString(undefined, {
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC'
-    });
-
-    const monthJump = $('calendarMonthJump');
-    const yearJump = $('calendarYearJump');
-    if (monthJump) monthJump.value = String(c.getUTCMonth());
-    if (yearJump) yearJump.value = String(c.getUTCFullYear());
-
-    let html = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-      .map(day => `<div class="calendar-weekday">${day}</div>`)
-      .join('');
-
-    for (let i = 0; i < 42; i++) {
-      const d = addDays(start, i);
-      const key = dayKey(d);
-      const on = state.stays.filter(stay => stay.start <= key && stay.end >= key);
-      const selectionRange = calendarSelectionStart && calendarSelectionEnd && key >= calendarSelectionStart && key <= calendarSelectionEnd;
-      const selectionStart = key === calendarSelectionStart;
-      const selectionEnd = key === calendarSelectionEnd;
-
-      html += `<div class="calendar-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'outside'} ${key === today ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${key}" role="button" tabindex="0" aria-label="${fmt(key)}">
-        <div class="day-number">${d.getUTCDate()}</div>
-        ${on.slice(0, 4).map(stay => `
-          <button
-            type="button"
-            class="day-stay calendar-stay-button ${SCHENGEN.has(stay.countryCode) && !stay.schengenExempt ? 'schengen' : ''} ${stay.status === 'planned' ? 'planned' : ''}"
-            data-calendar-stay-id="${stay.id}"
-            aria-label="Edit ${esc(stay.countryName)} stay"
-            title="Edit ${esc(stay.countryName)}"
-          >
-            ${flagHtml(stay.countryCode, 'flag-img flag-sm')}
-            <span class="calendar-stay-name">${esc(stay.countryName)}</span>
-          </button>
-        `).join('')}
-        ${on.length > 4 ? `<div class="day-stay calendar-more">+${on.length - 4} more</div>` : ''}
-      </div>`;
-    }
-
-    els.calendar.innerHTML = html;
-
-    els.calendar.querySelectorAll('[data-calendar-stay-id]').forEach(button => {
-      button.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        openStayDialog(button.dataset.calendarStayId);
-      });
-    });
-
-    els.calendar.querySelectorAll('[data-calendar-date]').forEach(day => {
-      day.onkeydown = event => {
-        if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('[data-calendar-stay-id]')) {
-          event.preventDefault();
-          handleCalendarDateClick(day.dataset.calendarDate);
-        }
-      };
-    });
-
-    updateCalendarSelectionUI();
-  };
+  // Calendar rendering lives in app-core.js; no post-load replacement.
 
   function installCountryCountEditorFix() {
     if ($('countryCountDialog')) return;

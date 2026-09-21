@@ -68,8 +68,8 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
 
   function visitedCountryCodesAsOf(date = isoDate(new Date())) {
     return new Set(
-      state.stays
-        .filter(stay => stay.start <= date)
+      staysForProfile()
+        .filter(stay => stay.status === 'actual' && stay.start <= date)
         .map(stay => stay.countryCode)
         .filter(code => code && code !== 'SEA')
     );
@@ -98,7 +98,7 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
     const totals = new Map();
 
     staysForProfile().forEach(stay => {
-      if (stay.start > today || stay.status === 'planned') return;
+      if (stay.start > today || stay.status !== 'actual') return;
       const days = datesForStay(stay).filter(day => day <= today);
       if (!days.length) return;
 
@@ -114,7 +114,7 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
 
     const allRows = [...totals].map(([code, record]) => ({
       code,
-      name: countryByCode(code)?.name || state.stays.find(stay => stay.countryCode === code)?.countryName || code,
+      name: countryByCode(code)?.name || staysForProfile().find(stay => stay.countryCode === code)?.countryName || code,
       total: record.days.size,
       home: [...record.days].filter(d => HVJourney.isHome(state,code,d)).length
     })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
@@ -131,7 +131,7 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
         <div class="country-name">
           <a href="#/country/${row.code}"><strong>${esc(row.name)}</strong></a>
           <span>${row.total-row.home} travel · ${row.home} home days</span>
-          <button type="button" class="country-remove-btn" data-action="exclude-country" data-country="${row.code}" aria-label="Remove ${esc(row.name)} from country totals">Remove</button>
+          <button type="button" class="country-remove-btn" data-action="exclude-country" data-country="${row.code}" aria-label="Hide ${esc(row.name)} from country totals">Hide from totals</button>
         </div>
         <div class="country-bar"><span style="width:${Math.max(0, Math.min(100, row.total / max * 100))}%"></span></div>
         <div class="country-count"><strong>${row.total}</strong><span>days</span></div>

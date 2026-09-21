@@ -202,7 +202,7 @@
     const planned = new Set();
     const current = new Set();
 
-    state.stays.forEach(stay => {
+    staysForProfile().filter(stay => stay.status !== 'cancelled' && stay.status !== 'unconfirmed').forEach(stay => {
       if (!stay.countryCode || stay.countryCode === 'SEA' || stay.countryCode === 'BOU') return;
 
       if (stay.start <= asOf) {
@@ -213,7 +213,7 @@
 
     d3.select(els.worldMap).selectAll('.map-country').attr('class', function () {
       const code = this.dataset.code;
-      return `map-country${actual.has(code) ? ' visited' : planned.has(code) ? ' planned' : ''}${current.has(code) ? ' current' : ''}`;
+      return `map-country${actual.has(code) ? ' visited' : planned.has(code) ? ' planned' : ''}${current.has(code) ? ' current' : ''}${els.worldMap.dataset.selectedCountry===code?' selected':''}`;
     });
   };
 
@@ -225,7 +225,7 @@
 
   // Keep slider/date calculations and show date endpoints; journeys.js renders the shared timeline bars.
   renderMapTimeline = function () {
-    const list = state.stays;
+    const list = staysForProfile().filter(stay => stay.status !== 'cancelled');
 
     if (!list.length) {
       els.timelineEmpty.classList.remove('hidden');
@@ -290,6 +290,11 @@
 
     els.mapFallback.classList.add('hidden');
     const svg = d3.select(els.worldMap);
+    // Travel edits change colours, not geography. Keep paths and zoom in place.
+    if (els.worldMap.querySelector('.map-viewport') && window.HVMapProjection) {
+      updateMapColors();
+      return;
+    }
     svg.selectAll('*').remove();
     svg.attr('aria-label', 'Interactive world map. Scroll or pinch to zoom and drag to pan. Hover a country to see its name.');
 
