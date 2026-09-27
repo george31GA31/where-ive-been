@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4">
-  <link rel="stylesheet" href="voyages.css?v=completion-3" />
+  <link rel="stylesheet" href="voyages.css?v=simplify-4" />
 </head>
 <body>
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -34,20 +34,20 @@
 
       <div class="sidebar-footer">
         <a class="secondary full" id="accountLink" href="profile/">Log in / Create account</a>
-        <p data-sync-status role="status" aria-live="polite">Connecting to your account…</p>
-        <button class="text-btn" id="retrySaveBtn" type="button">Retry save / connection</button>
+        <p data-sync-status role="status" aria-live="polite">Saved on this device. Sign in to sync everywhere.</p>
+        <button class="text-btn" id="retrySaveBtn" type="button" hidden>Retry save</button>
       </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
         <div>
-          <h1 id="pageTitle">Dashboard</h1>
+          <h1 id="pageTitle">Home</h1>
         </div>
         <button class="primary" id="addStayBtn">Add trip</button>
       </header>
 
-      <section id="dashboardView" class="view active" aria-label="Dashboard">
+      <section id="dashboardView" class="view active" aria-label="Home">
         <div class="atlas-masthead">
           <div class="atlas-masthead-copy"><p class="eyebrow">YOUR PERSONAL ATLAS</p><h2>Where you’ve been.<br><em>Where you’re going.</em></h2><a href="#/trips" class="atlas-text-link">Explore your journeys <span aria-hidden="true">↗</span></a></div>
           <div class="atlas-masthead-art"><img src="assets/herald-logo-dark.png" alt="Herald trumpet travel mark" width="1672" height="941"><span>HERALD VOYAGES</span></div>
@@ -138,7 +138,7 @@
               <div class="ring" id="schengenRing"><span id="ringUsed">0</span><small>/ 90 days</small></div>
               <div class="meter-copy"><div><span>Used</span><strong id="calcUsed">0 days</strong></div><div><span>Remaining</span><strong id="calcRemaining">90 days</strong></div><div><span>180-day window</span><strong id="windowDates">—</strong></div></div>
             </div>
-            <div id="forecastBox" class="forecast-box good-box"><strong id="forecastTitle">No recorded overstay</strong><span id="forecastText">Planned stays currently stay within the 90/180 rule.</span></div>
+            <div id="forecastBox" class="forecast-box neutral-box"><strong id="forecastTitle">Add Schengen stays to calculate</strong><span id="forecastText">No Schengen travel has been recorded for this traveller yet.</span></div>
           </article>
           <article class="panel">
             <p class="eyebrow">WHAT COUNTS</p><h2>Schengen days in this window</h2><div id="schengenBreakdown" class="breakdown empty-state">No Schengen days in this period.</div>
@@ -212,19 +212,16 @@
 
   <dialog id="stayDialog" class="dialog">
     <form method="dialog" id="stayForm" class="dialog-card">
-      <div class="dialog-head"><div><p class="eyebrow">TRAVEL RECORD</p><h2 id="dialogTitle">Add a stay</h2></div><button type="button" class="icon-btn" id="closeDialog" aria-label="Close">×</button></div>
+      <div class="dialog-head"><div><p class="eyebrow">TRIP</p><h2 id="dialogTitle">Add a trip</h2><p id="stayDialogIntro" class="dialog-intro">Start with where you went and when. You can add the extra details if you need them.</p></div><button type="button" class="icon-btn" id="closeDialog" aria-label="Close">×</button></div>
       <input type="hidden" id="stayId" />
-      <label class="field"><span>Trip</span><select id="stayTripSelect"><option value="">Standalone trip</option><option value="new">Create a new trip</option></select><small>Choose an existing trip to group this stay. Existing dates and records are preserved.</small></label><label class="field" id="newTripNameField" hidden><span>New trip name</span><input type="text" id="tripNameInput" placeholder="e.g. Eastern Alps 2026" maxlength="80" /></label>
-      <label class="field"><span>Country / location</span><div class="country-input-wrap"><input aria-describedby="formError" id="countryInput" list="countryList" autocomplete="off" placeholder="Start typing a country…" required /><span id="countryFlag" class="country-flag"></span></div><datalist id="countryList"></datalist></label>
-      <div class="field"><div class="field-heading"><span>Date ranges</span><button type="button" class="text-btn" id="addDateRangeBtn">＋ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">You can enter the From and To dates in either order. The other date will not be reset while you are editing.</small></div>
-      <label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label>
-      <div class="form-grid">
-        <label class="field"><span>Status</span><select id="stayStatus"><option value="actual">Completed</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></label>
-        <label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label>
+      <div class="trip-form-core">
+        <label class="field"><span>Country / location</span><div class="country-input-wrap"><input aria-describedby="formError" id="countryInput" list="countryList" autocomplete="off" placeholder="Start typing a country…" required /><span id="countryFlag" class="country-flag"></span></div><datalist id="countryList"></datalist></label>
+        <div class="field"><div class="field-heading"><span>Dates</span><button type="button" class="text-btn" id="addDateRangeBtn">＋ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">Use one range for a simple trip. Add another only if you returned to the same place.</small></div>
+        <label class="field"><span>Is this trip planned or completed?</span><select id="stayStatus"><option value="actual">Completed</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></label>
       </div>
-      <label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label>
+      <details class="trip-form-more"><summary>More trip details</summary><div class="trip-form-more-content"><label class="field"><span>Add to a trip</span><select id="stayTripSelect"><option value="">Keep as its own trip</option><option value="new">Create a new trip</option></select><small>Use an existing trip when this is another stop on the same journey.</small></label><label class="field" id="newTripNameField" hidden><span>New trip name</span><input type="text" id="tripNameInput" placeholder="e.g. Eastern Alps 2026" maxlength="80" /></label><label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label><label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label><label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label></div></details>
       <div id="formError" role="alert" class="form-error" role="alert"></div>
-      <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteStayBtn">Delete stay</button><div class="spacer"></div><button type="button" class="secondary" id="cancelDialog">Cancel</button><button type="submit" class="primary">Save stay</button></div>
+      <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteStayBtn">Delete trip stop</button><div class="spacer"></div><button type="button" class="secondary" id="cancelDialog">Cancel</button><button type="submit" class="primary" id="saveStayBtn">Save trip</button></div>
     </form>
   </dialog>
 
@@ -257,6 +254,6 @@
   <script src="account-model.js?v=completion-2"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=completion-3"></script>
+  <script src="app.js?v=simplify-2"></script>
 </body>
 </html>

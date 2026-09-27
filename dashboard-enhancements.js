@@ -88,7 +88,7 @@ function install(){
  const dialog=document.createElement('dialog');dialog.className='dialog atlas-widget-dialog';dialog.id='atlasWidgetDialog';document.body.append(dialog);
  const routeFor=card=>card.querySelector('#countriesLogged')?'countries':card.querySelector('#schengenUsed,#schengenRemaining')?'schengen':card.querySelector('#recordedTripCount')?'stays':'stats';
  document.querySelectorAll('#dashboardView .stats-grid > .stat-card').forEach((card,index)=>{
-   const button=document.createElement('button');button.className='stat-detail-trigger';button.type='button';button.textContent='Explore details +';button.setAttribute('aria-haspopup','dialog');card.append(button);
+   const button=document.createElement('button');button.className='stat-detail-trigger';button.type='button';button.textContent='Details';button.setAttribute('aria-haspopup','dialog');card.append(button);
    button.addEventListener('click',()=>{const detail=dashboardDetail(card);dialog.innerHTML=`<div class="dialog-card"><div class="dialog-head"><p class="eyebrow">YOUR TRAVEL RECORD</p><button type="button" class="icon-btn" data-close aria-label="Close details">×</button></div><h3 id="widgetTitle">${esc(detail.title)}</h3><p>${esc(detail.text)}</p><div class="stat-detail-pills">${detail.pills.map(p=>`<span class="stat-detail-pill">${esc(p)}</span>`).join('')}</div><button class="primary" data-open>Open ${routeFor(card)==='stays'?'trips':routeFor(card)==='stats'?'statistics':routeFor(card)}</button></div>`;dialog.setAttribute('aria-labelledby','widgetTitle');dialog.querySelector('[data-close]').onclick=()=>dialog.close();dialog.querySelector('[data-open]').onclick=()=>{dialog.close();switchView(routeFor(card));};dialog.showModal();});
  });
 }

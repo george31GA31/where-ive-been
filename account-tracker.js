@@ -12,6 +12,8 @@
       el.textContent = message; el.className = 'status-badge ' + (kind || 'neutral');
       el.dataset.syncKind=kind||'neutral';
     }
+    const retry = $('retrySaveBtn');
+    if (retry) retry.hidden = kind !== 'bad';
   }
   function lock(value) { document.querySelector('.app-shell').inert = value; }
   function apply(data) {
@@ -125,8 +127,8 @@
       $('accountLink').textContent = 'My profile';
     } else {
       engine.stop(); apply(localStorage.getItem(OWNER_KEY) ? guestState() : loadState());
-      $('accountLink').textContent = 'Log in / Create account';
-      status('Sign in to save and sync your travels', 'neutral');
+      $('accountLink').textContent = 'Sign in to sync';
+      status('Saved on this device. Sign in to sync everywhere.', 'neutral');
     }
     offerImport();
     if (next && engine.ready && !$('importDeviceBtn').hidden && !localStorage.getItem('whereIveBeen.importNoticed.' + next)) {
@@ -139,7 +141,7 @@
   }
   async function startAuth() {
     if (authStarting) return;
-    if (!window.supabase) { status('Account library could not load — changes will stay on this device. Refresh to reconnect.', 'warn'); return; }
+    if (!window.supabase) { status('Saved on this device. Sign in when you want to sync.', 'neutral'); return; }
     authStarting = true;
     try {
       const client = WIBAuth.client();
@@ -151,7 +153,7 @@
       const {data, error} = await client.auth.getSession();
       if (error) throw error;
       await changed(data.session);
-    } catch { lock(false); status(navigator.onLine?'Account sign-in could not be checked. Refresh to retry.':'Offline — changes will stay on this device until you reconnect.', navigator.onLine?'bad':'warn'); authStarting = false; }
+  } catch { lock(false); status(userId?(navigator.onLine?'Account sign-in could not be checked. Refresh to retry.':'Offline — changes will stay on this device until you reconnect.'):'Saved on this device. Sign in when you want to sync.', userId?'bad':'neutral'); authStarting = false; }
   }
   document.addEventListener('DOMContentLoaded', () => {
     booted = true;
