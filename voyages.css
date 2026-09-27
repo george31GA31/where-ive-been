@@ -804,7 +804,6 @@ hr {
 }
 .pill.actual {background:var(--green-soft);color:var(--green)}
 .pill.planned {background:var(--amber-soft);color:var(--amber)}
-.pill.unconfirmed {background:var(--amber-soft);color:var(--amber)}
 .pill.cancelled {background:var(--red-soft);color:var(--red)}
 .stay-row.cancelled {opacity:.58}
 .trip-list {display:grid;gap:14px}
@@ -1279,7 +1278,6 @@ body[data-current-view=calendar] #addStayBtn { display:none }
 .trip-filters .field { flex:1; min-width:140px }
 .trip-transport { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-top:1px solid var(--hv-line) }
 .trip-transport span { overflow-wrap:anywhere }
-.day-stay.unconfirmed { background:var(--amber-soft); border:1px dotted var(--amber); color:var(--amber) }
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important }
 }
@@ -2352,7 +2350,6 @@ body[data-current-view=calendar] #addStayBtn { display:none }
 #dashboardView .stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 #dashboardView .schengen-card { display:none; }
 .sheet-section-label { margin:20px 0 8px; color:var(--hv-muted); font-size:11px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
-.day-stay.unconfirmed { background:var(--amber-soft); border:1px dotted var(--amber); color:var(--amber); }
 @media(max-width:760px) {
   #dashboardView .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .agenda-row { grid-template-columns:auto 1fr auto; }
