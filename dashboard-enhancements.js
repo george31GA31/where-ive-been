@@ -78,7 +78,7 @@
 
     return {
       title: label,
-      text: 'Named trips count once. Each ungrouped confirmed stay is a standalone trip.',
+      text: 'Named trips count once. Each ungrouped completed stay is a standalone trip.',
       pills: []
     };
   }

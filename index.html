@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4">
-  <link rel="stylesheet" href="voyages.css?v=completion-2" />
+  <link rel="stylesheet" href="voyages.css?v=completion-3" />
 </head>
 <body>
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -53,7 +53,7 @@
           <div class="atlas-masthead-art"><img src="assets/herald-logo-dark.png" alt="Herald trumpet travel mark" width="1672" height="941"><span>HERALD VOYAGES</span></div>
         </div>
         <div class="stats-grid">
-          <article class="stat-card"><span class="stat-label">Countries visited</span><strong id="countriesLogged">0</strong><small>Confirmed visits through today</small><button type="button" id="editCountryCountBtn" class="country-count-edit-btn" aria-label="Choose which places count as countries">Edit</button></article>
+          <article class="stat-card"><span class="stat-label">Countries visited</span><strong id="countriesLogged">0</strong><small>Completed visits through today</small><button type="button" id="editCountryCountBtn" class="country-count-edit-btn" aria-label="Choose which places count as countries">Edit</button></article>
           <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique days away from recorded homes</small></article>
           <article class="stat-card"><span class="stat-label">Recorded trips</span><strong id="recordedTripCount">0</strong><small>Grouped trips and standalone stays</small></article>
           <article class="stat-card schengen-card">
@@ -83,8 +83,8 @@
         </article>
 
         <article class="panel" id="dashboardGapPanel">
-          <div class="panel-head"><div><p class="eyebrow">ATTENTION</p><h2>Things to review</h2></div><button class="text-btn" data-go-view="stays">Open trips →</button></div>
-          <div id="dashboardGaps" class="gap-list empty-state">Nothing needs your attention.</div>
+          <div class="panel-head"><div><p class="eyebrow">TRAVEL COMPANION</p><h2>Your plans, history and gaps</h2></div><button class="text-btn" data-go-view="stays">Open trips →</button></div>
+          <div id="dashboardGaps" class="gap-list"></div>
         </article>
       </section>
 
@@ -186,7 +186,7 @@
 
       <section id="staysView" class="view">
         <div class="two-col stays-layout">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">Add trip</button></div><div class="trip-filters"><label class="field"><span>Search trips or destinations</span><input id="tripSearch" type="search" placeholder="Country, trip name or notes"></label><label class="field"><span>Status</span><select id="tripStatusFilter"><option value="all">All statuses</option><option value="actual">Confirmed</option><option value="current">Current</option><option value="completed">Completed</option><option value="upcoming">Upcoming confirmed</option><option value="planned">Planned</option><option value="unconfirmed">Needs confirmation</option><option value="cancelled">Cancelled</option></select></label><label class="field"><span>Year</span><input id="tripYearFilter" type="number" min="1900" max="2200" placeholder="All years"></label></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">Add trip</button></div><div class="trip-filters"><label class="field"><span>Search trips or destinations</span><input id="tripSearch" type="search" placeholder="Country, trip name or notes"></label><label class="field"><span>Status</span><select id="tripStatusFilter"><option value="all">All statuses</option><option value="current">Current</option><option value="completed">Completed</option><option value="upcoming">Upcoming</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></label><label class="field"><span>Year</span><input id="tripYearFilter" type="number" min="1900" max="2200" placeholder="All years"></label></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
           <details class="panel journey-accordion"><summary>Check gaps in travel history</summary><div class="panel-head"><div><p class="eyebrow">GAP DETECTOR</p><h2>Dates with no country / location</h2></div></div><p class="panel-copy">When there is a hole between two recorded stays, you can fill the whole missing range in one click.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></details>
         </div>
       </section>
@@ -219,7 +219,7 @@
       <div class="field"><div class="field-heading"><span>Date ranges</span><button type="button" class="text-btn" id="addDateRangeBtn">＋ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">You can enter the From and To dates in either order. The other date will not be reset while you are editing.</small></div>
       <label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label>
       <div class="form-grid">
-        <label class="field"><span>Status</span><select id="stayStatus"><option value="actual">Confirmed / completed</option><option value="planned">Planned</option><option value="unconfirmed">Needs confirmation</option><option value="cancelled">Cancelled</option></select></label>
+        <label class="field"><span>Status</span><select id="stayStatus"><option value="actual">Completed</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></label>
         <label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label>
       </div>
       <label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label>
@@ -257,6 +257,6 @@
   <script src="account-model.js?v=completion-2"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=completion-2"></script>
+  <script src="app.js?v=completion-3"></script>
 </body>
 </html>

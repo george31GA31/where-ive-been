@@ -9,17 +9,33 @@ test('malformed imports are rejected before replacing live state',()=>{
   assert.equal(M.validateImport(valid),valid);
 });
 
-test('past plans require confirmation without inventing history or changing dates',()=>{
-  const stays=[{id:'past',status:'planned',start:'2026-01-01',end:'2026-01-10'},{id:'today',status:'planned',start:'2026-01-05',end:'2026-01-10'}];
+test('past plans automatically become completed after their final date',()=>{
+  const stays=[
+    {id:'past',status:'planned',start:'2026-01-01',end:'2026-01-04'},
+    {id:'active',status:'planned',start:'2026-01-01',end:'2026-01-10'},
+    {id:'future',status:'planned',start:'2026-02-01',end:'2026-02-10'},
+    {id:'legacy-past',status:'unconfirmed',start:'2026-01-01',end:'2026-01-04',plannedReviewStart:'2026-01-01'},
+    {id:'legacy-active',status:'unconfirmed',start:'2026-01-01',end:'2026-01-10',plannedReviewStart:'2026-01-01'}
+  ];
   assert.equal(J.reviewPlanned(stays,'2026-01-05'),true);
-  assert.equal(stays[0].status,'unconfirmed');assert.equal(stays.length,2);
-  assert.equal(stays[0].start,'2026-01-01');assert.equal(stays[1].status,'planned');
-  stays[0].status='planned';stays[0].plannedReviewStart=stays[0].start;
+  assert.equal(stays[0].status,'actual');assert.equal(stays[1].status,'planned');assert.equal(stays[2].status,'planned');
+  assert.equal(stays[3].status,'actual');assert.equal(stays[4].status,'planned');assert.equal(stays[0].start,'2026-01-01');
+  assert.equal('plannedReviewStart' in stays[3],false);assert.equal('plannedReviewStart' in stays[4],false);
   assert.equal(J.reviewPlanned(stays,'2026-01-05'),false);
-  stays[0].start='2026-01-02';assert.equal(J.reviewPlanned(stays,'2026-01-05'),true);
 });
 
-test('cancelled, unconfirmed and another traveller never become completed travel',()=>{
+test('planned transport completes after the later local endpoint date',()=>{
+  const transport=[
+    {id:'date-line',status:'planned',startLocal:'2026-01-02T01:00',endLocal:'2026-01-01T21:00'},
+    {id:'cancelled',status:'cancelled',startLocal:'2026-01-01T12:00',endLocal:'2026-01-01T15:00'}
+  ];
+  assert.equal(J.reviewTransport(transport,'2026-01-02'),false);
+  assert.equal(transport[0].status,'planned');
+  assert.equal(J.reviewTransport(transport,'2026-01-03'),true);
+  assert.equal(transport[0].status,'actual');assert.equal(transport[1].status,'cancelled');
+});
+
+test('cancelled, legacy-unconfirmed and another traveller never count as completed travel',()=>{
   const s={activeProfileId:'p',profiles:[{id:'p'}],residences:[],stays:['cancelled','unconfirmed','planned'].map(status=>({profileId:'p',countryCode:'FR',start:'2026-01-01',end:'2026-01-02',status}))};
   s.stays.push({profileId:'other',countryCode:'GB',start:'2026-01-01',end:'2026-01-02',status:'actual'});
   assert.equal(J.dayStatus(s,'2026-01-01'),'unrecorded');

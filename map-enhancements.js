@@ -202,7 +202,7 @@
     const planned = new Set();
     const current = new Set();
 
-    staysForProfile().filter(stay => stay.status !== 'cancelled' && stay.status !== 'unconfirmed').forEach(stay => {
+    staysForProfile().filter(countsForPlanning).forEach(stay => {
       if (!stay.countryCode || stay.countryCode === 'SEA' || stay.countryCode === 'BOU') return;
 
       if (stay.start <= asOf) {
@@ -225,7 +225,7 @@
 
   // Keep slider/date calculations and show date endpoints; journeys.js renders the shared timeline bars.
   renderMapTimeline = function () {
-    const list = staysForProfile().filter(stay => stay.status !== 'cancelled');
+    const list = staysForProfile().filter(countsForPlanning);
 
     if (!list.length) {
       els.timelineEmpty.classList.remove('hidden');

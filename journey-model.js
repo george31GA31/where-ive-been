@@ -19,7 +19,30 @@
   const countsForPlanning = s => isActual(s) || s?.status === 'planned';
   function reviewPlanned(stays,today) {
     let changed=false;
-    for(const stay of stays) if(stay.status==='planned'&&stay.start<today&&stay.plannedReviewStart!==stay.start) {stay.status='unconfirmed';changed=true;}
+    for(const stay of stays || []) {
+      // A plan becomes completed only once its final calendar day has passed.
+      // This leaves active journeys editable as planned and avoids inventing a
+      // partial completed trip while the traveller is still away.
+      const finished=(stay.end||stay.start)<today;
+      if(stay.status==='planned'&&finished){stay.status='actual';delete stay.plannedReviewStart;changed=true;}
+      // Earlier versions created a manual-review state. Retire it safely so
+      // existing records follow the new automatic-completion behaviour.
+      if(stay.status==='unconfirmed'){
+        stay.status=finished?'actual':'planned';
+        delete stay.plannedReviewStart;
+        changed=true;
+      }
+    }
+    return changed;
+  }
+  function reviewTransport(transports,today) {
+    let changed=false;
+    for(const transport of transports || []) if(transport.status==='planned') {
+      // Use the later local calendar date so date-line journeys cannot be
+      // marked complete before both their departure and arrival dates pass.
+      const finalDate=[transport.startLocal,transport.endLocal].map(value=>value?.slice(0,10)).filter(validDate).sort().at(-1);
+      if(finalDate&&finalDate<today){transport.status='actual';changed=true;}
+    }
     return changed;
   }
   function dayStatus(state,date,profileId=state.activeProfileId) {
@@ -51,6 +74,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={categories,types,scoped,summary,visibleTransport,isActual,countsForPlanning,reviewPlanned,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
+  const api={categories,types,scoped,summary,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

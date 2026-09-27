@@ -16,7 +16,7 @@ The redesign keeps `version: 2` and all existing IDs. It does not rewrite accoun
 
 Existing collections remain `profiles`, `stays`, `residences`, `transports`, `placeVisits`, and optional `trips`. An optional `tripId` links existing stays and transport without changing their IDs. A trip's displayed date range comes from its linked records. Ungrouped records remain valid.
 
-Stay status remains `actual`, `planned`, `unconfirmed`, or `cancelled`. Place visit status is additive: missing status means visited for older records; `want` and `not-recorded` do not count as visits. Explicit review can override an airport visit inferred from transport.
+Stay status is `actual`, `planned`, or `cancelled`. Planned stays become `actual` automatically on the day after their final date; planned transport does the same after the later local endpoint date. Older `unconfirmed` stays are migrated safely to `planned` or `actual` on load. Place visit status is additive: missing status means visited for older records; `want` and `not-recorded` do not count as visits. Explicit review can override an airport visit inferred from transport.
 
 Imports preserve country-definition preferences and visual layer settings. Destination account preferences win conflicting scalar visual settings; country exclusion/inclusion lists are combined. Account conflict choices preserve both sides in the local outbox until resolved.
 
