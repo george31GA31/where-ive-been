@@ -9,7 +9,7 @@
   }
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
-  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'placeVisits']);
+  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'placeVisits']);
   function merge(base, local, remote, resolve) {
     const conflicts = [];
     function field(b, l, r, path) {
@@ -45,7 +45,7 @@
       if (r.profileIds) r.profileIds.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'placeVisits']) {
+    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits']) {
       result[key] ||= [];
       for (const original of source[key] || []) {
         const record = copy(original);
@@ -76,7 +76,7 @@
   }
   function describeConflict(conflict,data={}) {
     const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
-    const labels={stays:'Stay',trips:'Trip',transports:'Transport',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',start:'Start date',end:'End date',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
+    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
     const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
     const display=value=>{
       if(value===undefined)return 'Deleted';if(value===null||value==='')return 'Not recorded';
@@ -105,6 +105,10 @@
           for(const side of ['start','end'])if(!row[side]||typeof row[side].name!=='string'||!row[side].name.trim())throw new Error('Check transport locations.');
         }
         if(key==='placeVisits'&&(typeof row.category!=='string'||typeof row.itemId!=='string'||(!['want','not-recorded'].includes(row.status)&&!/^\d{4}-\d{2}-\d{2}$/.test(row.date||''))))throw new Error('Check place visit details.');
+        if(key==='accommodations'){
+          const date=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
+          if(typeof row.tripId!=='string'||!row.tripId||typeof row.propertyName!=='string'||!row.propertyName.trim()||typeof row.location!=='string'||!row.location.trim()||!date(row.checkIn)||!date(row.checkOut)||row.checkOut<row.checkIn)throw new Error('Check accommodation details.');
+        }
         if (key==='stays' || key==='residences') {
           const date=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
           if (typeof row.countryCode!=='string'||!/^[A-Z]{2,3}$/.test(row.countryCode)||!date(row.start)||(key==='stays'&&!date(row.end))||(row.end&&(!date(row.end)||row.end<row.start))) throw new Error('Check country and date ranges in ' + key + '.');

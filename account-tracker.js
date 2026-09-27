@@ -75,8 +75,8 @@
     if (!button.hidden) {
       const source = deviceSource();
       button.textContent = 'Add this data to my account';
-      const preview=M.importData(state,source),added=['stays','trips','profiles','residences','transports','placeVisits'].reduce((n,key)=>n+(preview.data[key]?.length||0)-(state[key]?.length||0),0),total=['stays','trips','profiles','residences','transports','placeVisits'].reduce((n,key)=>n+(source[key]?.length||0),0),duplicates=Math.max(0,total-added-preview.conflicts.length);
-      button.previousElementSibling && (button.previousElementSibling.textContent = `We found existing travel history on this device: ${source.stays.length} stays, ${source.profiles.length} travellers, ${source.residences.length} home records and ${source.transports?.length||0} transport records. ${duplicates} likely duplicates will be skipped; ${preview.conflicts.length} conflicts need a choice. Your original copy will be kept.`);
+      const preview=M.importData(state,source),added=['stays','trips','profiles','residences','transports','accommodations','placeVisits'].reduce((n,key)=>n+(preview.data[key]?.length||0)-(state[key]?.length||0),0),total=['stays','trips','profiles','residences','transports','accommodations','placeVisits'].reduce((n,key)=>n+(source[key]?.length||0),0),duplicates=Math.max(0,total-added-preview.conflicts.length);
+      button.previousElementSibling && (button.previousElementSibling.textContent = `We found existing travel history on this device: ${source.stays.length} stays, ${source.profiles.length} travellers, ${source.residences.length} home records, ${source.transports?.length||0} transport records and ${source.accommodations?.length||0} accommodation entries. ${duplicates} likely duplicates will be skipped; ${preview.conflicts.length} conflicts need a choice. Your original copy will be kept.`);
     }
   }
   async function importDevice() {
@@ -92,7 +92,7 @@
     if (userId !== importingUser) return;
     const beforeImport = M.copy(state);
     let target = M.copy(state);
-    if (!target.stays.length && !target.residences.length && !target.transports?.length && !target.placeVisits?.length && target.profiles.length === 1 && target.profiles[0].name === 'Me' && !target.profiles[0].citizenships.length) {
+    if (!target.stays.length && !target.residences.length && !target.transports?.length && !target.accommodations?.length && !target.placeVisits?.length && target.profiles.length === 1 && target.profiles[0].name === 'Me' && !target.profiles[0].citizenships.length) {
       target.profiles = []; target.activeProfileId = null;
     }
     let result = M.importData(target, source);

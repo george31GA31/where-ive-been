@@ -5,7 +5,8 @@ Base inspected: `fe8b8b919b900a8e62887ea8a1201a15354a8875` on main, 21 September
 ## Changes in this stage
 
 - Shared pure travel summary and explicit combined-traveller summary; cancelled transport excluded from calendar/map/timeline/inferred airport visits.
-- Calendar uses separate date buttons, preserves range selection after cancellation, and includes transport and country filters in Agenda. Compact mobile toolbar and default Agenda on narrow screens.
+- Calendar is a journey-led Month view with separate date buttons, contextual transport markers and compact filters. Agenda is removed; the responsive Month view preserves range selection after cancellation.
+- The progressive trip planner saves dates, ordered stops, optional transport and optional accommodation as one linked journey. Accommodation stays independently editable and imports/syncs as additive data.
 - Explicit trip picker, trip rename/notes/membership editor, multi-traveller group membership, transport-only trips, and optional bulk completed/planned/cancelled actions. Planned travel automatically becomes completed after its final date. Existing stay and transport IDs are preserved.
 - Overview leads with the relevant trip, its grouped stay dates, and three or four primary statistics. Empty CTA opens the form. Country reference pages expose first/last/next visits and individual visit status/date controls.
 - Places visited under Explore, wish-list states, reviewable inferred airport visits, honest unavailable-data states and readable source context.

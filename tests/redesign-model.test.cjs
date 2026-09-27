@@ -59,6 +59,16 @@ test('trip links and nested visual preferences survive repeated device imports',
   assert.deepEqual(M.importData(out,source).data,out);
 });
 
+test('accommodation follows its trip through safe imports and rejects malformed entries',()=>{
+ const account={profiles:[{id:'account',name:'Me'}],trips:[{id:'account-trip',profileId:'account',name:'Europe'}],accommodations:[]};
+ const guest={profiles:[{id:'guest',name:'Me'}],trips:[{id:'guest-trip',profileId:'guest',name:'Europe'}],accommodations:[{id:'hotel',profileId:'guest',tripId:'guest-trip',propertyName:'Hotel Lovec',location:'Bled',checkIn:'2026-09-20',checkOut:'2026-09-22',notes:'Lake view'}]};
+ const out=M.importData(account,guest).data;
+ assert.equal(out.accommodations.length,1);assert.equal(out.accommodations[0].tripId,'account-trip');assert.equal(out.accommodations[0].profileId,'account');
+ assert.deepEqual(M.importData(out,guest).data,out);
+ assert.throws(()=>M.validateImport({accommodations:[{id:'bad',tripId:'trip',propertyName:'',location:'Bled',checkIn:'2026-09-20',checkOut:'2026-09-22'}]}));
+ assert.doesNotThrow(()=>M.validateImport({accommodations:[{id:'good',tripId:'trip',propertyName:'Hotel',location:'Bled',checkIn:'2026-09-20',checkOut:'2026-09-22'}]}));
+});
+
 test('shared summary counts dates once and applies each traveller’s own home history',()=>{
  const data={profiles:[{id:'a',homeCountryCodes:['GB']},{id:'b',homeCountryCodes:['US']}],activeProfileId:'a',residences:[],stays:[{id:'1',profileId:'a',countryCode:'GB',start:'2026-01-01',end:'2026-01-03',status:'actual'},{id:'2',profileId:'b',countryCode:'GB',start:'2026-01-02',end:'2026-01-03',status:'actual'},{id:'3',profileId:'a',countryCode:'FR',start:'2026-01-04',end:'2026-01-06',status:'cancelled'}]};
  assert.equal(J.summary(data,'2026-01-05','a').days.size,0);

@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4">
   <link rel="stylesheet" href="voyages.css?v=simplify-4" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=journeys-1" />
 </head>
 <body>
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -92,16 +93,36 @@
       <section id="homesView" class="view" aria-label="Lived In"></section>
       <section id="placesView" class="view"><article class="panel"><h2>Your places</h2><p class="helper">Individual place visits and your wish list. Country stays do not automatically imply visits to attractions.</p><div id="personalPlaces"></div></article></section>
       <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">Open profile</a></article></section>
-      <section id="calendarView" class="view">
-        <article class="panel calendar-panel">
-          <div class="calendar-toolbar">
-            <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
-            <div class="calendar-toolbar-actions"><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button><button class="secondary" id="todayBtn">Today</button></div>
+      <section id="calendarView" class="view" aria-label="Trip calendar">
+        <div class="calendar-experience">
+          <header class="calendar-hero">
+            <div>
+              <p class="eyebrow">JOURNEY CALENDAR</p>
+              <h2>Every part of a trip, <em>made clear.</em></h2>
+              <p>See where you are, where you are going and how each journey fits together.</p>
+            </div>
+            <button class="primary calendar-plan-button" id="calendarPlanTripBtn" type="button">Plan a trip <span aria-hidden="true">→</span></button>
+          </header>
+
+          <div class="calendar-layout">
+            <article class="panel calendar-panel calendar-month-panel">
+              <div class="calendar-toolbar">
+                <div class="calendar-toolbar-primary">
+                  <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
+                  <button class="secondary compact" id="todayBtn">Today</button>
+                </div>
+                <div class="calendar-toolbar-actions"><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button></div>
+              </div>
+              <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
+              <div id="calendar" class="calendar" aria-live="polite"></div>
+              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-trip"></i> Journey</span><span class="calendar-key"><i class="calendar-key-home"></i> Home / lived-in</span><span class="calendar-key"><i class="calendar-key-transport"></i> Transport</span><p>Select a journey to follow its route. Use the date number to plan a new one.</p></footer>
+            </article>
+
+            <aside id="calendarJourneyDetail" class="calendar-journey-detail" aria-live="polite"></aside>
           </div>
-          <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Click a date to add a stay</strong><span>Pick the first day, then the last day. Click the same day twice for a day trip.</span></div>
-          <div id="calendar" class="calendar"></div>
-          <p class="helper">Select a first and last date to add a trip.</p>
-        </article>
+
+          <div id="calendarTransportLibrary" class="calendar-transport-library"></div>
+        </div>
       </section>
 
       <section id="mapView" class="view">
@@ -251,9 +272,9 @@
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="account-config.js"></script>
-  <script src="account-model.js?v=completion-2"></script>
+  <script src="account-model.js?v=journeys-1"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=simplify-2"></script>
+  <script src="app.js?v=journeys-1"></script>
 </body>
 </html>
