@@ -72,8 +72,11 @@ test('accommodation follows its trip through safe imports and rejects malformed 
 test('shared summary counts dates once and applies each traveller’s own home history',()=>{
  const data={profiles:[{id:'a',homeCountryCodes:['GB']},{id:'b',homeCountryCodes:['US']}],activeProfileId:'a',residences:[],stays:[{id:'1',profileId:'a',countryCode:'GB',start:'2026-01-01',end:'2026-01-03',status:'actual'},{id:'2',profileId:'b',countryCode:'GB',start:'2026-01-02',end:'2026-01-03',status:'actual'},{id:'3',profileId:'a',countryCode:'FR',start:'2026-01-04',end:'2026-01-06',status:'cancelled'}]};
  assert.equal(J.summary(data,'2026-01-05','a').days.size,0);
+ assert.equal(J.summary(data,'2026-01-05','a').countries.size,0,'Ordinary home days are not a destination');
  assert.equal(J.summary(data,'2026-01-05','b').days.size,2);
  const all=J.summary(data,'2026-01-05','all');assert.equal(all.days.size,2);assert.equal(all.home.size,1);assert.deepEqual([...all.countries],['GB']);
+ data.stays[0].tripId='intentional-home-trip';
+ assert.deepEqual([...J.summary(data,'2026-01-05','a').countries],['GB'],'An explicitly logged home-country trip remains visible');
 });
 test('cancelled transport and cancelled linked trips cannot infer airport visits',()=>{
  const base={activeProfileId:'a',trips:[{id:'cancel',status:'cancelled'}],transports:[{id:'t',profileId:'a',type:'flight',status:'actual',tripId:'cancel',startLocal:'2026-01-01T12:00',endLocal:'2026-01-01T15:00',start:{airportId:'LHR'},end:{airportId:'CDG'}}],placeVisits:[]};

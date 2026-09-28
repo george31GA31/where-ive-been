@@ -7,7 +7,7 @@
   const visibleTransport = (state,profileId=state.activeProfileId) => scoped(state.transports,profileId).filter(t => t.status !== 'cancelled' && !(state.trips||[]).some(trip=>trip.id===t.tripId&&trip.status==='cancelled'));
   const summary = (state,today,profileId=state.activeProfileId) => {
     const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=today),countries=new Set(),days=new Set(),home=new Set(),trips=new Set();
-    for(const stay of stays){countries.add(stay.countryCode);trips.add(stay.tripId||'stay:'+stay.id);for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||state.activeProfileId;((profileId==='all'&&!stay.profileId?state.profiles.every(p=>isHome(state,stay.countryCode,date,p.id)):isHome(state,stay.countryCode,date,owner))?home:days).add(date);}}
+    for(const stay of stays){trips.add(stay.tripId||'stay:'+stay.id);for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||state.activeProfileId;const atHome=profileId==='all'&&!stay.profileId?state.profiles.every(p=>isHome(state,stay.countryCode,date,p.id)):isHome(state,stay.countryCode,date,owner);(atHome&&!stay.tripId&&!stay.location?home:days).add(date);if(!atHome||stay.tripId||stay.location)countries.add(stay.countryCode);}}
     countries.delete('SEA');for(const date of days)home.delete(date);
     return {stays,countries,days,home,trips};
   };

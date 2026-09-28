@@ -46,7 +46,7 @@
   function renderAchievements(){
     const host=get('atlasStatistics');if(!host)return;host.querySelector('#placeAchievements')?.remove();
     const panel=document.createElement('article');panel.id='placeAchievements';panel.className='panel';
-    const universe=COUNTRIES.filter(c=>c.code!=='SEA'&&WIBCountryCount.isCounted(c.code)),visited=new Set(staysForProfile().filter(s=>s.status==='actual'&&s.start<=today()).map(s=>s.countryCode));
+    const universe=COUNTRIES.filter(c=>c.code!=='SEA'&&WIBCountryCount.isCounted(c.code)),visited=J.summary(state,today()).countries;
     panel.innerHTML=`<h2>Places experienced</h2><p class="helper">Your recorded visits, counted once per place. Totals reflect imported reference data.</p><div class="achievement-grid"><div><span>Countries visited</span><strong>${universe.filter(c=>visited.has(c.code)).length} <small>/ ${universe.length}</small></strong></div>${Object.entries(J.categories).map(([key,label])=>{const ids=J.visits(state,key,today()),list=items(key);return `<div><span>${E(label)} visited</span><strong>${list.length?list.filter(r=>ids.has(r.id)).length:'—'} <small>${list.length?'/ '+list.length:''}</small></strong>${!list.length?'<small>Data not available yet</small>':''}</div>`;}).join('')}</div>`;
     host.append(panel);
   }
@@ -76,24 +76,10 @@
   }
   function transportEndpoint(t,end){const p=t[end];return p?.airportId?({...items('airports').find(a=>a.id===p.airportId),...p}):p;}
   function renderMap(){
-    const svg=get('worldMap'),viewport=svg?.querySelector('.map-viewport');if(!viewport||!window.d3||!window.HVMapProjection)return;
-    viewport.querySelector('.transport-routes')?.remove();const show=layer('map');svg.classList.toggle('countries-hidden',!show.countries);if(!show.transport)return;
-    const group=d3.select(viewport).append('g').attr('class','transport-routes');
-    records().filter(t=>!timelineDate||t.startLocal.slice(0,10)<=timelineDate).forEach(t=>{
-      const a=transportEndpoint(t,'start'),b=transportEndpoint(t,'end');if(![a?.lat,a?.lon,b?.lat,b?.lon].every(Number.isFinite))return;
-      const color=J.routeColor(t.type),coords=[[a.lon,a.lat],[b.lon,b.lat]],g=group.append('g');
-      g.append('path').attr('d',d3.geoPath(window.HVMapProjection)({type:'LineString',coordinates:coords})).attr('fill','none').attr('stroke',color).attr('stroke-width',2.5).attr('vector-effect','non-scaling-stroke').attr('stroke-dasharray',t.status==='planned'?'5 4':null);
-      const center=window.HVMapProjection(d3.geoInterpolate(coords[0],coords[1])(.5));
-      if(center){const mark=g.append('g').attr('transform',`translate(${center[0]-7},${center[1]-7}) scale(.6)`).attr('role','button').attr('tabindex',0).attr('aria-label',`${J.types[t.type]||t.type}: ${t.start.name} to ${t.end.name}`);
-        mark.append('rect').attr('width',24).attr('height',24).attr('rx',3).attr('fill','var(--hv-ink, #202a30)');mark.append('path').attr('d',paths[t.type]||paths.other).attr('fill','none').attr('stroke',color).attr('stroke-width',2);
-        mark.on('click',e=>{e.stopPropagation();openTransport(t.id);}).on('keydown',e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();e.stopPropagation();openTransport(t.id);}});
-      }
-    });
-    const missing=records().filter(t=>!['start','end'].every(k=>{const p=transportEndpoint(t,k);return Number.isFinite(p?.lat)&&Number.isFinite(p?.lon);})).length;
-    get('transportMapNote').textContent=missing?`${missing} transport record(s) need endpoint coordinates to appear on the map. Routes are shown through the selected timeline date.`:'Approximate endpoint connections, not travelled paths. Routes are shown through the selected timeline date.';
+    window.HVPlaces?.renderMap?.();
   }
   function renderTimeline(){
-    const show=layer('map'),all=[...(show.countries?staysForProfile().filter(countsForPlanning):[]),...(show.transport?records().map(t=>({start:t.startLocal.slice(0,10),end:t.endLocal.slice(0,10),countryName:`${J.types[t.type]||t.type}: ${t.start.name} → ${t.end.name}`,transport:t})):[])];
+    const all=staysForProfile().filter(countsForPlanning).filter(s=>!J.isHome(state,s.countryCode,s.start)||s.tripId||s.location);
     get('timelineEmpty').classList.toggle('hidden',all.length>0);get('timelineContent').classList.toggle('hidden',!all.length);if(!all.length)return;
     const dates=all.flatMap(r=>[r.start,r.end]).concat(today()).sort(),min=dates[0],max=dates.at(-1),total=Math.max(1,diffDays(min,max));
     els.timelineSlider.dataset.start=min;els.timelineSlider.max=total;timelineDate=timelineDate&&timelineDate>=min&&timelineDate<=max?timelineDate:today();els.timelineSlider.value=diffDays(min,timelineDate);
@@ -123,9 +109,10 @@
   function openTransport(id,prefill={}){
     const t=state.transports?.find(t=>t.id===id),dialog=get('transportDialog');opener=document.activeElement;
     const form=get('transportForm');form.reset();form.dataset.id=id||'';
-    form.elements.type.value=t?.type||prefill.type||'flight';form.elements.status.value=t?.status||prefill.status||'actual';form.elements.tripId.innerHTML='<option value="">No linked trip</option>'+J.scoped(state.trips,state.activeProfileId).map(x=>`<option value="${E(x.id)}">${E(x.name)}</option>`).join('');form.elements.tripId.value=t?.tripId||prefill.tripId||'';
-    for(const key of ['startLocal','endLocal','flightNumber','bookingReference'])form.elements[key].value=t?.[key]||(['startLocal','endLocal'].includes(key)?today()+'T12:00':'');
-    for(const key of ['start','end'])for(const field of ['name','terminal','lat','lon'])form.elements[key+field].value=t?.[key]?.[field]??'';
+    form._airportPrefill=prefill;
+    form.elements.type.value=t?.type||prefill.type||'flight';form.elements.status.value=t?.status||prefill.status||((prefill.startLocal||'').slice(0,10)>today()?'planned':'actual');form.elements.tripId.innerHTML='<option value="">No linked trip</option>'+J.scoped(state.trips,state.activeProfileId).map(x=>`<option value="${E(x.id)}">${E(x.name)}</option>`).join('');form.elements.tripId.value=t?.tripId||prefill.tripId||'';
+    for(const key of ['startLocal','endLocal','flightNumber','bookingReference'])form.elements[key].value=t?.[key]||prefill[key]||(['startLocal','endLocal'].includes(key)?today()+'T12:00':'');
+    for(const key of ['start','end'])for(const field of ['name','terminal','lat','lon'])form.elements[key+field].value=t?.[key]?.[field]??prefill[key]?.[field]??'';
 get('transportDelete').hidden=!t;get('transportError').textContent='';get('transportDialogTitle').textContent=t?'Edit transport':'Add transport';updateTransportFields();dialog.showModal();form.elements.type.focus();
   }
   function updateTransportFields(){
@@ -143,9 +130,9 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
     for(const key of ['startLocal','endLocal','flightNumber','bookingReference'])t[key]=f[key].value.trim();
     if(t.type!=='flight')delete t.flightNumber;
     for(const end of ['start','end']){
-      const name=f[end+'name'].value.trim(),a=t.type==='flight'?airportFor(name):null;
+      const name=f[end+'name'].value.trim(),savedAirport=form._airportPrefill?.[end]?.name===name?form._airportPrefill[end]:null,a=t.type==='flight'?(savedAirport||airportFor(name)):null;
       t[end]={...(old?.[end]?.name===name?old[end]:{}),name,terminal:f[end+'terminal'].value.trim(),lat:f[end+'lat'].value===''?(a?.lat??null):Number(f[end+'lat'].value),lon:f[end+'lon'].value===''?(a?.lon??null):Number(f[end+'lon'].value)};
-      if(a){t[end].airportId=a.id;if(a.timezone)t[end].timezone=a.timezone;}
+      if(a){t[end].airportId=a.airportId||a.id;if(a.timezone)t[end].timezone=a.timezone;if(a.iata)t[end].iata=a.iata;if(a.icao)t[end].icao=a.icao;}
     }
     const error=J.validateTransport(t);if(error){get('transportError').textContent=error;return;}
     state.transports||=[];if(old)state.transports[state.transports.indexOf(old)]=t;else state.transports.push(t);
@@ -156,7 +143,7 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
   function renderPersonalPlaces(){
     const host=get('personalPlaces');if(!host)return;
     const visits=J.scoped(state.placeVisits,state.activeProfileId).filter(v=>v.status!=='not-recorded');
-    host.innerHTML=visits.map(v=>{const place=items(v.category).find(p=>p.id===v.itemId),code=place?.countryCodes?.[0];return `<div class="reference-row"><div><strong>${E(place?.name||'Saved place visit')}</strong><p>${E(J.categories[v.category]||v.category)} · ${v.status==='want'?'Want to visit':E(v.date||'Date not recorded')}</p></div>${code?`<a class="secondary" href="#/country/${E(code)}">Review visit</a>`:'<span>Reference details unavailable</span>'}</div>`;}).join('')||'<div class="empty-state places-empty"><p>No individual places recorded yet.</p><p>Places are separate from country stays, so you can keep a personal list of things you visited or want to see.</p><a class="secondary" href="#/countries">Browse countries</a></div>';
+    host.innerHTML=visits.map(v=>{const place=v.category==='locations'?v.place:items(v.category).find(p=>p.id===v.itemId),code=place?.countryCode||place?.countryCodes?.[0];return `<div class="reference-row"><div><strong>${E(place?.name||'Saved place visit')}</strong><p>${E(J.categories[v.category]||place?.type||v.category)} · ${v.status==='want'?'Want to visit':E(v.date||'Date not recorded')}${v.tripId?' · Linked trip':''}</p></div>${v.category==='locations'?`<div class="place-actions"><button class="secondary compact" type="button" data-place-edit="${E(v.id)}">Edit</button><button class="text-btn" type="button" data-place-delete="${E(v.id)}">Remove</button></div>`:code?`<a class="secondary" href="#/country/${E(code)}">Review visit</a>`:'<span>Reference details unavailable</span>'}</div>`;}).join('')||'<div class="empty-state places-empty"><p>No individual places recorded yet.</p><p>Places are separate from country stays, so you can keep a personal list of things you visited or want to see.</p><a class="secondary" href="#/countries">Browse countries</a></div>';
   }
   function renderHomeSummary(){const host=get('homeCountriesSummary');if(host)host.textContent=(activeProfile()?.homeCountryCodes||[]).map(c=>countryByCode(c)?.name||c).join(' · ')||'No permanent home countries selected. Dated residence periods still apply.';}
   function installHome(){
@@ -179,10 +166,9 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
     for(const [node,label,open] of [[directory,'Country Directory',true],[get('countryTotals')?.closest('.panel'),'Time Spent by Country / Location',false]]){
       if(!node)continue;const accordion=document.createElement('details');accordion.className='journey-accordion';accordion.open=open;const summary=document.createElement('summary');summary.textContent=label;node.before(accordion);accordion.append(summary,node);
     }
-    installHome();installLayers('map');
+    installHome();
     const dateLabel=document.createElement('label');dateLabel.className='field timeline-manual';dateLabel.innerHTML='<span>Go to date</span><input type="date" id="timelineManualDate">';els.timelineSlider.before(dateLabel);
     get('timelineManualDate').onchange=e=>{if(J.validDate(e.target.value))setTimelineDate(e.target.value);};
-    const note=document.createElement('p');note.id='transportMapNote';note.className='helper';get('mapView').querySelector('.map-panel').append(note);
     const transport=document.createElement('details');transport.className='journey-accordion';transport.innerHTML='<summary>Transport journeys</summary><label class="field"><span>Search journeys</span><input type="search" id="transportSearch"></label><div id="transportRecords"></div>';
     get('calendarView').append(transport);get('transportSearch').oninput=renderTransportList;
     const add=document.createElement('button');add.type='button';add.className='secondary compact';add.id='addTransportBtn';add.textContent='+ Add transport';add.onclick=()=>openTransport();get('calendarView').querySelector('.calendar-toolbar-actions')?.append(add);
@@ -193,7 +179,7 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
     get('transportDelete').onclick=()=>{if(!confirm('Delete this transport journey?'))return;state.transports=state.transports.filter(t=>t.id!==get('transportForm').dataset.id);persist();dialog.close();refresh();};
     window.addEventListener('hv-calendar-rendered',renderCalendarExtras);
     const timeline=window.renderMapTimeline;window.renderMapTimeline=function(){timeline();renderTimeline();};
-    const labels=window.updateTimelineLabels;window.updateTimelineLabels=function(){labels();if(get('timelineManualDate'))get('timelineManualDate').value=timelineDate||'';const show=layer('map');if(!show.countries)els.timelineLocationLabel.textContent='Countries hidden';if(show.transport&&timelineDate){const on=records().filter(t=>t.startLocal.slice(0,10)===timelineDate||t.endLocal.slice(0,10)===timelineDate);if(on.length)els.timelineLocationLabel.textContent+=(show.countries?' · ':' · ')+on.map(t=>`${J.types[t.type]||t.type}: ${t.start.name} → ${t.end.name}`).join(' · ');}};
+    const labels=window.updateTimelineLabels;window.updateTimelineLabels=function(){labels();if(get('timelineManualDate'))get('timelineManualDate').value=timelineDate||'';};
     window.setTimelineDate=function(value){if(!J.validDate(value)||!els.timelineSlider.dataset.start)return;els.timelineSlider.value=Math.max(0,Math.min(Number(els.timelineSlider.max),diffDays(els.timelineSlider.dataset.start,value)));setTimelineFromSlider();};
     const colors=window.updateMapColors;window.updateMapColors=function(){colors();renderMap();};
     window.addEventListener('hv-route',()=>{render();renderCalendarExtras();for(const view of ['map','calendar'])get(view+'View')?.querySelectorAll('[data-layer]').forEach(input=>input.checked=layer(view)[input.dataset.layer]);});
@@ -212,7 +198,7 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
   document.addEventListener('change',event=>{
     const target=event.target;
     if(target.matches('[data-home-country]')){if(target.checked&&!confirm('Treat this country as home for every recorded date, including past visits? Use a dated residence instead if you only lived there for part of your history.')){target.checked=false;return;}const p=activeProfile();if(!p)return;p.homeCountryCodes=[...new Set(target.checked?[...(p.homeCountryCodes||[]),target.dataset.homeCountry]:(p.homeCountryCodes||[]).filter(c=>c!==target.dataset.homeCountry))];persist();refresh();}
-    if(target.matches('[data-layer]')){state.visualLayers||={};state.visualLayers[target.dataset.layerView]={...layer(target.dataset.layerView),[target.dataset.layer]:target.checked};persist();renderCalendarExtras();renderTimeline();renderMap();if(!layer('map').transport)get('transportMapNote').textContent='';}
+    if(target.matches('[data-layer]')){state.visualLayers||={};state.visualLayers[target.dataset.layerView]={...layer(target.dataset.layerView),[target.dataset.layer]:target.checked};persist();renderCalendarExtras();renderTimeline();renderMap();}
     if(target.matches('[data-place-id], [data-place-date]')){
       const id=target.dataset.placeId||target.dataset.placeDate,row=target.closest('.place-visit-controls'),select=row.querySelector('select'),input=row.querySelector('input'),status=select.value;
       input.disabled=status!=='visited';if(status==='visited'&&!input.value)input.value=today();

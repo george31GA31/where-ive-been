@@ -204,6 +204,7 @@
 
     staysForProfile().filter(countsForPlanning).forEach(stay => {
       if (!stay.countryCode || stay.countryCode === 'SEA' || stay.countryCode === 'BOU') return;
+      if (window.HVJourney?.isHome(state, stay.countryCode, stay.start) && !stay.tripId && !stay.location) return;
 
       if (stay.start <= asOf) {
         (stay.status === 'planned' ? planned : actual).add(stay.countryCode);
