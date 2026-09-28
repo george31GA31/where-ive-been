@@ -198,13 +198,14 @@
     if (!worldFeatures || !els?.worldMap || !window.d3) return;
 
     const asOf = timelineDate || isoDate(new Date());
-    const actual = new Set();
+    const homes = new Set(window.HVJourney.homeCountryCodes(state,state.activeProfileId,asOf));
+    const actual = new Set(homes);
     const planned = new Set();
     const current = new Set();
 
     staysForProfile().filter(countsForPlanning).forEach(stay => {
       if (!stay.countryCode || stay.countryCode === 'SEA' || stay.countryCode === 'BOU') return;
-      if (window.HVJourney?.isHome(state, stay.countryCode, stay.start)) return;
+
 
       if (stay.start <= asOf) {
         (stay.status === 'planned' ? planned : actual).add(stay.countryCode);
@@ -212,6 +213,8 @@
       if (stay.start <= asOf && stay.end >= asOf) current.add(stay.countryCode);
     });
 
+    const away=[...current].some(code=>!homes.has(code));
+    for(const code of homes){if(away)current.delete(code);else current.add(code);}
     d3.select(els.worldMap).selectAll('.map-country').attr('class', function () {
       const code = this.dataset.code;
       return `map-country${actual.has(code) ? ' visited' : planned.has(code) ? ' planned' : ''}${current.has(code) ? ' current' : ''}${els.worldMap.dataset.selectedCountry===code?' selected':''}`;

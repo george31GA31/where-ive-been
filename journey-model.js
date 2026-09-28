@@ -23,18 +23,28 @@
     });
     return candidates.length===1?candidates[0].id:null;
   }
+  function homeCountryCodes(state,profileId=state.activeProfileId,date=new Date().toISOString().slice(0,10)) {
+    const configured=(state.profiles||[]).find(p=>p.id===profileId)?.homeCountryCodes||[];
+    // Older accounts recorded their home as a residence, without permanent-home settings.
+    return [...new Set([...configured,...(!configured.length?scoped(state.residences,profileId).filter(r=>r.start<=date&&(!r.end||r.end>=date)).map(r=>r.countryCode):[])])];
+  }
+  function transportLabel(record,lookup=()=>null) {
+    if(record.type!=='flight')return `${record.start?.name||''} → ${record.end?.name||''}`;
+    const label=p=>p?.iata||lookup(p?.name||'')?.iata||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
+    return `${label(record.start)}-${label(record.end)}`+(record.via?.length?` via ${record.via.map(label).join(', ')}`:'');
+  }
   function memories(state,today,profileId=state.activeProfileId) {
     const year=Number(today.slice(0,4)),suffix=today.slice(4);
     const records=[...scoped(state.stays,profileId).filter(isActual),...scoped(state.residences,profileId),...scoped(state.placeVisits,profileId).filter(v=>v.category==='locations'&&v.status==='visited').map(v=>({...v,...v.place,start:v.date,end:v.endDate||v.date,location:v.place?.name}))];
-    const homeCodes=new Set((state.profiles||[]).find(p=>p.id===profileId)?.homeCountryCodes||[]);
+    const homeCodes=new Set(homeCountryCodes(state,profileId,today));
     const eligible=records.filter(r=>r.countryCode&&r.countryCode!=='SEA'&&!homeCodes.has(r.countryCode)&&validDate(r.start));
     const first=Math.min(year,...eligible.map(r=>Number(r.start.slice(0,4)))),result=[];
     for(let y=year-1;y>=first;y--){const date=y+suffix;if(!validDate(date))continue;
       const seen=new Map();
       for(const r of eligible){if(r.start>date||(r.end&&r.end<date))continue;
         // Permanent home settings apply even to linked trips and plotted places.
-        const ownerHomes=(state.profiles||[]).find(p=>p.id===(r.profileId||profileId))?.homeCountryCodes||[];
-        if(ownerHomes.includes(r.countryCode))continue;
+        const ownerHomes=homeCountryCodes(state,r.profileId||profileId,today);
+        if(ownerHomes.includes(r.countryCode)||(!ownerHomes.length&&homeCountryCodes(state,r.profileId||profileId,date).includes(r.countryCode)))continue;
         const country=r.countryName||r.countryCode,label=r.location||'';
         const name=label&&label.toLowerCase()!==country.toLowerCase()?label+', '+country:country;
         seen.set(r.countryCode+'|'+label.toLowerCase(),{code:r.countryCode,name});
@@ -102,6 +112,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={categories,types,scoped,summary,tripForDates,memories,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
+  const api={categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

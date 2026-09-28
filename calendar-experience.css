@@ -770,3 +770,11 @@
 .calendar-range-fields input { padding:10px 7px; }
 .place-search-form input[type=text],.place-search-form input[type=search],.place-search-form input[type=date],.place-search-form select { box-sizing:border-box; min-height:44px; border:1px solid var(--hv-line); border-radius:4px; padding:10px 12px; background:var(--hv-surface); color:var(--hv-ink); font:inherit; }
 .place-search-form input:focus-visible,.place-search-form select:focus-visible { outline:2px solid var(--hv-blue); outline-offset:2px; }
+
+/* Schengen remains a secondary edge cue, never a whole-card fill. */
+#calendarView .calendar-journey-chip { padding-right:7px; }
+#calendarView .calendar-schengen { position:absolute;right:1px;top:3px;bottom:3px;width:2px;min-width:2px;height:auto;border-radius:0; }
+.calendar-schengen-key b { width:2px;min-width:2px;height:10px;border-radius:0; }
+#flightViaList { display:flex;gap:7px;flex-wrap:wrap;margin-top:10px; }
+.flight-via-chip { display:inline-flex;align-items:center;gap:8px;border:1px solid var(--hv-line);padding:4px 9px;border-radius:4px;color:var(--hv-ink); }
+.flight-via-chip button { min-width:32px;min-height:32px;border:0;background:transparent;color:inherit; }

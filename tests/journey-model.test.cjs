@@ -43,3 +43,13 @@ test('standalone accommodation and ranged places survive validation and repeated
 test('bundled airport directory identifies Alicante by name and both official codes',()=>{
  const data=require('../data/airports.json');const airport=data.items.find(a=>a.iata==='ALC');assert.ok(airport.name.includes('Alicante'));assert.equal(airport.icao,'LEAL');assert.equal(airport.countryCodes[0],'ES');assert.ok(data.items.length>10000);
 });
+test('legacy home residence never creates memories, including overlaps with foreign trips',()=>{
+ const s=base();s.profiles[0].homeCountryCodes=[];s.residences=[{countryCode:'GB',countryName:'United Kingdom',start:'2000-01-01',end:null}];s.stays=[{countryCode:'AZ',countryName:'Azerbaijan',start:'2025-09-28',end:'2025-09-28',status:'actual'}];
+ const before=JSON.stringify(s);assert.deepEqual(J.memories(s,'2026-09-28'),[{year:2025,places:[{code:'AZ',name:'Azerbaijan'}]}]);assert.equal(JSON.stringify(s),before);
+ s.residences[0].end='2024-12-31';assert.deepEqual(J.memories(s,'2026-09-28'),[{year:2025,places:[{code:'AZ',name:'Azerbaijan'}]}]);
+});
+test('flight codes and connecting airports survive import without country records',()=>{
+ const t={id:'via-flight',profileId:'p',type:'flight',startLocal:'2026-09-28T10:00',endLocal:'2026-09-28T18:00',start:{name:'Ljubljana Airport',iata:'LJU'},end:{name:'Alicante Airport',iata:'ALC'},via:[{name:'Zurich Airport',iata:'ZRH',icao:'LSZH',lat:47.46,lon:8.55}],status:'actual'};
+ assert.equal(J.transportLabel(t),'LJU-ALC via ZRH');assert.equal(J.transportLabel({...t,via:[] }),'LJU-ALC');assert.equal(J.transportLabel({...t,type:'train'}),'Ljubljana Airport → Alicante Airport');
+ const imported=M.importData(base(),{profiles:[{id:'p',name:'Me'}],transports:[t]}).data;assert.equal(imported.stays.length,0);assert.deepEqual(imported.transports[0].via,t.via);
+});
