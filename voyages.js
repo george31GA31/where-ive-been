@@ -442,7 +442,7 @@
 
   function atlasRecords() {
     const today=isoDate(new Date());
-    return staysForProfile().filter(s=>s.start<=today&&s.status==='actual'&&(!HVJourney.isHome(state,s.countryCode,s.start)||s.tripId||s.location));
+    return staysForProfile().filter(s=>s.start<=today&&s.status==='actual'&&(!HVJourney.isHome(state,s.countryCode,s.start)));
   }
   function atlasCoverage() {
     const universe=COUNTRIES.filter(c=>c.code!=='SEA'&&WIBCountryCount.isCounted(c.code));
@@ -463,31 +463,13 @@
   function renderTravelMemory(todayDate) {
     const panel=$('travelMemoryPanel');if(!panel)return;
     const [currentYear,month,day]=todayDate.split('-').map(Number);
-    const homeCodes=new Set((activeProfile()?.homeCountryCodes)||[]);
-    const history=staysForProfile().filter(s=>s.status==='actual'&&s.countryCode&&s.countryCode!=='SEA');
-    const residences=HVJourney.scoped(state.residences||[],state.activeProfileId);
-    const places=HVJourney.scoped(state.placeVisits||[],state.activeProfileId).filter(v=>v.category==='locations'&&v.status==='visited'&&v.place?.countryCode&&v.date);
-    const years=[...history.map(s=>Number(s.start?.slice(0,4))),...residences.map(r=>Number(r.start?.slice(0,4))),...places.map(v=>Number(v.date?.slice(0,4)))].filter(y=>Number.isInteger(y)&&y>0&&y<currentYear);
-    const firstYear=years.length?Math.min(...years):currentYear;
-    const memory=[];
-    for(let year=currentYear-1;year>=firstYear;year--){
-      const date=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      if(new Date(Date.UTC(year,month-1,day)).getUTCDate()!==day)continue;
-      const seen=new Map(),add=(code,name,label='')=>{const key=code+'|'+label;if(!seen.has(key))seen.set(key,{code,name:label&&label.toLowerCase()!==name.toLowerCase()?`${label}, ${name}`:name});};
-      history.filter(s=>s.start<=date&&s.end>=date).forEach(s=>{
-        if(HVJourney.isHome(state,s.countryCode,date)&&!s.tripId&&!s.location)return;
-        add(s.countryCode,s.countryName||countryByCode(s.countryCode)?.name||s.countryCode,s.location||'');
-      });
-      residences.filter(r=>r.start<=date&&(!r.end||r.end>=date)&&!homeCodes.has(r.countryCode)).forEach(r=>add(r.countryCode,r.countryName||countryByCode(r.countryCode)?.name||r.countryCode));
-      places.filter(v=>v.date===date).forEach(v=>add(v.place.countryCode,v.place.countryName||countryByCode(v.place.countryCode)?.name||v.place.countryCode,v.place.name));
-      if(seen.size)memory.push({year,places:[...seen.values()]});
-    }
+    const memory=HVJourney.memories(state,todayDate);
     const dateLabel=new Date(Date.UTC(currentYear,month-1,day)).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'});
-    panel.innerHTML=`<div class="travel-memory-mark" aria-hidden="true">↶</div><div class="travel-memory-copy"><p class="eyebrow">ON THIS DATE</p><h2>Travel memories</h2>${memory.length?`<div class="travel-memory-list">${memory.map(({year,places})=>{const when=currentYear-year;return `<p>This day ${when} ${when===1?'year':'years'} ago, you were in <strong>${escapeHtml(new Intl.ListFormat('en-GB',{style:'long',type:'conjunction'}).format(places.map(p=>p.name)))}</strong>.</p><div class="travel-memory-places">${places.map(p=>`<span>${flagHtml(p.code,'flag-img flag-sm')}${escapeHtml(p.name)}</span>`).join('')}</div>`;}).join('')}</div>`:`<p class="travel-memory-empty">No travel or lived-in history is recorded for ${escapeHtml(dateLabel)} in previous years.</p>`}</div>`;
+    panel.innerHTML=`<div class="travel-memory-mark" aria-hidden="true">↶</div><div class="travel-memory-copy"><p class="eyebrow">ON THIS DATE</p><h2>Travel memories</h2>${memory.length?`<div class="travel-memory-list">${memory.map(({year,places})=>{const when=currentYear-year;return `<p>This day ${when} ${when===1?'year':'years'} ago, you were in <strong>${escapeHtml(new Intl.ListFormat('en-GB',{style:'long',type:'conjunction'}).format(places.map(p=>p.name)))}</strong>.</p><div class="travel-memory-places">${places.map(p=>`<span>${flagHtml(p.code,'flag-img flag-sm')}${escapeHtml(p.name)}</span>`).join('')}</div>`;}).join('')}</div>`:`<p class="travel-memory-empty">No travel outside your home country is recorded for ${escapeHtml(dateLabel)} in previous years.</p>`}</div>`;
   }
   function renderAtlas() {
     if(!$('atlasOverview'))return;
-    const {universe,visited,percent}=atlasCoverage(),records=atlasRecords(),todayDate=isoDate(new Date()),all=staysForProfile().filter(countsForPlanning).filter(s=>!HVJourney.isHome(state,s.countryCode,s.start)||s.tripId||s.location);const current=all.find(s=>s.start<=todayDate&&s.end>=todayDate),next=all.filter(s=>s.status==='planned'&&s.start>todayDate).sort((a,b)=>a.start.localeCompare(b.start))[0],recent=[...records].sort((a,b)=>b.start.localeCompare(a.start))[0],featured=current||next||recent,featuredLabel=current?'CURRENT TRIP':next?'NEXT TRIP':'MOST RECENT TRIP';const members=featured?.tripId?staysForProfile().filter(s=>s.tripId===featured.tripId&&s.status!=='cancelled'):[featured].filter(Boolean),featuredDates=members.flatMap(s=>[s.start,s.end]).sort();
+    const {universe,visited,percent}=atlasCoverage(),records=atlasRecords(),todayDate=isoDate(new Date()),all=staysForProfile().filter(countsForPlanning).filter(s=>!HVJourney.isHome(state,s.countryCode,s.start));const current=all.find(s=>s.start<=todayDate&&s.end>=todayDate),next=all.filter(s=>s.status==='planned'&&s.start>todayDate).sort((a,b)=>a.start.localeCompare(b.start))[0],recent=[...records].sort((a,b)=>b.start.localeCompare(a.start))[0],featured=current||next||recent,featuredLabel=current?'CURRENT TRIP':next?'NEXT TRIP':'MOST RECENT TRIP';const members=featured?.tripId?staysForProfile().filter(s=>s.tripId===featured.tripId&&s.status!=='cancelled'):[featured].filter(Boolean),featuredDates=members.flatMap(s=>[s.start,s.end]).sort();
     const regions=HVAtlas.progress(universe,new Set(visited.map(c=>c.code))),continents=new Set(records.map(s=>HVAtlas.region(s.countryCode)).filter(r=>r!=='Other locations'));
     const today=isoDate(new Date()),year=today.slice(0,4),thisYear=new Set(records.filter(s=>s.start<=`${year}-12-31`&&s.end>=`${year}-01-01`).map(s=>s.countryCode).filter(c=>c!=='SEA'));
     $('atlasOverview').innerHTML=featured

@@ -8,7 +8,7 @@ Reference data is versioned with the site, separate from private travel/account 
 - `mountains.json`: all 251 rows of **Tallest Natural High Point(1).xlsx**, names and metre values preserved. These are highest natural points, not necessarily mountains.
 - `capitals.json`: country/capital facts from [samayo/country-json](https://github.com/samayo/country-json/blob/master/src/country-by-capital-city.json), retrieved 2026-09-11 (MIT). Unknown entries remain unavailable; constituent UK countries and obsolete Netherlands Antilles rows were not assigned to another country.
 - `unesco.json`: pending a downloadable dataset. The official [UNESCO list](https://whc.unesco.org/en/list/) was inspected; its XML download returned HTTP 403 in the implementation environment. Country pages link to the official source without inventing site records or totals.
-- `airports.json`: pending the owner's airport file. No international/major-only filter is applied. Small airfields, heliports, seaplane bases and other supplied types are retained. An empty reference catalogue does not prevent manual flight recording.
+- `airports.json`: public-domain OurAirports directory for local autocomplete (details below). Airports with IATA or ICAO codes are included, including small airfields, heliports and seaplane bases. Manual transport recording remains available.
 
 ## Import an Excel or CSV file
 
@@ -43,3 +43,7 @@ Buildings and mountains default to country-based IDs (`buildings:GB`, `mountains
 - `visualLayers`: independent map/calendar visibility preferences. Map transport routes accumulate through the selected timeline date, like country history. Routes require endpoint coordinates; no geocoding is invented. They represent endpoint connections, not actual flown/driven tracks.
 
 These fields use the existing local/account payload, optimistic sync and guest transfer flow. Merge rules handle transport and place visits by record ID. Public reference datasets are never copied into account payloads or transfer codes. Flight local times are deliberately not converted to the viewer's timezone and not compared to calculate duration without explicit zone/offset data.
+
+## Airport search directory
+
+`airports.json` contains 11,763 non-closed airports with an IATA or ICAO code, from OurAirports public-domain data via https://github.com/datasets/airport-codes (retrieved 28 September 2026). ICAO codes come from the explicit `icao_code` column. The directory supplies search suggestions only; airport selection does not add country visits. Coordinates are retained internally for transport endpoints.

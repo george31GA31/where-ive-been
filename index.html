@@ -10,7 +10,8 @@
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4">
   <link rel="stylesheet" href="voyages.css?v=memory-1" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=calendar-entry-1" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=location-refine-2" />
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 </head>
 <body>
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -98,8 +99,8 @@
         <div class="calendar-experience">
           <header class="calendar-hero">
             <div>
-              <p class="eyebrow">YOUR JOURNEYS</p>
-              <h2>Your travel, in order.</h2>
+              <p class="eyebrow">JOURNEY CALENDAR</p>
+              <h2>Every part of a trip, <em>made clear.</em></h2>
               <p>Follow countries, places, stays and travel days in one clear view.</p>
             </div>
             <div class="calendar-hero-actions"><button class="primary calendar-plan-button" id="calendarPlanTripBtn" type="button">Add trip <span aria-hidden="true">→</span></button></div>
@@ -116,7 +117,7 @@
               </div>
               <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
               <div id="calendar" class="calendar" aria-live="polite"></div>
-              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-trip"></i> Journey</span><span class="calendar-key"><i class="calendar-key-transport"></i> Transport</span><span class="calendar-key"><i class="calendar-key-accommodation"></i> Accommodation</span><span class="calendar-key calendar-schengen-key"><b>S</b> Schengen <b>N</b> Outside</span><p>Select a journey to follow its route. Select a date to add a country, place, transport or accommodation.</p></footer>
+              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-trip"></i> Journey</span><span class="calendar-key"><i class="calendar-key-transport"></i> Transport</span><span class="calendar-key"><i class="calendar-key-accommodation"></i> Accommodation</span><span class="calendar-key calendar-schengen-key"><b aria-hidden="true"></b> Schengen <b aria-hidden="true"></b> Outside Schengen</span><p>Select a journey to follow its route. Select a date to add a country, place, transport or accommodation.</p></footer>
             </article>
 
             <aside id="calendarJourneyDetail" class="calendar-journey-detail" aria-live="polite"></aside>
@@ -241,7 +242,7 @@
         <div class="field"><div class="field-heading"><span>Dates</span><button type="button" class="text-btn" id="addDateRangeBtn">＋ Add another range</button></div><div id="dateRanges" class="date-ranges"></div><small class="date-entry-help">Use one range for a simple trip. Add another only if you returned to the same place.</small></div>
         <label class="field"><span>Is this trip planned or completed?</span><select id="stayStatus"><option value="actual">Completed</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></label>
       </div>
-      <details class="trip-form-more"><summary>More trip details</summary><div class="trip-form-more-content"><label class="field"><span>Add to a trip</span><select id="stayTripSelect"><option value="">Keep as its own trip</option><option value="new">Create a new trip</option></select><small>Use an existing trip when this is another stop on the same journey.</small></label><label class="field" id="newTripNameField" hidden><span>New trip name</span><input type="text" id="tripNameInput" placeholder="e.g. Eastern Alps 2026" maxlength="80" /></label><label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label><label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label><label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label></div></details>
+      <label class="field"><span>City or area <em>optional</em></span><input id="stayLocationInput" maxlength="160"></label><details class="trip-form-more"><summary>More trip details</summary><div class="trip-form-more-content"><label class="field"><span>Add to a trip</span><select id="stayTripSelect"><option value="">Keep as its own trip</option><option value="new">Create a new trip</option></select><small>Use an existing trip when this is another stop on the same journey.</small></label><label class="field" id="newTripNameField" hidden><span>New trip name</span><input type="text" id="tripNameInput" placeholder="e.g. Eastern Alps 2026" maxlength="80" /></label><label class="field"><span>Notes <em>optional</em></span><input type="text" id="notesInput" placeholder="e.g. Hiking tour, Lisbon, visiting family" maxlength="120" /></label><label class="field"><span>Traveller <em>optional</em></span><select id="stayProfile"></select></label><label class="check-row" id="schengenExemptRow"><input type="checkbox" id="schengenExempt" /><span><strong>Exclude these dates from the Schengen 90/180 total</strong><small>For example, dates covered by a qualifying residence permit or long-stay visa.</small></span></label></div></details>
       <div id="formError" role="alert" class="form-error" role="alert"></div>
       <div class="dialog-actions"><button type="button" class="danger-link hidden" id="deleteStayBtn">Delete trip stop</button><div class="spacer"></div><button type="button" class="secondary" id="cancelDialog">Cancel</button><button type="submit" class="primary" id="saveStayBtn">Save trip</button></div>
     </form>
@@ -273,7 +274,7 @@
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="account-config.js"></script>
-  <script src="account-model.js?v=journeys-1"></script>
+  <script src="account-model.js?v=location-refine-2"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
   <script src="app.js?v=calendar-refine-2"></script>

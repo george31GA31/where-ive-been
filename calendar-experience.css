@@ -296,7 +296,7 @@
   padding:8px;
   border:0;
   border-right:1px solid var(--hv-line);
-  border-bottom:0;
+  border-bottom:1px solid var(--hv-line);
   background:var(--hv-surface);
   cursor:pointer;
   overflow:hidden;
@@ -738,3 +738,35 @@
   .planner-dialog-actions-right { display:grid; grid-template-columns:1fr 1fr; }
   .planner-dialog-actions .secondary,.planner-dialog-actions .primary { width:100%; }
 }
+
+/* Small geographic cues, subordinate to country and date. */
+.calendar-schengen,.calendar-schengen-key b { width:5px;height:5px;min-width:5px;border:0;background:currentColor;border-radius:50%; }
+.calendar-range-fields { margin-bottom:12px; }
+.calendar-range-fields input { min-width:0; }
+@media(max-width:900px) { .calendar-journey-detail:has(.calendar-date-panel) { bottom:calc(76px + env(safe-area-inset-bottom)); } }
+.place-pin-map { height:300px; border:1px solid var(--hv-line); border-radius:5px; margin:12px 0; background:#e9e6df; }
+.place-search-results button { grid-template-columns:24px minmax(0,1fr) 20px; align-items:center; gap:12px; min-height:64px; }
+.place-result-copy { display:grid; gap:3px; min-width:0; }
+.place-result-copy strong { color:var(--hv-ink); font-size:14px; }
+.place-result-copy small { font-size:11px; line-height:1.4; }
+.place-search-results .flag-img { width:23px; }
+.place-form-actions { display:flex; gap:12px; justify-content:space-between; align-items:center; }
+.herald-map-pin { background:transparent; border:0; }
+.herald-map-pin span { display:block; width:25px; height:25px; border:3px solid white; border-radius:50% 50% 50% 0; transform:rotate(-45deg); background:#a93d4a; box-shadow:0 2px 5px #0005; }
+.herald-map-pin:focus-visible { outline:3px solid #174e76; outline-offset:4px; }
+.airport-search-results { max-height:240px; overflow:auto; display:grid; gap:4px; margin-top:8px; }
+.airport-search-results button { display:flex; align-items:center; gap:10px; min-height:56px; width:100%; text-align:left; color:var(--hv-ink); background:var(--hv-paper); border:1px solid var(--hv-line); padding:10px; border-radius:4px; }
+.airport-search-results button>span { display:grid; gap:4px; }
+.airport-search-results small { color:var(--hv-muted); }
+.airport-search-results .flag-img { width:24px; }
+.airport-search-results button:focus-visible { outline:2px solid var(--hv-blue); }
+@media(max-width:600px){.place-search-dialog { width:calc(100vw - 16px); max-height:90dvh; }.place-search-form { padding:16px; }.place-pin-map { height:260px; }.place-search-form .form-grid { grid-template-columns:1fr; }}
+@media(prefers-reduced-motion:reduce){.leaflet-zoom-animated { transition:none!important; }}
+.calendar-place-chip { border:0; background:var(--hv-paper); color:var(--hv-ink); min-height:24px; text-align:left; padding:3px; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.calendar-place-chip:focus-visible { outline:2px solid var(--hv-blue); }
+.calendar-date-actions button { min-height:44px; }
+#calendarView .atlas-month-dots i.home { background:var(--hv-line); }
+.calendar-range-fields { grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important; gap:10px; }
+.calendar-range-fields input { padding:10px 7px; }
+.place-search-form input[type=text],.place-search-form input[type=search],.place-search-form input[type=date],.place-search-form select { box-sizing:border-box; min-height:44px; border:1px solid var(--hv-line); border-radius:4px; padding:10px 12px; background:var(--hv-surface); color:var(--hv-ink); font:inherit; }
+.place-search-form input:focus-visible,.place-search-form select:focus-visible { outline:2px solid var(--hv-blue); outline-offset:2px; }

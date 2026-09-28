@@ -67,8 +67,9 @@
     }
 
     for (const accommodation of scoped(state.accommodations || [])) {
-      if (!accommodation.tripId) continue;
-      createGroup(groups, tripKey(accommodation.tripId), knownTrips.get(accommodation.tripId) || null).accommodations.push(accommodation);
+      const candidates = !accommodation.tripId ? [...groups.values()].filter(g=>g.stays.some(stay=>stay.status!=='cancelled'&&stay.start<=accommodation.checkIn&&stay.end>=accommodation.checkOut)) : [];
+      const key=accommodation.tripId ? tripKey(accommodation.tripId) : candidates.length===1 ? candidates[0].key : `accommodation:${accommodation.id}`;
+      createGroup(groups,key,knownTrips.get(accommodation.tripId)||null).accommodations.push(accommodation);
     }
 
     const findInferredGroup = transport => {
@@ -97,6 +98,7 @@
       group.transports.sort((a, b) => String(a.startLocal).localeCompare(String(b.startLocal)));
       group.accommodations.sort((a, b) => String(a.checkIn).localeCompare(String(b.checkIn)));
       const recordDates = [
+        ...(!group.trip && !group.stays.length && !group.transports.length ? group.accommodations.flatMap(a=>[a.checkIn,a.checkOut]) : []),
         ...group.stays.flatMap(stay => [stay.start, stay.end]),
         ...group.transports.flatMap(transport => [localDate(transport.startLocal), localDate(transport.endLocal)])
       ].filter(Boolean).sort();
@@ -105,7 +107,7 @@
       const records = [...group.stays, ...group.transports];
       const allCancelled = records.length > 0 && records.every(record => record.status === 'cancelled');
       group.phase = allCancelled ? 'cancelled' : !group.start ? 'draft' : group.end < today() ? 'completed' : group.start > today() ? 'upcoming' : 'active';
-      group.title = group.trip?.name || group.stays[0]?.location || group.stays[0]?.countryName || (group.transports[0] ? `${group.transports[0].start.name} → ${group.transports[0].end.name}` : 'Untitled journey');
+      group.title = group.trip?.name || group.stays[0]?.location || group.stays[0]?.countryName || (group.transports[0] ? `${group.transports[0].start.name} → ${group.transports[0].end.name}` : group.accommodations[0]?.propertyName || 'Untitled journey');
       group.colour = colourFor(group.key);
       group.countries = [...new Set(group.stays.filter(stay => stay.countryCode !== 'SEA').map(stay => stay.countryCode))];
       return group;
@@ -114,7 +116,7 @@
 
   function groupsForDate(date, groups, layers) {
     return groups.filter(group => {
-      const country = layers.countries && group.stays.some(stay => stay.status !== 'cancelled' && stay.start <= date && stay.end >= date && (!window.HVJourney.isHome(state, stay.countryCode, date) || !!stay.tripId));
+      const country = layers.countries && group.stays.some(stay => stay.status !== 'cancelled' && stay.start <= date && stay.end >= date && (!window.HVJourney.isHome(state, stay.countryCode, date)));
       const transport = layers.transport && group.transports.some(record => record.status !== 'cancelled' && [localDate(record.startLocal), localDate(record.endLocal)].includes(date));
       const accommodation = layers.accommodation && group.accommodations.some(record => record.checkIn <= date && record.checkOut >= date);
       return country || transport || accommodation;
@@ -172,20 +174,21 @@
       const selectionRange = calendarSelectionStart && calendarSelectionEnd && date >= calendarSelectionStart && date <= calendarSelectionEnd;
       const selectionStart = date === calendarSelectionStart;
       const selectionEnd = date === calendarSelectionEnd;
-      const travelGroups = activeGroups.filter(group => (layers.countries && group.stays.some(stay => stay.status !== 'cancelled' && stay.start <= date && stay.end >= date && (!window.HVJourney.isHome(state, stay.countryCode, date) || !!stay.tripId))) || (layers.transport && group.transports.some(record => record.status !== 'cancelled' && [localDate(record.startLocal), localDate(record.endLocal)].includes(date))));
+      const travelGroups = activeGroups.filter(group => (layers.countries && group.stays.some(stay => stay.status !== 'cancelled' && stay.start <= date && stay.end >= date && (!window.HVJourney.isHome(state, stay.countryCode, date)))) || (layers.transport && group.transports.some(record => record.status !== 'cancelled' && [localDate(record.startLocal), localDate(record.endLocal)].includes(date))));
       const visible = travelGroups.slice(0, 3);
       const accommodationGroups = layers.accommodation ? activeGroups.filter(group => group.accommodations.some(item => item.checkIn <= date && item.checkOut >= date)) : [];
       const primary = visible[0]?.key || accommodationGroups[0]?.key || '';
       const chips = visible.map(group => {
         const transfer = group.transports.find(record => record.status !== 'cancelled' && [localDate(record.startLocal), localDate(record.endLocal)].includes(date));
         const location = transfer ? `${transfer.start.name} → ${transfer.end.name}` : locationForDate(group, date);
-        const flags = layers.countries ? [...new Set(group.stays.filter(item => item.status !== 'cancelled' && item.start <= date && item.end >= date && item.countryCode !== 'SEA' && (!window.HVJourney.isHome(state, item.countryCode, date) || !!item.tripId)).map(item => item.countryCode))].map(code => flagHtml(code, 'calendar-chip-flag')).join('') : '';
+        const flags = layers.countries ? [...new Set(group.stays.filter(item => item.status !== 'cancelled' && item.start <= date && item.end >= date && item.countryCode !== 'SEA' && (!window.HVJourney.isHome(state, item.countryCode, date))).map(item => item.countryCode))].map(code => flagHtml(code, 'calendar-chip-flag')).join('') : '';
         const countryCodes = group.stays.filter(item => item.status !== 'cancelled' && item.start <= date && item.end >= date && item.countryCode !== 'SEA').map(item => item.countryCode);
+        const countryTitle = [...new Set(countryCodes)].map(code=>countryByCode(code)?.name || code).join(' · ') || group.title;
         const schengen = countryCodes.length ? countryCodes.every(code => SCHENGEN.has(code)) ? 'Schengen' : countryCodes.some(code => SCHENGEN.has(code)) ? 'Mixed' : 'Outside Schengen' : '';
         const began = group.start === date;
         const ended = group.end === date;
         const transferCue = transfer ? `<span class="calendar-transport-cue" title="${E(window.HVJourney.types[transfer.type] || 'Transport')}: ${E(location)}" aria-hidden="true">${transportIcon(transfer.type)}</span>` : '';
-        return `<button type="button" class="calendar-journey-chip phase-${group.phase} ${transfer ? 'has-transport' : ''} ${began ? 'journey-start' : ''} ${ended ? 'journey-end' : ''}" data-calendar-journey="${E(group.key)}" data-calendar-date="${E(date)}" style="--journey-colour:${E(group.colour)}" aria-label="Open ${E(group.title)}, ${E(location)}, ${E(schengen)}, ${E(phaseLabel(group.phase))}"><span class="calendar-journey-line" aria-hidden="true"></span>${flags}<span class="calendar-journey-copy"><strong>${E(group.title)}</strong>${location !== group.title ? `<small>${E(location)}</small>` : ''}</span>${schengen ? `<span class="calendar-schengen ${schengen === 'Schengen' ? 'in' : 'out'}" title="${E(schengen)}">${schengen === 'Schengen' ? 'S' : schengen === 'Mixed' ? '±' : 'N'}</span>` : ''}${transferCue}</button>`;
+        return `<button type="button" class="calendar-journey-chip phase-${group.phase} ${transfer ? 'has-transport' : ''} ${began ? 'journey-start' : ''} ${ended ? 'journey-end' : ''}" data-calendar-journey="${E(group.key)}" data-calendar-date="${E(date)}" style="--journey-colour:${E(group.colour)}" aria-label="Open ${E(group.title)}, ${E(location)}, ${E(schengen)}, ${E(phaseLabel(group.phase))}"><span class="calendar-journey-line" aria-hidden="true"></span>${flags}<span class="calendar-journey-copy"><strong>${E(countryTitle)}</strong>${location.trim().toLowerCase() !== countryTitle.toLowerCase() && !countryCodes.some(code=>(countryByCode(code)?.name||code).toLowerCase()===location.trim().toLowerCase()) ? `<small>${E(location)}</small>` : ''}</span>${schengen ? `<span class="calendar-schengen ${schengen === 'Schengen' ? 'in' : 'out'}" title="${E(schengen)}" role="img" aria-label="${E(schengen)}"></span>` : ''}${transferCue}</button>`;
       }).join('');
       const lodging = accommodationGroups.slice(0, 3).map(group => {
         const segments = [0,1].map(half => {
@@ -197,14 +200,16 @@
         return group.accommodations.some(item => item.checkIn <= date && item.checkOut >= date) ? `<button type="button" class="calendar-lodging-row" data-calendar-lodging-group="${E(group.key)}" data-calendar-date="${E(date)}" aria-label="Accommodation on ${E(dateText(date))}: ${E(group.accommodations.filter(item => item.checkIn <= date && item.checkOut >= date).map(item => `${item.propertyName}, ${item.location}`).join('; '))}">${segments}</button>` : '';
       }).join('');
       const more = travelGroups.length > visible.length ? `<button type="button" class="calendar-more-journeys" data-calendar-day-detail="${E(date)}">+${travelGroups.length - visible.length} more</button>` : '';
+      const places = layers.countries ? scoped(state.placeVisits || []).filter(v=>v.category==='locations'&&v.status==='visited'&&v.date<=date&&(v.endDate||v.date)>=date) : [];
+      const placeChips=places.map(v=>`<button type="button" class="calendar-place-chip" data-place-edit="${E(v.id)}" title="${E(v.place?.address||'')}">◎ ${E(v.place?.name||'Saved location')}</button>`).join('');
       const homeLabel = '';
       const seaLabel = sea.length ? `<span class="calendar-sea-mark" title="At sea">≈ At sea</span>` : '';
-      html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${home.length ? 'home' : 'unrecorded'}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${more}</div>${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}<div class="calendar-day-markers">${homeLabel}${seaLabel}</div></div>`;
+      html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${home.length ? 'home' : 'unrecorded'}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${more}${placeChips}</div>${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}<div class="calendar-day-markers">${homeLabel}${seaLabel}</div></div>`;
     }
     calendar.innerHTML = html;
     qa('[data-calendar-date]', calendar).forEach(day => {
       day.addEventListener('click', event => {
-        if (event.target.closest('[data-calendar-journey], [data-calendar-date-select], [data-calendar-day-detail]')) return;
+        if (event.target.closest('[data-calendar-journey], [data-calendar-date-select], [data-calendar-day-detail], [data-place-edit]')) return;
         event.stopPropagation();
         selectDate(day.dataset.calendarDate);
       });
@@ -259,11 +264,9 @@
   function dayInsight(date, groups) {
     const start = calendarSelectionStart || date, end = calendarSelectionEnd || start;
     const active = groups.filter(group => group.stays.some(s => s.status !== 'cancelled' && s.start <= end && s.end >= start) || group.accommodations.some(a => a.checkIn <= end && a.checkOut >= start) || group.transports.some(t => [localDate(t.startLocal),localDate(t.endLocal)].some(d => d >= start && d <= end)));
-    const trips = scoped(state.trips || []);
-    const options = trips.map(t => `<option value="${E(t.id)}">${E(t.name)}</option>`).join('');
-    const entries = active.map(group => `<div class="date-entry-group"><strong>${E(group.title)}</strong>${group.stays.filter(s => s.start <= end && s.end >= start).map(s => `<button type="button" data-calendar-edit-stay="${E(s.id)}">${flagHtml(s.countryCode,'calendar-chip-flag')} ${E(s.countryName)} · ${E(dateRangeText(s.start,s.end))} <span>Edit</span></button>`).join('')}${group.accommodations.filter(a => a.checkIn <= end && a.checkOut >= start).map(a => `<button type="button" data-calendar-edit-accommodation="${E(a.id)}">⌂ ${E(a.propertyName)} · ${E(dateRangeText(a.checkIn,a.checkOut))} <span>Edit</span></button>`).join('')}${group.transports.filter(t => [localDate(t.startLocal),localDate(t.endLocal)].some(d => d >= start && d <= end)).map(t => `<button type="button" data-calendar-edit-transport="${E(t.id)}">${transportIcon(t.type)} ${E(t.start.name)} → ${E(t.end.name)} <span>Edit</span></button>`).join('')}</div>`).join('') + scoped(state.placeVisits || []).filter(v => v.category === 'locations' && v.status === 'visited' && v.date >= start && v.date <= end).map(v => `<div class="date-entry-group"><button type="button" data-place-edit="${E(v.id)}">◎ ${E(v.place?.name || 'Saved place')} · ${E(dateText(v.date))} <span>Edit</span></button></div>`).join('');
-    const action = dateAction === 'country' ? `<form id="calendarQuickCountry" class="calendar-quick-form"><label class="field"><span>Country</span><input name="country" list="countryList" required autocomplete="off" placeholder="Search a country"></label><label class="field"><span>City or area <em>optional</em></span><input name="location" maxlength="160"></label><label class="field"><span>Trip</span><select name="tripId"><option value="">Create a new trip for this stay</option>${options}</select></label><button class="primary" type="submit">Save country stay</button><p class="form-error" role="alert"></p></form>` : dateAction === 'accommodation' ? `<form id="calendarQuickAccommodation" class="calendar-quick-form"><label class="field"><span>Trip</span><select name="tripId" required><option value="">Choose a trip</option>${options}</select></label><label class="field"><span>Accommodation</span><input name="propertyName" maxlength="160" required placeholder="Hotel, Airbnb or campsite"></label><label class="field"><span>Location</span><input name="location" maxlength="160" required></label><p class="helper">Check-in ${E(dateText(start))} · check-out ${E(dateText(end))}. You can edit both dates after saving.</p><button class="primary" type="submit">Save accommodation</button><p class="form-error" role="alert"></p></form>` : '';
-    return `<div class="calendar-date-panel"><button class="calendar-date-close text-btn" type="button" data-calendar-close-date aria-label="Close date editor">Close ×</button><p class="eyebrow">SELECTED ${start === end ? 'DATE' : 'RANGE'}</p><h2>${E(dateRangeText(start,end))}</h2><p class="calendar-date-hint">${calendarSelectionEnd ? 'Add an entry across these dates, or select a new start date.' : 'Select another date to extend this range, or add an entry for this day.'}</p><div class="calendar-date-actions"><button type="button" data-calendar-date-action="country" aria-pressed="${dateAction === 'country'}">+ Country</button><button type="button" data-calendar-date-action="accommodation" aria-pressed="${dateAction === 'accommodation'}">+ Accommodation</button><button type="button" data-calendar-date-action="transport">+ Transport</button><button type="button" data-calendar-date-action="location">+ Location</button></div>${action}<section class="calendar-date-entries"><p class="eyebrow">ON THESE DATES</p>${entries || '<p>No entries recorded for these dates yet.</p>'}</section><button type="button" class="text-btn" data-calendar-plan data-calendar-plan-date="${E(start)}">Plan a full trip →</button></div>`;
+    const entries = active.map(group => `<div class="date-entry-group"><strong>${E(group.title)}</strong>${group.stays.filter(s => s.start <= end && s.end >= start).map(s => `<button type="button" data-calendar-edit-stay="${E(s.id)}">${flagHtml(s.countryCode,'calendar-chip-flag')} ${E(s.countryName)} · ${E(dateRangeText(s.start,s.end))} <span>Edit</span></button>`).join('')}${group.accommodations.filter(a => a.checkIn <= end && a.checkOut >= start).map(a => `<button type="button" data-calendar-edit-accommodation="${E(a.id)}">⌂ ${E(a.propertyName)} · ${E(dateRangeText(a.checkIn,a.checkOut))} <span>Edit</span></button>`).join('')}${group.transports.filter(t => [localDate(t.startLocal),localDate(t.endLocal)].some(d => d >= start && d <= end)).map(t => `<button type="button" data-calendar-edit-transport="${E(t.id)}">${transportIcon(t.type)} ${E(t.start.name)} → ${E(t.end.name)} <span>Edit</span></button>`).join('')}</div>`).join('') + scoped(state.placeVisits || []).filter(v => v.category === 'locations' && v.status === 'visited' && v.date <= end && (v.endDate || v.date) >= start).map(v => `<div class="date-entry-group"><button type="button" data-place-edit="${E(v.id)}">◎ ${E(v.place?.name || 'Saved place')} · ${E(dateText(v.date))} <span>Edit</span></button></div>`).join('');
+    const action = dateAction === 'country' ? `<form id="calendarQuickCountry" class="calendar-quick-form"><label class="field"><span>Country</span><input type="text" name="country" list="countryList" required autocomplete="off" placeholder="Search a country"></label><label class="field"><span>City or area <em>optional</em></span><input type="text" name="location" maxlength="160"></label><button class="primary" type="submit">Save country stay</button><p class="form-error" role="alert"></p></form>` : dateAction === 'accommodation' ? `<form id="calendarQuickAccommodation" class="calendar-quick-form"><label class="field"><span>Accommodation</span><input type="text" name="propertyName" maxlength="160" required placeholder="Hotel, Airbnb or campsite"></label><label class="field"><span>Location</span><input type="text" name="location" maxlength="160" required></label><p class="helper">Check-in ${E(dateText(start))} · check-out ${E(dateText(end))}. You can edit both dates after saving.</p><button class="primary" type="submit">Save accommodation</button><p class="form-error" role="alert"></p></form>` : '';
+    return `<div class="calendar-date-panel"><button class="calendar-date-close text-btn" type="button" data-calendar-close-date aria-label="Close date editor">Close ×</button><p class="eyebrow">SELECTED ${start === end ? 'DATE' : 'RANGE'}</p><h2>${E(dateRangeText(start,end))}</h2><p class="calendar-date-hint">${calendarSelectionEnd ? 'Add an entry across these dates, or select a new start date.' : 'Select another date to extend this range, or add an entry for this day.'}</p><div class="form-grid calendar-range-fields"><label class="field"><span>From</span><input type="date" data-range-start value="${E(start)}"></label><label class="field"><span>To</span><input type="date" data-range-end value="${E(end)}"></label></div><div class="calendar-date-actions"><button type="button" data-calendar-date-action="country" aria-pressed="${dateAction === 'country'}">+ Country</button><button type="button" data-calendar-date-action="accommodation" aria-pressed="${dateAction === 'accommodation'}">+ Accommodation</button><button type="button" data-calendar-date-action="transport">+ Transport</button><button type="button" data-calendar-date-action="location">+ Location</button></div>${action}<section class="calendar-date-entries"><p class="eyebrow">ON THESE DATES</p>${entries || '<p>No entries recorded for these dates yet.</p>'}</section><button type="button" class="text-btn" data-calendar-plan data-calendar-plan-date="${E(start)}">Plan a full trip →</button></div>`;
   }
 
   function transportIcon(type) {
@@ -487,7 +490,7 @@
   }
 
   function stopRow(stop, index) {
-    return `<div class="planner-stop-row" data-planner-stop><div class="planner-row-head"><span>Stop ${index + 1}</span>${planner.stops.length > 1 ? `<button type="button" class="text-btn" data-planner-remove-stop="${index}">Remove</button>` : ''}</div><div class="planner-stop-grid"><label class="field"><span>Country / location</span><input name="countryName" list="countryList" value="${E(stop.countryName)}" placeholder="Choose a country" required></label><label class="field"><span>Town, island or base <em>optional</em></span><input name="location" value="${E(stop.location)}" maxlength="120" placeholder="e.g. Ljubljana"></label><label class="field"><span>From</span><input name="start" type="date" value="${E(stop.start)}" required></label><label class="field"><span>To</span><input name="end" type="date" value="${E(stop.end)}" required></label></div></div>`;
+    return `<div class="planner-stop-row" data-planner-stop><div class="planner-row-head"><span>Stop ${index + 1}</span>${planner.stops.length > 1 ? `<button type="button" class="text-btn" data-planner-remove-stop="${index}">Remove</button>` : ''}</div><div class="planner-stop-grid"><label class="field"><span>Country / location</span><input name="countryName" list="countryList" value="${E(stop.countryName)}" placeholder="Choose a country" required></label><label class="field"><span>Town, island or base <em>optional</em></span><input type="text" name="location" value="${E(stop.location)}" maxlength="120" placeholder="e.g. Ljubljana"></label><label class="field"><span>From</span><input name="start" type="date" value="${E(stop.start)}" required></label><label class="field"><span>To</span><input name="end" type="date" value="${E(stop.end)}" required></label></div></div>`;
   }
 
   function transportRow(transport, index) {
@@ -495,7 +498,7 @@
   }
 
   function accommodationRow(accommodation, index) {
-    return `<div class="planner-accommodation-row" data-planner-accommodation><div class="planner-row-head"><span>Stay ${index + 1}</span><button type="button" class="text-btn" data-planner-remove-accommodation="${index}">Remove</button></div><div class="planner-accommodation-grid"><label class="field"><span>Property name</span><input name="propertyName" value="${E(accommodation.propertyName)}" maxlength="160" placeholder="e.g. Hotel Lovec" required></label><label class="field"><span>Location</span><input name="location" value="${E(accommodation.location)}" maxlength="160" placeholder="e.g. Bled" required></label><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(accommodation.checkIn)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(accommodation.checkOut)}" required></label></div><label class="field"><span>Notes <em>optional</em></span><input name="notes" value="${E(accommodation.notes)}" maxlength="500" placeholder="Room, booking or useful notes"></label></div>`;
+    return `<div class="planner-accommodation-row" data-planner-accommodation><div class="planner-row-head"><span>Stay ${index + 1}</span><button type="button" class="text-btn" data-planner-remove-accommodation="${index}">Remove</button></div><div class="planner-accommodation-grid"><label class="field"><span>Property name</span><input type="text" name="propertyName" value="${E(accommodation.propertyName)}" maxlength="160" placeholder="e.g. Hotel Lovec" required></label><label class="field"><span>Location</span><input type="text" name="location" value="${E(accommodation.location)}" maxlength="160" placeholder="e.g. Bled" required></label><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(accommodation.checkIn)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(accommodation.checkOut)}" required></label></div><label class="field"><span>Notes <em>optional</em></span><input name="notes" value="${E(accommodation.notes)}" maxlength="500" placeholder="Room, booking or useful notes"></label></div>`;
   }
 
   function reviewMarkup() {
@@ -554,16 +557,21 @@
     window.HVJourneys?.render();
   }
 
+  function openCalendarStay(id) {
+    openStayDialog(id);
+    const picker=$('stayTripSelect');if(picker)picker.closest('label').hidden=true;
+  }
+
   function openAccommodationDialog(tripId, accommodationId = '') {
     const trip = state.trips.find(item => item.id === tripId);
-    if (!trip) return;
     const group = buildJourneys().find(item => item.trip?.id === tripId);
     const existing = (state.accommodations || []).find(item => item.id === accommodationId);
+    if(existing?.place && window.HVPlaces){window.HVPlaces.open({accommodationId:existing.id});return;}
     const dialog = document.createElement('dialog');
     dialog.className = 'dialog small-dialog';
     dialog.setAttribute('aria-label', existing ? 'Edit accommodation' : 'Add accommodation');
     const start = existing?.checkIn || group?.start || today(), end = existing?.checkOut || group?.end || start;
-    dialog.innerHTML = `<form method="dialog" class="dialog-card accommodation-dialog-card"><div class="dialog-head"><div><p class="eyebrow">ACCOMMODATION</p><h2>${existing ? 'Edit accommodation' : 'Add accommodation'}</h2><p class="dialog-intro">${E(trip.name)}</p></div><button type="button" class="icon-btn" data-accommodation-close aria-label="Close">×</button></div><label class="field"><span>Property name</span><input name="propertyName" value="${E(existing?.propertyName || '')}" maxlength="160" required></label><label class="field"><span>Location</span><input name="location" value="${E(existing?.location || '')}" maxlength="160" required></label><div class="form-grid"><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(start)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(end)}" required></label></div><label class="field"><span>Notes <em>optional</em></span><textarea name="notes" maxlength="500">${E(existing?.notes || '')}</textarea></label><p class="form-error" data-accommodation-error role="alert"></p><div class="dialog-actions">${existing ? '<button type="button" class="danger-link" data-accommodation-delete>Remove accommodation</button>' : ''}<div class="spacer"></div><button type="button" class="secondary" data-accommodation-close>Cancel</button><button type="submit" class="primary">Save accommodation</button></div></form>`;
+    dialog.innerHTML = `<form method="dialog" class="dialog-card accommodation-dialog-card"><div class="dialog-head"><div><p class="eyebrow">ACCOMMODATION</p><h2>${existing ? 'Edit accommodation' : 'Add accommodation'}</h2><p class="dialog-intro">${E(trip?.name || 'Dated stay')}</p></div><button type="button" class="icon-btn" data-accommodation-close aria-label="Close">×</button></div><label class="field"><span>Property name</span><input type="text" name="propertyName" value="${E(existing?.propertyName || '')}" maxlength="160" required></label><label class="field"><span>Location</span><input type="text" name="location" value="${E(existing?.location || '')}" maxlength="160" required></label><div class="form-grid"><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(start)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(end)}" required></label></div><label class="field"><span>Notes <em>optional</em></span><textarea name="notes" maxlength="500">${E(existing?.notes || '')}</textarea></label><p class="form-error" data-accommodation-error role="alert"></p><div class="dialog-actions">${existing ? '<button type="button" class="danger-link" data-accommodation-delete>Remove accommodation</button>' : ''}<div class="spacer"></div><button type="button" class="secondary" data-accommodation-close>Cancel</button><button type="submit" class="primary">Save accommodation</button></div></form>`;
     document.body.append(dialog);
     const form = q('form', dialog), error = q('[data-accommodation-error]', form);
     qa('[data-accommodation-close]', form).forEach(button => button.onclick = () => dialog.close());
@@ -573,7 +581,7 @@
       const propertyName = form.elements.propertyName.value.trim(), location = form.elements.location.value.trim(), checkIn = form.elements.checkIn.value, checkOut = form.elements.checkOut.value, notes = form.elements.notes.value.trim();
       if (!propertyName || !location || !window.HVJourney.validDate(checkIn) || !window.HVJourney.validDate(checkOut) || checkOut < checkIn) { error.textContent = 'Add a property, location and valid check-in/check-out dates.'; return; }
       state.accommodations ||= [];
-      const record = {id:existing?.id || uid(),tripId,profileId:existing?.profileId ?? trip.profileId ?? state.activeProfileId,propertyName,location,checkIn,checkOut,notes};
+      const record = {id:existing?.id || uid(),tripId,profileId:existing?.profileId ?? trip?.profileId ?? state.activeProfileId,propertyName,location,checkIn,checkOut,notes};
       if (existing) Object.assign(existing, record); else state.accommodations.push(record);
       persist(); dialog.close(); renderAll();
     };
@@ -595,33 +603,30 @@
     if (!['calendarQuickCountry','calendarQuickAccommodation'].includes(form.id)) return;
     event.preventDefault();
     const error = q('[role="alert"]', form), start = calendarSelectionStart || selectedDate, end = calendarSelectionEnd || start;
-    const tripId = form.elements.tripId.value;
+    const tripId = window.HVJourney.tripForDates(state,start,end);
     const trip = (state.trips || []).find(t => t.id === tripId);
     if (!window.HVJourney.validDate(start) || !window.HVJourney.validDate(end)) { error.textContent = 'Select valid dates first.'; return; }
     if (form.id === 'calendarQuickCountry') {
       const country = countryByName(form.elements.country.value);
       if (!country) { error.textContent = 'Choose a country from the list.'; return; }
       if (tripId && !trip) { error.textContent = 'Choose a valid trip.'; return; }
-      if ((state.stays || []).some(s => (s.tripId || '') === tripId && s.countryCode === country.code && s.start <= end && s.end >= start && (s.location || '').toLowerCase() === form.elements.location.value.trim().toLowerCase() && (!s.profileId || s.profileId === state.activeProfileId))) { error.textContent = 'This stay overlaps an existing entry. Edit that stay to change its dates.'; return; }
+      if ((state.stays || []).some(s => (s.tripId || null) === tripId && s.countryCode === country.code && s.start <= end && s.end >= start && (s.location || '').toLowerCase() === form.elements.location.value.trim().toLowerCase() && (!s.profileId || s.profileId === state.activeProfileId))) { error.textContent = 'This stay overlaps an existing entry. Edit that stay to change its dates.'; return; }
       const owner = state.activeProfileId;
-      const target = trip || {id:uid(),name:form.elements.location.value.trim() || country.name,notes:'',profileId:owner,profileIds:owner?[owner]:[]};
-      if (!trip) { state.trips ||= []; state.trips.push(target); }
-      else if (owner) target.profileIds = [...new Set([...(target.profileIds || []),target.profileId,owner].filter(Boolean))];
       state.stays ||= [];
-      state.stays.push({id:uid(),tripId:target.id,countryCode:country.code,countryName:country.name,location:form.elements.location.value.trim(),start,end,notes:'',schengenExempt:false,status:end < today()?'actual':'planned',profileId:owner,tripOrder:(state.stays || []).filter(s => s.tripId === target.id).length});
+      state.stays.push({id:uid(),tripId,countryCode:country.code,countryName:country.name,location:form.elements.location.value.trim(),start,end,notes:'',schengenExempt:false,status:end < today()?'actual':'planned',profileId:owner,tripOrder:(state.stays || []).filter(s => s.tripId === tripId).length});
     } else {
-      if (!trip) { error.textContent = 'Choose a trip for this accommodation. Add its country first if this is a new trip.'; return; }
       const propertyName = form.elements.propertyName.value.trim(), location = form.elements.location.value.trim();
       if (!propertyName || !location) { error.textContent = 'Add the property and its location.'; return; }
-      if ((state.accommodations || []).some(a => a.tripId === trip.id && a.propertyName.toLowerCase() === propertyName.toLowerCase() && a.checkIn <= end && a.checkOut >= start)) { error.textContent = 'This accommodation already overlaps these dates. Edit its existing entry instead.'; return; }
+      if ((state.accommodations || []).some(a => a.tripId === tripId && a.propertyName.toLowerCase() === propertyName.toLowerCase() && a.checkIn <= end && a.checkOut >= start)) { error.textContent = 'This accommodation already overlaps these dates. Edit its existing entry instead.'; return; }
       state.accommodations ||= [];
-      state.accommodations.push({id:uid(),tripId:trip.id,profileId:state.activeProfileId,propertyName,location,checkIn:start,checkOut:end,notes:''});
+      state.accommodations.push({id:uid(),tripId,profileId:state.activeProfileId,propertyName,location,checkIn:start,checkOut:end,notes:''});
     }
     updatePassedPlannedTrips(); persist(); dateAction = ''; renderAll(); window.HVJourneys?.render();
   }
 
   function captureCalendarAction(event) {
     const target = event.target;
+    if(target.closest('[data-place-edit]')) return;
     const lodging = target.closest('[data-calendar-lodging-group]');
     if (lodging) {
       event.preventDefault();event.stopPropagation();
@@ -634,7 +639,7 @@
     if (target.closest('[data-calendar-close-date]')) { event.preventDefault(); event.stopPropagation(); calendarSelectionStart = null; calendarSelectionEnd = null; selectedDate = ''; dateAction = ''; renderMonth(); return; }
     if (target.closest('#clearCalendarSelectionBtn')) { selectedDate = ''; dateAction = ''; }
     const journey = target.closest('[data-calendar-journey]');
-    if (journey) { event.preventDefault(); event.stopPropagation(); selectJourney(journey.dataset.calendarJourney, journey.dataset.calendarDate); return; }
+    if (journey) { event.preventDefault(); event.stopPropagation(); const group=buildJourneys().find(g=>g.key===journey.dataset.calendarJourney),date=journey.dataset.calendarDate; const stays=group?.stays.filter(s=>s.start<=date&&s.end>=date&&s.status!=='cancelled')||[]; if(stays.length===1){openCalendarStay(stays[0].id);}else selectJourney(journey.dataset.calendarJourney,date); return; }
     const date = target.closest('[data-calendar-date-select]');
     if (date) { event.preventDefault(); event.stopPropagation(); selectDate(date.dataset.calendarDateSelect); return; }
     const action = target.closest('[data-calendar-date-action]');
@@ -642,6 +647,7 @@
       event.preventDefault(); event.stopPropagation();
       const kind = action.dataset.calendarDateAction;
       if (kind === 'transport') { window.HVJourneys?.openTransport(null,{startLocal:`${calendarSelectionStart || selectedDate}T12:00`,endLocal:`${calendarSelectionEnd || calendarSelectionStart || selectedDate}T12:00`}); return; }
+      if (kind === 'accommodation') { window.HVPlaces?.open({date:calendarSelectionStart || selectedDate,end:calendarSelectionEnd || calendarSelectionStart || selectedDate,accommodation:true}); return; }
       if (kind === 'location') { window.HVPlaces?.open({date:calendarSelectionStart || selectedDate,end:calendarSelectionEnd || calendarSelectionStart || selectedDate,tripId:''}); return; }
       dateAction = dateAction === kind ? '' : kind; renderJourneyDetail(); q('#calendarJourneyDetail input')?.focus(); return;
     }
@@ -654,7 +660,7 @@
     const editTrip = target.closest('[data-calendar-edit-trip]');
     if (editTrip) { event.preventDefault(); event.stopPropagation(); window.HVJourneys?.editTrip(editTrip.dataset.calendarEditTrip); return; }
     const editStay = target.closest('[data-calendar-edit-stay]');
-    if (editStay) { event.preventDefault(); event.stopPropagation(); openStayDialog(editStay.dataset.calendarEditStay); return; }
+    if (editStay) { event.preventDefault(); event.stopPropagation(); openCalendarStay(editStay.dataset.calendarEditStay); return; }
     const transport = target.closest('[data-calendar-edit-transport]');
     if (transport?.dataset.calendarEditTransport) { event.preventDefault(); event.stopPropagation(); window.HVJourneys?.openTransport(transport.dataset.calendarEditTransport); return; }
     const addTransport = target.closest('[data-calendar-add-transport]');
@@ -689,6 +695,12 @@
     $('addStayFromListBtn').onclick = () => openTripPlanner({source:'manual'});
     document.addEventListener('click', captureCalendarAction, true);
     document.addEventListener('submit', saveDateEntry, true);
+    document.addEventListener('change',event=>{
+      if(!event.target.matches('[data-range-start],[data-range-end]'))return;
+      const host=event.target.closest('.calendar-date-panel'),start=host.querySelector('[data-range-start]').value,end=host.querySelector('[data-range-end]').value;
+      if(!window.HVJourney.validDate(start)||!window.HVJourney.validDate(end))return;
+      calendarSelectionStart=start<end?start:end;calendarSelectionEnd=start<end?end:start;selectedDate=calendarSelectionStart;renderMonth();
+    });
     renderMonth();
   }
 

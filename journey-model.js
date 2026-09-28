@@ -7,13 +7,41 @@
   const visibleTransport = (state,profileId=state.activeProfileId) => scoped(state.transports,profileId).filter(t => t.status !== 'cancelled' && !(state.trips||[]).some(trip=>trip.id===t.tripId&&trip.status==='cancelled'));
   const summary = (state,today,profileId=state.activeProfileId) => {
     const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=today),countries=new Set(),days=new Set(),home=new Set(),trips=new Set();
-    for(const stay of stays){trips.add(stay.tripId||'stay:'+stay.id);for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||state.activeProfileId;const atHome=profileId==='all'&&!stay.profileId?state.profiles.every(p=>isHome(state,stay.countryCode,date,p.id)):isHome(state,stay.countryCode,date,owner);(atHome&&!stay.tripId&&!stay.location?home:days).add(date);if(!atHome||stay.tripId||stay.location)countries.add(stay.countryCode);}}
+    for(const stay of stays){for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||state.activeProfileId;const atHome=profileId==='all'&&!stay.profileId?state.profiles.every(p=>isHome(state,stay.countryCode,date,p.id)):isHome(state,stay.countryCode,date,owner);(atHome?home:days).add(date);if(!atHome){countries.add(stay.countryCode);trips.add(stay.tripId||'stay:'+stay.id);}}}
     countries.delete('SEA');for(const date of days)home.delete(date);
     return {stays,countries,days,home,trips};
   };
   function isHome(state,code,date,profileId=state.activeProfileId) {
     if(code==='SEA') return false;
     return (state.profiles.find(p=>p.id===profileId)?.homeCountryCodes || []).includes(code) || scoped(state.residences,profileId).some(r=>r.countryCode===code&&r.start<=date&&(!r.end||r.end>=date));
+  }
+  // Association is derived from existing dates only; never extend or create a trip.
+  function tripForDates(state,start,end=start,profileId=state.activeProfileId) {
+    const candidates=scoped(state.trips,profileId).filter(t=>{
+      const dates=scoped(state.stays,profileId).filter(s=>s.tripId===t.id&&s.status!=='cancelled').flatMap(s=>[s.start,s.end]).concat(scoped(state.transports,profileId).filter(r=>r.tripId===t.id&&r.status!=='cancelled').flatMap(r=>[r.startLocal?.slice(0,10),r.endLocal?.slice(0,10)])).filter(Boolean).sort();
+      return dates.length&&dates[0]<=start&&dates.at(-1)>=end;
+    });
+    return candidates.length===1?candidates[0].id:null;
+  }
+  function memories(state,today,profileId=state.activeProfileId) {
+    const year=Number(today.slice(0,4)),suffix=today.slice(4);
+    const records=[...scoped(state.stays,profileId).filter(isActual),...scoped(state.residences,profileId),...scoped(state.placeVisits,profileId).filter(v=>v.category==='locations'&&v.status==='visited').map(v=>({...v,...v.place,start:v.date,end:v.endDate||v.date,location:v.place?.name}))];
+    const homeCodes=new Set((state.profiles||[]).find(p=>p.id===profileId)?.homeCountryCodes||[]);
+    const eligible=records.filter(r=>r.countryCode&&r.countryCode!=='SEA'&&!homeCodes.has(r.countryCode)&&validDate(r.start));
+    const first=Math.min(year,...eligible.map(r=>Number(r.start.slice(0,4)))),result=[];
+    for(let y=year-1;y>=first;y--){const date=y+suffix;if(!validDate(date))continue;
+      const seen=new Map();
+      for(const r of eligible){if(r.start>date||(r.end&&r.end<date))continue;
+        // Permanent home settings apply even to linked trips and plotted places.
+        const ownerHomes=(state.profiles||[]).find(p=>p.id===(r.profileId||profileId))?.homeCountryCodes||[];
+        if(ownerHomes.includes(r.countryCode))continue;
+        const country=r.countryName||r.countryCode,label=r.location||'';
+        const name=label&&label.toLowerCase()!==country.toLowerCase()?label+', '+country:country;
+        seen.set(r.countryCode+'|'+label.toLowerCase(),{code:r.countryCode,name});
+      }
+      if(seen.size)result.push({year:y,places:[...seen.values()]});
+    }
+    return result;
   }
   const isActual = s => s?.status === 'actual' || s?.status === undefined;
   const countsForPlanning = s => isActual(s) || s?.status === 'planned';
@@ -49,7 +77,7 @@
     const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=date&&s.end>=date);
     const home=stays.some(s=>isHome(state,s.countryCode,date,profileId));
     const travel=stays.some(s=>!isHome(state,s.countryCode,date,profileId));
-    return travel ? (home?'mixed':'travel') : home?'home':'unrecorded';
+    return travel ? (home?'mixed':'travel') : home||(state.profiles||[]).find(p=>p.id===profileId)?.homeCountryCodes?.length?'home':'unrecorded';
   }
   const validDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s||'') && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10)===s;
   const validLocal = s => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s||'') && validDate(s.slice(0,10)) && Number(s.slice(11,13))<24 && Number(s.slice(14,16))<60;
@@ -74,6 +102,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={categories,types,scoped,summary,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
+  const api={categories,types,scoped,summary,tripForDates,memories,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

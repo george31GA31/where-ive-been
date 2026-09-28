@@ -76,7 +76,7 @@ test('shared summary counts dates once and applies each traveller’s own home h
  assert.equal(J.summary(data,'2026-01-05','b').days.size,2);
  const all=J.summary(data,'2026-01-05','all');assert.equal(all.days.size,2);assert.equal(all.home.size,1);assert.deepEqual([...all.countries],['GB']);
  data.stays[0].tripId='intentional-home-trip';
- assert.deepEqual([...J.summary(data,'2026-01-05','a').countries],['GB'],'An explicitly logged home-country trip remains visible');
+ assert.deepEqual([...J.summary(data,'2026-01-05','a').countries],[],'Home-country links cannot inflate destination counts');assert.equal(data.stays[0].tripId,'intentional-home-trip','Home records and journey links remain intact');
 });
 test('cancelled transport and cancelled linked trips cannot infer airport visits',()=>{
  const base={activeProfileId:'a',trips:[{id:'cancel',status:'cancelled'}],transports:[{id:'t',profileId:'a',type:'flight',status:'actual',tripId:'cancel',startLocal:'2026-01-01T12:00',endLocal:'2026-01-01T15:00',start:{airportId:'LHR'},end:{airportId:'CDG'}}],placeVisits:[]};

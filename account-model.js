@@ -107,7 +107,7 @@
         if(key==='placeVisits'&&(typeof row.category!=='string'||typeof row.itemId!=='string'||(!['want','not-recorded'].includes(row.status)&&!/^\d{4}-\d{2}-\d{2}$/.test(row.date||''))))throw new Error('Check place visit details.');
         if(key==='accommodations'){
           const date=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
-          if(typeof row.tripId!=='string'||!row.tripId||typeof row.propertyName!=='string'||!row.propertyName.trim()||typeof row.location!=='string'||!row.location.trim()||!date(row.checkIn)||!date(row.checkOut)||row.checkOut<row.checkIn)throw new Error('Check accommodation details.');
+          if((row.tripId!=null&&typeof row.tripId!=='string')||typeof row.propertyName!=='string'||!row.propertyName.trim()||typeof row.location!=='string'||!row.location.trim()||!date(row.checkIn)||!date(row.checkOut)||row.checkOut<row.checkIn)throw new Error('Check accommodation details.');
         }
         if (key==='stays' || key==='residences') {
           const date=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;

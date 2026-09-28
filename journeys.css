@@ -38,7 +38,7 @@
 .atlas-month-dots i.has-transport{outline:2px solid var(--hv-gold);outline-offset:1px}
 .atlas-month-dots i.has-accommodation{border:2px solid var(--hv-blue)}
 .accommodation-legend{color:var(--hv-blue)}
-.calendar-day[data-home-status=home]{box-shadow:inset 0 -3px var(--hv-blue)}
+/* Home is retained in date data without a horizontal status stripe. */
 .day-stay.home-stay{background:var(--hv-blue)!important;color:white!important}
 .hide-calendar-countries .day-stay{display:none!important}.hide-calendar-countries .calendar-day{box-shadow:none}
 .calendar-transport{display:flex;align-items:center;gap:4px;border:0;border-left:3px solid var(--hv-gold);background:var(--panel);color:var(--text);width:100%;padding:5px 2px;min-height:32px;font-size:.68rem;text-align:left;overflow:hidden}
