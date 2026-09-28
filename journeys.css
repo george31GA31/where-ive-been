@@ -36,6 +36,8 @@
 .atlas-month-dots i.home{background:var(--hv-blue);background-image:repeating-linear-gradient(45deg,transparent 0 2px,#ffffff88 2px 3px)}
 .atlas-month-dots i.mixed{background:linear-gradient(90deg,var(--hv-blue) 50%,var(--hv-red) 50%)}
 .atlas-month-dots i.has-transport{outline:2px solid var(--hv-gold);outline-offset:1px}
+.atlas-month-dots i.has-accommodation{border:2px solid var(--hv-blue)}
+.accommodation-legend{color:var(--hv-blue)}
 .calendar-day[data-home-status=home]{box-shadow:inset 0 -3px var(--hv-blue)}
 .day-stay.home-stay{background:var(--hv-blue)!important;color:white!important}
 .hide-calendar-countries .day-stay{display:none!important}.hide-calendar-countries .calendar-day{box-shadow:none}
@@ -153,7 +155,6 @@ body[data-current-view=country] #pageTitle{font-size:1.5rem}
  .calendar-toolbar-actions{display:flex;gap:6px;width:100%}
  .calendar-toolbar-actions button{white-space:nowrap;font-size:12px;padding:10px 8px;flex:1}
  .calendar-view-switch{margin-bottom:0}
- .calendar-toolbar .calendar-filters{margin-left:0}
  .country-reference .journey-tools{display:block}.country-reference .journey-tools h2{font-size:1.3rem}
 }
 .calendar-panel:not([data-calendar-view=month]) .calendar-selection-info{display:none!important}

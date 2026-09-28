@@ -11,7 +11,7 @@
   const items=kind=>catalog[kind]?.items||[];
   const today=()=>isoDate(new Date());
   const records=()=>J.visibleTransport(state);
-  const layer=view=>({countries:true,transport:false,...state.visualLayers?.[view]});
+  const layer=view=>({countries:true,transport:false,accommodation:true,...state.visualLayers?.[view]});
   function openCountry(code){if(!countryByCode(code)||code==='SEA')return;selectedMapCountry=code;if(get('worldMap'))get('worldMap').dataset.selectedCountry=code;renderMapSelection();updateMapColors();}
   function renderMapSelection(){
     const host=get('mapCountrySummary');if(!host)return;
@@ -52,12 +52,13 @@
   }
   function renderYear(){
     const host=get('atlasYear');if(!host||host.hidden)return;
-    const year=calendarCursor.getUTCFullYear(),show=layer('calendar');
-    host.innerHTML=`<div class="year-legend"><span>● Travel</span><span class="home-legend">▧ Home</span><span>◐ Home & travel</span><span>○ Unrecorded</span></div>`+Array.from({length:12},(_,m)=>{
+    const year=calendarCursor.getUTCFullYear(),show=layer('calendar'),accommodations=show.accommodation?J.scoped(state.accommodations,state.activeProfileId):[];
+    host.innerHTML=`<div class="year-legend"><span>● Travel</span><span class="home-legend">▧ Home</span><span>◐ Home & travel</span><span>○ Unrecorded</span><span class="accommodation-legend">⌂ Accommodation</span></div>`+Array.from({length:12},(_,m)=>{
       const prefix=`${year}-${String(m+1).padStart(2,'0')}`;let home=0,travel=0;
       const dots=Array.from({length:new Date(year,m+1,0).getDate()},(_,d)=>{const date=prefix+'-'+String(d+1).padStart(2,'0'),status=date<=today()?J.dayStatus(state,date):'unrecorded';if(status==='home')home++;if(['travel','mixed'].includes(status))travel++;
         const transport=show.transport&&records().some(t=>t.startLocal.slice(0,10)===date||t.endLocal.slice(0,10)===date);
-        return `<i class="${show.countries?status:'unrecorded'} ${transport?'has-transport':''}" title="${date}: ${show.countries?status:'countries hidden'}${transport?', transport':''}"></i>`;}).join('');
+        const accommodation=accommodations.some(a=>a.checkIn<=date&&a.checkOut>=date);
+        return `<i class="${show.countries?status:'unrecorded'} ${transport?'has-transport':''} ${accommodation?'has-accommodation':''}" title="${date}: ${show.countries?status:'countries hidden'}${transport?', transport':''}${accommodation?', accommodation':''}"></i>`;}).join('');
       return `<button type="button" class="atlas-month" data-atlas-month="${m}" data-atlas-year="${year}"><strong>${new Date(year,m,1).toLocaleDateString('en-GB',{month:'long'})}</strong><div class="atlas-month-dots">${dots}</div><small>${show.countries?`${travel} travel · ${home} home-only days`:'Countries hidden'}</small></button>`;
     }).join('');
   }
@@ -165,19 +166,20 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
     get('homeCountrySearch').oninput=choices;panel.querySelector('details').addEventListener('toggle',choices);choices();renderHomeSummary();
   }
   function installLayers(view){
+    if(view!=='map')return;
     const field=document.createElement('fieldset');field.className='journey-layers';field.innerHTML=`<legend>Show</legend>${['countries','transport'].map(key=>`<label><input type="checkbox" data-layer-view="${view}" data-layer="${key}" ${layer(view)[key]?'checked':''}> ${key==='countries'?'Countries':'Transport'}</label>`).join('')}`;
-    if(view==='map'){const toolbar=get('mapView').querySelector('.voyages-map-toolbar');(toolbar||get('mapView').querySelector('.map-panel')).append(field);}else {const filters=document.createElement('details');filters.className='calendar-filters';const summary=document.createElement('summary');summary.textContent='Filters';filters.append(summary,field);get('calendarView').querySelector('.calendar-toolbar')?.append(filters);}
+    const toolbar=get('mapView').querySelector('.voyages-map-toolbar');(toolbar||get('mapView').querySelector('.map-panel')).append(field);
   }
   function init(){
     if(ready)return;ready=true;
-    const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('journeys.css?v=simplify-1',root);document.head.append(style);
+    const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('journeys.css?v=calendar-refine-2',root);document.head.append(style);
     const mapTools=document.createElement('label');mapTools.className='field map-country-search';mapTools.innerHTML='<span>Find a country on the map</span><select id="mapCountrySelect" aria-label="Select country on the map"><option value="">Choose a country</option>'+COUNTRIES.filter(c=>c.code!=='SEA').map(c=>`<option value="${E(c.code)}">${E(c.name)}</option>`).join('')+'</select>';(get('mapView')?.querySelector('.voyages-map-toolbar')||get('mapView')).append(mapTools);get('mapCountrySelect').onchange=e=>openCountry(e.target.value);
     const mapPanel=get('mapView')?.querySelector('.map-panel');if(mapPanel&&!get('mapCountrySummary')){const summary=document.createElement('article');summary.id='mapCountrySummary';summary.className='panel map-country-summary';summary.hidden=true;mapPanel.after(summary);}
     const countries=get('countriesView'),directory=countries.querySelector('.atlas-directory');
     for(const [node,label,open] of [[directory,'Country Directory',true],[get('countryTotals')?.closest('.panel'),'Time Spent by Country / Location',false]]){
       if(!node)continue;const accordion=document.createElement('details');accordion.className='journey-accordion';accordion.open=open;const summary=document.createElement('summary');summary.textContent=label;node.before(accordion);accordion.append(summary,node);
     }
-    installHome();installLayers('map');installLayers('calendar');
+    installHome();installLayers('map');
     const dateLabel=document.createElement('label');dateLabel.className='field timeline-manual';dateLabel.innerHTML='<span>Go to date</span><input type="date" id="timelineManualDate">';els.timelineSlider.before(dateLabel);
     get('timelineManualDate').onchange=e=>{if(J.validDate(e.target.value))setTimelineDate(e.target.value);};
     const note=document.createElement('p');note.id='transportMapNote';note.className='helper';get('mapView').querySelector('.map-panel').append(note);

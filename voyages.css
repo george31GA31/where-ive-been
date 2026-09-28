@@ -1267,10 +1267,6 @@ hr {
   vector-effect:non-scaling-stroke
 }
 .calendar-toolbar .calendar-view-switch { margin:0 }
-.calendar-filters { margin-left:auto }
-.calendar-filters summary { cursor:pointer; padding:10px 14px; border:1px solid var(--hv-line); border-radius:6px; font:inherit }
-.calendar-filters[open] { flex-basis:100%; display:flex; flex-wrap:wrap }
-.calendar-filters[open] .journey-layers { margin-top:10px }
 .calendar-panel .calendar-agenda,.calendar-panel .atlas-year { padding:20px }
 .calendar-panel:not([data-calendar-view=month]) .calendar-selection-info { display:none }
 body[data-current-view=calendar] #addStayBtn { display:none }
@@ -2449,6 +2445,17 @@ body[data-current-view=calendar] #addStayBtn { display:none }
 }
 .home-hero-actions a,
 .home-hero-actions button { text-decoration:none; white-space:nowrap; }
+.travel-memory-panel { display:flex; align-items:flex-start; gap:16px; padding:20px 24px; border-left:3px solid var(--hv-gold); }
+.travel-memory-mark { width:32px; height:32px; flex:0 0 32px; display:grid; place-items:center; border:1px solid var(--hv-line); border-radius:50%; color:var(--hv-gold); font-size:18px; }
+.travel-memory-copy { min-width:0; }
+.travel-memory-copy .eyebrow { margin:0 0 2px; color:var(--hv-gold); }
+.travel-memory-copy h2 { margin:0 0 8px; color:var(--hv-ink); font-family:var(--hv-serif); font-size:22px; font-weight:400; }
+.travel-memory-list { display:grid; gap:6px; }
+.travel-memory-list p,.travel-memory-empty { margin:0; color:var(--hv-ink); font-size:13px; }
+.travel-memory-list p strong { color:var(--hv-red); font-weight:700; }
+.travel-memory-places { display:flex; flex-wrap:wrap; gap:6px; }
+.travel-memory-places span { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border:1px solid var(--hv-line); border-radius:3px; color:var(--hv-muted); font-size:11px; }
+.travel-memory-places .flag-img { width:16px; height:11px; margin:0; }
 #dashboardView .stats-grid {
   gap:0;
   margin-bottom:24px;
@@ -2604,6 +2611,8 @@ body[data-current-view=calendar] #addStayBtn { display:none }
   .home-hero h2 { font-size:31px; }
   .home-hero-actions { width:100%; }
   .home-hero-actions a,.home-hero-actions button { flex:1; text-align:center; }
+  .travel-memory-panel { gap:11px; padding:16px; }
+  .travel-memory-mark { width:28px; height:28px; flex-basis:28px; }
   #dashboardView .stats-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
   #dashboardView .stat-card { padding:16px; border-right:1px solid var(--hv-line); border-bottom:1px solid var(--hv-line); }
   #dashboardView .stat-card:nth-child(2n) { border-right:0; }

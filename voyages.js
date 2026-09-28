@@ -460,6 +460,20 @@
       return `<a class="atlas-country country-link" href="#/country/${c.code}"><span class="atlas-country-name">${flagHtml(c.code)}<strong>${escapeHtml(c.name)}</strong></span><span>${records.length?`${days.size} logged days`:'Not yet visited'}</span><span aria-hidden="true">↗</span></a>`;
     }).join(''):'<p class="empty-state">No countries match your filters.</p>';
   }
+  function renderTravelMemory(todayDate) {
+    const panel=$('travelMemoryPanel');if(!panel)return;
+    const todayParts=todayDate.split('-').map(Number),currentYear=todayParts[0],month=todayParts[1],day=todayParts[2],history=staysForProfile().filter(s=>s.status==='actual'&&s.countryCode&&s.countryCode!=='SEA'),residences=(state.residences||[]).filter(r=>!r.profileId||r.profileId===state.activeProfileId),memory=[];
+    for(let year=currentYear-1;year>=Math.max(1900,currentYear-100)&&memory.length<3;year--){
+      const date=`${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      if(new Date(Date.UTC(year,month-1,day)).getUTCDate()!==day)continue;
+      const places=new Map();
+      history.filter(s=>s.start<=date&&s.end>=date).forEach(s=>places.set(s.countryCode,s.countryName||countryByCode(s.countryCode)?.name||s.countryCode));
+      residences.filter(r=>r.start<=date&&(!r.end||r.end>=date)).forEach(r=>places.set(r.countryCode,r.countryName||countryByCode(r.countryCode)?.name||r.countryCode));
+      if(places.size)memory.push({year,places:[...places]});
+    }
+    const dateLabel=new Date(Date.UTC(currentYear,month-1,day)).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'});
+    panel.innerHTML=`<div class="travel-memory-mark" aria-hidden="true">↶</div><div class="travel-memory-copy"><p class="eyebrow">ON THIS DATE</p><h2>Travel memories</h2>${memory.length?`<div class="travel-memory-list">${memory.map(({year,places})=>{const names=places.map(([,name])=>name),when=currentYear-year;return `<p>This day ${when} ${when===1?'year':'years'} ago, you were in <strong>${escapeHtml(new Intl.ListFormat('en-GB',{style:'long',type:'conjunction'}).format(names))}</strong>.</p><div class="travel-memory-places">${places.map(([code,name])=>`<span>${flagHtml(code,'flag-img flag-sm')}${escapeHtml(name)}</span>`).join('')}</div>`;}).join('')}</div>`:`<p class="travel-memory-empty">No travel or lived-in history is recorded for ${escapeHtml(dateLabel)} in previous years.</p>`}</div>`;
+  }
   function renderAtlas() {
     if(!$('atlasOverview'))return;
     const {universe,visited,percent}=atlasCoverage(),records=atlasRecords(),todayDate=isoDate(new Date()),all=staysForProfile().filter(countsForPlanning);const current=all.find(s=>s.start<=todayDate&&s.end>=todayDate),next=all.filter(s=>s.status==='planned'&&s.start>todayDate).sort((a,b)=>a.start.localeCompare(b.start))[0],recent=[...records].sort((a,b)=>b.start.localeCompare(a.start))[0],featured=current||next||recent,featuredLabel=current?'CURRENT TRIP':next?'NEXT TRIP':'MOST RECENT TRIP';const members=featured?.tripId?staysForProfile().filter(s=>s.tripId===featured.tripId&&s.status!=='cancelled'):[featured].filter(Boolean),featuredDates=members.flatMap(s=>[s.start,s.end]).sort();
@@ -468,6 +482,7 @@
     $('atlasOverview').innerHTML=featured
       ? `<section class="home-hero home-hero--trip"><div><p class="eyebrow">${featuredLabel}</p><h2>${escapeHtml(state.trips.find(t=>t.id===featured.tripId)?.name||countryByCode(featured.countryCode)?.name||featured.countryName)}</h2><p>${friendlyDate(featuredDates[0])} to ${friendlyDate(featuredDates.at(-1))}</p></div><div class="home-hero-actions"><a class="primary" href="#/trips">Open trip</a><a class="secondary" href="#/planner">Plan another trip</a></div></section>`
       : `<section class="home-hero home-hero--empty"><div><p class="eyebrow">TRAVEL, MADE SIMPLE</p><h2>One calm place for every journey.</h2><p>Plan what is next, log where you have been, and let Herald keep the practical details together.</p></div><div class="home-hero-actions"><button type="button" class="primary" data-plan-trip>Plan a trip</button><button type="button" class="secondary" data-add-first-trip data-trip-intent="actual">Log a past trip</button></div></section>`;
+    renderTravelMemory(todayDate);
     $('dashboardGaps').closest('.panel').hidden=!(staysForProfile().length||(state.transports||[]).length);
     const summary=HVJourney.summary(state,todayDate);
     if($('recordedTripCount'))$('recordedTripCount').textContent=summary.trips.size;

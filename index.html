@@ -9,8 +9,8 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4">
-  <link rel="stylesheet" href="voyages.css?v=simplify-4" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=journeys-1" />
+  <link rel="stylesheet" href="voyages.css?v=memory-1" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=calendar-refine-2" />
 </head>
 <body>
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -53,6 +53,7 @@
           <div class="atlas-masthead-copy"><p class="eyebrow">YOUR PERSONAL ATLAS</p><h2>Where you’ve been.<br><em>Where you’re going.</em></h2><a href="#/trips" class="atlas-text-link">Explore your journeys <span aria-hidden="true">↗</span></a></div>
           <div class="atlas-masthead-art"><img src="assets/herald-logo-dark.png" alt="Herald trumpet travel mark" width="1672" height="941"><span>HERALD VOYAGES</span></div>
         </div>
+        <article id="travelMemoryPanel" class="panel travel-memory-panel" aria-live="polite"></article>
         <div class="stats-grid">
           <article class="stat-card"><span class="stat-label">Countries visited</span><strong id="countriesLogged">0</strong><small>Completed visits through today</small><button type="button" id="editCountryCountBtn" class="country-count-edit-btn" aria-label="Choose which places count as countries">Edit</button></article>
           <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique days away from recorded homes</small></article>
@@ -111,11 +112,11 @@
                   <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
                   <button class="secondary compact" id="todayBtn">Today</button>
                 </div>
-                <div class="calendar-toolbar-actions"><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button></div>
+                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar layers"><button type="button" data-calendar-layer="countries" aria-pressed="true">Countries</button><button type="button" data-calendar-layer="transport" aria-pressed="true">Transport</button><button type="button" data-calendar-layer="accommodation" aria-pressed="true">Accommodation</button></div><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button></div>
               </div>
               <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
               <div id="calendar" class="calendar" aria-live="polite"></div>
-              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-trip"></i> Journey</span><span class="calendar-key"><i class="calendar-key-home"></i> Home / lived-in</span><span class="calendar-key"><i class="calendar-key-transport"></i> Transport</span><p>Select a journey to follow its route. Use the date number to plan a new one.</p></footer>
+              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-trip"></i> Journey</span><span class="calendar-key"><i class="calendar-key-home"></i> Home / lived-in</span><span class="calendar-key"><i class="calendar-key-transport"></i> Transport</span><span class="calendar-key"><i class="calendar-key-accommodation"></i> Accommodation</span><p>Select a journey to follow its route. Use the date number to plan a new one.</p></footer>
             </article>
 
             <aside id="calendarJourneyDetail" class="calendar-journey-detail" aria-live="polite"></aside>
@@ -275,6 +276,6 @@
   <script src="account-model.js?v=journeys-1"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=journeys-1"></script>
+  <script src="app.js?v=calendar-refine-2"></script>
 </body>
 </html>
