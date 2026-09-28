@@ -25,3 +25,9 @@ test('rail/water geometry follows connected mapped ways and refuses fabricated b
  assert.equal(G.mappedPath(elements,{lat:20,lon:20},{lat:.01,lon:.02}),null);
  assert.equal(G.mappedPath([{members:[{geometry:[{lat:0,lon:0},{lat:0,lon:.01}]},{geometry:[{lat:.1,lon:.1},{lat:.1,lon:.2}]}]}],{lat:0,lon:0},{lat:.1,lon:.2}),null);
 });
+
+test('manual airport codes take precedence over directory names and survive import',()=>{
+ const airport={id:'manual-airport:test',airportId:'manual-airport:test',manualAirport:true,name:'Personal airfield',icao:'QQXY',lat:4.6,lon:-58.6,countryCode:'GY'};
+ assert.equal(J.airportLabel(airport,()=>({iata:'ABC'})),'QQXY');
+ const s=base();s.transports=[{id:'manual-flight',profileId:'p',type:'flight',start:airport,end:{name:'Destination',iata:'DEF'},startLocal:'2026-11-05T12:00',endLocal:'2026-11-05T14:00'}];M.validateImport(s);assert.deepEqual(M.importData(base(),s).data.transports[0].start,airport);assert.equal(J.summary(s,'2026-11-06').countries.size,0);
+});

@@ -4,7 +4,7 @@
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const G=HVRouteGeometry,cache=new Map();let dialog,lastRequest=0;
   const styles={flight:{color:'#44758c',dashArray:'6 5'},bus:{color:'#ac7631'},car:{color:'#ac7631'},walk:{color:'#647d52',dashArray:'2 5'},train:{color:'#7c6187',dashArray:'10 3'},boat:{color:'#31848a',dashArray:'3 6'},other:{color:'#777',dashArray:'3 5'}};
-  function airport(p){return G.point(p)?p:{...HVJourneys.airportFor(p?.iata||p?.icao||p?.name||''),...p,lat:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lat,lon:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lon};}
+  function airport(p){return G.point(p)||p?.manualAirport?p:{...HVJourneys.airportFor(p?.iata||p?.icao||p?.name||''),...p,lat:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lat,lon:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lon};}
   async function route(type,start,end,signal){
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon]);if(cache.has(key))return cache.get(key);
     // FOSSGIS public routing limit: at most one request per second, shared across maps.

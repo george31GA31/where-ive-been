@@ -41,7 +41,7 @@
     const points=[record.start,...(record.via||[]),record.end];
     return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:'',endLocal:i===points.length-2?record.endLocal:'',flightNumber:points.length===2?record.flightNumber||'':'',airline:points.length===2?record.airline||null:null}));
   }
-  const airportLabel=(p,lookup=()=>null)=>p?.iata||lookup(p?.name||'')?.iata||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
+  const airportLabel=(p,lookup=()=>null)=>p?.manualAirport?(p.iata||p.icao||p.name||''):p?.iata||lookup(p?.name||'')?.iata||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
   function transportLabel(record,lookup=()=>null) {
     if(record.type!=='flight')return `${record.start?.name||''} → ${record.end?.name||''}`;
     const legs=flightLegs(record),parts=[];

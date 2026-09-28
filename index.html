@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=4">
   <link rel="stylesheet" href="voyages.css?v=memory-1" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=journey-map-1" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=journey-library-1" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 </head>
 <body>
@@ -230,6 +230,11 @@
           </article>
         </div>
       </section>
+      <section id="journeysView" class="view">
+        <header class="journey-library-heading"><div><p class="eyebrow">YOUR JOURNEYS</p><h2>Routes &amp; stays</h2><p>All your transport and accommodation, past and upcoming. Open a journey to explore its routes and stays on the map.</p></div><div class="journey-library-actions"><button type="button" class="primary" data-library-transport>Add transport</button><button type="button" class="secondary" data-library-stay>Add accommodation</button></div></header>
+        <div class="journey-library-filters"><label class="field"><span>When</span><select name="journeyPeriod"><option value="all">All dates</option><option value="upcoming">Current &amp; upcoming</option><option value="previous">Previous</option><option value="cancelled">Cancelled</option></select></label><label class="field"><span>Show</span><select name="journeyKind"><option value="all">Transport &amp; accommodation</option><option value="transport">Transport</option><option value="accommodation">Accommodation</option></select></label><label class="field"><span>Search</span><input type="search" name="journeySearch" placeholder="Journey, airport, airline or accommodation"></label></div>
+        <p class="helper" id="journeyLibraryCount" role="status"></p><div id="journeyLibraryRecords"></div>
+      </section>
     </main>
   </div>
 
@@ -274,9 +279,9 @@
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="account-config.js"></script>
-  <script src="account-model.js?v=journey-map-1"></script>
+  <script src="account-model.js?v=journey-library-1"></script>
   <script src="account-client.js"></script>
   <script src="account-sync.js"></script>
-  <script src="app.js?v=journey-map-1"></script>
+  <script src="app.js?v=journey-library-1"></script>
 </body>
 </html>

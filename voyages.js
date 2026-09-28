@@ -11,27 +11,28 @@
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
 
   const ROUTES = {
-    places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
+    journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
     stats: 'stats', homes: 'lived-in', settings: 'settings', schengen: 'schengen', planner: 'planner', rules: 'visa', profiles: 'people'
   };
   const ROUTE_TO_VIEW = Object.fromEntries(Object.entries(ROUTES).map(([view, route]) => [route, view]));
   const VIEW_TITLES = {
-    places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
+    journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
     stats: 'Travel statistics', homes: 'Home bases', settings: 'Preferences', schengen: 'Schengen planner', planner: 'Plan a trip', rules: 'Entry rules', profiles: 'People & passports'
   };
   const WORKSPACES = {
     home: { label: 'Home', icon: 'dashboard', view: 'dashboard' },
     trips: { label: 'Calendar', icon: 'calendar', view: 'calendar' },
+    journeys: {label:'Journey Map',icon:'map',view:'journeys'},
     atlas: { label: 'Atlas', icon: 'map', view: 'map' },
     plan: { label: 'Plan a trip', icon: 'planner', view: 'planner' },
     account: { label: 'Account', icon: 'profiles', view: 'profiles' }
   };
   const VIEW_WORKSPACE = {
-    dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
+    journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
     planner: 'plan', rules: 'plan', schengen: 'plan', profiles: 'account', homes: 'account', settings: 'account'
   };
   const WORKSPACE_TABS = {
-    trips: ['calendar', 'stays'],
+    trips: ['calendar', 'stays', 'journeys'],
     atlas: ['map', 'countries', 'places', 'stats'],
     plan: ['planner', 'rules', 'schengen'],
     account: ['profiles', 'homes', 'settings']
@@ -213,7 +214,7 @@
     if(view==='country') window.HVJourneys?.renderCountry();
     document.body.dataset.currentView = view;
     const workspace = VIEW_WORKSPACE[view] || 'home';
-    qa('.voyages-mobile-nav [data-mobile-view]').forEach((button) => button.classList.toggle('active', VIEW_WORKSPACE[button.dataset.mobileView] === workspace));
+    qa('.voyages-mobile-nav [data-mobile-view]').forEach((button) => button.classList.toggle('active', VIEW_WORKSPACE[button.dataset.mobileView] === workspace || view==='journeys'&&button.dataset.mobileView==='calendar'));
     if($(`${view}View`)) $(`${view}View`).setAttribute('aria-label', VIEW_TITLES[view] || view);
     qa('.nav-item[data-workspace]').forEach((button) => {
       const current = button.dataset.workspace === workspace;
