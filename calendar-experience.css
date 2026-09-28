@@ -778,3 +778,69 @@
 #flightViaList { display:flex;gap:7px;flex-wrap:wrap;margin-top:10px; }
 .flight-via-chip { display:inline-flex;align-items:center;gap:8px;border:1px solid var(--hv-line);padding:4px 9px;border-radius:4px;color:var(--hv-ink); }
 .flight-via-chip button { min-width:32px;min-height:32px;border:0;background:transparent;color:inherit; }
+
+/* Journey details share the established quiet Calendar controls. */
+#prevMonth,#nextMonth { border-radius:4px !important; aspect-ratio:1; }
+.place-search-results { max-height:none; overflow:visible; gap:8px; }
+.place-search-results button { height:auto !important; max-height:none; min-width:0; white-space:normal; align-items:start; padding:12px; }
+.place-result-copy,.place-result-copy strong,.place-result-copy span,.place-result-copy small { min-width:0; white-space:normal; overflow-wrap:anywhere; line-height:1.45; }
+.place-result-copy strong { font-size:14px; }
+.place-result-copy span,.place-result-copy small { font-size:12px; }
+.place-search-results button>.flag-img { margin-top:4px; }
+.flight-legs { min-width:0; }
+.flight-leg { border:1px solid var(--hv-line); border-radius:5px; margin:16px 0; padding:16px; min-width:0; }
+.flight-leg legend { font-weight:700; padding:0 6px; }
+.flight-leg-actions { display:flex; justify-content:flex-end; gap:6px; margin-bottom:10px; }
+.flight-leg-actions button { min-height:40px; min-width:40px; border:1px solid var(--hv-line); border-radius:4px; background:var(--hv-paper); color:var(--hv-ink); }
+.flight-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.flight-fields>* { min-width:0; }
+.flight-fields input { min-width:0; width:100%; box-sizing:border-box; }
+.flight-search-results { display:grid; gap:5px; }
+.flight-search-results button { display:flex; gap:8px; align-items:center; min-width:0; min-height:44px; text-align:left; padding:10px; border:1px solid var(--hv-line); border-radius:4px; color:var(--hv-ink); background:var(--hv-paper); }
+.flight-search-results button span { min-width:0; overflow-wrap:anywhere; }
+.flight-search-results strong,.flight-search-results small { display:block; }
+.flight-search-results small { color:var(--hv-muted); margin-top:4px; }
+.flight-search-results .flag-img { flex-shrink:0; }
+.journey-map-dialog { width:min(1180px,calc(100vw - 28px)); max-width:none; max-height:94dvh; overflow:auto; padding:0; border:1px solid var(--hv-line); border-radius:6px; color:var(--hv-ink); background:var(--hv-surface); }
+.journey-map-dialog::backdrop { background:rgba(15,26,34,.48); }
+.journey-map-head { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px 22px; }
+.journey-map-head h2 { margin:4px 0; font-family:var(--hv-serif); font-weight:400; overflow-wrap:anywhere; }
+.journey-map-head p { margin:4px 0; }
+.journey-map-layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; }
+.journey-map-canvas { height:510px; min-width:0; background:var(--hv-paper); }
+.journey-map-stops { list-style:none; margin:0; padding:12px; max-height:510px; overflow:auto; box-sizing:border-box; }
+.journey-map-stops li { padding:8px 0 14px; border-bottom:1px solid var(--hv-line); }
+.journey-map-stop { display:flex; gap:9px; padding:6px; width:100%; text-align:left; color:var(--hv-ink); background:transparent; border:0; min-height:44px; }
+.journey-map-stop>span:last-child { min-width:0; overflow-wrap:anywhere; }
+.journey-map-stop small { display:block; margin-top:5px; color:var(--hv-muted); }
+.journey-stop-number { display:grid; place-items:center; background:var(--hv-paper); border:1px solid var(--hv-line); border-radius:4px; width:25px; height:25px; flex-shrink:0; }
+.journey-map-marker { border:2px solid white; border-radius:5px; background:#345d70; color:white; display:grid; place-items:center; box-shadow:0 1px 5px #0005; font-size:12px; }
+.journey-map-marker.marker-accommodation { background:#985c4d; font-size:19px; }
+.journey-map-marker.marker-location { background:#78634c; }
+.journey-direction { background:none; border:0; }
+.journey-direction span { display:block; font-size:20px; line-height:20px; text-shadow:0 0 3px white; }
+.journey-map-footer { padding:16px 22px; }
+.journey-map-footer p { font-size:12px; color:var(--hv-muted); line-height:1.5; }
+.journey-map-key { display:flex; flex-wrap:wrap; gap:10px 18px; font-size:12px; }
+.journey-map-key span { display:flex; align-items:center; gap:7px; }
+.journey-map-key i { display:inline-block; width:18px; border-top:3px solid var(--route-colour); }
+.journey-map-key .key-flight,.journey-map-key .key-train { border-top-style:dashed; }
+.journey-map-key .key-boat,.journey-map-key .key-walk { border-top-style:dotted; }
+.journey-map-key .key-accommodation,.journey-map-key .key-location { width:9px; height:9px; border:1px solid var(--route-colour); background:var(--route-colour); border-radius:2px; }
+.journey-map-dialog button:focus-visible,.flight-legs button:focus-visible { outline:2px solid var(--hv-blue); outline-offset:2px; }
+@media(max-width:760px) {
+ .flight-fields { grid-template-columns:1fr; }
+ .flight-leg { padding:12px; }
+ .journey-map-layout { grid-template-columns:1fr; }
+ .journey-map-canvas { height:360px; }
+ .journey-map-stops { max-height:none; overflow:visible; padding:14px; }
+ .journey-map-dialog { width:calc(100vw - 16px); max-height:94dvh; }
+ .journey-map-head,.journey-map-footer { padding:16px; }
+}
+@media(prefers-reduced-motion:reduce) { .journey-map-dialog *,.flight-legs * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+.flight-fields input { min-height:44px; border:1px solid var(--hv-line); border-radius:4px; padding:10px 12px; background:var(--hv-surface); color:var(--hv-ink); font:inherit; }
+.flight-fields .field { margin:8px 0; }
+.flight-fields input:focus-visible { outline:2px solid var(--hv-blue); outline-offset:2px; }
+.journey-map-marker.marker-flight { min-width:36px; font-size:10px; font-weight:700; }
+.journey-map-key .key-location { background:#78634c; border-color:#78634c; transform:rotate(45deg); }
+.place-search-heading>[data-place-close],.journey-map-head>[data-map-close] { flex-shrink:0; white-space:nowrap; }

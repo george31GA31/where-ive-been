@@ -2,12 +2,12 @@
 (function(root) {
   'use strict';
   const categories = {buildings:'Tallest buildings', mountains:'Highest natural points', unesco:'UNESCO sites', airports:'Airports'};
-  const types = {flight:'Flight',train:'Train',bus:'Bus',boat:'Boat',car:'Car',other:'Other'};
+  const types = {flight:'Flight',train:'Train',bus:'Bus',boat:'Boat',car:'Car',walk:'Walking',other:'Other'};
   const scoped = (rows,profileId) => (rows || []).filter(r => profileId === 'all' || !r.profileId || r.profileId === profileId || r.profileIds?.includes(profileId));
   const visibleTransport = (state,profileId=state.activeProfileId) => scoped(state.transports,profileId).filter(t => t.status !== 'cancelled' && !(state.trips||[]).some(trip=>trip.id===t.tripId&&trip.status==='cancelled'));
   const summary = (state,today,profileId=state.activeProfileId) => {
     const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=today),countries=new Set(),days=new Set(),home=new Set(),trips=new Set();
-    for(const stay of stays){for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||state.activeProfileId;const atHome=profileId==='all'&&!stay.profileId?state.profiles.every(p=>isHome(state,stay.countryCode,date,p.id)):isHome(state,stay.countryCode,date,owner);(atHome?home:days).add(date);if(!atHome){countries.add(stay.countryCode);trips.add(stay.tripId||'stay:'+stay.id);}}}
+    for(const stay of stays){for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||state.activeProfileId;const atHome=!isDomesticHoliday(stay)&&(profileId==='all'&&!stay.profileId?state.profiles.every(p=>isHome(state,stay.countryCode,date,p.id)):isHome(state,stay.countryCode,date,owner));(atHome?home:days).add(date);if(!atHome){if(!homeCountryCodes(state,owner,today).includes(stay.countryCode))countries.add(stay.countryCode);trips.add(stay.tripId||'stay:'+stay.id);}}}
     countries.delete('SEA');for(const date of days)home.delete(date);
     return {stays,countries,days,home,trips};
   };
@@ -18,7 +18,7 @@
   // Association is derived from existing dates only; never extend or create a trip.
   function tripForDates(state,start,end=start,profileId=state.activeProfileId) {
     const candidates=scoped(state.trips,profileId).filter(t=>{
-      const dates=scoped(state.stays,profileId).filter(s=>s.tripId===t.id&&s.status!=='cancelled').flatMap(s=>[s.start,s.end]).concat(scoped(state.transports,profileId).filter(r=>r.tripId===t.id&&r.status!=='cancelled').flatMap(r=>[r.startLocal?.slice(0,10),r.endLocal?.slice(0,10)])).filter(Boolean).sort();
+      const dates=scoped(state.stays,profileId).filter(s=>s.tripId===t.id&&s.status!=='cancelled').flatMap(s=>[s.start,s.end]).concat(scoped(state.transports,profileId).filter(r=>r.tripId===t.id&&r.status!=='cancelled').flatMap(r=>transportDates(r))).filter(Boolean).sort();
       return dates.length&&dates[0]<=start&&dates.at(-1)>=end;
     });
     return candidates.length===1?candidates[0].id:null;
@@ -28,26 +28,42 @@
     // Older accounts recorded their home as a residence, without permanent-home settings.
     return [...new Set([...configured,...(!configured.length?scoped(state.residences,profileId).filter(r=>r.start<=date&&(!r.end||r.end>=date)).map(r=>r.countryCode):[])])];
   }
+  const domesticDestinations = [
+    {code:'GB',name:'England',domesticDestination:'GB-ENG'},
+    {code:'GB',name:'Scotland',domesticDestination:'GB-SCT'},
+    {code:'GB',name:'Wales',domesticDestination:'GB-WLS'},
+    {code:'GB',name:'Northern Ireland',domesticDestination:'GB-NIR'}
+  ];
+  const isDomesticHoliday = r => r?.countryCode==='GB' && r.domesticHoliday===true && domesticDestinations.some(d=>d.domesticDestination===r.domesticDestination);
+  const domesticFields = c => ({domesticDestination:c?.domesticDestination||null,domesticHoliday:!!c?.domesticDestination});
+  function flightLegs(record) {
+    if(record.legs?.length)return record.legs.map(l=>({...l,start:{...l.start},end:{...l.end}}));
+    const points=[record.start,...(record.via||[]),record.end];
+    return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:'',endLocal:i===points.length-2?record.endLocal:'',flightNumber:points.length===2?record.flightNumber||'':'',airline:points.length===2?record.airline||null:null}));
+  }
+  const airportLabel=(p,lookup=()=>null)=>p?.iata||lookup(p?.name||'')?.iata||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
   function transportLabel(record,lookup=()=>null) {
     if(record.type!=='flight')return `${record.start?.name||''} → ${record.end?.name||''}`;
-    const label=p=>p?.iata||lookup(p?.name||'')?.iata||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
-    return `${label(record.start)}-${label(record.end)}`+(record.via?.length?` via ${record.via.map(label).join(', ')}`:'');
+    const legs=flightLegs(record),parts=[];
+    legs.forEach((leg,i)=>{const start=airportLabel(leg.start,lookup),end=airportLabel(leg.end,lookup);if(!i||parts.at(-1)!==start)parts.push(start);parts.push(end);});
+    return parts.join(' → ');
   }
+  const transportDates = record => [...new Set([record.startLocal,record.endLocal,...(record.type==='flight'?record.legs||[]:[]).flatMap(l=>[l.startLocal,l.endLocal])].filter(Boolean).map(d=>d.slice(0,10)))];
   function memories(state,today,profileId=state.activeProfileId) {
     const year=Number(today.slice(0,4)),suffix=today.slice(4);
     const records=[...scoped(state.stays,profileId).filter(isActual),...scoped(state.residences,profileId),...scoped(state.placeVisits,profileId).filter(v=>v.category==='locations'&&v.status==='visited').map(v=>({...v,...v.place,start:v.date,end:v.endDate||v.date,location:v.place?.name}))];
     const homeCodes=new Set(homeCountryCodes(state,profileId,today));
-    const eligible=records.filter(r=>r.countryCode&&r.countryCode!=='SEA'&&!homeCodes.has(r.countryCode)&&validDate(r.start));
+    const eligible=records.filter(r=>r.countryCode&&r.countryCode!=='SEA'&&(!homeCodes.has(r.countryCode)||isDomesticHoliday(r))&&validDate(r.start));
     const first=Math.min(year,...eligible.map(r=>Number(r.start.slice(0,4)))),result=[];
     for(let y=year-1;y>=first;y--){const date=y+suffix;if(!validDate(date))continue;
       const seen=new Map();
       for(const r of eligible){if(r.start>date||(r.end&&r.end<date))continue;
         // Permanent home settings apply even to linked trips and plotted places.
         const ownerHomes=homeCountryCodes(state,r.profileId||profileId,today);
-        if(ownerHomes.includes(r.countryCode)||(!ownerHomes.length&&homeCountryCodes(state,r.profileId||profileId,date).includes(r.countryCode)))continue;
+        if(!isDomesticHoliday(r)&&(ownerHomes.includes(r.countryCode)||(!ownerHomes.length&&homeCountryCodes(state,r.profileId||profileId,date).includes(r.countryCode))))continue;
         const country=r.countryName||r.countryCode,label=r.location||'';
         const name=label&&label.toLowerCase()!==country.toLowerCase()?label+', '+country:country;
-        seen.set(r.countryCode+'|'+label.toLowerCase(),{code:r.countryCode,name});
+        seen.set((r.domesticDestination||r.countryCode)+'|'+label.toLowerCase(),{code:r.countryCode,...(r.domesticDestination?{flagCode:r.domesticDestination}:{}),name});
       }
       if(seen.size)result.push({year:y,places:[...seen.values()]});
     }
@@ -78,15 +94,15 @@
     for(const transport of transports || []) if(transport.status==='planned') {
       // Use the later local calendar date so date-line journeys cannot be
       // marked complete before both their departure and arrival dates pass.
-      const finalDate=[transport.startLocal,transport.endLocal].map(value=>value?.slice(0,10)).filter(validDate).sort().at(-1);
+      const finalDate=transportDates(transport).filter(validDate).sort().at(-1);
       if(finalDate&&finalDate<today){transport.status='actual';changed=true;}
     }
     return changed;
   }
   function dayStatus(state,date,profileId=state.activeProfileId) {
     const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=date&&s.end>=date);
-    const home=stays.some(s=>isHome(state,s.countryCode,date,profileId));
-    const travel=stays.some(s=>!isHome(state,s.countryCode,date,profileId));
+    const home=stays.some(s=>!isDomesticHoliday(s)&&isHome(state,s.countryCode,date,profileId));
+    const travel=stays.some(s=>isDomesticHoliday(s)||!isHome(state,s.countryCode,date,profileId));
     return travel ? (home?'mixed':'travel') : home||(state.profiles||[]).find(p=>p.id===profileId)?.homeCountryCodes?.length?'home':'unrecorded';
   }
   const validDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s||'') && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10)===s;
@@ -106,12 +122,11 @@
   function visits(state,category,today,profileId=state.activeProfileId) {
     const result=new Set(scoped(state.placeVisits,profileId).filter(v=>v.category===category&&(!v.status||v.status==='visited')&&v.date<=today).map(v=>v.itemId));
     if(category==='airports') visibleTransport(state,profileId).filter(t=>t.type==='flight'&&isActual(t)).forEach(t=>{
-      if(t.startLocal?.slice(0,10)<=today&&t.start?.airportId)result.add(t.start.airportId);
-      if(t.endLocal?.slice(0,10)<=today&&t.end?.airportId)result.add(t.end.airportId);
+      for(const leg of flightLegs(t)){if(leg.startLocal?.slice(0,10)<=today&&leg.start?.airportId)result.add(leg.start.airportId);if(leg.endLocal?.slice(0,10)<=today&&leg.end?.airportId)result.add(leg.end.airportId);}
     });
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
+  const api={domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

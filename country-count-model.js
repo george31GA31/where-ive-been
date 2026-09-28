@@ -52,7 +52,7 @@ AF AL DZ AD AO AG AR AM AU AT AZ BS BH BD BB BY BE BZ BJ BT BO BA BW BR BN BG BF
   function visitedCountryCodesAsOf(date = isoDate(new Date())) {
     return new Set(
       staysForProfile()
-        .filter(stay => stay.status === 'actual' && stay.start <= date)
+        .filter(stay => stay.status === 'actual' && stay.start <= date && !HVJourney.isHome(state,stay.countryCode,stay.start,stay.profileId||state.activeProfileId))
         .map(stay => stay.countryCode)
         .filter(code => code && code !== 'SEA')
     );

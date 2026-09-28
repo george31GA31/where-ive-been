@@ -47,3 +47,14 @@ These fields use the existing local/account payload, optimistic sync and guest t
 ## Airport search directory
 
 `airports.json` contains 11,763 non-closed airports with an IATA or ICAO code, from OurAirports public-domain data via https://github.com/datasets/airport-codes (retrieved 28 September 2026). ICAO codes come from the explicit `icao_code` column. The directory supplies search suggestions only; airport selection does not add country visits. Coordinates are retained internally for transport endpoints.
+
+## Airline directory and domestic flags
+
+- `airlines.json`: 1,255 active-coded rows from [OpenFlights airlines.dat](https://github.com/jpatokal/openflights/blob/master/data/airlines.dat), retrieved 2026-09-28. OpenFlights data is available under the [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/); individual contents are under the Database Contents License. This extracted subset is licensed under ODbL 1.0. This historical directory is a search aid, not a live airline-operations feed. Names and IATA/ICAO codes may change; manual airline names remain supported. Logos are deliberately omitted without a reliable licensed source. Airline selections are independent for each flight leg.
+- `assets/domestic/gb-*.svg`: constituent-country flags from [FlagCDN](https://flagcdn.com/), retrieved 2026-09-28. Northern Ireland uses the historic Ulster Banner as a destination symbol. These destinations retain sovereign country code GB in travel records.
+
+## Free search and route providers
+
+Photon supplies live multilingual place search (up to 50 ranked results, displayed ten at a time). Search near adds optional city/country context; map position provides geographic bias. An explicit wider-search action queries accommodation names and English/French aliases in OpenStreetMap through Overpass (up to 100 additional records). Coverage and addresses depend on the community database; manual draggable-pin plotting remains available. No paid API or key is required.
+
+Journey Map uses OpenStreetMap tiles and FOSSGIS OSRM road/walking routing, with requests paced above one second and cached in memory. Rail/ferry lines use connected OSM route-relation geometry only when both selected stops match it within 2.5 km. These are candidate mapped routes, not a guarantee of the operator's actual itinerary. Missing geometry is clearly labelled and never replaced with a straight road/rail/water line. Flight arcs are illustrative airport connections, not actual flight tracks. Atlas does not draw these routes or accommodation.

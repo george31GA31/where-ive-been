@@ -342,6 +342,7 @@
       })
       .on('start', () => hideMapTooltip())
       .on('zoom', event => {
+        viewport.selectAll('.saved-place-pin').attr('r',4/event.transform.k);
         mapZoomTransform = event.transform;
         viewport.attr('transform', event.transform);
       });

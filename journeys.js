@@ -56,7 +56,7 @@
     host.innerHTML=`<div class="year-legend"><span>● Travel</span><span class="home-legend">▧ Home</span><span>◐ Home & travel</span><span>○ Unrecorded</span><span class="accommodation-legend">⌂ Accommodation</span></div>`+Array.from({length:12},(_,m)=>{
       const prefix=`${year}-${String(m+1).padStart(2,'0')}`;let home=0,travel=0;
       const dots=Array.from({length:new Date(year,m+1,0).getDate()},(_,d)=>{const date=prefix+'-'+String(d+1).padStart(2,'0'),status=date<=today()?J.dayStatus(state,date):'unrecorded';if(status==='home')home++;if(['travel','mixed'].includes(status))travel++;
-        const transport=show.transport&&records().some(t=>t.startLocal.slice(0,10)===date||t.endLocal.slice(0,10)===date);
+        const transport=show.transport&&records().some(t=>J.transportDates(t).includes(date));
         const accommodation=accommodations.some(a=>a.checkIn<=date&&a.checkOut>=date);
         return `<i class="${show.countries?status:'unrecorded'} ${transport?'has-transport':''} ${accommodation?'has-accommodation':''}" title="${date}: ${show.countries?status:'countries hidden'}${transport?', transport':''}${accommodation?', accommodation':''}"></i>`;}).join('');
       return `<button type="button" class="atlas-month" data-atlas-month="${m}" data-atlas-year="${year}"><strong>${new Date(year,m,1).toLocaleDateString('en-GB',{month:'long'})}</strong><div class="atlas-month-dots">${dots}</div><small>${show.countries?`${travel} travel · ${home} home-only days`:'Countries hidden'}</small></button>`;
@@ -69,7 +69,7 @@
       day.querySelectorAll('.calendar-transport').forEach(el=>el.remove());const date=day.dataset.calendarDate;
       day.dataset.homeStatus=show.countries&&date<=today()?J.dayStatus(state,date):'unrecorded';
       day.querySelectorAll('.day-stay').forEach(el=>{const s=state.stays.find(s=>s.id===(el.dataset.id||el.dataset.calendarStayId));if(s)el.classList.toggle('home-stay',J.isHome(state,s.countryCode,date));});
-      if(show.transport)records().filter(t=>t.startLocal.slice(0,10)===date||t.endLocal.slice(0,10)===date).forEach(t=>{
+      if(show.transport)records().filter(t=>J.transportDates(t).includes(date)).forEach(t=>{
         const b=document.createElement('button');b.type='button';b.className='calendar-transport';b.dataset.transportEdit=t.id;b.innerHTML=icon(t.type)+`<span>${E(t.type==='flight'?(t.flightNumber||'Flight'):J.types[t.type]||t.type)} · ${E(J.transportLabel(t,airportFor))}</span>`;b.title=`${t.startLocal} → ${t.endLocal} (each endpoint's local time)`;day.append(b);
       });
     });renderYear();renderTransportList();
@@ -109,15 +109,16 @@
   function openTransport(id,prefill={}){
     const t=state.transports?.find(t=>t.id===id),dialog=get('transportDialog');opener=document.activeElement;
     const form=get('transportForm');form.reset();form.dataset.id=id||'';
-    form._airportPrefill={...prefill};form._via=(t?.via||prefill.via||[]).map(a=>({...a}));renderVia();form.querySelectorAll('.airport-search-results').forEach(el=>el.replaceChildren());
+    form._flightRecord=t||prefill;form._flightInitialised=false;form._airportPrefill={...prefill};form._via=(t?.via||prefill.via||[]).map(a=>({...a}));renderVia();form.querySelectorAll('.airport-search-results').forEach(el=>el.replaceChildren());
     form.elements.type.value=t?.type||prefill.type||'flight';form.elements.status.value=t?.status||prefill.status||((prefill.startLocal||'').slice(0,10)>today()?'planned':'actual');form.elements.tripId.innerHTML='<option value="">No linked trip</option>'+J.scoped(state.trips,state.activeProfileId).map(x=>`<option value="${E(x.id)}">${E(x.name)}</option>`).join('');form.elements.tripId.value=t?.tripId||prefill.tripId||'';
     for(const key of ['startLocal','endLocal','flightNumber','bookingReference'])form.elements[key].value=t?.[key]||prefill[key]||(['startLocal','endLocal'].includes(key)?today()+'T12:00':'');
     for(const key of ['start','end'])for(const field of ['name','terminal','lat','lon'])form.elements[key+field].value=t?.[key]?.[field]??prefill[key]?.[field]??'';
 get('transportDelete').hidden=!t;get('transportError').textContent='';get('transportDialogTitle').textContent=t?'Edit transport':'Add transport';updateTransportFields();dialog.showModal();form.elements.type.focus();
   }
   function updateTransportFields(){
-    const form=get('transportForm'),flight=form.elements.type.value==='flight';get('flightNumberField').hidden=!flight;get('flightViaFields').hidden=!flight;form.elements.flightNumber.required=false;
+    const form=get('transportForm'),flight=form.elements.type.value==='flight';window.HVFlights?.toggle(form,flight);get('flightNumberField').hidden=!flight;get('flightViaFields').hidden=!flight;form.elements.flightNumber.required=false;
     for(const end of ['start','end']){
+      let pick=form.querySelector(`[data-pick-endpoint="${end}"]`);if(!pick){pick=document.createElement('button');pick.type='button';pick.className='secondary compact';pick.dataset.pickEndpoint=end;pick.textContent='Find or plot on map';form.elements[end+'name'].closest('label').after(pick);pick.onclick=()=>HVPlaces.open({onSelect:p=>{form.elements[end+'name'].value=p.name;form.elements[end+'lat'].value=p.lat;form.elements[end+'lon'].value=p.lon;form._airportPrefill[end]={...p};}});}pick.hidden=flight;
       get(end+'PlaceLabel').textContent=(end==='start'?'Departure':'Arrival')+(flight?' airport':' city / place');
       form.elements[end+'name'].removeAttribute('list');form.querySelector(`[data-airport-results="${end}"]`)?.replaceChildren();
       form.elements[end+'name'].placeholder=flight?'Airport name or code':'City or place';
@@ -130,14 +131,14 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
   }
   function airportFor(value){const key=value.trim().toLowerCase();return items('airports').find(a=>[a.name,a.iata,a.icao,`${a.name} (${a.iata||a.icao||a.id})`].some(x=>x?.toLowerCase()===key));}
   function saveTransport(event){
-    event.preventDefault();const form=event.currentTarget,f=form.elements,old=state.transports?.find(t=>t.id===form.dataset.id);
+    event.preventDefault();const form=event.currentTarget,f=form.elements;if(f.type.value==='flight'&&window.HVFlights)return HVFlights.save(form);const old=state.transports?.find(t=>t.id===form.dataset.id);
     const t={...old,id:old?.id||uid(),profileId:old?.profileId??state.activeProfileId,tripId:f.tripId.value||J.tripForDates(state,f.startLocal.value.slice(0,10),f.endLocal.value.slice(0,10)),type:f.type.value,status:f.status.value};
     for(const key of ['startLocal','endLocal','flightNumber','bookingReference'])t[key]=f[key].value.trim();
     if(t.type!=='flight')delete t.flightNumber;
     for(const end of ['start','end']){
-      const name=f[end+'name'].value.trim(),savedAirport=form._airportPrefill?.[end]?.name===name?form._airportPrefill[end]:null,a=t.type==='flight'?(savedAirport||airportFor(name)):null;
+      const name=f[end+'name'].value.trim(),savedAirport=form._airportPrefill?.[end]?.name===name?form._airportPrefill[end]:null,a=t.type==='flight'?(savedAirport||airportFor(name)):savedAirport;
       t[end]={...(old?.[end]?.name===name?old[end]:{}),name,terminal:f[end+'terminal'].value.trim(),lat:f[end+'lat'].value===''?(a?.lat??null):Number(f[end+'lat'].value),lon:f[end+'lon'].value===''?(a?.lon??null):Number(f[end+'lon'].value)};
-      if(a){t[end].airportId=a.airportId||a.id;if(a.timezone)t[end].timezone=a.timezone;if(a.iata)t[end].iata=a.iata;if(a.icao)t[end].icao=a.icao;}
+      if(a){t[end]={...a,...t[end]};if(t.type==='flight')t[end].airportId=a.airportId||a.id;if(a.timezone)t[end].timezone=a.timezone;if(a.iata)t[end].iata=a.iata;if(a.icao)t[end].icao=a.icao;}
     }
     if(t.type==='flight'){if(f.vianame.value.trim()){get('transportError').textContent='Select the connecting airport from the results, or clear the Via search.';return;}t.via=(form._via||[]).map(a=>({...a}));}else delete t.via;
     const error=J.validateTransport(t);if(error){get('transportError').textContent=error;return;}
@@ -227,5 +228,5 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
       persist();renderAchievements();
     }
   });
-  window.HVJourneys={transportLabel:t=>J.transportLabel(t,airportFor),init,render,renderCountry,openCountry,renderMap,editTrip,openTransport};
+  window.HVJourneys={airports:()=>items('airports'),airportFor,transportLabel:t=>J.transportLabel(t,airportFor),init,render,renderCountry,openCountry,renderMap,editTrip,openTransport};
 })();

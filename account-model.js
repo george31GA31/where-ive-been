@@ -101,8 +101,9 @@
         if(row.tripId!=null&&typeof row.tripId!=='string')throw new Error('Invalid trip reference in '+key+'.');
         if(key==='transports'){
           const local=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'Z'))&&new Date(v+'Z').toISOString().slice(0,16)===v;
-          if(!['flight','train','bus','boat','car','other'].includes(row.type)||!local(row.startLocal)||!local(row.endLocal))throw new Error('Check transport type and local times.');
+          if(!['flight','train','bus','boat','car','walk','other'].includes(row.type)||!local(row.startLocal)||!local(row.endLocal))throw new Error('Check transport type and local times.');
           for(const side of ['start','end'])if(!row[side]||typeof row[side].name!=='string'||!row[side].name.trim())throw new Error('Check transport locations.');
+          if(row.legs!=null){if(!Array.isArray(row.legs))throw new Error('Check flight legs.');for(const leg of row.legs)if(!leg||!local(leg.startLocal)||!local(leg.endLocal)||!leg.start?.name?.trim()||!leg.end?.name?.trim())throw new Error('Check each flight leg and its local times.');}
         }
         if(key==='placeVisits'&&(typeof row.category!=='string'||typeof row.itemId!=='string'||(!['want','not-recorded'].includes(row.status)&&!/^\d{4}-\d{2}-\d{2}$/.test(row.date||''))))throw new Error('Check place visit details.');
         if(key==='accommodations'){
