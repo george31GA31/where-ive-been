@@ -51,11 +51,11 @@ test('flight number is optional, invalid types and dates are rejected',()=>{
 });
 
 test('trip links and nested visual preferences survive repeated device imports',()=>{
-  const remote={profiles:[{id:'account',name:'Me'}],trips:[{id:'account-trip',profileId:'account',name:'Europe'}],stays:[],transports:[],visualLayers:{map:{countries:false}},countryCountExcludedCodes:['GB']};
-  const source={profiles:[{id:'guest',name:'Me'}],trips:[{id:'guest-trip',profileId:'guest',name:'Europe'}],stays:[{id:'s',profileId:'guest',tripId:'guest-trip'}],transports:[{id:'t',profileId:'guest',tripId:'guest-trip'}],visualLayers:{map:{transport:true},calendar:{countries:true}},countryCountExcludedCodes:['FR'],countryCountIncludedExtraCodes:['AQ']};
+  const remote={profiles:[{id:'account',name:'Me'}],trips:[{id:'account-trip',profileId:'account',name:'Europe'}],stays:[],transports:[],visualLayers:{map:{countries:false},journeys:{flights:false}},countryCountExcludedCodes:['GB']};
+  const source={profiles:[{id:'guest',name:'Me'}],trips:[{id:'guest-trip',profileId:'guest',name:'Europe'}],stays:[{id:'s',profileId:'guest',tripId:'guest-trip'}],transports:[{id:'t',profileId:'guest',tripId:'guest-trip'}],visualLayers:{map:{transport:true},calendar:{countries:true,transport:false},journeys:{transport:true,flights:true,period:"past"}},countryCountExcludedCodes:['FR'],countryCountIncludedExtraCodes:['AQ']};
   const out=M.importData(remote,source).data;
   assert.equal(out.trips.length,1);assert.equal(out.stays[0].tripId,'account-trip');assert.equal(out.transports[0].profileId,'account');
-  assert.deepEqual(out.visualLayers.map,{countries:false,transport:true});assert.deepEqual(out.countryCountExcludedCodes,['GB','FR']);
+  assert.deepEqual(out.visualLayers.map,{countries:false,transport:true});assert.deepEqual(out.visualLayers.journeys,{transport:true,flights:false,period:'past'});assert.equal(out.visualLayers.calendar.transport,false);assert.deepEqual(out.countryCountExcludedCodes,['GB','FR']);
   assert.deepEqual(M.importData(out,source).data,out);
 });
 

@@ -8,7 +8,7 @@
   async function route(type,start,end,signal){
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon]);if(cache.has(key))return cache.get(key);
     // FOSSGIS public routing limit: at most one request per second, shared across maps.
-    const delay=Math.max(0,lastRequest+1100-Date.now());if(delay)await new Promise(r=>setTimeout(r,delay));if(signal.aborted)throw new DOMException('Closed','AbortError');lastRequest=Date.now();
+    const reserved=Math.max(Date.now(),lastRequest+1100),delay=reserved-Date.now();lastRequest=reserved;if(delay)await new Promise(r=>setTimeout(r,delay));if(signal.aborted)throw new DOMException('Closed','AbortError');
     let result;
     if(['car','bus','walk'].includes(type)){
       const service=type==='walk'?'foot':'car',url=`https://routing.openstreetmap.de/routed-${service}/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson&steps=false`;
@@ -66,5 +66,32 @@
     own.addEventListener('close',()=>{controller.abort();map.remove();own.remove();opener?.focus?.();});
   }
   document.addEventListener('click',e=>{const button=e.target.closest('[data-journey-map]');if(button){e.preventDefault();open(button.dataset.journeyMap);}});
-  window.HVJourneyMap={open};
+  // The global surface owns only Leaflet layers, never copies of saved records.
+  function mountGlobal(host,rows,today,status){
+    const controller=new AbortController(),reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const map=L.map(host,{zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([25,0],2);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map).on('tileerror',()=>{status.textContent='Map background unavailable. Your saved stops and routes remain available.';});
+    const markers=L.layerGroup().addTo(map),points=[],bounds=[],routes=[];let unavailable=0,pending=0;
+    const popup=r=>`<strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):r.record.propertyName||r.place?.name||'Location')}</strong><br>${E(r.start||'Date not recorded')}${r.end!==r.start?' – '+E(r.end):''}${r.leg?'<br>'+E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · ')):''}`;
+    function addPoint(p,r){if(!G.point(p))return;const position=[Number(p.lat),Number(p.lon)];bounds.push(position);points.push({position,r,label:r.type==='flight'?HVJourney.airportLabel(p):r.type==='accommodation'?'⌂':'•',name:p.name||r.record.propertyName||'Location'});}
+    function draw(coords,r,label){const past=r.end&&r.end<today;L.polyline(coords,{...styles[r.type],weight:past?2.5:3.5,opacity:past?.65:.95}).bindPopup(popup(r)+'<br>'+E(label)).addTo(map);
+      const mid=Math.floor(coords.length/2),a=coords[Math.max(0,mid-1)],b=coords[mid],angle=Math.atan2(b[0]-a[0],(b[1]-a[1])*Math.cos(b[0]*Math.PI/180))*180/Math.PI;
+      L.marker(b,{interactive:false,keyboard:false,icon:L.divIcon({className:'journey-direction',html:`<span style="color:${styles[r.type]?.color||'#777'};transform:rotate(${-angle}deg)">➤</span>`,iconSize:[16,16],iconAnchor:[8,8]})}).addTo(map);
+    }
+    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){if(r.type==='flight')draw(G.flightArc(start,end),r,'Flight connection');else routes.push({r,start,end});}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
+    // Screen-space clusters update on zoom; coincident stops have a readable popup at maximum zoom.
+    function cluster(){markers.clearLayers();const buckets=new Map();for(const p of points){const xy=map.latLngToContainerPoint(p.position),key=`${Math.floor(xy.x/52)}:${Math.floor(xy.y/52)}`;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(p);}
+      for(const members of buckets.values()){const p=members[0],many=members.length>1,position=many?[members.reduce((n,m)=>n+m.position[0],0)/members.length,members.reduce((n,m)=>n+m.position[1],0)/members.length]:p.position;
+        const marker=L.marker(position,{title:many?`${members.length} journey stops. Open for details or zoom in.`:p.name,icon:L.divIcon({className:`journey-map-marker ${many?'journey-cluster':'marker-'+p.r.type}`,html:`<span>${many?members.length:E(p.label)}</span>`,iconSize:[30,30],iconAnchor:[15,15]})}).addTo(markers);
+        marker.bindPopup(`<div class="global-map-popup">${many?`<strong>${members.length} stops here</strong><p>Zoom in to separate nearby stops.</p>`:''}${members.map(m=>`<p>${E(m.name)}<br>${popup(m.r)}</p>`).join('')}</div>`,{maxHeight:260,maxWidth:300});
+      }
+    }
+    map.on('zoomend moveend',cluster);
+    const fit=()=>{map.invalidateSize();if(bounds.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:12,animate:false});cluster();};requestAnimationFrame(()=>{if(!controller.signal.aborted)fit();});
+    const report=()=>{status.textContent=`${rows.length} entries · ${points.length} mapped stops${pending?' · Loading '+pending+' surface routes…':''}${unavailable?' · '+unavailable+' entries have missing positions or unavailable routes; recorded stops remain visible.':''}${rows.length?'':' · No matching records. Change the filters or add a journey.'}`;};pending=routes.length;report();
+    (async()=>{for(const {r,start,end} of routes){if(controller.signal.aborted)return;const request=new AbortController(),abort=()=>request.abort(),timer=setTimeout(abort,22000);controller.signal.addEventListener('abort',abort,{once:true});try{const result=await route(r.type,start,end,request.signal);if(!controller.signal.aborted)draw(result.coordinates,r,result.label);}catch{unavailable++;}finally{clearTimeout(timer);controller.signal.removeEventListener('abort',abort);}if(controller.signal.aborted)return;pending--;report();}})();
+    return {fit,remove(){controller.abort();map.remove();}};
+  }
+
+  window.HVJourneyMap={open,mountGlobal};
 })();

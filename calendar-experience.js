@@ -21,7 +21,7 @@
   const dateRangeText = (start, end) => !start ? 'Dates to be added' : start === end ? dateText(start) : `${dateText(start)} to ${dateText(end)}`;
   const durationText = (start, end) => `${days(start, end)} ${days(start, end) === 1 ? 'day' : 'days'}`;
   const scoped = rows => window.HVJourney.scoped(rows || [], state.activeProfileId);
-  const visibleLayers = () => ({countries:true,transport:false,accommodation:true,...state.visualLayers?.calendar});
+  const visibleLayers = () => ({countries:true,transport:true,accommodation:true,...state.visualLayers?.calendar});
 
   function hash(value) {
     let result = 0;
@@ -157,6 +157,7 @@
     const start = addDays(cursor, -first);
     const current = today();
     const layers = visibleLayers();
+    qa('[data-calendar-layer]').forEach(button => button.setAttribute('aria-pressed', String(layers[button.dataset.calendarLayer] !== false)));
     const groups = buildJourneys();
     window.HVCalendar._groups = groups;
 
