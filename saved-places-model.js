@@ -1,0 +1,9 @@
+(function(root){
+ 'use strict';
+ const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+ const point=p=>Number.isFinite(p?.lat)&&Number.isFinite(p?.lon);
+ function same(a,b){if(norm(a.name)!==norm(b.name))return false;if(point(a)&&point(b))return Math.hypot(a.lat-b.lat,(a.lon-b.lon)*Math.cos(a.lat*Math.PI/180))<.00015&&(!a.address||!b.address||norm(a.address)===norm(b.address));return !!(a.iata||a.icao||a.code)&&norm(a.iata||a.icao||a.code)===norm(b.iata||b.icao||b.code)&&a.countryCode===b.countryCode;}
+ function upsert(rows,place,profileId){const existing=rows.find(r=>(r.profileId||null)===(profileId||null)&&(r.id===place.savedPlaceId||(place.id&&(r.place.id===place.id||r.sourceIds?.includes(place.id)))||same(r.place,place)));if(existing)return existing;let hash=2166136261;for(const c of [profileId,norm(place.name),point(place)?[place.lat.toFixed(4),place.lon.toFixed(4)]:place.iata||place.icao||place.code].join('|'))hash=Math.imul(hash^c.charCodeAt(0),16777619);let id='saved:'+ (hash>>>0).toString(36),i=1;while(rows.some(r=>r.id===id))id+=':'+i++;const record={id,profileId,sourceIds:place.id?[place.id]:[],place:JSON.parse(JSON.stringify(place))};rows.push(record);return record;}
+ function search(rows,term,profileId){const words=norm(term).split(' ').filter(Boolean);if(!words.length)return [];return rows.filter(r=>!r.deleted).filter(r=>!r.profileId||profileId==='all'||r.profileId===profileId).map(r=>({...r.place,savedPlaceId:r.id,personal:true})).filter(p=>words.every(w=>norm([p.name,p.address,p.city,p.area,p.countryName,p.iata,p.icao,p.code].join(' ')).includes(w))).sort((a,b)=>Number(norm(b.name)===norm(term))-Number(norm(a.name)===norm(term)));}
+ const api={norm,same,upsert,search};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVSavedModel=api;
+})(typeof window!=='undefined'?window:globalThis);

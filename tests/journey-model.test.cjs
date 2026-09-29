@@ -5,7 +5,7 @@ test('home and travel overlap counts as travel; dated residences and profiles re
  const s=base();s.stays=[{countryCode:'GB',start:'2026-01-01',end:'2026-01-04'},{countryCode:'US',start:'2026-01-03',end:'2026-01-04'}];
  assert.equal(J.dayStatus(s,'2026-01-01'),'home');assert.equal(J.dayStatus(s,'2026-01-03'),'mixed');assert.equal(J.dayStatus(s,'2026-01-05'),'home');
  s.residences=[{countryCode:'US',start:'2026-01-04',end:'2026-01-04',profileId:'p'}];assert.equal(J.dayStatus(s,'2026-01-04'),'home');assert.equal(J.isHome(s,'US','2026-01-04','other'),false);assert.equal(J.isHome(s,'US','2026-01-05'),false);
- s.stays.push({countryCode:'DE',start:'2026-01-01',end:'2026-01-02',status:'planned'});assert.equal(J.dayStatus(s,'2026-01-01'),'home');
+ s.stays.push({countryCode:'DE',start:'2026-01-01',end:'2026-01-02',status:'planned'});assert.equal(J.dayStatus(s,'2026-01-01'),'mixed');
 });
 test('transport local clocks allow westbound/date-line travel and validate real dates and coordinates',()=>{
  const t={type:'flight',startLocal:'2026-01-02T01:00',endLocal:'2026-01-01T21:00',start:{name:'Tokyo',lat:0,lon:0},end:{name:'Los Angeles'},flightNumber:'TEST1'};

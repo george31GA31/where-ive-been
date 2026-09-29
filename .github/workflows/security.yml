@@ -31,7 +31,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: browser-screenshots
-          path: test-results/browser
+          path: test-results/
       - name: Check country imports
         run: python tests/test_country_import.py
       - name: Check account sync and migration
@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in app.js app-core.js app-fixes.js theme.js security-runtime.js map-enhancements.js country-count-model.js dashboard-enhancements.js account-config.js account-client.js account-model.js account-sync.js account-tracker.js account-pages.js herald.js voyages.js atlas-model.js journey-model.js journeys.js calendar-experience.js place-search.js flight-editor.js journey-routes.js journey-map.js journey-library.js; do
+          for file in app.js app-core.js app-fixes.js theme.js security-runtime.js map-enhancements.js country-count-model.js dashboard-enhancements.js account-config.js account-client.js account-model.js account-sync.js account-tracker.js account-pages.js herald.js voyages.js atlas-model.js journey-model.js journeys.js calendar-experience.js place-search.js flight-editor.js journey-routes.js journey-map.js journey-library.js journey-global-model.js saved-places-model.js saved-places.js home-choice.js accommodation-times.js calendar-layout-model.js visa-notices.js; do
             node --check "$file"
           done
 
