@@ -4,7 +4,7 @@
 
   const THEME_KEY = 'whereIveBeen.theme.v1';
   const ASSET_ROOT = new URL('./', document.currentScript.src);
-  const FAVICON = new URL('assets/herald-favicon.png', ASSET_ROOT).href;
+  const FAVICON = new URL('assets/herald-favicon.png?v=6', ASSET_ROOT).href;
   const brandMark = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png' : 'assets/herald-logo-dark.png', ASSET_ROOT).href;
   function updateLogos() {
     const images = new Set(document.querySelectorAll('.brand-logo-mark, .atlas-masthead-art img'));
