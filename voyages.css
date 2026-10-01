@@ -2634,3 +2634,21 @@ body[data-current-view=calendar] #addStayBtn { display:none }
 @media screen and (min-width: 761px) and (max-width: 1080px) {
   #dashboardView .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
 }
+
+
+/* Full Herald wordmark: keep the wide logo fully visible in every header. */
+.brand-mark,
+.brand-mark.has-logo {
+  overflow: visible;
+}
+.brand-logo-mark,
+.sidebar .brand-logo-mark,
+.account-page .brand-logo-mark {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  transform: none !important;
+}
