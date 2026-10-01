@@ -167,7 +167,7 @@ get('transportDelete').hidden=!t;get('transportError').textContent='';get('trans
   }
   function init(){
     if(ready)return;ready=true;
-    const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('journeys.css?v=flight-home-3',root);document.head.append(style);
+    const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('journeys.css?v=flight-home-3&rollback=20261001-1',root);document.head.append(style);
     const mapTools=document.createElement('label');mapTools.className='field map-country-search';mapTools.innerHTML='<span>Find a country on the map</span><select id="mapCountrySelect" aria-label="Select country on the map"><option value="">Choose a country</option>'+COUNTRIES.filter(c=>c.code!=='SEA').map(c=>`<option value="${E(c.code)}">${E(c.name)}</option>`).join('')+'</select>';(get('mapView')?.querySelector('.voyages-map-toolbar')||get('mapView')).append(mapTools);get('mapCountrySelect').onchange=e=>openCountry(e.target.value);
     const mapPanel=get('mapView')?.querySelector('.map-panel');if(mapPanel&&!get('mapCountrySummary')){const summary=document.createElement('article');summary.id='mapCountrySummary';summary.className='panel map-country-summary';summary.hidden=true;mapPanel.after(summary);}
     const countries=get('countriesView'),directory=countries.querySelector('.atlas-directory');
