@@ -272,7 +272,7 @@ function renderVisaChecker(){
   let p=activeProfile(),cit=p?.citizenships||[];
   if(!els.visaPassport.value&&cit.length){let c=countryByCode(cit[0]);if(c)els.visaPassport.value=c.name}
   if(cit.length){els.visaProfileHint.innerHTML=`${esc(p.name)} has ${cit.length===1?'this passport':'these passports'} saved: `+cit.map(code=>{let c=countryByCode(code);return c?`<button type="button" data-action="use-profile-passport" data-country="${code}">${flagHtml(code,'flag-img flag-sm')} ${esc(c.name)}</button>`:''}).filter(Boolean).join(' · ')}else els.visaProfileHint.innerHTML=`No passport saved for ${esc(p?.name||'this traveller')}. You can still type one above, or <button type="button" data-go-view="profiles">add it to the profile</button>.`;
-  if(els.visaDataStatus&&!visaDataset)els.visaDataStatus.textContent='Visa data will load when you run a check.';
+  if(els.visaDataStatus)els.visaDataStatus.textContent='Reviewed official guidance for supported routes. Other destinations and special circumstances need an official requirements check.';
 }
 async function loadVisaDataset(){
   if(visaDataset)return visaDataset;
