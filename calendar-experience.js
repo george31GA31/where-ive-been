@@ -403,7 +403,7 @@
     }
     if (planner.step === 3) {
       planner.transports = qa('[data-planner-transport]', form).map((row,index) => ({
-        ...(q('[name="type"]',row).value==='flight'?planner.transports[index]:{}),
+        ...planner.transports[index],
         type: q('[name="type"]', row).value,
         startLocal: q('[name="startLocal"]', row).value,
         endLocal: q('[name="endLocal"]', row).value,
@@ -421,7 +421,7 @@
         location: q('[name="location"]', row).value.trim(),
         checkIn: q('[name="checkIn"]', row).value,
         checkOut: q('[name="checkOut"]', row).value,
-        ...HVAccommodation.read(row),notes: q('[name="notes"]', row).value.trim()
+        ...HVAccommodation.read(row),notes: q('[name="notes"]', row).value.trim(),price:HVPrices.read(row)
       }));
     }
   }
@@ -460,6 +460,7 @@
       if (empty) continue;
       if (!accommodation.propertyName || !accommodation.location || !window.HVJourney.validDate(accommodation.checkIn) || !window.HVJourney.validDate(accommodation.checkOut) || accommodation.checkOut < accommodation.checkIn) return 'Each accommodation needs a property, location and valid check-in/check-out dates.';
       const timeError=HVAccommodation.valid(accommodation);if(timeError)return timeError;
+      const priceError=HVPrices.valid(accommodation.price);if(priceError)return priceError;
       if (accommodation.checkIn < planner.start || accommodation.checkOut > planner.end) return 'Accommodation dates must sit inside the journey dates.';
     }
     return '';
@@ -489,7 +490,7 @@
   }
 
   function accommodationRow(accommodation, index) {
-    return `<div class="planner-accommodation-row" data-planner-accommodation><div class="planner-row-head"><span>Stay ${index + 1}</span><button type="button" class="secondary compact" data-planner-place="${index}">Search / plot on map</button><button type="button" class="text-btn" data-planner-remove-accommodation="${index}">Remove</button></div><div class="planner-accommodation-grid"><label class="field"><span>Property name</span><input type="text" name="propertyName" value="${E(accommodation.propertyName)}" maxlength="160" placeholder="e.g. Hotel Lovec" required></label><label class="field"><span>Location</span><input type="text" name="location" value="${E(accommodation.location)}" maxlength="160" placeholder="e.g. Bled" required></label><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(accommodation.checkIn)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(accommodation.checkOut)}" required></label></div>${HVAccommodation.fields(accommodation)}<label class="field"><span>Notes <em>optional</em></span><input name="notes" value="${E(accommodation.notes)}" maxlength="500" placeholder="Room, booking or useful notes"></label></div>`;
+    return `<div class="planner-accommodation-row" data-planner-accommodation><div class="planner-row-head"><span>Stay ${index + 1}</span><button type="button" class="secondary compact" data-planner-place="${index}">Search / plot on map</button><button type="button" class="text-btn" data-planner-remove-accommodation="${index}">Remove</button></div><div class="planner-accommodation-grid"><label class="field"><span>Property name</span><input type="text" name="propertyName" value="${E(accommodation.propertyName)}" maxlength="160" placeholder="e.g. Hotel Lovec" required></label><label class="field"><span>Location</span><input type="text" name="location" value="${E(accommodation.location)}" maxlength="160" placeholder="e.g. Bled" required></label><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(accommodation.checkIn)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(accommodation.checkOut)}" required></label></div>${HVAccommodation.fields(accommodation)}${HVPrices.fields(accommodation)}<label class="field"><span>Notes <em>optional</em></span><textarea name="notes" rows="3" maxlength="4000" placeholder="Room, booking or useful notes">${E(accommodation.notes)}</textarea></label></div>`;
   }
 
   function reviewMarkup() {
@@ -526,29 +527,30 @@
     qa('[data-planner-remove-stop]', form).forEach(button => button.onclick = () => { readPlannerStep(); planner.stops.splice(Number(button.dataset.plannerRemoveStop), 1); renderPlanner(); });
     qa('[data-planner-remove-transport]', form).forEach(button => button.onclick = () => { readPlannerStep(); planner.transports.splice(Number(button.dataset.plannerRemoveTransport), 1); renderPlanner(); });
     qa('[data-planner-remove-accommodation]', form).forEach(button => button.onclick = () => { readPlannerStep(); planner.accommodations.splice(Number(button.dataset.plannerRemoveAccommodation), 1); renderPlanner(); });
-    qa('[data-planner-flight]',form).forEach(button=>button.onclick=()=>{
+    qa('[data-planner-flight]',form).forEach(button=>{button.textContent=planner.transports[Number(button.dataset.plannerFlight)]?.type==='flight'?'Flight legs & details':'Stations, vias & details';button.onclick=()=>{
       readPlannerStep();const index=Number(button.dataset.plannerFlight),t=planner.transports[index];
-      HVJourneys.openTransport(null,{...t,type:'flight',status:planner.status,start:t.start||{name:t.startName},end:t.end||{name:t.endName},onSave:record=>{planner.transports[index]={...t,...record,startName:record.start.name,endName:record.end.name};renderPlanner();}});
-    });
+      let saved=0;
+      HVJourneys.openTransport(null,{...t,status:planner.status,start:t.start?.name===t.startName?t.start:{name:t.startName},end:t.end?.name===t.endName?t.end:{name:t.endName},onSave:record=>{const draft={...t,...record,startName:record.start.name,endName:record.end.name};if(saved===0)planner.transports[index]=draft;else planner.transports.splice(index+saved,0,draft);saved++;renderPlanner();}});
+    };});
     qa('[data-planner-place]',form).forEach(button=>button.onclick=()=>{
       readPlannerStep();const index=Number(button.dataset.plannerPlace),a=planner.accommodations[index];
-      HVPlaces.open({accommodation:true,date:a.checkIn,end:a.checkOut,place:a.place,searchArea:planner.stops[0]?.location||planner.stops[0]?.countryName,onSelect:(place,dates)=>{planner.accommodations[index]={...a,place,placeId:place.id,lat:place.lat,lon:place.lon,propertyName:place.name,location:place.area||place.address||place.countryName,checkIn:dates.date,checkOut:dates.end,checkInTime:dates.checkInTime,checkOutTime:dates.checkOutTime,timeZone:dates.timeZone};renderPlanner();}});
+      HVPlaces.open({...a,accommodation:true,date:a.checkIn,end:a.checkOut,place:a.place,searchArea:planner.stops[0]?.location||planner.stops[0]?.countryName,onSelect:(place,dates)=>{planner.accommodations[index]={...a,place,placeId:place.id,lat:place.lat,lon:place.lon,propertyName:place.name,type:place.type,location:place.area||place.address||place.countryName,checkIn:dates.date,checkOut:dates.end,checkInTime:dates.checkInTime,checkOutTime:dates.checkOutTime,timeZone:dates.timeZone,price:dates.price,notes:dates.notes};renderPlanner();}});
     });
-    qa('[data-planner-transport]',form).forEach((row,index)=>{q('[name="type"]',row).onchange=()=>{readPlannerStep();renderPlanner();};if(planner.transports[index]?.legs?.length){for(const name of ['startLocal','endLocal','startName','endName','flightNumber'])q(`[name="${name}"]`,row).readOnly=true;}});
+    qa('[data-planner-transport]',form).forEach((row,index)=>{q('[name="type"]',row).onchange=()=>{readPlannerStep();if(planner.transports[index].type!=='flight')delete planner.transports[index].legs;renderPlanner();};if(planner.transports[index]?.legs?.length||planner.transports[index]?.id){for(const name of ['startLocal','endLocal','startName','endName','flightNumber'])q(`[name="${name}"]`,row).readOnly=true;}});
     form.onsubmit = event => { event.preventDefault(); readPlannerStep(); const error = validateThrough(4); if (error) { plannerError(error); return; } savePlanner(); };
   }
 
   async function savePlanner() {
     for(const stop of planner.stops){const choice=await HVHome.choose(countryByName(stop.countryName),stop.start,planner.profileId,stop);if(choice==='cancel')return;stop.travelKind=choice;}
-    const trip = {id:uid(), name:planner.name, notes:planner.notes, profileId:planner.profileId || null, profileIds:planner.profileId ? [planner.profileId] : []};
+    const trip = {id:uid(), name:planner.name, notes:planner.notes,start:planner.start,end:planner.end, profileId:planner.profileId || null, profileIds:planner.profileId ? [planner.profileId] : []};
     state.trips ||= []; state.stays ||= []; state.transports ||= []; state.accommodations ||= [];
     state.trips.push(trip);
     planner.stops.forEach((stop, index) => {
       const country = countryByName(stop.countryName);
       state.stays.push({id:uid(),tripId:trip.id,countryCode:country.code,countryName:country.name,...HVJourney.domesticFields(country),travelKind:stop.travelKind,domesticHoliday:stop.travelKind==='trip'||(!stop.travelKind&&!!country.domesticDestination),location:stop.location,start:stop.start,end:stop.end,notes:'',schengenExempt:false,status:planner.status,profileId:planner.profileId || null,tripOrder:index});
     });
-    planner.transports.forEach(transport => state.transports.push({...(transport.legs?.length?{legs:transport.legs,via:transport.via}:{}),id:uid(),tripId:trip.id,type:transport.type,status:planner.status,profileId:planner.profileId || null,startLocal:transport.startLocal,endLocal:transport.endLocal,start:{...(transport.start||{}),name:transport.startName,lat:transport.start?.lat??null,lon:transport.start?.lon??null},end:{...(transport.end||{}),name:transport.endName,lat:transport.end?.lat??null,lon:transport.end?.lon??null},flightNumber:transport.flightNumber,bookingReference:transport.bookingReference}));
-    planner.accommodations.filter(accommodation => accommodation.propertyName).forEach(accommodation => state.accommodations.push({...(accommodation.place?{place:accommodation.place,placeId:accommodation.placeId,lat:accommodation.lat,lon:accommodation.lon}:{}),id:uid(),tripId:trip.id,profileId:planner.profileId || null,propertyName:accommodation.propertyName,location:accommodation.location,checkIn:accommodation.checkIn,checkOut:accommodation.checkOut,checkInTime:accommodation.checkInTime||'',checkOutTime:accommodation.checkOutTime||'',timeZone:accommodation.timeZone||'',notes:accommodation.notes}));
+    planner.transports.forEach(transport => {const {startName,endName,...details}=transport;state.transports.push({...details,id:transport.id||uid(),tripId:trip.id,type:transport.type,status:planner.status,profileId:planner.profileId || null,startLocal:transport.startLocal,endLocal:transport.endLocal,start:{...(transport.start||{}),name:startName,lat:transport.start?.lat??null,lon:transport.start?.lon??null},end:{...(transport.end||{}),name:endName,lat:transport.end?.lat??null,lon:transport.end?.lon??null}});});
+    planner.accommodations.filter(accommodation => accommodation.propertyName).forEach(accommodation => state.accommodations.push({...accommodation,id:uid(),tripId:trip.id,profileId:planner.profileId || null,propertyName:accommodation.propertyName,location:accommodation.location,checkIn:accommodation.checkIn,checkOut:accommodation.checkOut,checkInTime:accommodation.checkInTime||'',checkOutTime:accommodation.checkOutTime||'',timeZone:accommodation.timeZone||'',notes:accommodation.notes}));
     updatePassedPlannedTrips();
     calendarSelectionStart = null; calendarSelectionEnd = null;
     selectedJourneyKey = tripKey(trip.id); selectedDate = '';
@@ -572,7 +574,7 @@
     dialog.className = 'dialog small-dialog';
     dialog.setAttribute('aria-label', existing ? 'Edit accommodation' : 'Add accommodation');
     const start = existing?.checkIn || group?.start || today(), end = existing?.checkOut || group?.end || start;
-    dialog.innerHTML = `<form method="dialog" class="dialog-card accommodation-dialog-card"><div class="dialog-head"><div><p class="eyebrow">ACCOMMODATION</p><h2>${existing ? 'Edit accommodation' : 'Add accommodation'}</h2><p class="dialog-intro">${E(trip?.name || 'Dated stay')}</p></div><button type="button" class="icon-btn" data-accommodation-close aria-label="Close">×</button></div><label class="field"><span>Property name</span><input type="text" name="propertyName" value="${E(existing?.propertyName || '')}" maxlength="160" required></label><label class="field"><span>Location</span><input type="text" name="location" value="${E(existing?.location || '')}" maxlength="160" required></label><div class="form-grid"><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(start)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(end)}" required></label></div>${HVAccommodation.fields(existing)}<button type="button" class="secondary" data-accommodation-map>Find or plot on map</button><label class="field"><span>Notes <em>optional</em></span><textarea name="notes" maxlength="500">${E(existing?.notes || '')}</textarea></label><p class="form-error" data-accommodation-error role="alert"></p><div class="dialog-actions">${existing ? '<button type="button" class="danger-link" data-accommodation-delete>Remove accommodation</button>' : ''}<div class="spacer"></div><button type="button" class="secondary" data-accommodation-close>Cancel</button><button type="submit" class="primary">Save accommodation</button></div></form>`;
+    dialog.innerHTML = `<form method="dialog" class="dialog-card accommodation-dialog-card"><div class="dialog-head"><div><p class="eyebrow">ACCOMMODATION</p><h2>${existing ? 'Edit accommodation' : 'Add accommodation'}</h2><p class="dialog-intro">${E(trip?.name || 'Dated stay')}</p></div><button type="button" class="icon-btn" data-accommodation-close aria-label="Close">×</button></div><label class="field"><span>Property name</span><input type="text" name="propertyName" value="${E(existing?.propertyName || '')}" maxlength="160" required></label><label class="field"><span>Location</span><input type="text" name="location" value="${E(existing?.location || '')}" maxlength="160" required></label><div class="form-grid"><label class="field"><span>Check-in</span><input name="checkIn" type="date" value="${E(start)}" required></label><label class="field"><span>Check-out</span><input name="checkOut" type="date" value="${E(end)}" required></label></div>${HVAccommodation.fields(existing)}${HVPrices.fields(existing)}<button type="button" class="secondary" data-accommodation-map>Find or plot on map</button><label class="field"><span>Notes <em>optional</em></span><textarea name="notes" maxlength="500">${E(existing?.notes || '')}</textarea></label><p class="form-error" data-accommodation-error role="alert"></p><div class="dialog-actions">${existing ? '<button type="button" class="danger-link" data-accommodation-delete>Remove accommodation</button>' : ''}<div class="spacer"></div><button type="button" class="secondary" data-accommodation-close>Cancel</button><button type="submit" class="primary">Save accommodation</button></div></form>`;
     document.body.append(dialog);
     const form = q('form', dialog), error = q('[data-accommodation-error]', form);
     qa('[data-accommodation-close]', form).forEach(button => button.onclick = () => dialog.close());
@@ -584,7 +586,8 @@
       if (!propertyName || !location || !window.HVJourney.validDate(checkIn) || !window.HVJourney.validDate(checkOut) || checkOut < checkIn) { error.textContent = 'Add a property, location and valid check-in/check-out dates.'; return; }
       state.accommodations ||= [];
       const times=HVAccommodation.read(form);if(HVAccommodation.valid(times)){error.textContent=HVAccommodation.valid(times);return;}
-      const record = {...times,id:existing?.id || uid(),tripId,profileId:existing?.profileId ?? trip?.profileId ?? state.activeProfileId,propertyName,location,checkIn,checkOut,notes};
+      const price=HVPrices.read(form);if(HVPrices.valid(price)){error.textContent=HVPrices.valid(price);return;}
+      const record = {...times,price,id:existing?.id || uid(),tripId,profileId:existing?.profileId ?? trip?.profileId ?? state.activeProfileId,propertyName,location,checkIn,checkOut,notes};
       if (existing) Object.assign(existing, record); else state.accommodations.push(record);
       persist(); dialog.close(); renderAll();
     };

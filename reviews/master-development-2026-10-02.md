@@ -66,3 +66,20 @@ The account client, account model, account sync engine, tracker, configuration, 
 - A fixed 88px mobile day with several countries, journeys and stays cannot display every full name simultaneously. The compact entries retain all underlying information through hover/focus detail and the date panel, with no +X-more data removal.
 
 Official visa source pages: [Ireland](https://www.gov.uk/foreign-travel-advice/ireland/entry-requirements), [France/Schengen](https://www.gov.uk/foreign-travel-advice/france/entry-requirements), [Albania](https://www.gov.uk/foreign-travel-advice/albania/entry-requirements), [USA](https://www.gov.uk/foreign-travel-advice/usa/entry-requirements), [India](https://www.gov.uk/foreign-travel-advice/india/entry-requirements), [Egypt](https://www.gov.uk/foreign-travel-advice/egypt/entry-requirements).
+
+## Reconnection verification and corrections
+
+The interrupted release was merged as `e54af90466d862eebacd650052a7942e9871ffba` in PR #11. Security checks and Pages deployment both succeeded on that commit. A fresh checkout was checked against the complete brief. Live search prioritised Stansted Airport railway station and populated its editable address.
+
+The follow-up verification found and corrected these gaps:
+
+- Blank flight endpoints no longer resolve against empty directory codes or display an unrelated airport.
+- Trip creation excludes unlinked records outside the selected dates. Adding records to an existing trip preserves its name, notes, photos, traveller membership and earlier dates. It extends the date range where needed.
+- Automatic trip association considers explicit trip dates and linked accommodation/location dates, while ambiguous overlapping trips stay unassigned. Explicit exclusions survive later record editing, and cancelled trips are not inferred.
+- Repeat accommodation stays in the trip-specific map retain their count and individual saved dates, matching the global map.
+- The planner reuses the shared editor for ground transport and retains via stops, precise endpoints, operators, service numbers, notes, original prices and both return records. Draft record IDs and return links survive editing and final save.
+- Planner accommodation retains House Sit type, notes and original prices after selecting a place, changing steps, saving and refreshing. Unplotted legacy accommodation has optional price editing.
+
+No Calendar CSS, grid geometry or compact entry layout was changed in this follow-up. All six Calendar screenshots at 390, 768 and 1440 pixels in both themes are pixel-identical to the interrupted published release. No authentication, account loading, account sync, storage keys, database scripts or configuration was changed. The asset-loader release query is refreshed to prevent mixing cached scripts.
+
+Verification adds regressions for blank airports, trip association, out-of-range records, metadata-preserving trip extension, repeat-stay trip maps, complete planner returns and accommodation, and original-price persistence on legacy stays. The unit suite now has 58 passing tests. The existing DOM, country-import, 60-scene responsive and focused Calendar/map gates are retained, along with CodeQL. The external limits above remain explicit; fixtures do not establish real-user sign-in or physical-device sync.

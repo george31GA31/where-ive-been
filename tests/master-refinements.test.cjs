@@ -1,5 +1,26 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const J=require('../journey-model.js'),Search=require('../travel-search.js'),Prices=require('../travel-costs.js');
+test('Blank airport fields never resolve to an unrelated directory entry',()=>{
+ let lookups=0;const lookup=()=>{lookups++;return{name:'Unrelated airport',iata:'UTK'};};
+ assert.equal(J.airportDetails({},lookup),'');assert.equal(J.airportLabel({},lookup),'');assert.equal(lookups,0);
+ assert.match(J.airportDetails({name:'Known airport'},lookup),/Unrelated airport/);
+});
+test('Trip association includes saved trip dates and dated accommodation and locations without mutation',()=>{
+ const state={activeProfileId:'p',trips:[{id:'trip',profileId:'p',start:'2026-10-05',end:'2026-10-19'}],stays:[],transports:[],accommodations:[],placeVisits:[]};
+ const before=JSON.stringify(state);assert.equal(J.tripForDates(state,'2026-10-10'),'trip');assert.equal(JSON.stringify(state),before);
+ delete state.trips[0].start;delete state.trips[0].end;
+ state.accommodations.push({id:'a',profileId:'p',tripId:'trip',checkIn:'2026-10-05',checkOut:'2026-10-09'});
+ state.placeVisits.push({id:'v',profileId:'p',tripId:'trip',date:'2026-10-10',endDate:'2026-10-12',status:'visited'});
+ assert.equal(J.tripForDates(state,'2026-10-06'),'trip');assert.equal(J.tripForDates(state,'2026-10-11'),'trip');assert.equal(J.tripForDates(state,'2026-10-13'),null);
+ state.trips.push({id:'ambiguous',profileId:'p',start:'2026-10-01',end:'2026-10-31'});assert.equal(J.tripForDates(state,'2026-10-06'),null);
+});
+test('Trip association respects explicit record exclusions and cancelled trips during editing',()=>{
+ const state={activeProfileId:'p',trips:[{id:'trip',profileId:'p',start:'2026-10-05',end:'2026-10-19',excludedRecordIds:{transports:['excluded']}}],stays:[],transports:[]};
+ assert.equal(J.tripForDates(state,'2026-10-10','2026-10-10','p',{id:'excluded',collection:'transports'}),null);
+ assert.equal(J.tripForDates(state,'2026-10-10','2026-10-10','p',{id:'included',collection:'transports'}),'trip');
+ assert.equal(J.tripForDates(state,'2026-10-10','2026-10-10','p',{id:'excluded',collection:'accommodations'}),'trip');
+ state.trips[0].status='cancelled';assert.equal(J.tripForDates(state,'2026-10-10'),null);
+});
 test('Travel context ranks precise stations, hotels and terminals above generic towns',()=>{
  const town={id:'town',name:'Peterborough',type:'city',lat:52.5,lon:-.2};
  const station={id:'station',name:'Peterborough railway station',type:'station',lat:52.57,lon:-.24};

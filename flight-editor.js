@@ -64,13 +64,13 @@
     if(focusIndex!==undefined)host.querySelector(`[data-leg="${focusIndex}"] input`)?.focus();
   }
   function save(form){
-    const old=state.transports?.find(t=>t.id===form.dataset.id),f=form.elements,error=document.getElementById('transportError');
+    const old=state.transports?.find(t=>t.id===form.dataset.id)||(form._saveCallback?form._flightRecord:null),f=form.elements,error=document.getElementById('transportError');
     const legs=form._legs.map(l=>({...l,id:l.id||uid()}));
     for(let i=0;i<legs.length;i++){
       const message=HVJourney.validateTransport({...legs[i],type:'flight'});if(message){error.textContent=`Leg ${i+1}: ${message}`;return;}
     }
     const first=legs[0],last=legs.at(-1),dates=legs.flatMap(l=>[l.startLocal.slice(0,10),l.endLocal.slice(0,10)]).sort();
-    const record={...old,id:old?.id||uid(),profileId:old?.profileId??state.activeProfileId,type:'flight',status:f.status.value,tripId:old?.tripId||f.tripId.value||HVJourney.tripForDates(state,dates[0],dates.at(-1)),legs,start:{...first.start},end:{...last.end},startLocal:first.startLocal,endLocal:last.endLocal,via:legs.slice(0,-1).map(l=>({...l.end})),bookingReference:f.bookingReference.value.trim()};
+    const record={...old,id:old?.id||uid(),profileId:old?.profileId??state.activeProfileId,type:'flight',status:f.status.value,tripId:old?.tripId||f.tripId.value||HVJourney.tripForDates(state,dates[0],dates.at(-1),old?.profileId||state.activeProfileId,{id:old?.id,collection:'transports'}),legs,start:{...first.start},end:{...last.end},startLocal:first.startLocal,endLocal:last.endLocal,via:legs.slice(0,-1).map(l=>({...l.end})),bookingReference:f.bookingReference.value.trim()};
     // Do not discard an old shared flight number; per-leg values take precedence in the UI.
     if(legs.length===1)record.flightNumber=first.flightNumber;
     HVTransportDetails.finish(form,record);

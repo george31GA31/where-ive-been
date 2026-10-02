@@ -115,7 +115,7 @@
       const price=accommodation?HVPrices.read(form):null;const priceError=HVPrices.valid(price);if(priceError){error.textContent=priceError;return;}const times=accommodation?HVAccommodation.read(form):{};const invalid=HVAccommodation.valid(times);if(invalid){error.textContent=invalid;return;}
       if(prefill.onSelect){prefill.onSelect(place,{date:start,end,...(accommodation?{...HVAccommodation.read(form),price,notes:f.recordNotes.value.trim()}:{} )});ownDialog.close();return;}
       const travelKind=await HVHome.choose(country,start,old?.profileId||oldAccommodation?.profileId||state.activeProfileId,old||oldAccommodation||context);if(travelKind==='cancel')return;
-      const tripId=old?.tripId||oldAccommodation?.tripId||prefill.tripId||HVJourney.tripForDates(state,start,end);
+      const tripId=old?.tripId||oldAccommodation?.tripId||prefill.tripId||HVJourney.tripForDates(state,start,end,old?.profileId||oldAccommodation?.profileId||state.activeProfileId,{id:old?.id||oldAccommodation?.id,collection:accommodation?'accommodations':'placeVisits'});
       if(accommodation){
         state.accommodations||=[];
         if(state.accommodations.some(a=>a.id!==oldAccommodation?.id&&a.profileId===state.activeProfileId&&a.placeId===place.id&&a.checkIn<=end&&a.checkOut>=start)){error.textContent='This accommodation already overlaps these dates. Edit the existing entry.';return;}
