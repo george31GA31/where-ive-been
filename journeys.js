@@ -130,10 +130,10 @@ HVTransportDetails.setup(form,t||prefill);get('transportDelete').hidden=!t;get('
     host.innerHTML=(form._via||[]).map((a,i)=>`<span class="flight-via-chip">${E(a.iata||a.icao||a.name)}<button type="button" data-remove-via="${i}" aria-label="Remove connection ${E(a.name)}">×</button></span>`).join('');
     host.onclick=e=>{const button=e.target.closest('[data-remove-via]');if(button){form._via.splice(Number(button.dataset.removeVia),1);renderVia();}};
   }
-  function airportFor(value){const key=value.trim().toLowerCase();return items('airports').find(a=>[a.name,a.iata,a.icao,`${a.name} (${a.iata||a.icao||a.id})`].some(x=>x?.toLowerCase()===key));}
+  function airportFor(value){const key=String(value||'').trim().toLowerCase();if(!key)return null;return items('airports').find(a=>[a.name,a.iata,a.icao,`${a.name} (${a.iata||a.icao||a.id})`].some(x=>x?.toLowerCase()===key));}
   function saveTransport(event){
-    event.preventDefault();const form=event.currentTarget,f=form.elements;if(f.type.value==='flight'&&window.HVFlights)return HVFlights.save(form);const old=state.transports?.find(t=>t.id===form.dataset.id);
-    const t={...old,id:old?.id||uid(),profileId:old?.profileId??state.activeProfileId,tripId:f.tripId.value||J.tripForDates(state,f.startLocal.value.slice(0,10),f.endLocal.value.slice(0,10)),type:f.type.value,status:f.status.value};
+    event.preventDefault();const form=event.currentTarget,f=form.elements;if(f.type.value==='flight'&&window.HVFlights)return HVFlights.save(form);const old=state.transports?.find(t=>t.id===form.dataset.id)||(form._saveCallback?form._flightRecord:null);
+    const t={...old,id:old?.id||uid(),profileId:old?.profileId??state.activeProfileId,tripId:f.tripId.value||J.tripForDates(state,f.startLocal.value.slice(0,10),f.endLocal.value.slice(0,10),old?.profileId||state.activeProfileId,{id:old?.id,collection:'transports'}),type:f.type.value,status:f.status.value};
     for(const key of ['startLocal','endLocal','flightNumber','bookingReference'])t[key]=f[key].value.trim();
     if(t.type!=='flight')delete t.flightNumber;
     for(const end of ['start','end']){

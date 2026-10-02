@@ -48,9 +48,10 @@
     return {days:dates.size,weekdayMax,weekdays:weekdays.flatMap((n,i)=>n&&n===weekdayMax?[i]:[]),yearMax,dates:[...anniversaries].filter(([,v])=>v.size===yearMax).map(([k])=>k).sort()};
   }
   // Association is derived from existing dates only; never extend or create a trip.
-  function tripForDates(state,start,end=start,profileId=state.activeProfileId) {
+  function tripForDates(state,start,end=start,profileId=state.activeProfileId,record=null) {
     const candidates=scoped(state.trips,profileId).filter(t=>{
-      const dates=scoped(state.stays,profileId).filter(s=>s.tripId===t.id&&s.status!=='cancelled').flatMap(s=>[s.start,s.end]).concat(scoped(state.transports,profileId).filter(r=>r.tripId===t.id&&r.status!=='cancelled').flatMap(r=>transportDates(r))).filter(Boolean).sort();
+      if(t.status==='cancelled'||(record&&t.excludedRecordIds?.[record.collection]?.includes(record.id)))return false;
+      const dates=[t.start,t.end,...scoped(state.stays,profileId).filter(s=>s.tripId===t.id&&s.status!=='cancelled').flatMap(s=>[s.start,s.end]),...scoped(state.transports,profileId).filter(r=>r.tripId===t.id&&r.status!=='cancelled').flatMap(r=>transportDates(r)),...scoped(state.accommodations,profileId).filter(a=>a.tripId===t.id&&a.status!=='cancelled').flatMap(a=>[a.checkIn,a.checkOut]),...scoped(state.placeVisits,profileId).filter(v=>v.tripId===t.id&&v.status!=='not-recorded').flatMap(v=>[v.date,v.endDate||v.date])].filter(validDate).sort();
       return dates.length&&dates[0]<=start&&dates.at(-1)>=end;
     });
     return candidates.length===1?candidates[0].id:null;
@@ -73,9 +74,9 @@
     const points=[record.start,...(record.via||[]),record.end];
     return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:'',endLocal:i===points.length-2?record.endLocal:'',flightNumber:points.length===2?record.flightNumber||'':'',airline:points.length===2?record.airline||null:null}));
   }
-  const airportLabel=(p,lookup=()=>null)=>p?.manualAirport?(p.iata||p.icao||p.name||''):p?.iata||lookup(p?.name||'')?.iata||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
+  const airportLabel=(p,lookup=()=>null)=>p?.manualAirport?(p.iata||p.icao||p.name||''):p?.iata||(p?.name?.trim()?lookup(p.name)?.iata:'')||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
   function airportDetails(p,lookup=()=>null){
-    if(!p)return '';const found=lookup(p.iata||p.icao||p.name||'')||{},a={...found,...p,name:p.manualAirport||p.personal?p.name:found.name||p.name};
+    if(!p)return '';const key=p.iata||p.icao||p.name||'';if(!key.trim())return '';const found=lookup(key)||{},a={...found,...p,name:p.manualAirport||p.personal?p.name:found.name||p.name};
     const country=a.countryName||((typeof Intl.DisplayNames==='function'&&(a.countryCode||a.countryCodes?.[0]))?new Intl.DisplayNames(['en'],{type:'region'}).of(a.countryCode||a.countryCodes[0]):'');
     return [...new Set([a.name,a.city||a.area,country].filter(Boolean))].join(', ')+(a.iata||a.icao?' ('+[a.iata,a.icao].filter(Boolean).join(' / ')+')':'');
   }

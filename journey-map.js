@@ -35,7 +35,7 @@
     for(const members of groups.values()){
       const p=members[0],count=new Set(members.map(x=>x.r?.record?.id||x)).size,flight=p.type==='flight',size=flight?8:p.type==='accommodation'?16:10;
       const m=L.marker(p.position,{title:p.name+(count>1?' · '+count+' separate stays':''),autoPanOnFocus:false,bubblingMouseEvents:false,icon:L.divIcon({className:`journey-map-marker marker-${p.type}`,html:`<span>${p.type==='accommodation'?'⌂':''}</span>${count>1?'<small>×'+count+'</small>':''}`,iconSize:[size,size],iconAnchor:[size/2,size/2]})}).addTo(layer);
-      m.bindPopup(()=>members.map(x=>typeof x.html==='function'?x.html():x.html).join('<hr>'),{autoPan:false,closeOnClick:false,maxHeight:280,maxWidth:320});
+      m.bindPopup(()=>(p.type==='accommodation'&&count>1?'<p><strong>Stayed '+count+' times</strong></p>':'')+members.map(x=>typeof x.html==='function'?x.html():x.html).join('<hr>'),{autoPan:false,closeOnClick:false,maxHeight:280,maxWidth:320});
       m.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);m.openPopup();});
     }
     return {refresh(){}};
@@ -65,8 +65,8 @@
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).on('tileerror',()=>{const status=own.querySelector('[data-map-tile-status]');status.hidden=false;status.textContent='Map tiles are unavailable. Saved stops and route details are still shown.';}).addTo(map);
     const bounds=[],rowBounds=new Map(),markerLocations=new Set(),stopPoints=[];
     function marker(p,index,label,type){if(!G.point(p))return;const latlng=[p.lat,p.lon];bounds.push(latlng);if(!rowBounds.has(index))rowBounds.set(index,[]);rowBounds.get(index).push(latlng);
-      const markerKey=[type,p.lat,p.lon,label].join('|');if(markerLocations.has(markerKey))return;markerLocations.add(markerKey);
-      stopPoints.push({position:latlng,name:label,type,label:type==='flight'?HVJourney.airportLabel(p):type==='accommodation'?'⌂':'•',r:rows[index],html:()=>`<strong>${E(label)}</strong><p>${E(type==='flight'?HVJourney.airportDetails(p,HVJourneys.airportFor):[p.address,p.city||p.area,p.countryName].filter(Boolean).join(' · '))}</p>`});
+      const markerKey=[type,p.lat,p.lon,label].join('|');if(type!=='accommodation'&&markerLocations.has(markerKey))return;markerLocations.add(markerKey);
+      stopPoints.push({position:latlng,name:label,type,label:type==='flight'?HVJourney.airportLabel(p):type==='accommodation'?'⌂':'•',r:rows[index],html:()=>`<strong>${E(label)}</strong>${type==='accommodation'?'<p>'+E(rows[index].record.checkIn)+' to '+E(rows[index].record.checkOut)+'</p>':''}<p>${E(type==='flight'?HVJourney.airportDetails(p,HVJourneys.airportFor):[p.address,p.city||p.area,p.countryName].filter(Boolean).join(' · '))}</p>`});
     }
     rows.forEach((r,i)=>{if(r.leg){r.start=r.type==='flight'?airport(r.leg.start):r.leg.start;r.end=r.type==='flight'?airport(r.leg.end):r.leg.end;marker(r.start,i,r.start?.name||'Departure',r.type);marker(r.end,i,r.end?.name||'Arrival',r.type);}else marker(r.place,i,r.place?.name||r.record.propertyName,r.type);});
     const pointSurface=pointLayer(map,stopPoints);
