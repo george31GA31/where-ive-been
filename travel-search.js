@@ -54,11 +54,12 @@
         host.innerHTML=matches.slice(0,12).map((p,i)=>`<button type="button" data-travel-result="${i}"><span><strong>${E(p.name)}</strong><small>${E([p.type,p.area,p.countryName].filter(Boolean).join(' · '))}</small><small>${E(p.address)}</small></span></button>`).join('')||'<p class="helper" role="status">No matches. Try a full address or plot on map.</p>';
       }catch(e){if(token===request&&e.name!=='AbortError')host.innerHTML='<p class="helper" role="status">Search is unavailable. Enter a place or plot on map.</p>';}
     }
-    input.addEventListener('input',()=>{onType();clearTimeout(timer);controller?.abort();request++;host.replaceChildren();timer=setTimeout(run,400);});
-    input.addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&host.querySelector('button')){e.preventDefault();host.querySelector('button').focus();}if(e.key==='Enter'&&input.value.trim().length>=2){e.preventDefault();clearTimeout(timer);run();}if(e.key==='Escape')host.replaceChildren();});
-    host.addEventListener('click',e=>{const b=e.target.closest('[data-travel-result]');if(!b)return;clearTimeout(timer);controller?.abort();request++;const p=matches[Number(b.dataset.travelResult)];input.value=p.name;host.replaceChildren();onSelect(p);input.focus();});
-    host.addEventListener('keydown',e=>{const buttons=[...host.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}if(e.key==='Escape'){host.replaceChildren();input.focus();}});
-    return {cancel(){clearTimeout(timer);controller?.abort();request++;host.replaceChildren();}};
+    const onInput=()=>{onType();clearTimeout(timer);controller?.abort();request++;host.replaceChildren();timer=setTimeout(run,400);};
+    const onKey=e=>{if(e.key==='ArrowDown'&&host.querySelector('button')){e.preventDefault();host.querySelector('button').focus();}if(e.key==='Enter'&&input.value.trim().length>=2){e.preventDefault();clearTimeout(timer);run();}if(e.key==='Escape')host.replaceChildren();};
+    const onChoice=e=>{const b=e.target.closest('[data-travel-result]');if(!b)return;clearTimeout(timer);controller?.abort();request++;const p=matches[Number(b.dataset.travelResult)];input.value=p.name;host.replaceChildren();onSelect(p);input.focus();};
+    const onResultsKey=e=>{const buttons=[...host.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}if(e.key==='Escape'){host.replaceChildren();input.focus();}};
+    input.addEventListener('input',onInput);input.addEventListener('keydown',onKey);host.addEventListener('click',onChoice);host.addEventListener('keydown',onResultsKey);
+    return {cancel(){clearTimeout(timer);controller?.abort();request++;host.replaceChildren();input.removeEventListener('input',onInput);input.removeEventListener('keydown',onKey);host.removeEventListener('click',onChoice);host.removeEventListener('keydown',onResultsKey);}};
   }
   const api={normalise,rank,search,reverse,bind,tags};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVTravelSearch=api;
 })(typeof window!=='undefined'?window:globalThis);
