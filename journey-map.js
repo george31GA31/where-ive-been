@@ -3,7 +3,7 @@
   'use strict';
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const G=HVRouteGeometry,cache=new Map();let dialog,lastRequest=0;
-  const styles={flight:{color:'#44758c',dashArray:'6 5'},bus:{color:'#29556b'},car:{color:'#29556b'},walk:{color:'#647d52',dashArray:'2 5'},train:{color:'#7c6187',dashArray:'10 3'},boat:{color:'#31848a',dashArray:'3 6'},other:{color:'#777',dashArray:'3 5'}};
+  const styles={flight:{color:'#44758c'},bus:{color:'#29556b'},car:{color:'#29556b'},walk:{color:'#647d52',dashArray:'2 5'},train:{color:'#7c6187',dashArray:'10 3'},boat:{color:'#31848a',dashArray:'3 6'},other:{color:'#777',dashArray:'3 5'}};
   function airport(p){return G.point(p)||p?.manualAirport?p:{...HVJourneys.airportFor(p?.iata||p?.icao||p?.name||''),...p,lat:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lat,lon:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lon};}
   async function route(type,start,end,signal){
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon]);if(cache.has(key))return cache.get(key);
@@ -24,33 +24,27 @@
     }else throw Error();
     cache.set(key,result);if(cache.size>80)cache.delete(cache.keys().next().value);return result;
   }
+  // Only repeated stays at the same saved property share a marker. Other points keep exact coordinates.
   function pointLayer(map,points){
-    const layer=L.layerGroup().addTo(map),selectedLayer=L.layerGroup().addTo(map);let selected=null,selectedPoint=null,expanded=null;
-    const stop=e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);};
-    function single(p,position=p.position,spider=false){
-      const m=L.marker(position,{title:p.name,autoPanOnFocus:false,bubblingMouseEvents:false,icon:L.divIcon({className:`journey-map-marker marker-${p.type}`,html:`<span>${E(p.label)}</span>`,iconSize:[26,26],iconAnchor:[13,13]})}).addTo(layer);
-      m.bindPopup(p.html,{autoPan:false,closeOnClick:false,maxHeight:240,maxWidth:300});
-      m.on('click',e=>{stop(e);selectedLayer.clearLayers();selected=m;selectedPoint=p;layer.removeLayer(m);selectedLayer.addLayer(m);m.openPopup();});
-      m.on('popupclose',()=>queueMicrotask(()=>{if(selected===m&&!m.isPopupOpen()){selected=null;selectedPoint=null;selectedLayer.clearLayers();cluster();}}));
-      if(spider)L.polyline([p.position,position],{color:'#536b76',weight:1,interactive:false}).addTo(layer);
+    const layer=L.layerGroup().addTo(map),groups=new Map();
+    for(const p of points){
+      const r=p.r?.record,place=r?.place||{},identity=r?.placeId||place.id||r?.savedPlaceId;
+      const key=p.type==='accommodation'?(identity?'id:'+identity:'property:'+JSON.stringify([p.name.trim().toLowerCase(),...p.position])):Symbol();
+      if(!groups.has(key))groups.set(key,[]);groups.get(key).push(p);
     }
-    function spider(members){expanded=members;layer.clearLayers();const centre=map.latLngToLayerPoint(members[0].position),radius=Math.max(34,members.length*7);
-      members.forEach((p,i)=>{const angle=2*Math.PI*i/members.length;single(p,map.layerPointToLatLng([centre.x+Math.cos(angle)*radius,centre.y+Math.sin(angle)*radius]),true);});
+    for(const members of groups.values()){
+      const p=members[0],count=new Set(members.map(x=>x.r?.record?.id||x)).size,flight=p.type==='flight',size=flight?8:p.type==='accommodation'?16:10;
+      const m=L.marker(p.position,{title:p.name+(count>1?' · '+count+' separate stays':''),autoPanOnFocus:false,bubblingMouseEvents:false,icon:L.divIcon({className:`journey-map-marker marker-${p.type}`,html:`<span>${p.type==='accommodation'?'⌂':''}</span>${count>1?'<small>×'+count+'</small>':''}`,iconSize:[size,size],iconAnchor:[size/2,size/2]})}).addTo(layer);
+      m.bindPopup(()=>members.map(x=>typeof x.html==='function'?x.html():x.html).join('<hr>'),{autoPan:false,closeOnClick:false,maxHeight:280,maxWidth:320});
+      m.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);m.openPopup();});
     }
-    function cluster(){expanded=null;layer.clearLayers();const buckets=[];const radius=map.getZoom()>=13?14:24;
-      for(const p of points){if(selectedPoint===p)continue;const xy=map.project(p.position,map.getZoom());let group=buckets.find(g=>g.xy.distanceTo(xy)<radius);if(!group){group={xy,members:[]};buckets.push(group);}group.members.push(p);}
-      for(const {members} of buckets){if(members.length===1){single(members[0]);continue;}const position=[members.reduce((n,p)=>n+p.position[0],0)/members.length,members.reduce((n,p)=>n+p.position[1],0)/members.length];
-        const m=L.marker(position,{autoPanOnFocus:false,bubblingMouseEvents:false,title:`${members.length} nearby stops. Click to expand.`,icon:L.divIcon({className:'journey-map-marker journey-cluster',html:`<span>${members.length}</span>`,iconSize:[28,28],iconAnchor:[14,14]})}).addTo(layer);
-        m.on('click',e=>{stop(e);const spread=Math.max(...members.map(p=>map.project(p.position,map.getZoom()).distanceTo(map.project(members[0].position,map.getZoom()))));if(spread<4||map.getZoom()>=17)spider(members);else map.fitBounds(members.map(p=>p.position),{padding:[55,55],maxZoom:Math.min(map.getZoom()+3,18),animate:false});});
-      }
-    }
-    map.on('zoomend',cluster);map.on('click',()=>{selectedLayer.clearLayers();selected=null;selectedPoint=null;cluster();});cluster();return {refresh:cluster};
+    return {refresh(){}};
   }
   function drawRoute(map,coords,type,options={},content){
     const road=['car','bus'].includes(type),base={...styles[type],...options,bubblingMouseEvents:false};
-    if(road)L.polyline(coords,{...base,color:'#fff',weight:(base.weight||3)+3,opacity:.85,interactive:false}).addTo(map);
-    const line=L.polyline(coords,base).addTo(map);if(content)line.bindPopup(content,{autoPan:false,closeOnClick:false});
-    line.on('mouseover',()=>line.setStyle({weight:(base.weight||3)+2,opacity:1}));line.on('mouseout',()=>line.setStyle({weight:base.weight||3,opacity:base.opacity||.85}));line.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);});return line;
+    const casing=road?L.polyline(coords,{...base,color:'#fff',weight:(base.weight||1.5)+1.5,opacity:.85,interactive:false}).addTo(map):null;
+    const line=L.polyline(coords,base).addTo(map);line._routeCasing=casing;if(content)line.bindPopup(content,{autoPan:false,closeOnClick:false});
+    line.on('mouseover',()=>line.setStyle({weight:(base.weight||1.5)+1,opacity:1}));line.on('mouseout',()=>line.setStyle({weight:base.weight||1.5,opacity:base.opacity||.85}));line.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);});return line;
   }
 
   function open(key){
@@ -58,13 +52,13 @@
     dialog?.close();const opener=document.activeElement,controller=new AbortController();
     const own=document.createElement('dialog');dialog=own;own.className='journey-map-dialog';own.setAttribute('aria-labelledby','journeyMapTitle');
     const transports=group.transports.filter(t=>t.status!=='cancelled'&&!HVJourney.hiddenHomeRecord(state,t));
-    const rows=transports.flatMap(t=>(t.type==='flight'?HVJourney.flightLegs(t):[t]).map((l,i)=>({record:t,leg:l,index:i,date:l.startLocal||t.startLocal||'',type:t.type}))).concat(group.accommodations.filter(a=>!HVJourney.hiddenHomeRecord(state,a)).map(a=>({type:'accommodation',record:a,date:a.checkIn,place:a.place||{name:a.propertyName,lat:a.lat,lon:a.lon}})));
+    const rows=transports.flatMap(t=>(t.type==='flight'?HVJourney.flightLegs(t):HVJourney.groundLegs(t)).map((l,i)=>({record:t,leg:l,index:i,date:l.startLocal||t.startLocal||'',type:t.type}))).concat(group.accommodations.filter(a=>!HVJourney.hiddenHomeRecord(state,a)).map(a=>({type:'accommodation',record:a,date:a.checkIn,place:a.place||{name:a.propertyName,lat:a.lat,lon:a.lon}})));
     const groups=HVCalendar.journeyGroups();
-    const places=HVJourney.scoped(state.placeVisits||[],state.activeProfileId).filter(v=>!HVJourney.hiddenHomeRecord(state,v)&&v.category==='locations'&&HVJourney.validDate(v.date)&&v.status!=='not-recorded'&&(v.tripId?group.trip?.id===v.tripId:group.start<=v.date&&group.end>=(v.endDate||v.date)&&groups.filter(g=>g.start<=v.date&&g.end>=(v.endDate||v.date)).length===1));
+    const places=HVJourney.scoped(state.placeVisits||[],state.activeProfileId).filter(v=>!HVJourney.hiddenHomeRecord(state,v)&&v.category==='locations'&&!group.trip?.excludedRecordIds?.placeVisits?.includes(v.id)&&HVJourney.validDate(v.date)&&v.status!=='not-recorded'&&(v.tripId?group.trip?.id===v.tripId:group.start<=v.date&&group.end>=(v.endDate||v.date)&&groups.filter(g=>g.start<=v.date&&g.end>=(v.endDate||v.date)).length===1));
     rows.push(...group.stays.filter(s=>s.status!=='cancelled'&&HVJourney.isTravelStay(state,s)).map(s=>({type:'country',record:s,date:s.start,place:{name:s.location||s.countryName}})));
     rows.push(...places.map(v=>({type:'location',record:v,date:v.date,place:v.place})));
     rows.sort((a,b)=>(a.leg?a.record.startLocal.slice(0,10):a.date).localeCompare(b.leg?b.record.startLocal.slice(0,10):b.date)||(a.record===b.record&&a.leg&&b.leg?a.index-b.index:0)||((a.leg?a.record.startLocal.slice(11):a.record.checkInTime)&&(b.leg?b.record.startLocal.slice(11):b.record.checkInTime)&&(!a.record.timeZone||!b.record.timeZone||a.record.timeZone===b.record.timeZone)?(a.leg?a.record.startLocal.slice(11):a.record.checkInTime).localeCompare(b.leg?b.record.startLocal.slice(11):b.record.checkInTime):0)||(a.record.journeyOrder??a.index??0)-(b.record.journeyOrder??b.index??0));
-    own.innerHTML=`<header class="journey-map-head"><div><p class="eyebrow">JOURNEY MAP</p><h2 id="journeyMapTitle">${E(group.title)}</h2><p>${E(group.start)} – ${E(group.end)}</p><p class="helper" data-map-tile-status hidden role="status"></p></div><button type="button" class="secondary" data-map-close>Close ×</button></header><div class="journey-map-layout"><div class="journey-map-canvas" aria-label="Journey routes and places"></div><ol class="journey-map-stops">${rows.map((r,i)=>`<li data-map-row="${i}"><button class="journey-map-stop" type="button" data-map-stop="${i}"><span class="journey-stop-number">${i+1}</span><span><strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):r.place?.name||r.record.propertyName||'Location')}</strong><small>${E(r.date.replace('T',' '))}${r.record.checkInTime?' · '+E(r.record.checkInTime):''}${r.record.checkOutTime?' → '+E(r.record.checkOut+' '+r.record.checkOutTime):''}${r.record.timeZone?' · '+E(r.record.timeZone):''}${r.leg?.endLocal?' → '+E(r.leg.endLocal.replace('T',' ')):''}</small>${r.leg?`<small>${E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · '))}</small>${r.type==='flight'?`<small>${E(HVJourney.airportDetails(r.leg.start,HVJourneys.airportFor))} → ${E(HVJourney.airportDetails(r.leg.end,HVJourneys.airportFor))}</small>`:''}`:''}</span></button><p class="helper" data-route-status="${i}" role="status">${r.leg?'Checking route…':'Saved location'}</p><button type="button" class="text-btn" data-map-edit="${i}">Edit ${r.leg?'transport':r.type==='accommodation'?'accommodation':r.type==='country'?'country stay':'location'}</button></li>`).join('')||'<li class="empty-state">Add transport and plotted places to see this journey on the map.</li>'}</ol></div><footer class="journey-map-footer"><div class="journey-map-key">${[['flight','Flights'],['car','Road'],['walk','Walking'],['train','Rail'],['boat','Boats'],['accommodation','Accommodation'],['location','Locations']].map(([type,label])=>`<span><i class="key-${type}" style="--route-colour:${styles[type]?.color||'#985c4d'}"></i>${label}</span>`).join('')}</div><p>Flight arcs show connections, not actual flight tracks. Calculated routes may differ from the service taken. Stops are shown without a line when route data is unavailable. Times are local to each stop.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></footer>`;
+    own.innerHTML=`<header class="journey-map-head"><div><p class="eyebrow">JOURNEY MAP</p><h2 id="journeyMapTitle">${E(group.title)}</h2><p>${E(group.start)} – ${E(group.end)}</p><p class="helper" data-map-tile-status hidden role="status"></p></div><button type="button" class="secondary" data-map-close>Close ×</button></header><div class="journey-map-layout"><div class="journey-map-canvas" aria-label="Journey routes and places"></div><ol class="journey-map-stops">${rows.map((r,i)=>`<li data-map-row="${i}"><button class="journey-map-stop" type="button" data-map-stop="${i}"><span class="journey-stop-number">${i+1}</span><span><strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):r.place?.name||r.record.propertyName||'Location')}</strong><small>${E(r.date.replace('T',' '))}${r.record.checkInTime?' · '+E(r.record.checkInTime):''}${r.record.checkOutTime?' → '+E(r.record.checkOut+' '+r.record.checkOutTime):''}${r.record.timeZone?' · '+E(r.record.timeZone):''}${r.leg?.endLocal?' → '+E(r.leg.endLocal.replace('T',' ')):''}</small>${r.leg?`<small>${E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · '))}</small>${r.type==='flight'?`<small>${E(HVJourney.airportDetails(r.leg.start,HVJourneys.airportFor))} → ${E(HVJourney.airportDetails(r.leg.end,HVJourneys.airportFor))}</small>`:''}`:''}</span></button><p class="helper" data-route-status="${i}" role="status">${r.leg?'Checking route…':'Saved location'}</p><button type="button" class="text-btn" data-map-edit="${i}">Edit ${r.leg?'transport':r.type==='accommodation'?'accommodation':r.type==='country'?'country stay':'location'}</button></li>`).join('')||'<li class="empty-state">Add transport and plotted places to see this journey on the map.</li>'}</ol></div><footer class="journey-map-footer"><div class="journey-map-key">${[['flight','Flights'],['car','Road'],['walk','Walking'],['train','Rail'],['boat','Boats'],['accommodation','Accommodation'],['location','Locations']].map(([type,label])=>`<span><i class="key-${type}" style="--route-colour:${styles[type]?.color||'#985c4d'}"></i>${label}</span>`).join('')}</div><p>Flight arcs show connections, not actual flight tracks. Calculated routes may differ from the service taken. Straight connections join recorded stops when route data is unavailable. Times are local to each stop.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></footer>`;
     document.body.append(own);own.showModal();
     const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const map=L.map(own.querySelector('.journey-map-canvas'),{zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([30,0],2);
@@ -72,23 +66,22 @@
     const bounds=[],rowBounds=new Map(),markerLocations=new Set(),stopPoints=[];
     function marker(p,index,label,type){if(!G.point(p))return;const latlng=[p.lat,p.lon];bounds.push(latlng);if(!rowBounds.has(index))rowBounds.set(index,[]);rowBounds.get(index).push(latlng);
       const markerKey=[type,p.lat,p.lon,label].join('|');if(markerLocations.has(markerKey))return;markerLocations.add(markerKey);
-      stopPoints.push({position:latlng,name:label,type,label:type==='flight'?HVJourney.airportLabel(p):type==='accommodation'?'⌂':'•',html:()=>`<strong>${E(label)}</strong><p>${E(type==='flight'?HVJourney.airportDetails(p,HVJourneys.airportFor):[p.address,p.city||p.area,p.countryName].filter(Boolean).join(' · '))}</p>`});
+      stopPoints.push({position:latlng,name:label,type,label:type==='flight'?HVJourney.airportLabel(p):type==='accommodation'?'⌂':'•',r:rows[index],html:()=>`<strong>${E(label)}</strong><p>${E(type==='flight'?HVJourney.airportDetails(p,HVJourneys.airportFor):[p.address,p.city||p.area,p.countryName].filter(Boolean).join(' · '))}</p>`});
     }
     rows.forEach((r,i)=>{if(r.leg){r.start=r.type==='flight'?airport(r.leg.start):r.leg.start;r.end=r.type==='flight'?airport(r.leg.end):r.leg.end;marker(r.start,i,r.start?.name||'Departure',r.type);marker(r.end,i,r.end?.name||'Arrival',r.type);}else marker(r.place,i,r.place?.name||r.record.propertyName,r.type);});
     const pointSurface=pointLayer(map,stopPoints);
     const fit=()=>{if(bounds.length)map.fitBounds(bounds,{padding:[30,30],maxZoom:14,animate:false});};map.invalidateSize();fit();
-    function draw(coords,type,i){drawRoute(map,coords,type,{weight:3,opacity:.85});const mid=Math.floor(coords.length/2),a=coords[Math.max(0,mid-1)],b=coords[mid],angle=Math.atan2(b[0]-a[0],(b[1]-a[1])*Math.cos(b[0]*Math.PI/180))*180/Math.PI;
-      L.marker(b,{interactive:false,icon:L.divIcon({className:'journey-direction',html:`<span style="color:${styles[type]?.color||'#777'};transform:rotate(${-angle}deg)">➤</span>`,iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);rowBounds.set(i,coords);
-    }
+    const routeLines=new Map();
+    function draw(coords,type,i){const old=routeLines.get(i);old?._routeCasing?.remove();old?.remove();routeLines.set(i,drawRoute(map,coords,type,{weight:1.5,opacity:.85}));rowBounds.set(i,coords);}
     (async()=>{for(const [i,r] of rows.entries()){
       if(controller.signal.aborted)return;const status=own.querySelector(`[data-route-status="${i}"]`);
       if(r.type==='country'){status.textContent='Country stay · '+r.record.start+' – '+r.record.end;continue;}
       if(!r.leg){if(!G.point(r.place))status.textContent='No map position yet. Edit to search or place a pin.';continue;}
       if(!G.point(r.start)||!G.point(r.end)){status.textContent='Choose both locations in Edit transport to map this leg.';continue;}
       if(r.type==='flight'){draw(G.flightArc(r.start,r.end),'flight',i);status.textContent='Flight connection';continue;}
-      status.textContent='Finding a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),22000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
+      draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],r.type,i);status.textContent='Recorded stops joined; checking for a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),22000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
       try{const result=await route(r.type,r.start,r.end,requestController.signal);if(!controller.signal.aborted){draw(result.coordinates,r.type,i);status.textContent=result.label;}}
-      catch{if(!controller.signal.aborted)status.textContent='Route unavailable. Departure and arrival are shown; no estimated straight line.';}
+      catch{if(!controller.signal.aborted){draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],r.type,i);status.textContent='Recorded stops joined by a straight line; route unavailable.';}}
       finally{clearTimeout(timeout);controller.signal.removeEventListener('abort',abort);}
     }})();
     own.querySelector('[data-map-close]').onclick=()=>own.close();
@@ -102,17 +95,15 @@
     const map=L.map(host,{zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([25,0],2);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map).on('tileerror',()=>{status.textContent='Map background unavailable. Your saved stops and routes remain available.';});
     const points=[],bounds=[],routes=[];let unavailable=0,pending=0;
-    const popup=r=>`<strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):r.record.propertyName||r.place?.name||'Location')}</strong><br>${E(r.start||'Date not recorded')}${r.end!==r.start?' – '+E(r.end):''}${r.leg?'<br>'+E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · ')):''}`;
+    const popup=r=>`<strong>${r.leg?HVTransportIcons.html(r.type):''}${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):r.record.propertyName||r.place?.name||'Location')}</strong><br>${E(r.start||'Date not recorded')}${r.end!==r.start?' – '+E(r.end):''}${r.leg?'<br>'+E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · ')):''}`;
     function addPoint(p,r){if(!G.point(p))return;const position=[Number(p.lat),Number(p.lon)];bounds.push(position);points.push({position,r,type:r.type,html:()=>popup(r)+(r.type==='accommodation'?'<p>'+E([r.record.checkInTime?'Check-in '+r.record.checkInTime:'',r.record.checkOutTime?'Check-out '+r.record.checkOutTime:'',r.record.timeZone].filter(Boolean).join(' · '))+'</p>':'')+'<p>'+E(r.type==='flight'?HVJourney.airportDetails(p,HVJourneys.airportFor):[p.address,p.city||p.area,p.countryName].filter(Boolean).join(' · '))+'</p>',label:r.type==='flight'?HVJourney.airportLabel(p):r.type==='accommodation'?'⌂':'•',name:p.name||r.record.propertyName||'Location'});}
-    function draw(coords,r,label){const past=r.end&&r.end<today;drawRoute(map,coords,r.type,{weight:past?2.5:3.5,opacity:past?.72:.95},popup(r)+'<br>'+E(label));
-      const mid=Math.floor(coords.length/2),a=coords[Math.max(0,mid-1)],b=coords[mid],angle=Math.atan2(b[0]-a[0],(b[1]-a[1])*Math.cos(b[0]*Math.PI/180))*180/Math.PI;
-      L.marker(b,{interactive:false,keyboard:false,icon:L.divIcon({className:'journey-direction',html:`<span style="color:${styles[r.type]?.color||'#777'};transform:rotate(${-angle}deg)">➤</span>`,iconSize:[16,16],iconAnchor:[8,8]})}).addTo(map);
-    }
-    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){if(r.type==='flight')draw(G.flightArc(start,end),r,'Flight connection');else routes.push({r,start,end});}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
+    const routeLines=new Map();
+    function draw(coords,r,label){const old=routeLines.get(r.key);old?._routeCasing?.remove();old?.remove();const past=r.end&&r.end<today;routeLines.set(r.key,drawRoute(map,coords,r.type,{weight:past?1.2:1.6,opacity:past?.72:.95},popup(r)+'<br>'+E(label)));}
+    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){if(r.type==='flight')draw(G.flightArc(start,end),r,'Flight connection');else{draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; checking mapped route');routes.push({r,start,end});}}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
     const pointSurface=pointLayer(map,points);
     const fit=()=>{map.invalidateSize();if(bounds.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:12,animate:false});pointSurface.refresh();};fit();
     const report=()=>{status.textContent=`${rows.length} entries · ${points.length} mapped stops${pending?' · Loading '+pending+' surface routes…':''}${unavailable?' · '+unavailable+' entries have missing positions or unavailable routes; recorded stops remain visible.':''}${rows.length?'':' · No matching records. Change the filters or add a journey.'}`;};pending=routes.length;report();
-    (async()=>{for(const {r,start,end} of routes){if(controller.signal.aborted)return;const request=new AbortController(),abort=()=>request.abort(),timer=setTimeout(abort,22000);controller.signal.addEventListener('abort',abort,{once:true});try{const result=await route(r.type,start,end,request.signal);if(!controller.signal.aborted)draw(result.coordinates,r,result.label);}catch{unavailable++;}finally{clearTimeout(timer);controller.signal.removeEventListener('abort',abort);}if(controller.signal.aborted)return;pending--;report();}})();
+    (async()=>{for(const {r,start,end} of routes){if(controller.signal.aborted)return;const request=new AbortController(),abort=()=>request.abort(),timer=setTimeout(abort,22000);controller.signal.addEventListener('abort',abort,{once:true});try{const result=await route(r.type,start,end,request.signal);if(!controller.signal.aborted)draw(result.coordinates,r,result.label);}catch{unavailable++;if(!controller.signal.aborted)draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; route unavailable');}finally{clearTimeout(timer);controller.signal.removeEventListener('abort',abort);}if(controller.signal.aborted)return;pending--;report();}})();
     return {fit,remove(){controller.abort();map.remove();}};
   }
 

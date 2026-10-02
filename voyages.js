@@ -70,7 +70,7 @@
   }
   installStyles();
 
-  const brandAssetUrl = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png' : 'assets/herald-logo-dark.png', rootUrl).href;
+  const brandAssetUrl = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png?v=master-20261002' : 'assets/herald-logo-dark.png?v=master-20261002', rootUrl).href;
 
   function replaceText(root, re, replacement) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -108,6 +108,8 @@
     desc.content = 'Herald Voyages — your personal travel atlas for trips, countries, travel days and Schengen planning.';
 
     qa('.brand').forEach((brand) => {
+      if(brand.tagName!=='A') {const link=document.createElement('a');link.className=brand.className;link.href=new URL('index.html#/dashboard',rootUrl).href;link.setAttribute('aria-label','Herald Voyages dashboard');link.append(...brand.childNodes);brand.replaceWith(link);brand=link;}
+      if(!document.body.dataset.accountPage)brand.addEventListener('click',e=>{e.preventDefault();navigateToView('dashboard');});
       const strong = q('strong', brand);
       const subtitle = q('span:not(.brand-mark)', brand);
       const mark = q('.brand-mark', brand);
@@ -458,7 +460,7 @@
     el.innerHTML=rows.length?rows.map(c=>{
       const records=atlasRecords().filter(s=>s.countryCode===c.code).sort((a,b)=>a.start.localeCompare(b.start));
       const days=new Set(records.flatMap(s=>datesForStay(s,null,isoDate(new Date()))));
-      return `<a class="atlas-country country-link" href="#/country/${c.code}"><span class="atlas-country-name">${flagHtml(c.code)}<strong>${escapeHtml(c.name)}</strong></span><span>${records.length?`${days.size} logged days`:'Not yet visited'}</span><span aria-hidden="true">↗</span></a>`;
+      return `<a class="atlas-country country-link" href="#/country/${c.code}"><span class="atlas-country-name">${flagHtml(c.code)}<strong>${escapeHtml(c.name)}</strong></span><span>${codes.has(c.code)?`${days.size} logged days · Visited`:'Not yet visited'}</span><span aria-hidden="true">↗</span></a>`;
     }).join(''):'<p class="empty-state">No countries match your filters.</p>';
   }
   function renderTravelMemory(todayDate) {

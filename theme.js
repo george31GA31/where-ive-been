@@ -4,8 +4,8 @@
 
   const THEME_KEY = 'whereIveBeen.theme.v1';
   const ASSET_ROOT = new URL('./', document.currentScript.src);
-  const FAVICON = new URL('assets/herald-favicon.png?v=6', ASSET_ROOT).href;
-  const brandMark = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png' : 'assets/herald-logo-dark.png', ASSET_ROOT).href;
+  const FAVICON = new URL('assets/herald-favicon.png?v=master-20261002', ASSET_ROOT).href;
+  const brandMark = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png?v=master-20261002' : 'assets/herald-logo-dark.png?v=master-20261002', ASSET_ROOT).href;
   function updateLogos() {
     const images = new Set(document.querySelectorAll('.brand-logo-mark, .atlas-masthead-art img'));
     window.HVPages?.get('dashboardView')?.querySelectorAll('.atlas-masthead-art img').forEach(img=>images.add(img));
@@ -49,7 +49,7 @@
       document.head.appendChild(favicon);
     }
     favicon.type = 'image/png';
-    favicon.href = FAVICON;
+    favicon.href = FAVICON; favicon.removeAttribute('sizes');
 
     let apple = document.querySelector('link[rel="apple-touch-icon"]');
     if (!apple) {

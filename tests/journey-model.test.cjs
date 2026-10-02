@@ -50,6 +50,6 @@ test('legacy home residence never creates memories, including overlaps with fore
 });
 test('flight codes and connecting airports survive import without country records',()=>{
  const t={id:'via-flight',profileId:'p',type:'flight',startLocal:'2026-09-28T10:00',endLocal:'2026-09-28T18:00',start:{name:'Ljubljana Airport',iata:'LJU'},end:{name:'Alicante Airport',iata:'ALC'},via:[{name:'Zurich Airport',iata:'ZRH',icao:'LSZH',lat:47.46,lon:8.55}],status:'actual'};
- assert.equal(J.transportLabel(t),'LJU → ZRH → ALC');assert.equal(J.transportLabel({...t,via:[] }),'LJU → ALC');assert.equal(J.transportLabel({...t,type:'train'}),'Ljubljana Airport → Alicante Airport');
+ assert.equal(J.transportLabel(t),'LJU → ZRH → ALC');assert.equal(J.transportLabel({...t,via:[] }),'LJU → ALC');assert.equal(J.transportLabel({...t,type:'train'}),'Ljubljana Airport → Zurich Airport → Alicante Airport');
  const imported=M.importData(base(),{profiles:[{id:'p',name:'Me'}],transports:[t]}).data;assert.equal(imported.stays.length,0);assert.deepEqual(imported.transports[0].via,t.via);
 });

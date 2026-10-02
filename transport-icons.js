@@ -1,0 +1,2 @@
+/* One supplied icon family, proportional width and a shared visible height. */
+(()=>{const modes=new Set(['flight','boat','bus','car','train','walk','other']);window.HVTransportIcons={html(type){type=type==='taxi'?'car':type==='coach'?'bus':type==='ferry'?'boat':type;return '<img class="transport-mode-icon" src="assets/transport/'+(modes.has(type)?type:'other')+'.png" alt="" aria-hidden="true">';}};})();

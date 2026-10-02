@@ -1,0 +1,64 @@
+/* Shared travel-focused geocoding. Search results never mutate travel records. */
+(function(root){
+  'use strict';
+  const normal=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const tags={train:['railway:station','railway:halt'],bus:['amenity:bus_station','highway:bus_stop','public_transport:station'],boat:['amenity:ferry_terminal','harbour','waterway:dock'],flight:['aeroway:aerodrome'],accommodation:['tourism:hotel','tourism:hostel','tourism:guest_house','tourism:apartment','tourism:camp_site','tourism:resort']};
+  const preferred={train:/station|halt|railway|rail/,bus:/bus_station|bus_stop|coach|bus station|bus stop|terminal/,boat:/ferry|port|harbour|harbor|dock/,flight:/aerodrome|airport/,accommodation:/hotel|hostel|resort|guest.house|apartment|camp.site|motel|chalet/};
+  const cache=new Map();
+  function normalise(feature){
+    const p=feature.properties||{},[lon,lat]=feature.geometry?.coordinates||[],countryCode=String(p.countrycode||'').toUpperCase(),area=p.city||p.town||p.village||p.county||p.state||'';
+    return {id:`osm:${p.osm_type}:${p.osm_id}`,externalPlaceId:`osm:${p.osm_type}:${p.osm_id}`,name:p.name||[p.housenumber,p.street].filter(Boolean).join(' ')||area||'Unnamed place',type:p.osm_value||'place',osmKey:p.osm_key||'',countryCode,countryName:p.country||'',city:p.city||p.town||p.village||'',area,address:[p.housenumber,p.street,p.postcode,area,p.state,p.country].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', '),lat,lon};
+  }
+  function rank(list,term,context='other'){
+    const words=normal(term).split(/[^\p{L}\p{N}]+/u).filter(Boolean),unique=new Map();
+    for(const p of list){
+      if(!Number.isFinite(p.lat)||!Number.isFinite(p.lon))continue;
+      const name=normal(p.name),hay=normal([p.name,p.address,p.area,p.city,p.countryName].join(' '));
+      const relevance=words.reduce((n,w)=>n+(name.includes(w)?8:hay.includes(w)?2:0),0);
+      if(words.length&&!relevance)continue;
+      const score=relevance+(name===normal(term)?15:0)+(preferred[context]?.test(normal([p.type,p.osmKey,p.name].join(' ')))?60:0)+(p.personal?12:0);
+      const key=p.externalPlaceId||p.id||[name,p.lat,p.lon].join('|');
+      if(!unique.has(key)||unique.get(key).score<score)unique.set(key,{...p,score});
+    }
+    return [...unique.values()].sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
+  }
+  function enrich(p){return {...p,countryName:root.countryByCode?.(p.countryCode)?.name||p.countryName||''};}
+  async function search(term,{context='other',area='',centre,signal}={}){
+    term=term.trim();if(term.length<2)return [];
+    const saved=root.HVSavedPlaces?.search(term)||[],key=normal([term,context,area,centre?.lat,centre?.lng].join('|'));
+    if(cache.has(key))return rank([...saved,...cache.get(key)],term,context);
+    const params=new URLSearchParams({q:[term,area].filter(Boolean).join(' '),limit:'40',lang:'en'});
+    if(centre){params.set('lat',centre.lat);params.set('lon',centre.lng);}
+    const variants=[params];
+    if(tags[context]){const focused=new URLSearchParams(params);tags[context].forEach(t=>focused.append('osm_tag',t));variants.unshift(focused);}
+    const responses=await Promise.allSettled(variants.map(async p=>{
+      const res=await fetch('https://photon.komoot.io/api/?'+p,{signal,headers:{Accept:'application/json'}});
+      if(!res.ok)throw Error('Search unavailable');return ((await res.json()).features||[]).map(normalise).map(enrich);
+    }));
+    if(signal?.aborted)throw new DOMException('Search cancelled','AbortError');
+    const matches=responses.filter(r=>r.status==='fulfilled').flatMap(r=>r.value);
+    if(!responses.some(r=>r.status==='fulfilled')){if(saved.length)return rank(saved,term,context);throw Error('Online search unavailable');}
+    cache.set(key,matches);if(cache.size>100)cache.delete(cache.keys().next().value);
+    return rank([...saved,...matches],term,context);
+  }
+  async function reverse(lat,lon,signal){
+    const res=await fetch('https://photon.komoot.io/reverse?'+new URLSearchParams({lat,lon,limit:'1',lang:'en'}),{signal});
+    if(!res.ok)throw Error('Address lookup unavailable');const feature=(await res.json()).features?.[0];return feature?enrich(normalise(feature)):null;
+  }
+  function bind(input,host,{context=()=> 'other',onSelect,onType=()=>{},area=()=>''}={}){
+    let request=0,timer,controller,matches=[];
+    const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    async function run(){const term=input.value.trim(),token=++request;controller?.abort();host.replaceChildren();if(term.length<2)return;
+      controller=new AbortController();host.innerHTML='<p class="helper" role="status">Searching places…</p>';
+      try{matches=await search(term,{context:context(),area:area(),signal:controller.signal});if(token!==request||!input.isConnected)return;
+        host.innerHTML=matches.slice(0,12).map((p,i)=>`<button type="button" data-travel-result="${i}"><span><strong>${E(p.name)}</strong><small>${E([p.type,p.area,p.countryName].filter(Boolean).join(' · '))}</small><small>${E(p.address)}</small></span></button>`).join('')||'<p class="helper" role="status">No matches. Try a full address or plot on map.</p>';
+      }catch(e){if(token===request&&e.name!=='AbortError')host.innerHTML='<p class="helper" role="status">Search is unavailable. Enter a place or plot on map.</p>';}
+    }
+    input.addEventListener('input',()=>{onType();clearTimeout(timer);controller?.abort();request++;host.replaceChildren();timer=setTimeout(run,400);});
+    input.addEventListener('keydown',e=>{if(e.key==='ArrowDown'&&host.querySelector('button')){e.preventDefault();host.querySelector('button').focus();}if(e.key==='Enter'&&input.value.trim().length>=2){e.preventDefault();clearTimeout(timer);run();}if(e.key==='Escape')host.replaceChildren();});
+    host.addEventListener('click',e=>{const b=e.target.closest('[data-travel-result]');if(!b)return;clearTimeout(timer);controller?.abort();request++;const p=matches[Number(b.dataset.travelResult)];input.value=p.name;host.replaceChildren();onSelect(p);input.focus();});
+    host.addEventListener('keydown',e=>{const buttons=[...host.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}if(e.key==='Escape'){host.replaceChildren();input.focus();}});
+    return {cancel(){clearTimeout(timer);controller?.abort();request++;host.replaceChildren();}};
+  }
+  const api={normalise,rank,search,reverse,bind,tags};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVTravelSearch=api;
+})(typeof window!=='undefined'?window:globalThis);
