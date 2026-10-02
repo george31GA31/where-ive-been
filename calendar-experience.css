@@ -898,6 +898,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   min-height:24px;
   height:24px;
   margin-bottom:7px;
+  flex:none;
 }
 
 #calendarView .calendar-day .day-number {
@@ -995,7 +996,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 
 
 
-#calendarView .calendar-country-row:has(.calendar-country-section:nth-child(2)) .calendar-journey-chip {
+#calendarView .calendar-country-row:where(:not(.calendar-country-pair)):has(.calendar-country-section:nth-child(2)) .calendar-journey-chip {
   gap:3px;
   padding-inline:6px;
 }
@@ -1010,6 +1011,21 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   min-width:10px;
   height:7px!important;
   flex-basis:10px;
+}
+
+/* Exactly two countries keep their chronological slots and the usual flag size. */
+#calendarView .calendar-country-pair .calendar-journey-copy { display:none; }
+#calendarView .calendar-country-row.calendar-country-pair .calendar-journey-chip {
+  justify-content:center;
+  gap:0;
+  height:23px;
+  min-height:23px;
+}
+#calendarView .calendar-country-row.calendar-country-pair .calendar-chip-flag {
+  width:15px!important;
+  min-width:15px;
+  height:10px!important;
+  flex-basis:15px;
 }
 
 #calendarView .calendar-schengen {
@@ -1059,6 +1075,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 }
 
 #calendarView .calendar-country-row + .calendar-day-transport,
+#calendarView .calendar-lodging + .calendar-day-transport,
 #calendarView .calendar-day-transport:first-child {
   min-height:19px;
   margin-top:0;
@@ -1131,14 +1148,14 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 #calendarView .calendar-lodging-half {
   position:relative;
   display:grid;
-  grid-template-columns:10px minmax(0,1fr);
+  grid-template-columns:minmax(0,1fr);
   align-items:center;
   width:100%;
   height:100%;
   min-width:0;
   gap:2px;
   margin:0;
-  padding:2px 3px;
+  padding:0 3px;
   overflow:hidden;
   border:1px solid color-mix(in srgb,var(--hv-blue) 20%,var(--hv-line));
   border-radius:1px;
@@ -1156,16 +1173,18 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   border-radius:1px;
 }
 
-#calendarView .calendar-lodging-half > span {
-  display:grid;
-  place-items:center;
+#calendarView .calendar-lodging-half .calendar-lodging-cue {
+  display:block;
+  float:left;
   width:10px;
   min-width:10px;
+  height:8px;
+  margin:0 2px 0 0;
   padding:0;
   color:var(--hv-blue);
   font-size:9px;
   font-weight:800;
-  line-height:1;
+  line-height:8px;
 }
 
 #calendarView .calendar-lodging-half small {
@@ -1313,6 +1332,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 }
 
 #calendarView .calendar-day-dense .calendar-country-row + .calendar-day-transport,
+#calendarView .calendar-day-dense .calendar-lodging + .calendar-day-transport,
 #calendarView .calendar-day-dense .calendar-day-transport:first-child {
   min-height:15px;
   height:15px;
@@ -1347,15 +1367,18 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 }
 
 #calendarView .calendar-day-dense .calendar-lodging-half {
-  grid-template-columns:9px minmax(0,1fr);
+  grid-template-columns:minmax(0,1fr);
   gap:1px;
   padding:1px 2px;
 }
 
-#calendarView .calendar-day-dense .calendar-lodging-half > span {
+#calendarView .calendar-day-dense .calendar-lodging-half .calendar-lodging-cue {
   width:9px;
   min-width:9px;
+  height:7px;
+  margin-right:1px;
   font-size:8px;
+  line-height:7px;
 }
 
 #calendarView .calendar-day-dense .calendar-lodging-half small {
@@ -1397,6 +1420,11 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
     min-height:21px;
   }
 
+  #calendarView .calendar-country-row.calendar-country-pair .calendar-journey-chip {
+    height:21px;
+    min-height:21px;
+  }
+
   #calendarView .calendar-lodging-row {
     height:19px;
   }
@@ -1426,6 +1454,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   }
 
   #calendarView .calendar-day-dense .calendar-country-row + .calendar-day-transport,
+  #calendarView .calendar-day-dense .calendar-lodging + .calendar-day-transport,
   #calendarView .calendar-day-dense .calendar-day-transport:first-child {
     height:14px;
     min-height:14px;
@@ -1494,7 +1523,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
     flex-basis:9px;
   }
 
-  #calendarView .calendar-country-row:has(.calendar-country-section:nth-child(2)) .calendar-journey-chip,
+  #calendarView .calendar-country-row:where(:not(.calendar-country-pair)):has(.calendar-country-section:nth-child(2)) .calendar-journey-chip,
   #calendarView .calendar-country-row:has(.calendar-country-section:nth-child(3)) .calendar-journey-chip {
     gap:1px;
     padding-inline:3px;
@@ -1503,6 +1532,21 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   #calendarView .calendar-country-row:has(.calendar-country-section:nth-child(2)) .calendar-journey-copy strong {
     font-size:8px;
     letter-spacing:-.03em;
+  }
+
+  #calendarView .calendar-country-row.calendar-country-pair .calendar-journey-chip {
+    height:15px;
+    min-height:15px;
+    padding-inline:1px;
+  }
+  #calendarView .calendar-country-row.calendar-country-pair .calendar-chip-flag {
+    width:9px!important;
+    min-width:9px;
+    height:6px!important;
+    flex-basis:9px;
+  }
+  #calendarView .calendar-country-pair .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip {
+    padding-right:7px!important;
   }
 
   #calendarView .calendar-schengen {
@@ -1521,6 +1565,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   }
 
   #calendarView .calendar-country-row + .calendar-day-transport,
+  #calendarView .calendar-lodging + .calendar-day-transport,
   #calendarView .calendar-day-transport:first-child {
     min-height:14px;
     height:14px;
@@ -1557,12 +1602,17 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 
   #calendarView .calendar-lodging-half {
     grid-template-columns:minmax(0,1fr);
-    gap:0;
+    gap:1px;
     padding:1px 2px;
   }
 
-  #calendarView .calendar-lodging-half > span {
-    display:none;
+  #calendarView .calendar-lodging-half .calendar-lodging-cue {
+    width:8px;
+    min-width:8px;
+    height:7px;
+    margin-right:1px;
+    font-size:8px;
+    line-height:7px;
   }
 
   #calendarView .calendar-lodging-half small {
@@ -1652,6 +1702,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   }
 
   #calendarView .calendar-day-dense .calendar-country-row + .calendar-day-transport,
+  #calendarView .calendar-day-dense .calendar-lodging + .calendar-day-transport,
   #calendarView .calendar-day-dense .calendar-day-transport:first-child {
     min-height:11px;
     height:11px;
@@ -1736,19 +1787,18 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 .journey-leg-details small { display:block; color:var(--muted); line-height:1.5; }
 
 #calendarView .calendar-day-transport { grid-template-columns:max-content minmax(0,1fr); }
-#calendarView .calendar-day-transport .calendar-transport-cue { width:auto; min-width:0; }
+#calendarView .calendar-day-transport .calendar-transport-cue { width:auto; min-width:0; height:auto; }
 .currency-conversion { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:11px; }
 .currency-conversion select { width:76px; padding:4px; }
 .calendar-floating-detail .currency-conversion { display:none; }
 /* Keep the existing cells and entry treatments. Expand only measured overflowing text. */
 #calendarView .calendar-country-row .country-name-full { display:block; }
 #calendarView .calendar-country-row .country-name-compact { display:none; }
-#calendarView .calendar-day .calendar-entry-wrap { height:auto; }
+#calendarView .calendar-day .calendar-entry-wrap:not(.calendar-lodging-half) { height:auto; }
 #calendarView .calendar-entry-wrap .country-name-full,
 #calendarView .calendar-entry-wrap .calendar-route-label { white-space:normal; overflow-wrap:anywhere; text-overflow:clip; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
-#calendarView .calendar-lodging-row.single-property .lodging-start:not(.lodging-end) { background:linear-gradient(to right,var(--hv-surface) 50%,color-mix(in srgb,var(--hv-blue) 9%,var(--hv-surface)) 50%); }
-#calendarView .calendar-lodging-row.single-property .lodging-end:not(.lodging-start) { background:linear-gradient(to right,color-mix(in srgb,var(--hv-blue) 9%,var(--hv-surface)) 50%,var(--hv-surface) 50%); }
 #calendarView .calendar-lodging-half small { white-space:nowrap; display:block; text-overflow:ellipsis; }
+#calendarView .calendar-lodging-half.calendar-entry-wrap { padding-inline:1px; }
 #calendarView .calendar-lodging-half.calendar-entry-wrap small { white-space:normal; display:-webkit-box; overflow-wrap:anywhere; -webkit-line-clamp:2; }
 .journey-date-filter { display:flex; align-items:center; flex-wrap:wrap; gap:8px 12px; margin:0 0 12px; color:var(--hv-muted); font-size:12px; }
 .journey-date-filter label { display:flex; align-items:center; gap:5px; }
@@ -1784,5 +1834,3 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 .entry-source-note ul,.entry-more ul { padding-left:18px; }
 .entry-dialog .dialog-card { max-width:660px; }
 @media (max-width:500px) { .entry-core-options { grid-template-columns:minmax(0,1fr); gap:0; } }
-
-#calendarView .calendar-lodging-row:has(.calendar-entry-wrap) { height:auto; }
