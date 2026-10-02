@@ -2652,3 +2652,30 @@ body[data-current-view=calendar] #addStayBtn { display:none }
   object-position: center !important;
   transform: none !important;
 }
+
+.brand { text-decoration:none; color:inherit; cursor:pointer; }
+.sidebar .brand { display:block; }
+.sidebar .brand > div:not(.brand-mark) { display:none; }
+.sidebar .brand .brand-mark { display:block; width:100%; height:auto; aspect-ratio:2048/464; padding:0; background:transparent; border:0; overflow:visible; }
+.sidebar .brand .brand-logo-mark { width:100%!important; height:auto!important; aspect-ratio:2048/464; object-fit:contain; }
+@media(min-width:761px) and (max-width:1080px) {
+  .sidebar .brand { width:108px; min-width:108px; flex:0 0 108px; }
+}
+@media(max-width:760px) {
+  .sidebar .brand { width:150px; min-width:0; flex:0 0 150px; }
+}
+.travel-tools-navigation { margin:0 0 12px; font-size:12px; color:var(--muted); }
+.travel-tools-navigation summary { cursor:pointer; width:fit-content; }
+.travel-tools-navigation small { margin-left:6px; font-size:10px; }
+.travel-tools-navigation > div { display:flex; flex-wrap:wrap; gap:16px; padding:10px 0; }
+@media(min-width:1081px) { .sidebar .brand { width:190px; min-width:190px; flex:0 0 190px; } }
+#atlasCountryDirectory { max-width:860px; }
+a.atlas-country { display:grid; grid-template-columns:minmax(0,1fr) 140px 18px; align-items:center; gap:12px; padding:9px 0; color:var(--hv-muted); text-decoration:none; font-size:12px; }
+a.atlas-country .atlas-country-name { gap:10px; }
+a.atlas-country .atlas-country-name strong { font-size:13px; }
+a.atlas-country .flag-img { width:28px; height:20px; }
+@media(max-width:520px) { a.atlas-country { grid-template-columns:minmax(0,1fr) 96px 12px; gap:7px; font-size:11px; } }
+.account-page .brand { display:block; width:240px; max-width:100%; }
+.account-page .brand > div:not(.brand-mark) { display:none; }
+.account-page .brand .brand-mark { width:100%; height:auto; aspect-ratio:2048/464; padding:0; background:transparent; border:0; }
+.account-page .brand .brand-logo-mark { width:100%!important; height:auto!important; object-fit:contain; }

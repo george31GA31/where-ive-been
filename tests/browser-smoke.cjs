@@ -182,7 +182,7 @@ let browser;
  await global.goto(origin+'/#/journey-map');await global.waitForSelector('#globalJourneyMap .leaflet-container, #globalJourneyMap.leaflet-container');
  await global.waitForFunction(()=>document.querySelectorAll('#globalJourneyMap path.leaflet-interactive').length===3);
  assert.equal(await global.locator('[data-journey-period=all]').getAttribute('aria-pressed'),'true');for(const layer of ['flights','transport','accommodation','locations'])assert.equal(await global.locator(`[data-journey-layer=${layer}]`).getAttribute('aria-pressed'),'true');
- assert.match(await global.locator('#journeyLibraryRecords').innerText(),/LJU → ZRH/);assert.match(await global.locator('#journeyLibraryRecords').innerText(),/ZRH → ALC/);assert.match(await global.locator('#journeyLibraryRecords').innerText(),/My cabin/);assert.ok(await global.locator('#globalJourneyMap .journey-cluster').count());
+ assert.match(await global.locator('#journeyLibraryRecords').innerText(),/LJU → ZRH/);assert.match(await global.locator('#journeyLibraryRecords').innerText(),/ZRH → ALC/);assert.match(await global.locator('#journeyLibraryRecords').innerText(),/My cabin/);assert.equal(await global.locator('#globalJourneyMap .journey-cluster').count(),0);
  const before=await global.evaluate(()=>JSON.stringify([state.transports,state.accommodations,state.placeVisits,state.stays]));
  await global.screenshot({path:path.join(out,'global-journeys-all.png'),fullPage:true});
  await global.locator('[data-journey-period=upcoming]').click();assert.doesNotMatch(await global.locator('#journeyLibraryRecords').innerText(),/LJU/);assert.match(await global.locator('#journeyLibraryRecords').innerText(),/Start → End/);

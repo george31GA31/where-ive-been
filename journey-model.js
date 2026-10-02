@@ -2,7 +2,7 @@
 (function(root) {
   'use strict';
   const categories = {buildings:'Tallest buildings', mountains:'Highest natural points', unesco:'UNESCO sites', airports:'Airports'};
-  const types = {flight:'Flight',train:'Train',bus:'Bus',boat:'Boat',car:'Car',walk:'Walking',other:'Other'};
+  const types = {flight:'Flight',train:'Train',bus:'Bus / coach',boat:'Boat / ferry',car:'Car / taxi',walk:'Walking',other:'Other'};
   const scoped = (rows,profileId) => (rows || []).filter(r => profileId === 'all' || !r.profileId || r.profileId === profileId || r.profileIds?.includes(profileId));
   const visibleTransport = (state,profileId=state.activeProfileId) => scoped(state.transports,profileId).filter(t => t.status !== 'cancelled' && !(state.trips||[]).some(trip=>trip.id===t.tripId&&trip.status==='cancelled'));
   const summary = (state,today,profileId=state.activeProfileId) => {
@@ -80,12 +80,21 @@
     return [...new Set([a.name,a.city||a.area,country].filter(Boolean))].join(', ')+(a.iata||a.icao?' ('+[a.iata,a.icao].filter(Boolean).join(' / ')+')':'');
   }
   function transportLabel(record,lookup=()=>null) {
-    if(record.type!=='flight')return `${record.start?.name||''} → ${record.end?.name||''}`;
+    if(record.type!=='flight')return [record.start,...(record.via||[]),record.end].map(p=>p?.name||'').join(' → ');
     const legs=flightLegs(record),parts=[];
     legs.forEach((leg,i)=>{const start=airportLabel(leg.start,lookup),end=airportLabel(leg.end,lookup);if(!i||parts.at(-1)!==start)parts.push(start);parts.push(end);});
     return parts.join(' → ');
   }
-  const transportDates = record => [...new Set([record.startLocal,record.endLocal,...(record.type==='flight'?record.legs||[]:[]).flatMap(l=>[l.startLocal,l.endLocal])].filter(Boolean).map(d=>d.slice(0,10)))];
+  function groundLegs(record){
+    const points=[record.start,...(record.via||[]),record.end];
+    return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:points[i]?.departureLocal||'',endLocal:i===points.length-2?record.endLocal:end?.arrivalLocal||'',operator:points[i]?.operator||record.operator||'',serviceNumber:points[i]?.serviceNumber||record.serviceNumber||''}));
+  }
+  function transportDates(record){
+    const dates=[record.startLocal,record.endLocal,...(record.legs||[]).flatMap(l=>[l.startLocal,l.endLocal]),...(record.via||[]).flatMap(p=>[p.arrivalLocal,p.departureLocal])].filter(Boolean).map(d=>d.slice(0,10)).filter(validDate).sort();
+    if(!dates.length)return [];const result=[];
+    for(let ms=Date.parse(dates[0]),last=Date.parse(dates.at(-1));ms<=last;ms+=86400000)result.push(new Date(ms).toISOString().slice(0,10));
+    return result;
+  }
   function memories(state,today,profileId=state.activeProfileId) {
     const year=Number(today.slice(0,4)),suffix=today.slice(4);
     const records=[...scoped(state.stays,profileId).filter(isActual),...scoped(state.residences,profileId).map(r=>({...r,memoryResidence:true})),...scoped(state.placeVisits,profileId).filter(v=>v.category==='locations'&&v.status==='visited').map(v=>({...v,...v.place,start:v.date,end:v.endDate||v.date,location:v.place?.name}))];
@@ -151,7 +160,7 @@
     if(!validLocal(r.startLocal)||!validLocal(r.endLocal)) return 'Enter valid departure and arrival dates and local times.';
     if(!r.start?.name?.trim()||!r.end?.name?.trim()) return 'Enter both locations.';
     // Local clocks cannot be ordered across time zones, including date-line crossings.
-    for(const point of [r.start,r.end]) {
+    for(const point of [r.start,...(r.via||[]),r.end]) {
       const hasLat=point.lat!==null&&point.lat!==undefined,hasLon=point.lon!==null&&point.lon!==undefined;
       if(hasLat!==hasLon) return 'Provide both latitude and longitude, or leave both blank.';
       if(hasLat&&(!Number.isFinite(point.lat)||Math.abs(point.lat)>90||!Number.isFinite(point.lon)||Math.abs(point.lon)>180)) return 'Coordinates must be valid latitude (−90 to 90) and longitude (−180 to 180).';
@@ -166,6 +175,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
+  const api={airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);
