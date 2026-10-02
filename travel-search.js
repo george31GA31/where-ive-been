@@ -1,19 +1,22 @@
 /* Shared travel-focused geocoding. Search results never mutate travel records. */
 (function(root){
   'use strict';
+  const A=typeof module!=='undefined'&&module.exports?require('./address-display.js'):root.HVAddress;
   const normal=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const tags={train:['railway:station','railway:halt'],bus:['amenity:bus_station','highway:bus_stop','public_transport:station'],boat:['amenity:ferry_terminal','harbour','waterway:dock'],flight:['aeroway:aerodrome'],accommodation:['tourism:hotel','tourism:hostel','tourism:guest_house','tourism:apartment','tourism:camp_site','tourism:resort']};
   const preferred={train:/station|halt|railway|rail/,bus:/bus_station|bus_stop|coach|bus station|bus stop|terminal/,boat:/ferry|port|harbour|harbor|dock/,flight:/aerodrome|airport/,accommodation:/hotel|hostel|resort|guest.house|apartment|camp.site|motel|chalet/};
   const cache=new Map();
   function normalise(feature){
     const p=feature.properties||{},[lon,lat]=feature.geometry?.coordinates||[],countryCode=String(p.countrycode||'').toUpperCase(),area=p.city||p.town||p.village||p.county||p.state||'';
-    return {id:`osm:${p.osm_type}:${p.osm_id}`,externalPlaceId:`osm:${p.osm_type}:${p.osm_id}`,name:p.name||[p.housenumber,p.street].filter(Boolean).join(' ')||area||'Unnamed place',type:p.osm_value||'place',osmKey:p.osm_key||'',countryCode,countryName:p.country||'',city:p.city||p.town||p.village||'',area,address:[p.housenumber,p.street,p.postcode,area,p.state,p.country].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', '),lat,lon};
+    const originalAddress=[p.housenumber,p.street,p.postcode,area,p.state,p.country].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', '),originalName=p.name||[p.housenumber,p.street].filter(Boolean).join(' ')||area||'Unnamed place';
+    const nameEn=p['name:en']||p.name_en||'',areaEn=p['city:en']||p['town:en']||p['village:en']||(/^(city|town|village)$/.test(p.osm_value)&&A.isLatin(nameEn||p.name)?nameEn||p.name:'');
+    return A.place({id:`osm:${p.osm_type}:${p.osm_id}`,externalPlaceId:`osm:${p.osm_type}:${p.osm_id}`,name:originalName,nameEn,nameSource:'geocoder',originalName,type:p.osm_value||'place',osmKey:p.osm_key||'',countryCode,countryName:p.country||'',city:p.city||p.town||p.village||'',cityEn:areaEn,area,areaEn,address:originalAddress,originalAddress,addressAliases:areaEn&&area?{[area]:areaEn}:{},street:p.street||'',postcode:p.postcode||'',houseNumber:p.housenumber||'',bounds:p.extent||feature.bbox,lat,lon});
   }
   function rank(list,term,context='other'){
     const words=normal(term).split(/[^\p{L}\p{N}]+/u).filter(Boolean),unique=new Map();
     for(const p of list){
       if(!Number.isFinite(p.lat)||!Number.isFinite(p.lon))continue;
-      const name=normal(p.name),hay=normal([p.name,p.address,p.area,p.city,p.countryName].join(' '));
+      const name=normal(p.name),hay=normal([p.name,...(p.aliases||[]),p.address,p.area,p.city,p.countryName].join(' '));
       const relevance=words.reduce((n,w)=>n+(name.includes(w)?8:hay.includes(w)?2:0),0);
       if(words.length&&!relevance)continue;
       const score=relevance+(name===normal(term)?15:0)+(preferred[context]?.test(normal([p.type,p.osmKey,p.name].join(' ')))?60:0)+(p.personal?12:0);
@@ -56,10 +59,11 @@
     }
     const onInput=()=>{onType();clearTimeout(timer);controller?.abort();request++;host.replaceChildren();timer=setTimeout(run,400);};
     const onKey=e=>{if(e.key==='ArrowDown'&&host.querySelector('button')){e.preventDefault();host.querySelector('button').focus();}if(e.key==='Enter'&&input.value.trim().length>=2){e.preventDefault();clearTimeout(timer);run();}if(e.key==='Escape')host.replaceChildren();};
-    const onChoice=e=>{const b=e.target.closest('[data-travel-result]');if(!b)return;clearTimeout(timer);controller?.abort();request++;const p=matches[Number(b.dataset.travelResult)];input.value=p.name;host.replaceChildren();onSelect(p);input.focus();};
+    const onChoice=e=>{const b=e.target.closest('[data-travel-result]');if(!b)return;e.preventDefault();e.stopPropagation();clearTimeout(timer);controller?.abort();request++;const p=matches[Number(b.dataset.travelResult)];input.value=p.name;host.replaceChildren();onSelect(p);input.focus();};
     const onResultsKey=e=>{const buttons=[...host.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}if(e.key==='Escape'){host.replaceChildren();input.focus();}};
     input.addEventListener('input',onInput);input.addEventListener('keydown',onKey);host.addEventListener('click',onChoice);host.addEventListener('keydown',onResultsKey);
-    return {cancel(){clearTimeout(timer);controller?.abort();request++;host.replaceChildren();input.removeEventListener('input',onInput);input.removeEventListener('keydown',onKey);host.removeEventListener('click',onChoice);host.removeEventListener('keydown',onResultsKey);}};
+    const clear=()=>{clearTimeout(timer);controller?.abort();request++;matches=[];host.replaceChildren();};
+    return {clear,cancel(){clear();input.removeEventListener('input',onInput);input.removeEventListener('keydown',onKey);host.removeEventListener('click',onChoice);host.removeEventListener('keydown',onResultsKey);}};
   }
   const api={normalise,rank,search,reverse,bind,tags};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVTravelSearch=api;
 })(typeof window!=='undefined'?window:globalThis);

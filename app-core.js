@@ -20,7 +20,7 @@ const RULES=[
  {id:'us-vwp',name:'United States — Visa Waiver Program',countries:['US'],type:'perVisit',limit:90,source:'https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visa-waiver-program.html',desc:'For eligible travellers admitted under the VWP: up to 90 days. Side trips may not reset the original admission period.'}
 ];
 let state=loadState(),calendarCursor=startOfMonth(new Date()),timelineDate=null,worldFeatures=null,worldLoading=false,profileCitizenships=[],calendarSelectionStart=null,calendarSelectionEnd=null,stayDialogContext='manual';
-let visaDataset=null,visaDatasetPromise=null;
+
 let cloudClient=null,cloudSession=null,cloudTimer=null,lastPlannerTrip=null;
 let transferClient=null,lastTransferCode='';
 const $=id=>document.getElementById(id)||window.HVPages?.get(id),els={};
@@ -272,42 +272,16 @@ function renderVisaChecker(){
   let p=activeProfile(),cit=p?.citizenships||[];
   if(!els.visaPassport.value&&cit.length){let c=countryByCode(cit[0]);if(c)els.visaPassport.value=c.name}
   if(cit.length){els.visaProfileHint.innerHTML=`${esc(p.name)} has ${cit.length===1?'this passport':'these passports'} saved: `+cit.map(code=>{let c=countryByCode(code);return c?`<button type="button" data-action="use-profile-passport" data-country="${code}">${flagHtml(code,'flag-img flag-sm')} ${esc(c.name)}</button>`:''}).filter(Boolean).join(' · ')}else els.visaProfileHint.innerHTML=`No passport saved for ${esc(p?.name||'this traveller')}. You can still type one above, or <button type="button" data-go-view="profiles">add it to the profile</button>.`;
-  if(els.visaDataStatus)els.visaDataStatus.textContent='Reviewed official guidance for supported routes. Other destinations and special circumstances need an official requirements check.';
-}
-async function loadVisaDataset(){
-  if(visaDataset)return visaDataset;
-  if(visaDatasetPromise)return visaDatasetPromise;
-  if(els.visaDataStatus)els.visaDataStatus.textContent='Loading visa-policy data…';
-  const url='https://raw.githubusercontent.com/geetpurwar/countries_with_visa_and_flags/main/countries_with_visa_and_flags.min.json';
-  visaDatasetPromise=fetch(url,{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error(`Visa data request failed (${r.status})`);return r.json()}).then(data=>{
-    if(!Array.isArray(data))throw new Error('Unexpected visa data format');
-    visaDataset=data;window.HVVisaRetrieved=new Date().toISOString().slice(0,10);
-    if(els.visaDataStatus)els.visaDataStatus.textContent=`Quick checker ready · ${data.length} passport records loaded from the open visa-policy dataset.`;
-    return data;
-  }).catch(err=>{
-    visaDatasetPromise=null;
-    if(els.visaDataStatus)els.visaDataStatus.textContent='Quick visa data could not be loaded. Use “Open live requirements” to check instead.';
-    throw err;
-  });
-  return visaDatasetPromise;
-}
-function visaRequirementInfo(req=''){
-  req=typeof req==='string'?req.slice(0,300):'';let x=req.trim().toLowerCase();
-  if(x.includes('visa free')||x==='free')return{tone:'good',badge:'VISA-FREE',title:'No visa required',label:'Visa-free',answer:'No'};
-  if(x.includes('visa on'))return{tone:'warn',badge:'ON ARRIVAL',title:'Visa on arrival',label:'Visa on arrival',answer:'On arrival'};
-  if(x.includes('e-visa')||x.includes('evisa'))return{tone:'warn',badge:'EVISA',title:'eVisa required',label:'eVisa',answer:'Yes — online'};
-  if(x==='eta'||x.includes('electronic travel'))return{tone:'warn',badge:'TRAVEL AUTHORISATION',title:'Electronic travel authorisation required',label:'ETA / electronic authorisation',answer:'Authorisation'};
-  if(x==='visa'||x.includes('visa required'))return{tone:'bad',badge:'VISA REQUIRED',title:'Visa required before travel',label:'Visa required',answer:'Yes'};
-  if(x.includes('no admission')||x.includes('not admitted'))return{tone:'bad',badge:'RESTRICTED',title:'Entry may be restricted',label:req||'Restricted',answer:'Check'};
-  return{tone:'neutral',badge:'CHECK RULE',title:req?req.replace(/\b\w/g,c=>c.toUpperCase()):'Requirement not classified',label:req||'Unknown',answer:'Check'};
+  HVEntryChecker.init();const coverage=HVEntryRules.coverage();if(els.visaDataStatus)els.visaDataStatus.textContent=coverage.passports+' passports · '+coverage.routes.toLocaleString()+' routes. Official guidance overrides provisional dataset indications; unavailable details are labelled.';
 }
 async function runVisaCheck(){
-  let from=countryByName(els.visaPassport.value),to=countryByName(els.visaDestination.value);
-  if(!from||!to){els.visaResultTitle.textContent='Check your countries';els.visaResultBody.innerHTML='<div class="visa-error">Choose a valid passport country and destination from the country list.</div>';return}
-  if(from.code==='SEA'||to.code==='SEA'){els.visaResultTitle.textContent='At Sea';els.visaResultBody.innerHTML='<div class="visa-error">At Sea is a travel location rather than a country, so there is no standalone visa requirement for it.</div>';return}
-  const rule=HVEntryRules.lookup(from.code,to.code,{purpose:document.getElementById('visaPurpose')?.value||'tourism',days:Number(document.getElementById('visaLength')?.value)||null,residency:document.getElementById('visaResidency')?.value.trim()||''});
-  els.visaResultTitle.textContent=from.name+' → '+to.name;
-  els.visaResultBody.innerHTML=`<div class="visa-result-card"><div class="visa-answer ${esc(rule.tone)}"><h3>${esc(rule.title)}</h3><p>${esc(rule.text)}</p></div><p class="helper">Guidance reviewed ${esc(rule.checked)}. Rules apply to the stated passport and purpose.</p><a href="${esc(rule.source)}" target="_blank" rel="noopener noreferrer">Check official entry requirements ↗</a></div>`;
+  HVEntryChecker.init();
+  const from=countryByName(els.visaPassport.value),to=countryByName(els.visaDestination.value),host=els.visaPassport.closest('.panel'),input=HVEntryChecker.read(host);
+  if(!from||!to||from.code==='SEA'||to.code==='SEA'||input.error){els.visaResultTitle.textContent='Check your details';els.visaResultBody.innerHTML='<p class="visa-error">'+esc(input.error||'Choose a valid passport country and destination.')+'</p>';return;}
+  const display=()=>{const rule=HVEntryRules.lookup(from.code,to.code,input.options);els.visaResultTitle.innerHTML=flagHtml(to.code)+' '+esc(to.name);els.visaResultBody.innerHTML=HVEntryChecker.resultHtml(rule);};
+  display();
+  const button=els.runVisaCheckBtn;button.disabled=true;
+  try{await HVEntryRules.refresh();if(els.visaPassport.value===from.name&&els.visaDestination.value===to.name)display();}finally{button.disabled=false;}
 }
 
 function visitBlocksForRule(rule,profileId){let dates=new Set();staysForProfile(profileId).filter(countsForPlanning).filter(s=>rule.countries.includes(s.countryCode)).forEach(s=>datesForStay(s).forEach(d=>dates.add(d)));let a=[...dates].sort(),out=[];for(let d of a){let last=out.at(-1);if(!last||diffDays(last.end,d)>1)out.push({start:d,end:d,days:1});else{last.end=d;last.days++}}return out}

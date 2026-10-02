@@ -15,18 +15,28 @@ A local-first personal travel atlas for trips, countries, travel days, home peri
 - `theme.js` retains the existing light/dark preference key and uses the supplied trumpet artwork.
 - `assets/herald-trumpet.png` is the supplied logo, unchanged. The masthead uses this fourth supplied image in place of the inspiration page's globe.
 
-Routes: Dashboard (default), Map, Trips, Countries, Calendar, Schengen, Statistics, Lived In, Trip Planner, Visa Tools, People and Settings. Account pages remain separately addressable HTML documents.
+Routes: Dashboard (default), Map, Trips, Countries, Calendar, Schengen, Statistics, Lived In, Trip Planner, Entry Requirements, Travel Tools, People and Settings. Account pages remain separately addressable HTML documents.
 
-Desktop links become a floating island after scrolling. Mobile uses a bottom navigation bar and a keyboard-accessible More menu. Motion respects reduced-motion preferences.
+Desktop links become a floating island after scrolling. Mobile uses the same primary areas through a bottom navigation bar, including Tools. Motion respects reduced-motion preferences.
 
 Storage keys, account identity, country-count choices, existing flags and synchronization payloads are preserved. No database migration is required for this redesign.
 
 ## Validation
 
-- Existing account sync and migration suite: all seven tests passed.
+- Unit tests cover storage/imports, accounts, trips, maps, safe hotel reconciliation, Roman-script display and worldwide entry lookups.
 - DOM integration checks: individual page mounting, rerendering while pages are detached, country search, year/month navigation, widget dialogs, trip creation retaining existing homes and profiles, and account-page boot.
 - JavaScript syntax and local HTML asset references checked.
-- No live-account mutation was performed for testing. Visual browser testing was not run in this environment.
+- Chromium checks cover desktop (1440px), tablet (768px), mobile (390px), both themes, click/tap, manual map plotting, date overlaps, Calendar sizing, complete flight panels, entry contexts and acknowledgements. Baseline and current Calendar screenshots are compared with the same records.
+- No live-account mutation is used for testing; existing version-2 fixtures, imports, guest persistence and account merge flows are exercised.
+- Run `npm test`, `npm run test:dom`, `npm run test:browser` and `python tests/test_country_import.py`. The site is static; there is no compilation step.
+
+## October 2026 refinements
+
+Journey Map date ranges intersect each flight leg, transport, accommodation stay and dated destination/location. Hotel pins are 16px SVG drops. Physical-property reconciliation is read-only: conservative distance, address, identity and name checks group historical stays and expose aliases without combining or deleting stays. Removed saved places remain removed.
+
+Calendar dimensions, colours and typography are retained. Single-property text uses the full row while the background retains its check-in/check-out cue. Country and route wrapping is measured against actual space and the fixed cell boundary.
+
+Entry Requirements accepts any supported passport, destination and date, with optional departure, recent travel, transit durations and age. The global planning snapshot covers 199 passports and 39,402 routes; reviewed official rules take precedence. Unverified rules, health and document conditions are explicit. See [data provenance and refresh policy](data/entry-requirements/README.md). Travel Tools has moved into the normal navigation; its existing Coming Soon tools are unchanged.
 
 ## Account system and guest migration
 

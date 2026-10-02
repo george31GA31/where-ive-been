@@ -1,6 +1,8 @@
 /* Pure, additive travel data rules. No storage or network side effects. */
 (function(root) {
   'use strict';
+  const A=typeof module!=='undefined'&&module.exports?require('./address-display.js'):null;
+  const roman=value=>(A||root.HVAddress)?.text(value)||value;
   const categories = {buildings:'Tallest buildings', mountains:'Highest natural points', unesco:'UNESCO sites', airports:'Airports'};
   const types = {flight:'Flight',train:'Train',bus:'Bus / coach',boat:'Boat / ferry',car:'Car / taxi',walk:'Walking',other:'Other'};
   const scoped = (rows,profileId) => (rows || []).filter(r => profileId === 'all' || !r.profileId || r.profileId === profileId || r.profileIds?.includes(profileId));
@@ -78,13 +80,13 @@
   function airportDetails(p,lookup=()=>null){
     if(!p)return '';const key=p.iata||p.icao||p.name||'';if(!key.trim())return '';const found=lookup(key)||{},a={...found,...p,name:p.manualAirport||p.personal?p.name:found.name||p.name};
     const country=a.countryName||((typeof Intl.DisplayNames==='function'&&(a.countryCode||a.countryCodes?.[0]))?new Intl.DisplayNames(['en'],{type:'region'}).of(a.countryCode||a.countryCodes[0]):'');
-    return [...new Set([a.name,a.city||a.area,country].filter(Boolean))].join(', ')+(a.iata||a.icao?' ('+[a.iata,a.icao].filter(Boolean).join(' / ')+')':'');
+    return roman([...new Set([a.name,a.city||a.area,country].filter(Boolean))].join(', '))+(a.iata||a.icao?' ('+[a.iata,a.icao].filter(Boolean).join(' / ')+')':'');
   }
   function transportLabel(record,lookup=()=>null) {
-    if(record.type!=='flight')return [record.start,...(record.via||[]),record.end].map(p=>p?.name||'').join(' → ');
+    if(record.type!=='flight')return [record.start,...(record.via||[]),record.end].map(p=>roman(p?.name||'')).join(' → ');
     const legs=flightLegs(record),parts=[];
     legs.forEach((leg,i)=>{const start=airportLabel(leg.start,lookup),end=airportLabel(leg.end,lookup);if(!i||parts.at(-1)!==start)parts.push(start);parts.push(end);});
-    return parts.join(' → ');
+    return roman(parts.join(' → '));
   }
   function groundLegs(record){
     const points=[record.start,...(record.via||[]),record.end];

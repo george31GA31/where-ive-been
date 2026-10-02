@@ -11,12 +11,12 @@
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
 
   const ROUTES = {
-    journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
+    tools:'travel-tools', journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
     stats: 'stats', homes: 'lived-in', settings: 'settings', schengen: 'schengen', planner: 'planner', rules: 'visa', profiles: 'people'
   };
   const ROUTE_TO_VIEW = Object.fromEntries(Object.entries(ROUTES).map(([view, route]) => [route, view]));
   const VIEW_TITLES = {
-    journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
+    tools:'Travel Tools', journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
     stats: 'Travel statistics', homes: 'Home bases', settings: 'Preferences', schengen: 'Schengen planner', planner: 'Plan a trip', rules: 'Entry rules', profiles: 'People & passports'
   };
   const WORKSPACES = {
@@ -25,10 +25,11 @@
     journeys: {label:'Journey Map',icon:'map',view:'journeys'},
     atlas: { label: 'Atlas', icon: 'map', view: 'map' },
     plan: { label: 'Plan a trip', icon: 'planner', view: 'planner' },
+    tools: { label: 'Travel Tools', icon: 'settings', view: 'tools' },
     account: { label: 'Account', icon: 'profiles', view: 'profiles' }
   };
   const VIEW_WORKSPACE = {
-    journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
+    tools:'tools', journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
     planner: 'plan', rules: 'plan', schengen: 'plan', profiles: 'account', homes: 'account', settings: 'account'
   };
   const WORKSPACE_TABS = {
@@ -175,8 +176,8 @@
     nav.id = 'voyagesMobileNav';
     nav.className = 'voyages-mobile-nav';
     nav.setAttribute('aria-label', 'Mobile navigation');
-    const items = [['dashboard', 'Home'], ['calendar', 'Calendar'], ['map', 'Atlas'], ['planner', 'Plan'], ['profiles', 'Account']];
-    nav.innerHTML = items.map(([view, label]) => `<button type="button" data-mobile-view="${view}">${icon(view)}<span>${label}</span></button>`).join('');
+    const items = [['dashboard', 'Home'], ['calendar', 'Calendar'], ['map', 'Atlas'], ['planner', 'Plan'], ['tools', 'Tools'], ['profiles', 'Account']];
+    nav.innerHTML = items.map(([view, label]) => `<button type="button" data-mobile-view="${view}" aria-label="${VIEW_TITLES[view]||label}">${icon(view)}<span>${label}</span></button>`).join('');
     document.body.append(nav);
 
     nav.addEventListener('click', (event) => {
