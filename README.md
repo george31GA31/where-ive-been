@@ -36,7 +36,7 @@ Journey Map date ranges intersect each flight leg, transport, accommodation stay
 
 Calendar dimensions, colours and typography are retained. Single-property text uses the full row while the background retains its check-in/check-out cue. Country and route wrapping is measured against actual space and the fixed cell boundary.
 
-Entry Requirements accepts any supported passport, destination and date, with optional departure, recent travel, transit durations and age. The global planning snapshot covers 199 passports and 39,402 routes; reviewed official rules take precedence. Unverified rules, health and document conditions are explicit. See [data provenance and refresh policy](data/entry-requirements/README.md). Travel Tools has moved into the normal navigation; its existing Coming Soon tools are unchanged.
+Entry Requirements needs only a supported passport and destination. Date, stay length, departure, recent travel, transit and age are optional under Add trip details. The global planning snapshot supplies worldwide answers for 199 passports and 39,402 routes; sourced official corrections take precedence, with separate health and documentation enrichment. See [data provenance and refresh policy](data/entry-requirements/README.md). Calendar Schengen entries use a blue edge strip and a small S; split-country entries use only the strip, following the reference. Travel Tools remains in the normal navigation.
 
 ## Account system and guest migration
 

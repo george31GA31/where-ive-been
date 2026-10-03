@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
   <link rel="stylesheet" href="voyages.css?v=master-complete-20261002" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=calendar-cell-20261002" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=entry-schengen-20261003" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 </head>
 <body>
@@ -189,7 +189,7 @@
       <section id="rulesView" class="view">
         <div class="visa-check-layout">
           <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">ENTRY REQUIREMENTS</p><h2>Do I need a visa?</h2><p class="panel-copy">Choose your passport, destination and travel date. Add your route when entry conditions depend on recent travel or transit.</p></div></div>
+            <div class="panel-head"><div><p class="eyebrow">ENTRY REQUIREMENTS</p><h2>Do I need a visa?</h2><p class="panel-copy">Choose your passport and destination. Add optional trip details for a more specific check.</p></div></div>
             <label class="field"><span>Passport / nationality</span><input id="visaPassport" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
             <label class="field"><span>Travelling to</span><input id="visaDestination" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
             <div class="visa-profile-hint" id="visaProfileHint"></div>
@@ -202,8 +202,8 @@
           </article>
         </div>
         <article class="panel visa-source-panel">
-          <div class="panel-head"><div><p class="eyebrow">BEFORE YOU TRAVEL</p><h2>Always verify the live rule</h2></div><a class="secondary" href="https://apply.joinsherpa.com/visa" target="_blank" rel="noreferrer">Open live requirements ↗</a></div>
-          <p class="panel-copy">The quick answer uses an open visa-policy dataset and is useful for planning, but entry rules can change and may depend on trip purpose, residence, transit route, passport validity and other circumstances. Use the live requirements link or the destination government's immigration/embassy site before booking or travelling.</p>
+          <div class="panel-head"><div><p class="eyebrow">SOURCES</p><h2>Visa data and official guidance</h2></div><a class="secondary" href="https://github.com/imorte/passport-index-data" target="_blank" rel="noopener noreferrer">View dataset ↗</a></div>
+          <p class="panel-copy">Worldwide visa answers use Passport Index planning data, with reviewed official corrections for special arrangements. Each result includes its available sources. Optional journey details refine the health and entry information where guidance is available.</p>
           <div id="visaDataStatus" class="visa-data-status">Worldwide planning coverage with separately reviewed official guidance.</div>
         </article>
       </section>
@@ -292,6 +292,6 @@
   <script src="account-model.js?v=rollback-20261001-1"></script>
   <script src="account-client.js?v=rollback-20261001-1"></script>
   <script src="account-sync.js?v=rollback-20261001-1"></script>
-  <script src="app.js?v=calendar-cell-20261002"></script>
+  <script src="app.js?v=entry-schengen-20261003"></script>
 </body>
 </html>

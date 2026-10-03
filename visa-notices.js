@@ -20,7 +20,7 @@
      d.querySelector('[data-passport]').onclick=async()=>{
        const country=countryByName(d.querySelector('[name=passport]').value),input=HVEntryChecker.read(d),error=d.querySelector('[data-passport-error]');
        if(!country||country.code==='SEA'||input.error){error.textContent=input.error||'Choose your passport nationality.';return;}
-       (i.trip||s).visaPassportCode=country.code;const defaults=HVEntryRules.forStay(state,{...s,entryContext:undefined}).options;s.entryContext={...input.options,travelDateOverride:input.options.travelDate!==s.start,daysOverride:input.options.days!==defaults.days,arrivingFromOverride:input.options.arrivingFrom!==defaults.arrivingFrom};persist();render();HVCalendar.renderMonth();
+       (i.trip||s).visaPassportCode=country.code;const defaults=HVEntryRules.forStay(state,{...s,entryContext:undefined}).options;s.entryContext={...(s.entryContext||{}),...input.options,travelDateOverride:input.options.travelDate!==s.start,daysOverride:input.options.days!==defaults.days,arrivingFromOverride:input.options.arrivingFrom!==defaults.arrivingFrom};persist();render();HVCalendar.renderMonth();
        if(await HVEntryRules.refresh()){if(d.open)render();HVCalendar.renderMonth();}
      };
      d.querySelector('[data-ack]')?.addEventListener('click',()=>{
