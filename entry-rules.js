@@ -4,6 +4,7 @@
  const node=typeof module!=='undefined'&&module.exports;
  let dataset=node?require('./data/entry-requirements/passport-index.js'):root.HVEntryDataset;
  const guidance=node?require('./data/entry-requirements/guidance.js'):root.HVEntryGuidance;
+ const travelHealth=node?require('./entry-health.js'):root.HVEntryHealth;
  const checked=guidance.checked,schengen=new Set('AT BE BG HR CZ DK EE FI FR DE GR HU IS IT LV LI LT LU MT NL NO PL PT RO SK SI ES SE CH'.split(' '));
  const requirements={'visa-free':'visa free','visa-required':'visa',evisa:'e-visa','visa-on-arrival':'visa on arrival',eta:'eta','entry-permit':'entry permit','transit-visa':'transit visa','conditional-exemption':'special arrangement',citizen:'citizen',restricted:'restricted',unknown:'unknown'};
  const titles={'visa-free':'Visa-free','visa-required':'Visa required before travel',evisa:'eVisa','visa-on-arrival':'Visa on arrival',eta:'ETA / electronic authorisation','entry-permit':'Entry permit / entry-fee voucher','transit-visa':'Transit visa','conditional-exemption':'Conditional exemption',citizen:'Citizenship destination',restricted:'Entry may be restricted',unknown:'Check official requirements'};
@@ -13,7 +14,7 @@
  const fresh=(date,today,days)=>validDate(date)&&validDate(today)&&today>=date&&Date.parse(today)-Date.parse(date)<=days*day;
  function context(input={}){
    const today=validDate(input.today)?input.today:new Date().toISOString().slice(0,10);
-   return {today,travelDate:input.travelDate||null,purpose:input.purpose||'tourism',days:input.days==null||input.days===''?null:Number(input.days),residency:input.residency||'',arrivingFrom:input.arrivingFrom||'',recentCountries:[...new Set(input.recentCountries||[])].sort(),transit:(input.transit||[]).map(t=>({country:t.country||'',hours:t.hours==null||t.hours===''?null:Number(t.hours)})),age:input.age==null||input.age===''?null:Number(input.age)};
+   return {today,travelDate:input.travelDate||null,purpose:input.purpose||'tourism',days:input.days==null||input.days===''?null:Number(input.days),residency:input.residency||'',arrivingFrom:input.arrivingFrom||'',recentCountries:[...new Set(input.recentCountries||[])].sort(),transit:(input.transit||[]).map(t=>({country:t.country||'',hours:t.hours==null||t.hours===''?null:Number(t.hours)})),age:input.age==null||input.age===''?null:Number(input.age),healthDestination:input.healthDestination||'',healthLocation:input.healthLocation||''};
  }
  function datasetRecord(passport,destination){
    const i=dataset.codes.indexOf(destination),encoded=dataset.matrix[passport]?.[i];
@@ -55,7 +56,8 @@
    }
    r.requirement=requirements[r.status]||'unknown';r.tone=['visa-free','citizen'].includes(r.status)||r.status==='conditional-exemption'&&(/^(cta|europe-free-movement)/.test(r.id||''))?'good':['visa-required','restricted','transit-visa'].includes(r.status)?'bad':r.status==='unknown'?'neutral':'warn';
    if(c.days&&r.days&&c.days>r.days)r.tone='warn';
-   r.health=health(destination,c);r.sources=[...r.sources,...r.health.sources].filter((s,i,a)=>a.findIndex(x=>x.url===s.url)===i);r.source=r.sources.find(s=>s.kind==='official')?.url||r.sources[0]?.url||'';r.fingerprint=fingerprint(r);
+   r.health=health(destination,c);try{r.health.travelHealthPro=travelHealth?.lookup?.(destination,c)||{status:'unavailable',url:'https://travelhealthpro.org.uk/countries'};}catch{r.health.travelHealthPro={status:'unavailable',url:'https://travelhealthpro.org.uk/countries'};}
+   r.sources=[...r.sources,...r.health.sources,...(r.health.travelHealthPro.certificates?[{name:'TravelHealthPro (NaTHNaC): '+r.health.travelHealthPro.name,url:r.health.travelHealthPro.url,kind:'health'}]:[])].filter((s,i,a)=>a.findIndex(x=>x.url===s.url)===i);r.source=r.sources.find(s=>s.kind==='official')?.url||r.sources[0]?.url||'';r.fingerprint=fingerprint(r);
    if(cache.size>=300)cache.delete(cache.keys().next().value);cache.set(key,{value:structuredCopy(r),expires:Date.now()+10*60000});return r;
  }
  const structuredCopy=value=>JSON.parse(JSON.stringify(value));
@@ -85,7 +87,7 @@
    const days=validDate(stay.start)&&validDate(stay.end)?Math.round((Date.parse(stay.end)-Date.parse(stay.start))/day)+1:null;
    const transit=[];
    if(arrivals.length===1){const arrival=arrivals[0],legs=arrival.transport.type==='flight'?arrival.transport.legs||[]:[];for(let i=0;i<arrival.index;i++){const country=legs[i].end?.countryCode;if(country&&country!==stay.countryCode){const end=legs[i].endLocal||'',start=legs[i+1]?.startLocal||'',explicit=/[Zz]|[+-]\d{2}:\d{2}$/.test(end)&&/[Zz]|[+-]\d{2}:\d{2}$/.test(start),hours=explicit?(Date.parse(start)-Date.parse(end))/3600000:null;transit.push({country,hours:Number.isFinite(hours)&&hours>=0?hours:null});}}}
-   return {profile,trip,passport,options:{transit,...(stay.entryContext||{}),days:stay.entryContext?.daysOverride?stay.entryContext.days:days,arrivingFrom:stay.entryContext?.arrivingFromOverride?stay.entryContext.arrivingFrom:arrivingFrom,travelDate:stay.entryContext?.travelDateOverride?stay.entryContext.travelDate:stay.start}};
+   return {profile,trip,passport,options:{transit,healthLocation:[stay.location,stay.place?.city,stay.place?.area,stay.place?.region,stay.place?.state,stay.place?.countryName].filter(Boolean).join(', '),...(stay.entryContext||{}),days:stay.entryContext?.daysOverride?stay.entryContext.days:days,arrivingFrom:stay.entryContext?.arrivingFromOverride?stay.entryContext.arrivingFrom:arrivingFrom,travelDate:stay.entryContext?.travelDateOverride?stay.entryContext.travelDate:stay.start}};
  }
  const api={lookup,refresh,context,forStay,fingerprint,checked,schengen,datasetRecord,coverage:()=>({passports:dataset.codes.length,routes:dataset.codes.length*(dataset.codes.length-1),updated:dataset.source.updated,retrieved:dataset.source.retrieved}),clearCache:()=>cache.clear()};
  if(node)module.exports=api;else root.HVEntryRules=api;
