@@ -12,30 +12,34 @@
 
   const ROUTES = {
     tools:'travel-tools', journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
-    stats: 'stats', homes: 'lived-in', settings: 'settings', schengen: 'schengen', planner: 'planner', rules: 'visa', profiles: 'people'
+    stats: 'stats', homes: 'lived-in', settings: 'settings', schengen: 'travel-tools/schengen', planner: 'plan-a-trip', stayPlanner: 'travel-tools/stay-planner', rules: 'travel-tools/entry-requirements', profiles: 'people'
   };
-  const ROUTE_TO_VIEW = Object.fromEntries(Object.entries(ROUTES).map(([view, route]) => [route, view]));
+  // Existing utility bookmarks still open the same maintained tool.
+  const ROUTE_TO_VIEW = {
+    ...Object.fromEntries(Object.entries(ROUTES).map(([view, route]) => [route, view])),
+    planner: 'stayPlanner', visa: 'rules', rules: 'rules', schengen: 'schengen'
+  };
   const VIEW_TITLES = {
     tools:'Travel Tools', journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
-    stats: 'Travel statistics', homes: 'Home bases', settings: 'Preferences', schengen: 'Schengen planner', planner: 'Plan a trip', rules: 'Entry rules', profiles: 'People & passports'
+    stats: 'Travel statistics', homes: 'Home bases', settings: 'Preferences', schengen: 'Schengen calculator', planner: 'Plan a Trip', stayPlanner: 'Stay planner', rules: 'Entry Requirements', profiles: 'People & passports'
   };
   const WORKSPACES = {
     home: { label: 'Home', icon: 'dashboard', view: 'dashboard' },
     trips: { label: 'Calendar', icon: 'calendar', view: 'calendar' },
     journeys: {label:'Journey Map',icon:'map',view:'journeys'},
     atlas: { label: 'Atlas', icon: 'map', view: 'map' },
-    plan: { label: 'Plan a trip', icon: 'planner', view: 'planner' },
+    plan: { label: 'Plan a Trip', icon: 'planner', view: 'planner' },
     tools: { label: 'Travel Tools', icon: 'settings', view: 'tools' },
     account: { label: 'Account', icon: 'profiles', view: 'profiles' }
   };
   const VIEW_WORKSPACE = {
     tools:'tools', journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
-    planner: 'plan', rules: 'plan', schengen: 'plan', profiles: 'account', homes: 'account', settings: 'account'
+    planner: 'plan', stayPlanner: 'tools', rules: 'tools', schengen: 'tools', profiles: 'account', homes: 'account', settings: 'account'
   };
   const WORKSPACE_TABS = {
     trips: ['calendar', 'stays', 'journeys'],
     atlas: ['map', 'countries', 'places', 'stats'],
-    plan: ['planner', 'rules', 'schengen'],
+    tools: ['tools', 'stayPlanner', 'rules', 'schengen'],
     account: ['profiles', 'homes', 'settings']
   };
   const ACCOUNT_TITLES = {
@@ -205,7 +209,8 @@
 
   function setRoute(view, replace = false) {
     const route = view==='country' ? 'country/'+(location.hash.match(/country\/([A-Z]{2,3})/i)?.[1]||'').toUpperCase() : ROUTES[view] || 'dashboard';
-    const target = `${location.pathname}${location.search}#/${route}`;
+    const suffix = routeFromHash() === view ? location.hash.match(/[?&].*$/)?.[0] || '' : '';
+    const target = `${location.pathname}${location.search}#/${route}${suffix}`;
     if (`${location.pathname}${location.search}${location.hash}` === target) return;
     history[replace ? 'replaceState' : 'pushState']({ heraldVoyagesView: view }, '', target);
   }
@@ -234,13 +239,13 @@
   function navigateToView(view, { replace = false, fromHistory = false } = {}) {
     if (!ROUTES[view]) view = 'dashboard';
     try {
-      if (typeof window.switchView === 'function') window.switchView(view);
+      if (typeof window.switchView === 'function') window.switchView(view, { replaceRoute: replace || fromHistory });
       else q(`.nav-item[data-view="${view}"]`)?.click();
     } catch (_) {
       q(`.nav-item[data-view="${view}"]`)?.click();
     }
     applyViewChrome(view);
-    if (!fromHistory) setRoute(view, replace);
+    setRoute(view, replace || fromHistory);
   }
 
   function installRouting() {
@@ -362,12 +367,12 @@
     Object.entries(WORKSPACE_TABS).forEach(([workspace, views]) => {
       views.forEach((view) => {
         const host = $(`${view}View`);
-        if (!host || q('.workspace-tabs', host)) return;
+        if (!host || view === 'tools' || q('.workspace-tabs', host)) return;
         const tabs = document.createElement('nav');
         tabs.className = 'workspace-tabs';
         tabs.dataset.workspace = workspace;
         tabs.setAttribute('aria-label', `${WORKSPACES[workspace].label} sections`);
-        tabs.innerHTML = views.map((tabView) => `<button type="button" data-workspace-view="${tabView}">${VIEW_TITLES[tabView]}</button>`).join('');
+        tabs.innerHTML = views.map((tabView) => `<button type="button" data-workspace-view="${tabView}">${tabView === 'tools' ? 'Overview' : VIEW_TITLES[tabView]}</button>`).join('');
         tabs.addEventListener('click', (event) => {
           const button = event.target.closest('[data-workspace-view]');
           if (button) navigateToView(button.dataset.workspaceView);
@@ -410,7 +415,7 @@
       mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.append(target);target.classList.add('active');}
     };
     const previous=window.switchView;
-    window.switchView=function(view){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view);window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
+    window.switchView=function(view,{replaceRoute=false}={}){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view,replaceRoute);window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
     window.HVPages.mount(routeFromHash()||'dashboard');
   }
 
@@ -477,7 +482,7 @@
     const regions=HVAtlas.progress(universe,new Set(visited.map(c=>c.code))),continents=new Set(records.map(s=>HVAtlas.region(s.countryCode)).filter(r=>r!=='Other locations'));
     const today=isoDate(new Date()),year=today.slice(0,4),thisYear=new Set(records.filter(s=>s.start<=`${year}-12-31`&&s.end>=`${year}-01-01`).map(s=>s.countryCode).filter(c=>c!=='SEA'));
     $('atlasOverview').innerHTML=featured
-      ? `<section class="home-hero home-hero--trip"><div><p class="eyebrow">${featuredLabel}</p><h2>${escapeHtml(state.trips.find(t=>t.id===featured.tripId)?.name||countryByCode(featured.countryCode)?.name||featured.countryName)}</h2><p>${friendlyDate(featuredDates[0])} to ${friendlyDate(featuredDates.at(-1))}</p></div><div class="home-hero-actions"><a class="primary" href="#/trips">Open trip</a><a class="secondary" href="#/planner">Plan another trip</a></div></section>`
+      ? `<section class="home-hero home-hero--trip"><div><p class="eyebrow">${featuredLabel}</p><h2>${escapeHtml(state.trips.find(t=>t.id===featured.tripId)?.name||countryByCode(featured.countryCode)?.name||featured.countryName)}</h2><p>${friendlyDate(featuredDates[0])} to ${friendlyDate(featuredDates.at(-1))}</p></div><div class="home-hero-actions"><a class="primary" href="#/trips">Open trip</a><a class="secondary" href="#/travel-tools/stay-planner">Plan another trip</a></div></section>`
       : `<section class="home-hero home-hero--empty"><div><p class="eyebrow">TRAVEL, MADE SIMPLE</p><h2>One calm place for every journey.</h2><p>Plan what is next, log where you have been, and let Herald keep the practical details together.</p></div><div class="home-hero-actions"><button type="button" class="primary" data-plan-trip>Plan a trip</button><button type="button" class="secondary" data-add-first-trip data-trip-intent="actual">Log a past trip</button></div></section>`;
     renderTravelMemory(todayDate);
     $('dashboardGaps').closest('.panel').hidden=!(staysForProfile().length||(state.transports||[]).length);

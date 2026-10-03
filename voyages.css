@@ -2668,6 +2668,33 @@ body[data-current-view=calendar] #addStayBtn { display:none }
 .travel-tools-navigation summary { cursor:pointer; width:fit-content; }
 .travel-tools-navigation small { margin-left:6px; font-size:10px; }
 .travel-tools-navigation > div { display:flex; flex-wrap:wrap; gap:16px; padding:10px 0; }
+.travel-tool-links { display:grid; margin-top:20px; }
+.travel-tool-link { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:16px; padding:18px 0; border-bottom:1px solid var(--hv-line); color:var(--hv-ink); text-decoration:none; }
+.travel-tool-link strong { display:block; font-size:16px; font-weight:600; }
+.travel-tool-link small { display:block; margin-top:5px; max-width:70ch; color:var(--hv-muted); font-size:14px; line-height:1.6; }
+.travel-tool-link > span:last-child { color:var(--hv-blue); }
+.travel-tool-link:hover strong { color:var(--hv-blue); }
+.travel-tools-upcoming { margin-top:24px; }
+.travel-tools-list { display:flex; flex-wrap:wrap; gap:16px 24px; margin-top:12px; }
+.travel-tools-list button { min-height:44px; text-align:left; }
+.travel-tools-list small { display:inline-block; margin-left:6px; color:var(--hv-muted); font-size:11px; font-weight:400; }
+.personal-planning header .panel-copy { max-width:72ch; margin-top:12px; }
+.personal-planning-status { margin:24px 0 16px; padding:12px 16px; border-left:2px solid var(--hv-blue); background:var(--blue-soft); color:var(--hv-blue); font-size:14px; line-height:1.6; }
+.personal-planning-services { margin-top:24px; }
+.personal-planning-service { display:grid; grid-template-columns:minmax(170px,1fr) minmax(0,2.6fr); gap:24px; padding:22px 0; border-top:1px solid var(--hv-line); }
+.personal-planning-service h3 { margin:0; font-size:17px; font-weight:600; }
+.personal-planning-level { margin:6px 0 0; color:var(--hv-blue); font-size:14px; }
+.personal-planning-service > p { margin:0; color:var(--hv-muted); font-size:15px; line-height:1.7; }
+.personal-planning .atlas-text-link { display:inline-block; white-space:nowrap; }
+body[data-current-view=planner] #addStayBtn { display:none; }
+@media(max-width:760px) {
+  .workspace-tabs[data-workspace=tools] { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workspace-tabs[data-workspace=tools] button { text-align:left; }
+}
+@media(max-width:600px) {
+  .personal-planning-service { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .travel-tools-list { flex-direction:column; align-items:flex-start; gap:8px; }
+}
 @media(min-width:1081px) { .sidebar .brand { width:190px; min-width:190px; flex:0 0 190px; } }
 #atlasCountryDirectory { max-width:860px; }
 a.atlas-country { display:grid; grid-template-columns:minmax(0,1fr) 140px 18px; align-items:center; gap:12px; padding:9px 0; color:var(--hv-muted); text-decoration:none; font-size:12px; }

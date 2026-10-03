@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
-  <link rel="stylesheet" href="voyages.css?v=master-complete-20261002" />
+  <link rel="stylesheet" href="voyages.css?v=travel-tools-20261003" />
   <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=health-water-20261003" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 </head>
@@ -28,8 +28,8 @@
         <button class="nav-item" data-view="map"><span>◉</span>Map & timeline</button>
         <button class="nav-item" data-view="countries"><span>◎</span>Countries</button>
         <button class="nav-item" data-view="schengen"><span>◌</span>Schengen</button>
-        <button class="nav-item" data-view="planner"><span>↗</span>Trip planner</button>
-        <button class="nav-item" data-view="rules"><span>⌕</span>Visa checker</button>
+        <button class="nav-item" data-view="planner"><span>↗</span>Plan a Trip</button>
+        <button class="nav-item" data-view="tools"><span>⌕</span>Travel Tools</button>
         <button class="nav-item" data-view="stays"><span>≡</span>All stays</button>
         <button class="nav-item" data-view="profiles"><span>♙</span>Profiles & data</button>
       </nav>
@@ -82,7 +82,7 @@
         <article class="panel warning-panel" id="schengenAlertPanel">
           <div class="warning-icon">!</div>
           <div><p class="eyebrow">SCHENGEN WATCH</p><h2 id="alertTitle">You're comfortably within the limit</h2><p id="alertBody">Add your travel dates and this will automatically warn you as your rolling allowance gets tight.</p></div>
-          <button class="secondary" data-go-view="planner">Plan a Schengen entry</button>
+          <button class="secondary" data-go-view="stayPlanner">Plan a Schengen entry</button>
         </article>
 
         <article class="panel" id="dashboardGapPanel">
@@ -91,7 +91,25 @@
         </article>
       </section>
 
-      <section id="toolsView" class="view" aria-label="Travel Tools"></section>
+      <section id="toolsView" class="view" aria-label="Travel Tools">
+        <article class="panel">
+          <p class="eyebrow">TRAVEL TOOLS</p><h2>Useful tools for your next journey</h2>
+          <p class="panel-copy">Plan your own trip with Herald’s self-service travel tools.</p>
+          <nav class="travel-tool-links" aria-label="Self-service travel tools">
+            <a class="travel-tool-link" href="#/travel-tools/stay-planner"><span><strong>Stay planner</strong><small>Plan destination dates and check your available Schengen stay before adding a trip to your calendar.</small></span><span aria-hidden="true">→</span></a>
+            <a class="travel-tool-link" href="#/travel-tools/entry-requirements"><span><strong>Entry Requirements</strong><small>Check visa requirements, entry guidance and destination health information for your passport.</small></span><span aria-hidden="true">→</span></a>
+            <a class="travel-tool-link" href="#/travel-tools/schengen"><span><strong>Schengen calculator</strong><small>Check your recorded days, remaining allowance and rolling 90/180-day window.</small></span><span aria-hidden="true">→</span></a>
+          </nav>
+          <div class="travel-tools-upcoming">
+            <p class="eyebrow">IN DEVELOPMENT</p>
+            <div class="travel-tools-list">
+              <button class="text-btn" type="button" data-coming-tool="0">Road Trip Planner <small>Coming Soon</small></button>
+              <button class="text-btn" type="button" data-coming-tool="1">Budget Planner <small>Coming Soon</small></button>
+              <button class="text-btn" type="button" data-coming-tool="2">Currency Converter <small>Coming Soon</small></button>
+            </div>
+          </div>
+        </article>
+      </section>
       <section id="statsView" class="view" aria-label="Statistics"><div id="atlasStatistics"></div></section>
       <section id="homesView" class="view" aria-label="Lived In"></section>
       <section id="placesView" class="view"><article class="panel"><h2>Your places</h2><p class="helper">Individual place visits and your wish list. Country stays do not automatically imply visits to attractions.</p><div id="personalPlaces"></div></article></section>
@@ -171,10 +189,37 @@
         </div>
       </section>
 
-      <section id="plannerView" class="view">
+      <section id="plannerView" class="view" aria-label="Plan a Trip">
+        <article class="panel personal-planning">
+          <header>
+            <p class="eyebrow">PERSONAL TRAVEL PLANNING</p>
+            <h2>Want help putting your trip together?</h2>
+            <p class="panel-copy">Herald’s personal trip-planning service is being developed to help travellers turn an idea into a realistic itinerary. The idea is for me to plan each itinerary personally, around your trip.</p>
+          </header>
+          <p class="personal-planning-status">Personal trip planning is currently being developed. More details will be available soon.</p>
+          <p class="panel-copy">These are the current ideas for the service, with the details still being worked out.</p>
+          <div class="personal-planning-services">
+            <section class="personal-planning-service" aria-labelledby="basicPlanTitle">
+              <div><h3 id="basicPlanTitle">Basic Plan</h3><p class="personal-planning-level">Free</p></div>
+              <p>A useful basic day-by-day itinerary covering where to go, the order and days to visit each place, and things worth doing.</p>
+            </section>
+            <section class="personal-planning-service" aria-labelledby="fullItineraryTitle">
+              <div><h3 id="fullItineraryTitle">Full Itinerary</h3><p class="personal-planning-level">£100</p></div>
+              <p>A detailed, personally researched trip plan with suggested flights and accommodation, departure and arrival timings, realistic travel times, airport information, trains, buses and ferries where relevant. It would also cover local transport, transfers, activities, guides or tours, and what to book in advance.</p>
+            </section>
+            <section class="personal-planning-service" aria-labelledby="fullBookingTitle">
+              <div><h3 id="fullBookingTitle">Full Trip Booking</h3><p class="personal-planning-level">Coming later</p></div>
+              <p>A possible future option where I may also be able to arrange the bookings for your trip for an additional fee. The details and fee are still to be confirmed.</p>
+            </section>
+          </div>
+          <p class="helper">Planning your own trip? <a class="atlas-text-link" href="#/travel-tools">Open Travel Tools <span aria-hidden="true">→</span></a></p>
+        </article>
+      </section>
+
+      <section id="stayPlannerView" class="view" aria-label="Stay planner">
         <div class="planner-layout">
           <article class="panel planner-card">
-            <p class="eyebrow">BEFORE YOU BOOK</p><h2>Trip planner</h2><p class="panel-copy">Pick a destination and entry date. For Schengen, the planner tells you the maximum continuous stay, your safe departure date and when a one-day re-entry becomes possible after using the full allowance.</p>
+            <p class="eyebrow">BEFORE YOU BOOK</p><h2>Stay planner</h2><p class="panel-copy">Pick a destination and entry date. For Schengen, the planner tells you the maximum continuous stay, your safe departure date and when a one-day re-entry becomes possible after using the full allowance.</p>
             <label class="field"><span>Traveller</span><select id="plannerProfile"></select></label>
             <label class="field"><span>Destination country</span><input id="plannerCountry" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
             <div class="form-grid"><label class="field"><span>Entry date</span><input type="date" id="plannerEntry" /></label><label class="field"><span>Planned departure <em>optional</em></span><input type="date" id="plannerExit" /></label></div>
@@ -292,6 +337,6 @@
   <script src="account-model.js?v=rollback-20261001-1"></script>
   <script src="account-client.js?v=rollback-20261001-1"></script>
   <script src="account-sync.js?v=rollback-20261001-1"></script>
-  <script src="app.js?v=health-water-20261003"></script>
+  <script src="app.js?v=travel-tools-20261003"></script>
 </body>
 </html>

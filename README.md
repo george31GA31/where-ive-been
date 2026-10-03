@@ -15,7 +15,7 @@ A local-first personal travel atlas for trips, countries, travel days, home peri
 - `theme.js` retains the existing light/dark preference key and uses the supplied trumpet artwork.
 - `assets/herald-trumpet.png` is the supplied logo, unchanged. The masthead uses this fourth supplied image in place of the inspiration page's globe.
 
-Routes: Dashboard (default), Map, Trips, Countries, Calendar, Schengen, Statistics, Lived In, Trip Planner, Entry Requirements, Travel Tools, People and Settings. Account pages remain separately addressable HTML documents.
+Routes: Dashboard (default), Map, Trips, Countries, Calendar, Schengen, Statistics, Lived In, Plan a Trip, Travel Tools (Stay planner, Entry Requirements and Schengen calculator), People and Settings. Account pages remain separately addressable HTML documents.
 
 Desktop links become a floating island after scrolling. Mobile uses the same primary areas through a bottom navigation bar, including Tools. Motion respects reduced-motion preferences.
 
@@ -63,3 +63,9 @@ Replacing repository files does not intentionally delete browser or account trav
 ## Public-release checklist
 
 Before announcing a production release, make sure GitHub secret scanning/push protection, branch rules, HTTPS and private vulnerability reporting are enabled in repository settings, and apply `supabase-hardening.sql` to any existing Supabase project.
+
+### Personal planning and self-service tools
+
+Plan a Trip (`#/plan-a-trip`) introduces the personal travel-planning service in development: a free basic plan, a proposed £100 full itinerary and a possible booking service with details and fee unconfirmed. It has no intake, generation, payment or booking system.
+
+Travel Tools (`#/travel-tools`) is the home for the existing working utilities. Stay planner uses `#/travel-tools/stay-planner`, Entry Requirements (including health guidance) uses `#/travel-tools/entry-requirements`, and the Schengen calculator uses `#/travel-tools/schengen`. Old `#/planner`, `#/visa`, `#/rules` and `#/schengen` links are replaced with their corresponding tool URL, including query suffixes, without adding duplicate history entries. The planner keeps its original handlers and element IDs and adds planned records to the same stays collection. No storage keys, saved-data schemas or account/sync code change. Existing Road Trip Planner, Budget Planner and Currency Converter coming-soon items remain.
