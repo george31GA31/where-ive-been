@@ -178,15 +178,18 @@
       const allTransport=HVJourney.visibleTransport(state).filter(t=>!HVJourney.hiddenHomeRecord(state,t)&&HVJourney.transportDates(t).includes(date));
       const dayStays=layers.countries?scoped(state.stays).filter(s=>s.status!=='cancelled'&&s.start<=date&&s.end>=date&&HVJourney.isTravelStay(state,s,date)):[];
       const countries=HVCalendarLayout.countries(dayStays,allTransport,date);
+      const visibleCountries=countries.slice(0,4),columns=countries.length>=4?2:Math.max(1,countries.length);
       const countryRows=[];
-      for(let n=0;n<countries.length;n+=3){
-        const chunk=countries.slice(n,n+3),pair=countries.length===2;
-        countryRows.push(`<div class="calendar-country-row ${pair?'calendar-country-pair':''} ${countries.length>1?'calendar-country-split':''}" style="grid-template-columns:${chunk.map(s=>`minmax(0,${pair?1:s.width}fr)`).join(' ')}">${chunk.map(({record:s})=>{
+      for(let n=0;n<visibleCountries.length;n+=columns){
+        const chunk=visibleCountries.slice(n,n+columns),split=countries.length>1;
+        countryRows.push(`<div class="calendar-country-row ${countries.length===2?'calendar-country-pair':''} ${split?'calendar-country-split':''} ${countries.length===3?'calendar-country-triple':''}" style="grid-template-columns:${chunk.map(s=>`minmax(0,${split?1:s.width}fr)`).join(' ')}">${chunk.map(({record:s})=>{
           const group=groups.find(g=>g.stays.some(x=>x.id===s.id));
           return `<div class="calendar-country-section"><button type="button" class="calendar-journey-chip" data-calendar-journey="${E(group?.key||stayKey(s.id))}" data-calendar-edit-country="${E(s.id)}" aria-label="${E(s.countryName)}${SCHENGEN.has(s.countryCode)?' · Schengen Area':''}" data-calendar-date="${date}" title="${E(s.countryName)}${s.location?' · '+E(s.location):''}">${flagHtml(s.domesticDestination||s.countryCode,'calendar-chip-flag')}<span class="calendar-journey-copy"><strong class="country-name-full">${E(s.countryName)}</strong><strong class="country-name-compact" aria-hidden="true">${E(s.domesticDestination?s.countryName.slice(0,3):s.countryCode)}</strong></span>${SCHENGEN.has(s.countryCode)?'<span class="calendar-schengen in" role="img" aria-label="Schengen Area" title="Schengen Area">'+(countries.length===1?'S':'')+'</span>':''}</button>${window.HVVisaNotices?.indicator(s)||''}</div>`;
         }).join('')}</div>`);
       }
-      const chips=countryRows.join('');
+      const extraCountries=countries.slice(4).map(({record})=>record);
+      const moreCountries=extraCountries.length?`<button type="button" class="calendar-more-countries" data-calendar-more-countries="${E(JSON.stringify(extraCountries.map(s=>s.id)))}" aria-label="${E(extraCountries.length+' more countries: '+extraCountries.map(s=>s.countryName).join(', '))}" title="${E(extraCountries.map(s=>s.countryName).join(', '))}">+${extraCountries.length} countries</button>`:'';
+      const chips=countryRows.join('')+moreCountries;
       const transportChips=layers.transport?allTransport.map(t=>{const fullLabel=HVJourneys.transportLabel(t),cellLabel=t.type==='flight'?HVJourney.flightLegs(t).flatMap((leg,index)=>index?[HVJourney.airportLabel(leg.end,HVJourneys.airportFor)]:[HVJourney.airportLabel(leg.start,HVJourneys.airportFor),HVJourney.airportLabel(leg.end,HVJourneys.airportFor)]).filter(Boolean).join(' → '):fullLabel;return `<button type="button" class="calendar-day-transport" aria-label="${E(fullLabel)}" data-calendar-edit-transport="${E(t.id)}" title="${E(fullLabel)}"><span class="calendar-transport-cue" aria-hidden="true">${transportIcon(t.type)}</span><span class="calendar-route-label">${E(cellLabel)}</span></button>`;}).join(''):'';
       const stays=layers.accommodation?scoped(state.accommodations).filter(a=>!HVJourney.hiddenHomeRecord(state,a)&&!state.trips.some(t=>t.id===a.tripId&&t.status==='cancelled')):[];
       const segments=HVCalendarLayout.lodging(stays,date);
@@ -232,7 +235,7 @@
       const bottom=()=>Math.max(...[...day.querySelectorAll('.calendar-day-top,.calendar-journeys,.calendar-place-row,.calendar-day-markers:has(*)')].map(n=>n.getBoundingClientRect().bottom));
       const limit=()=>{const style=getComputedStyle(day);return day.getBoundingClientRect().bottom-parseFloat(style.paddingBottom)-(parseFloat(style.borderBottomWidth)||0);};
       for(const row of day.querySelectorAll('.calendar-country-row')){
-        if(row.classList.contains('calendar-country-pair'))continue;
+        if(row.classList.contains('calendar-country-split'))continue;
         const sections=[...row.children],needs=sections.map(section=>{const label=section.querySelector('.country-name-full'),chip=section.querySelector('button'),style=getComputedStyle(chip);return natural(label)+parseFloat(style.paddingLeft)+parseFloat(style.paddingRight)+(section.querySelector('.calendar-chip-flag')?.getBoundingClientRect().width||0)+(parseFloat(style.columnGap)||0)+1;});
         row.style.gridTemplateColumns=needs.map(n=>`minmax(0,${Math.max(1,n)}fr)`).join(' ');
         if(sections.length>1&&needs.reduce((a,b)=>a+b,0)>row.clientWidth){row.style.gridTemplateColumns='minmax(0,1fr)';if(bottom()>limit())row.style.gridTemplateColumns=needs.map(n=>`minmax(0,${Math.max(1,n)}fr)`).join(' ');}
