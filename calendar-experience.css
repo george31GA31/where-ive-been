@@ -996,7 +996,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 
 
 
-#calendarView .calendar-country-row:where(:not(.calendar-country-pair)):has(.calendar-country-section:nth-child(2)) .calendar-journey-chip {
+#calendarView .calendar-country-row:where(:not(.calendar-country-split)):has(.calendar-country-section:nth-child(2)) .calendar-journey-chip {
   gap:3px;
   padding-inline:6px;
 }
@@ -1013,15 +1013,15 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   flex-basis:10px;
 }
 
-/* Exactly two countries keep their chronological slots and the usual flag size. */
-#calendarView .calendar-country-pair .calendar-journey-copy { display:none; }
-#calendarView .calendar-country-row.calendar-country-pair .calendar-journey-chip {
+/* Multiple countries keep chronological slots and show only their flags. */
+#calendarView .calendar-country-split .calendar-journey-copy { display:none; }
+#calendarView .calendar-country-row.calendar-country-split .calendar-journey-chip {
   justify-content:center;
   gap:0;
   height:23px;
   min-height:23px;
 }
-#calendarView .calendar-country-row.calendar-country-pair .calendar-chip-flag {
+#calendarView .calendar-country-row.calendar-country-split .calendar-chip-flag {
   width:15px!important;
   min-width:15px;
   height:10px!important;
@@ -1420,7 +1420,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
     min-height:21px;
   }
 
-  #calendarView .calendar-country-row.calendar-country-pair .calendar-journey-chip {
+  #calendarView .calendar-country-row.calendar-country-split .calendar-journey-chip {
     height:21px;
     min-height:21px;
   }
@@ -1523,7 +1523,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
     flex-basis:9px;
   }
 
-  #calendarView .calendar-country-row:where(:not(.calendar-country-pair)):has(.calendar-country-section:nth-child(2)) .calendar-journey-chip,
+  #calendarView .calendar-country-row:where(:not(.calendar-country-split)):has(.calendar-country-section:nth-child(2)) .calendar-journey-chip,
   #calendarView .calendar-country-row:has(.calendar-country-section:nth-child(3)) .calendar-journey-chip {
     gap:1px;
     padding-inline:3px;
@@ -1534,18 +1534,18 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
     letter-spacing:-.03em;
   }
 
-  #calendarView .calendar-country-row.calendar-country-pair .calendar-journey-chip {
+  #calendarView .calendar-country-row.calendar-country-split .calendar-journey-chip {
     height:15px;
     min-height:15px;
     padding-inline:1px;
   }
-  #calendarView .calendar-country-row.calendar-country-pair .calendar-chip-flag {
+  #calendarView .calendar-country-row.calendar-country-split .calendar-chip-flag {
     width:9px!important;
     min-width:9px;
     height:6px!important;
     flex-basis:9px;
   }
-  #calendarView .calendar-country-pair .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip {
+  #calendarView .calendar-country-split .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip {
     padding-right:7px!important;
   }
 
@@ -1874,6 +1874,52 @@ html[data-theme=dark] #calendarView { --calendar-schengen-blue:#80aaff; }
 #rulesView .visa-profile-hint button { color:var(--hv-blue); }
 html[data-theme=dark] .entry-uncertainty { color:var(--amber); }
 html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--hv-red) 65%,var(--hv-ink)); }
+/* Extra countries use the existing floating details without expanding a day. */
+#calendarView .calendar-more-countries {
+  display:block;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  margin:0 0 3px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:none;
+  color:var(--hv-muted);
+  font:inherit;
+  font-size:9px;
+  line-height:12px;
+  text-align:left;
+  white-space:normal;
+  cursor:pointer;
+}
+#calendarView .calendar-more-countries:hover { color:var(--hv-ink); }
+#calendarView .calendar-day-dense .calendar-country-row.calendar-country-split:not(.calendar-country-pair) .calendar-journey-chip { height:14px; min-height:14px; }
+#calendarView .calendar-day-dense .calendar-country-row.calendar-country-split:not(.calendar-country-pair) .calendar-chip-flag { width:11px!important; min-width:11px; height:7px!important; flex-basis:11px; }
+.calendar-extra-countries-detail { pointer-events:auto; }
+.calendar-extra-country-list { list-style:none; margin:8px 0 0; padding:0; }
+.calendar-extra-country-list li { display:flex; align-items:center; gap:8px; margin:6px 0; }
+.calendar-extra-country-list .calendar-chip-flag { width:18px; height:12px; flex:none; }
+@media (max-width:1100px) {
+  #calendarView .calendar-country-triple .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip { align-items:flex-end; padding:0 0 0 3px!important; }
+  #calendarView .calendar-country-triple .calendar-country-section:has(.calendar-visa-notice) .calendar-chip-flag { align-self:flex-end; }
+  #calendarView .calendar-country-triple .calendar-visa-notice { top:1px; }
+  #calendarView .calendar-day-dense .calendar-country-triple .calendar-visa-notice { width:5px; height:5px; font-size:5px; }
+}
+@media (max-width:700px) {
+  #calendarView .calendar-more-countries { margin-bottom:2px; font-size:6.5px; line-height:9px; letter-spacing:-.03em; }
+  #calendarView .calendar-day-dense:has(.calendar-more-countries) .calendar-country-row { margin-bottom:0; }
+  #calendarView .calendar-day.calendar-day-dense:has(.calendar-more-countries) .calendar-country-row.calendar-country-split .calendar-journey-chip { height:8px; min-height:8px; }
+  #calendarView .calendar-day-dense .calendar-more-countries { margin-bottom:0; font-size:6.5px; line-height:7px; }
+  #calendarView .calendar-day-dense .calendar-country-row.calendar-country-split:not(.calendar-country-pair) .calendar-journey-chip { height:10px; min-height:10px; }
+  #calendarView .calendar-day-dense .calendar-country-row.calendar-country-split:not(.calendar-country-pair) .calendar-chip-flag { width:7px!important; min-width:7px; height:5px!important; flex-basis:7px; }
+  #calendarView .calendar-country-row.calendar-country-triple .calendar-chip-flag { width:7px!important; min-width:7px; height:5px!important; flex-basis:7px; }
+  #calendarView .calendar-country-triple .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip { align-items:flex-end; padding:0 0 1px 2px!important; }
+  #calendarView .calendar-country-triple .calendar-country-section:has(.calendar-visa-notice) .calendar-chip-flag { align-self:flex-end; }
+  #calendarView .calendar-country-triple .calendar-visa-notice { top:1px; right:1px; width:5px; height:5px; font-size:5px; }
+  #calendarView .calendar-day-dense .calendar-country-split:not(.calendar-country-pair) .calendar-visa-notice { top:1px; width:5px; height:5px; font-size:5px; }
+  #calendarView .calendar-day-dense .calendar-country-triple .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip { height:13px; min-height:13px; }
+}
 @media (max-width:700px) {
   #calendarView .calendar-schengen.in { width:5px; font-size:8px; }
   #calendarView .calendar-country-split .calendar-schengen.in { width:2px; }
