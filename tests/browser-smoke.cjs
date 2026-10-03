@@ -51,7 +51,7 @@ let browser;
     await page.locator('[data-calendar-journey="trip:alps"]').first().click();
     assert.ok(await page.locator('#stayDialog[open]').count(),'Existing country entry opens directly for editing');assert.equal(await page.locator('#stayTripSelect').isVisible(),false);await page.evaluate(()=>document.querySelector('#stayDialog').close());
     assert.equal(await page.locator('.calendar-day').first().evaluate(el=>getComputedStyle(el).borderBottomWidth),'1px','Normal cell borders remain');
-    assert.equal(await page.locator('.calendar-schengen').first().innerText(),'','Schengen is a small labelled dot');
+    assert.equal(await page.locator('.calendar-schengen').first().innerText(),'S','An unsplit Schengen country has the labelled blue marker');
     const dateButton=page.locator('[data-calendar-date-select="2026-09-01"]');await dateButton.focus();await page.keyboard.press('Enter');await dateButton.focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#tripPlannerDialog[open]').count(),0,'Selecting a range keeps the editor on the Calendar');assert.ok(await page.locator('.selection-start').count(),'Date range remains highlighted');assert.ok(await page.locator('[data-calendar-date-action="country"]').count(),'Date panel offers a country action');
    }
    await page.screenshot({path:path.join(out,`${route.replace('/','-')}-${width}-${theme}.png`),fullPage:true});scenes++;

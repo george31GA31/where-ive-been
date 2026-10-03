@@ -12,20 +12,29 @@
         "IE"
       ],
       "status": "conditional-exemption",
-      "text": "British and Irish citizens can travel under the Common Travel Area. Carry identification accepted by your carrier.",
+      "text": "British and Irish citizens do not need a tourist visa to travel between the UK and Ireland under the Common Travel Area. Carry identification accepted by your carrier.",
       "sources": [
         {
-          "name": "UK government entry guidance",
+          "name": "UK government: Common Travel Area citizenship rights",
+          "url": "https://www.gov.uk/government/publications/common-travel-area-guidance/common-travel-area-guidance",
+          "kind": "official",
+          "checked": "2026-10-03"
+        },
+        {
+          "name": "UK government entry guidance for Ireland",
           "url": "https://www.gov.uk/foreign-travel-advice/ireland/entry-requirements",
           "kind": "official",
           "checked": "2026-10-02"
         }
       ],
-      "checked": "2026-10-02",
+      "checked": "2026-10-03",
       "refreshDays": 30,
       "purposes": [
         "tourism",
-        "business"
+        "business",
+        "work",
+        "study",
+        "transit"
       ],
       "title": "Entry under the Common Travel Area",
       "stay": "Common Travel Area citizenship rights apply; no short-visit visa limit is stated here"
@@ -39,22 +48,140 @@
         "GB"
       ],
       "status": "conditional-exemption",
-      "text": "Irish citizens can travel under the Common Travel Area. Carry identification accepted by your carrier.",
+      "text": "British and Irish citizens do not need a tourist visa to travel between the UK and Ireland under the Common Travel Area. Carry identification accepted by your carrier.",
       "sources": [
         {
-          "name": "UK government entry guidance",
+          "name": "UK government: Common Travel Area citizenship rights",
+          "url": "https://www.gov.uk/government/publications/common-travel-area-guidance/common-travel-area-guidance",
+          "kind": "official",
+          "checked": "2026-10-03"
+        },
+        {
+          "name": "UK government entry guidance for Ireland",
           "url": "https://www.gov.uk/foreign-travel-advice/ireland/entry-requirements",
           "kind": "official",
           "checked": "2026-10-02"
         }
       ],
-      "checked": "2026-10-02",
+      "checked": "2026-10-03",
       "refreshDays": 30,
       "purposes": [
-        "tourism"
+        "tourism",
+        "business",
+        "work",
+        "study",
+        "transit"
       ],
       "title": "Entry under the Common Travel Area",
       "stay": "Common Travel Area citizenship rights apply; no short-visit visa limit is stated here"
+    },
+    {
+      "id": "europe-free-movement",
+      "passports": [
+        "AT",
+        "BE",
+        "BG",
+        "HR",
+        "CY",
+        "CZ",
+        "DK",
+        "EE",
+        "FI",
+        "FR",
+        "DE",
+        "GR",
+        "HU",
+        "IE",
+        "IT",
+        "LV",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "PL",
+        "PT",
+        "RO",
+        "SK",
+        "SI",
+        "ES",
+        "SE",
+        "IS",
+        "LI",
+        "NO",
+        "CH"
+      ],
+      "destinations": [
+        "AT",
+        "BE",
+        "BG",
+        "HR",
+        "CY",
+        "CZ",
+        "DK",
+        "EE",
+        "FI",
+        "FR",
+        "DE",
+        "GR",
+        "HU",
+        "IE",
+        "IT",
+        "LV",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "PL",
+        "PT",
+        "RO",
+        "SK",
+        "SI",
+        "ES",
+        "SE",
+        "IS",
+        "LI",
+        "NO",
+        "CH"
+      ],
+      "status": "conditional-exemption",
+      "title": "No tourist visa required under free movement",
+      "text": "EU, EEA and Swiss citizens can make short visits within these countries without a tourist visa. Citizenship-based free movement differs from the Schengen visitor allowance.",
+      "stay": "Free-movement rights apply. Longer stays can involve local registration or residence conditions.",
+      "passport": {
+        "documents": "Carry a valid passport or accepted national identity card."
+      },
+      "purposes": [
+        "tourism",
+        "business"
+      ],
+      "checked": "2026-10-03",
+      "refreshDays": 30,
+      "sources": [
+        {
+          "name": "Your Europe: travel documents for EU nationals",
+          "url": "https://europa.eu/youreurope/citizens/travel/entry-exit/eu-citizen/index_en.htm",
+          "kind": "official",
+          "checked": "2026-10-03"
+        },
+        {
+          "name": "EU Council: entry controls for EU, EEA and Swiss citizens",
+          "url": "https://www.consilium.europa.eu/en/infographics/schengen-border-controls/",
+          "kind": "official",
+          "checked": "2026-10-03"
+        },
+        {
+          "name": "Ireland Immigration Service: EU, EEA and Swiss citizens",
+          "url": "https://www.irishimmigration.ie/eu-eea-country-or-switzerland/",
+          "kind": "official",
+          "checked": "2026-10-03"
+        },
+        {
+          "name": "Swiss migration authority: EU and EFTA entry",
+          "url": "https://www.sem.admin.ch/sem/en/home/overview-einreise.html",
+          "kind": "official",
+          "checked": "2026-10-03"
+        }
+      ]
     },
     {
       "id": "gb-schengen",

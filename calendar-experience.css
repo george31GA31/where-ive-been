@@ -1834,3 +1834,50 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 .entry-source-note ul,.entry-more ul { padding-left:18px; }
 .entry-dialog .dialog-card { max-width:660px; }
 @media (max-width:500px) { .entry-core-options { grid-template-columns:minmax(0,1fr); gap:0; } }
+
+/* Match the reference: a blue entry edge, with S only on unsplit country rows. */
+#calendarView { --calendar-schengen-blue:#1647a0; }
+html[data-theme=dark] #calendarView { --calendar-schengen-blue:#80aaff; }
+#calendarView .calendar-journey-chip:has(.calendar-schengen.in) {
+  box-shadow:inset 3px 0 var(--calendar-schengen-blue);
+}
+#calendarView .calendar-schengen.in {
+  color:var(--calendar-schengen-blue);
+  background:transparent;
+  right:2px;
+  width:7px;
+  min-width:0;
+  font-size:11px;
+  line-height:1;
+}
+#calendarView .calendar-country-row:not(.calendar-country-split) .calendar-journey-chip:has(.calendar-schengen.in) {
+  padding-right:13px;
+}
+#calendarView .calendar-country-row:not(.calendar-country-split) .calendar-country-section:has(.calendar-visa-notice) .calendar-schengen.in {
+  right:12px;
+}
+#calendarView .calendar-country-row:not(.calendar-country-split) .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip:has(.calendar-schengen.in) {
+  padding-right:23px!important;
+}
+#calendarView .calendar-country-split .calendar-schengen.in {
+  left:0;
+  right:auto;
+  top:0;
+  bottom:0;
+  width:3px;
+  background:var(--calendar-schengen-blue);
+}
+#calendarView .calendar-schengen-key b { color:var(--calendar-schengen-blue); }
+.entry-result .entry-health h4 { font-size:12px; font-weight:600; margin:5px 0; }
+.entry-visit-options .entry-core-options { margin-top:12px; }
+#rulesView .visa-data-status { background:var(--hv-soft); color:var(--hv-muted); }
+#rulesView .visa-profile-hint button { color:var(--hv-blue); }
+html[data-theme=dark] .entry-uncertainty { color:var(--amber); }
+html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--hv-red) 65%,var(--hv-ink)); }
+@media (max-width:700px) {
+  #calendarView .calendar-schengen.in { width:5px; font-size:8px; }
+  #calendarView .calendar-country-split .calendar-schengen.in { width:2px; }
+  #calendarView .calendar-country-row:not(.calendar-country-split) .calendar-journey-chip:has(.calendar-schengen.in) { padding-right:9px; }
+  #calendarView .calendar-country-row:not(.calendar-country-split) .calendar-country-section:has(.calendar-visa-notice) .calendar-schengen.in { right:9px; }
+  #calendarView .calendar-country-row:not(.calendar-country-split) .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip:has(.calendar-schengen.in) { padding-right:16px!important; }
+}

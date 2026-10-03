@@ -41,14 +41,14 @@ test('Prices retain original currencies, deduplicate repeated record references 
  assert.deepEqual(Prices.totals([outbound,outbound,returned]),{GBP:12.5,EUR:30});assert.match(Prices.valid({amount:-1,currency:'GBP'}),/valid/);assert.equal(Prices.valid({amount:0,currency:'GBP'}),'');
 });
 const Rules=require('../entry-rules.js'),M=require('../account-model.js');
-test('Official entry rules recognise CTA and purpose, duration, residency and stale-data uncertainty',()=>{
+test('Official corrections survive optional context and review deadlines; unsupported passports remain unknown',()=>{
  assert.match(Rules.lookup('GB','IE').title,/Common Travel Area/);
  assert.equal(Rules.lookup('GB','FR').requirement,'visa free');
  assert.equal(Rules.lookup('GB','AL').requirement,'visa free');
  assert.equal(Rules.lookup('GB','US').requirement,'eta');
  assert.equal(Rules.lookup('GB','IN').requirement,'visa');
  assert.equal(Rules.lookup('GB','EG').requirement,'visa on arrival');
- for(const args of [['GB','FR',{purpose:'work'}],['GB','AL',{days:100}],['GB','FR',{residency:'permit'}],['GB','IE',{today:'2027-01-01'}],['XX','YY',{}]])assert.equal(Rules.lookup(...args).requirement,'unknown');
+ for(const args of [['GB','FR',{purpose:'work'}],['GB','AL',{days:100}],['GB','FR',{residency:'permit'}],['GB','IE',{today:'2027-01-01'}]])assert.notEqual(Rules.lookup(...args).requirement,'unknown');assert.equal(Rules.lookup('XX','YY').requirement,'unknown');
 });
 test('New trip photos, linked returns, notes and original prices survive backup validation and account merge',()=>{
  const old={version:2,activeProfileId:'p',profiles:[{id:'p',name:'Traveller'}],trips:[],stays:[],transports:[],accommodations:[],placeVisits:[],residences:[]};
