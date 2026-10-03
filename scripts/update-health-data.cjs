@@ -3,13 +3,22 @@
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{execFile}=require('node:child_process'),{promisify}=require('node:util');
 const Parser=require('./travelhealthpro-parser.cjs'),curl=promisify(execFile),origin='https://travelhealthpro.org.uk',agent='HeraldVoyagesHealthUpdater/1.0 (+https://github.com/george31GA31/where-ive-been)';
 const output=path.resolve(__dirname,'../data/entry-requirements/travelhealthpro.js'),reportFile=path.resolve(__dirname,'../data/entry-requirements/health-refresh.json');
+function cachedPage(file,retrieved,url){
+ let descriptor;
+ try{
+  // Stat and read the same opened file, even if its path is replaced concurrently.
+  descriptor=fs.openSync(file,'r');if(fs.fstatSync(descriptor).mtime.toISOString().slice(0,10)!==retrieved)return null;
+  const html=fs.readFileSync(descriptor,'utf8');let metadata={};try{metadata=JSON.parse(fs.readFileSync(file+'.json','utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
+  return {status:200,html,url:metadata.url||url};
+ }catch(error){if(error.code==='ENOENT')return null;throw error;}finally{if(descriptor!==undefined)fs.closeSync(descriptor);}
+}
 async function update(){
  const retrieved=new Date().toISOString().slice(0,10),temp=fs.mkdtempSync(path.join(os.tmpdir(),'hv-health-'));let policy,last=0;
  async function get(url,redirects=0){
   const u=new URL(url);if(u.origin!==origin||!['/robots.txt','/about','/countries'].includes(u.pathname)&&!Parser.sourceUrl(url))throw Error('Source URL refused');
   if(policy&&!policy.allows(u.pathname))throw Error('Source disallows '+u.pathname);
   const cacheDir=process.env.HV_HEALTH_CACHE,cacheFile=cacheDir&&path.join(cacheDir,(u.pathname.split('/').pop()||'root')+'.html');
-  if(cacheFile&&fs.existsSync(cacheFile)&&fs.statSync(cacheFile).mtime.toISOString().slice(0,10)===retrieved){const metadata=fs.existsSync(cacheFile+'.json')?JSON.parse(fs.readFileSync(cacheFile+'.json','utf8')):{};return {status:200,html:fs.readFileSync(cacheFile,'utf8'),url:metadata.url||url};}
+  const cached=cacheFile&&cachedPage(cacheFile,retrieved,url);if(cached)return cached;
   const delay=Math.max(0,last+(policy?.delay||1.5)*1000-Date.now());if(delay)await new Promise(r=>setTimeout(r,delay));last=Date.now();
   const file=path.join(temp,'response'),{stdout}=await curl('curl',['--silent','--show-error','--max-time','30','--max-filesize','2500000','--user-agent',agent,'--header','Accept: text/html, text/plain;q=0.9','--output',file,'--write-out','%{http_code}\n%{redirect_url}',url],{timeout:35000,maxBuffer:10000});
   const [code,redirect]=stdout.trim().split('\n'),status=Number(code),html=fs.readFileSync(file,'utf8');if([401,403,406,429].includes(status)){const error=Error('Source declined requests (HTTP '+status+'); no alternate access attempted');error.blocked=true;throw error;}
@@ -43,4 +52,4 @@ async function update(){
  }finally{fs.rmSync(temp,{recursive:true,force:true});}
 }
 if(require.main===module)update().catch(e=>{console.error(e.message);process.exitCode=1;});
-module.exports={update};
+module.exports={update,cachedPage};
