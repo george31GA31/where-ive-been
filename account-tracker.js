@@ -28,13 +28,13 @@
   // Account copies never enter the legacy shared local key.
   persist = function () {
     if (userId) {
-      try { engine.edit(state); } catch (error) { status(error.message, 'bad'); }
+      try { engine.edit(state); return true; } catch (error) { status(error.message, 'bad'); return false; }
     } else if (!localStorage.getItem(OWNER_KEY)) {
-      try { originalPersist(true); status('Saved on this device — sign in to sync', 'neutral'); }
-      catch { status('Could not save on this device. Keep this page open.', 'bad'); }
+      try { originalPersist(true); status('Saved on this device — sign in to sync', 'neutral'); return true; }
+      catch { status('Could not save on this device. Keep this page open.', 'bad'); return false; }
     } else {
-      try { localStorage.setItem('whereIveBeen.guest.v1', JSON.stringify(state)); status('Saved on this device — sign in to sync', 'neutral'); }
-      catch { status('Could not save on this device. Keep this page open.', 'bad'); }
+      try { localStorage.setItem('whereIveBeen.guest.v1', JSON.stringify(state)); status('Saved on this device — sign in to sync', 'neutral'); return true; }
+      catch { status('Could not save on this device. Keep this page open.', 'bad'); return false; }
     }
   };
   // A claimed legacy copy stays preserved but is not shown to other accounts or guests.

@@ -12,7 +12,7 @@
     const old=(state.placeVisits||[]).find(v=>v.id===prefill.recordId&&v.category==='locations');
     const oldAccommodation=(state.accommodations||[]).find(a=>a.id===prefill.accommodationId);
     const accommodation=!!(prefill.accommodation||oldAccommodation),group=(old?.tripId||oldAccommodation?.tripId||prefill.tripId)?HVCalendar?.journeyGroups().find(g=>g.trip?.id===(old?.tripId||oldAccommodation?.tripId||prefill.tripId)):null,date=old?.date||oldAccommodation?.checkIn||prefill.date||group?.start||isoDate(new Date()),end=old?.endDate||old?.date||oldAccommodation?.checkOut||prefill.end||group?.end||date;
-    let selected=old?.place?{...old.place}:oldAccommodation?.place?{...oldAccommodation.place}:prefill.place?{...prefill.place}:oldAccommodation?{name:oldAccommodation.propertyName,area:oldAccommodation.location||'',type:oldAccommodation.type||'Hotel',lat:oldAccommodation.lat??null,lon:oldAccommodation.lon??null}:null,results=[],shown=10,timer,controller,request=0,map,marker,manual=false,pinRequest=0,pinController,mapSearch,cityRequest=0,cityController,areaRevision=0,pinSnapshot;
+    let selected=old?.place?{...old.place}:oldAccommodation?.place?{...oldAccommodation.place}:prefill.place?{...prefill.place}:oldAccommodation?{name:oldAccommodation.propertyName,area:oldAccommodation.location||'',type:oldAccommodation.type||'Hotel',lat:oldAccommodation.lat??null,lon:oldAccommodation.lon??null}:null,results=[],shown=10,timer,resizeFrame,controller,request=0,map,marker,manual=false,pinRequest=0,pinController,mapSearch,cityRequest=0,cityController,areaRevision=0,pinSnapshot;
     const opener=document.activeElement;
     dialog=document.createElement('dialog');const ownDialog=dialog;
     dialog.className='place-search-dialog';dialog.setAttribute('aria-label',accommodation?'Accommodation':'Add a location');
@@ -95,7 +95,7 @@
         map.on('click',event=>{manual=true;placePin(event.latlng);});
         if(HVRouteGeometry.point(selected))placePin({lat:selected.lat,lng:selected.lon});
       }
-      requestAnimationFrame(()=>map.invalidateSize());
+      cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(()=>{resizeFrame=null;if(ownDialog.open&&ownDialog.isConnected)map.invalidateSize();});
     }
     function renderResults(){
       host.innerHTML=results.slice(0,shown).map((p,i)=>`<button type="button" data-place-result="${i}">${p.countryCode?flagHtml(p.countryCode,'flag-img flag-sm'):'<span aria-hidden="true">⌂</span>'}<span class="place-result-copy"><strong>${E(p.name)}</strong>${p.personal?'<small>Saved place</small>':''}<span>${E([p.type,p.area,p.countryName].filter(Boolean).join(' · '))}</span><small>${E(p.address)}</small></span><span aria-hidden="true">→</span></button>`).join('');
@@ -163,7 +163,7 @@
       }
       finish();
     };
-    ownDialog.addEventListener('close',()=>{clearTimeout(timer);controller?.abort();request++;pinController?.abort();cancelCity();mapSearch?.cancel();map?.remove();HVJourneyUI.clearPreview();ownDialog.remove();opener?.focus?.();});
+    ownDialog.addEventListener('close',()=>{clearTimeout(timer);cancelAnimationFrame(resizeFrame);controller?.abort();request++;pinController?.abort();cancelCity();mapSearch?.cancel();map?.remove();HVJourneyUI.clearPreview();ownDialog.remove();opener?.focus?.();});
     showSelected();f.placeType.value=chosenType;if(oldAccommodation?.location)f.area.value=oldAccommodation.location;if(!selected&&oldAccommodation){f.placeName.value=oldAccommodation.propertyName;f.query.value=oldAccommodation.propertyName;f.country.value=context?.countryName||'';}HVJourneyUI.showEditor(ownDialog);(selected?form.querySelector('[data-place-change]'):f.query).focus();
   }
   function renderMap(){
