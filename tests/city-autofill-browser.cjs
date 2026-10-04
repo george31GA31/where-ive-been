@@ -62,7 +62,7 @@ let browser;
 
     await open();await select('Example hostel');await page.waitForFunction(()=>document.querySelector('.place-search-dialog [name=area]').value==='Abu Dhabi');
     assert.match(await editor.locator('[name=address]').inputValue(),/Khalifa City, Abu Dhabi/);
-    await area.scrollIntoViewIfNeeded();await editor.screenshot({path:path.join(out,`city-autofill-${width}-${theme}.png`)});await close();
+    await editor.locator('[data-place-details]>summary').click();await area.scrollIntoViewIfNeeded();await editor.screenshot({path:path.join(out,`city-autofill-${width}-${theme}.png`)});await close();
     await open();await editor.locator('[name=query]').fill('Wider hostel');await editor.locator('[name=query]').press('Enter');await page.waitForFunction(()=>document.getElementById('placeSearchStatus').textContent.startsWith('No matching'));
     await editor.locator('[data-place-wider]').click();await editor.locator('[data-place-result]').first().click();await page.waitForFunction(()=>document.querySelector('.place-search-dialog [name=area]').value==='Abu Dhabi');
     assert.match(await editor.locator('[name=address]').inputValue(),/Khalifa City, Abu Dhabi/);await close();
@@ -71,9 +71,9 @@ let browser;
 
     // Resolve late even after cancellation, to prove edits and newer selections win.
     await page.evaluate(()=>{window.realCityResolver=HVTravelSearch.resolveCity;window.pendingCities=[];HVTravelSearch.resolveCity=()=>new Promise(resolve=>pendingCities.push(resolve));});
-    await open();await select('Example hostel');await area.fill('My manual choice');
+    await open();await select('Example hostel');await editor.locator('[data-place-details]>summary').click();await area.fill('My manual choice');
     await page.evaluate(async()=>{pendingCities.shift()('Abu Dhabi');await Promise.resolve();});assert.equal(await area.inputValue(),'My manual choice');await close();
-    await open();await select('Example hostel');await select('Example hostel');
+    await open();await select('Example hostel');await editor.locator('[data-place-change]').click();await select('Example hostel');
     await page.evaluate(async()=>{pendingCities.shift()('Stale city');await Promise.resolve();});assert.equal(await area.inputValue(),'Khalifa City');
     await page.evaluate(async()=>{pendingCities.shift()('Abu Dhabi');await Promise.resolve();});assert.equal(await area.inputValue(),'Abu Dhabi');await close();
     await open();await select('Example hostel');await close();await page.evaluate(()=>HVPlaces.open({accommodationId:'old'}));
