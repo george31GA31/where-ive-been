@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const M = require('../account-model.js');
 const Sync = require('../account-sync.js');
+const Logos = require('../accommodation-logos.js');
 const state = () => ({version:2, stays:[{id:'s1',countryCode:'GB',start:'2026-01-01',end:'2026-01-02',notes:'one',profileId:'p1'}], profiles:[{id:'p1',name:'Me',citizenships:['GB'],enabledRules:['schengen']}], residences:[], activeProfileId:'p1', excludedCountryCodes:[]});
 class Storage {
   constructor() { this.items = new Map(); }
@@ -36,6 +37,18 @@ function engine(api, storage = new Storage(), tabId = 'tab') {
   const s = new Sync({client:api,storage,tabId,onData:()=>{},onStatus:(...args)=>statuses.push(args),resolve:async conflicts=>Object.fromEntries(conflicts.map(c=>[c.path,'local']))});
   s.statuses = statuses; return s;
 }
+test('location logos use the existing outbox, survive offline reload and merge with another device edit', async () => {
+  const data=state(),p={id:'osm:N:sur',name:'Best Western Sur',type:'Hotel',city:'Sur',countryCode:'OM',address:'Sur Road',lat:22.57,lon:59.52};
+  data.savedPlaces=[];data.accommodations=['first','second'].map(id=>({id,profileId:'p1',propertyName:p.name,place:M.copy(p)}));
+  const api=backend(data),storage=new Storage(),s=engine(api,storage);await s.start('A',data);
+  const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSe8AAAAASUVORK5CYII=';
+  const local=M.copy(data);Logos.set(local,'first',image);api.fail=true;s.edit(local);await s.flush();s.stop();api.fail=false;
+  const another=engine(api,storage,'other-account');await another.start('B',data);assert.equal(Logos.logo(another.local,'first'),null);another.stop();
+  const remote=api.get();remote.stays[0].notes='Other device note';api.change(remote);
+  const restored=engine(api,storage,'reload');await restored.start('A',data);
+  assert.equal(Logos.logo(api.get(),'second'),image);assert.equal(api.get().stays[0].notes,'Other device note');assert.deepEqual(api.get().accommodations,data.accommodations);
+  const removed=M.copy(restored.local);Logos.set(removed,'second',null);restored.edit(removed);await restored.flush();assert.equal(Logos.logo(api.get(),'first'),null);restored.stop();
+});
 test('independent changes merge, deletions stay deleted, same-field edits require a choice', () => {
   const b=state(), l=M.copy(b), r=M.copy(b); l.stays[0].notes='local'; r.stays[0].end='2026-01-03';
   const out=M.merge(b,l,r); assert.equal(out.conflicts.length,0); assert.equal(out.data.stays[0].notes,'local'); assert.equal(out.data.stays[0].end,'2026-01-03');

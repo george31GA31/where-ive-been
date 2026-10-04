@@ -17,6 +17,7 @@
   }
   function nights(start,end){return date(start)&&date(end)&&end>=start?Math.round((Date.parse(end.slice(0,10)+'T12:00:00Z')-Date.parse(start.slice(0,10)+'T12:00:00Z'))/86400000):null;}
   const house='<svg class="herald-stay-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="m2 7 6-5 6 5M4 6v8h8V6M7 14v-4h2v4"/></svg>';
+  const stayIcon=record=>root.HVAccommodationLogos?.icon(record,house)||house;
   function location(place,record={}){
     const A=root.HVAddress,field=(key)=>A?.field(place,key)||place?.[key]||'';
     const city=field('city')||field('area')||A?.text(record.location)||record.location||'';
@@ -36,7 +37,7 @@
   }
   function popup(row){
     const r=row.record,p=row.place||r.place||{};let content;
-    if(row.type==='accommodation')content=header(root.HVAddress?.text(r.propertyName||p.name)||r.propertyName||p.name||'Stay',location(p,r),house)+stayBody(row);
+    if(row.type==='accommodation')content=header(root.HVAddress?.text(r.propertyName||p.name)||r.propertyName||p.name||'Stay',location(p,r),stayIcon(r))+stayBody(row);
     else if(row.leg){
       const J=root.HVJourney,items=r.type==='flight'?J.flightLegs(r):J.groundLegs(r),label=root.HVJourneys?.transportLabel(r)||J.transportLabel(r),leg=row.leg;
       const fullRoute=items.length?items.map((l,i)=>(i===0?[l.start]:[]).concat(l.end)).flat().map(point=>root.HVAddress?.field(point,'city')||root.HVAddress?.field(point,'name')||point?.name).filter(Boolean).join(' → '):'';
@@ -49,7 +50,7 @@
   function hotelPopup(name,members){
     const rows=[...new Map(members.map(p=>[p.r.record.id,p.r])).values()];
     if(rows.length===1)return popup({...rows[0],record:{...rows[0].record,propertyName:name}});
-    return '<article class="herald-popup-card">'+header(name,location(rows[0].place||rows[0].record.place,rows[0].record),house)+'<p class="herald-popup-meta">Stayed '+rows.length+' times</p><div class="herald-stay-list">'+rows.map(row=>'<section>'+stayBody(row)+'</section>').join('')+'</div></article>';
+    return '<article class="herald-popup-card">'+header(name,location(rows[0].place||rows[0].record.place,rows[0].record),stayIcon(rows[0].record))+'<p class="herald-popup-meta">Stayed '+rows.length+' times</p><div class="herald-stay-list">'+rows.map(row=>'<section>'+stayBody(row)+'</section>').join('')+'</div></article>';
   }
   const maps=[];let draft;
   function registerMap(map){
