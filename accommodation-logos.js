@@ -58,12 +58,13 @@
     } finally {root.URL.revokeObjectURL(url);}
   }
 
-  let defaultIcon = '', openControl;
+  const housePath = 'm2 7 6-5 6 5M4 6v8h8V6M7 14v-4h2v4';
+  const defaultIcon = '<svg class="herald-stay-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="'+housePath+'"/></svg>';
+  let openControl;
   const current = () => typeof state === 'undefined' ? null : state;
   function artwork(src) {return src ? `<img class="herald-hotel-logo" src="${E(src)}" alt="" width="18" height="18">` : defaultIcon;}
   function label(record, src) {return (src ? 'Change hotel logo for ' : 'Upload hotel logo for ') + (record?.propertyName || record?.place?.name || 'this accommodation');}
-  function icon(record, house) {
-    defaultIcon = house;
+  function icon(record) {
     const src = logo(current(), record.id);
     return `<span class="herald-hotel-logo-control"><button type="button" class="herald-hotel-logo-button" data-hotel-logo="${E(record.id)}" aria-label="${E(label(record,src))}" title="${E(src ? 'Change hotel logo' : 'Upload hotel logo')}"${src ? ' aria-haspopup="menu" aria-expanded="false"' : ''}>${artwork(src)}</button></span>`;
   }
@@ -77,7 +78,15 @@
     closeControl();
     for (const button of document.querySelectorAll('[data-hotel-logo]')) {
       const id = button.dataset.hotelLogo, src = logo(current(),id), record = current()?.accommodations?.find(r => r.id === id);
-      button.innerHTML = artwork(src); button.setAttribute('aria-label',label(record,src));
+      if (src) {
+        const img = document.createElement('img'); img.className = 'herald-hotel-logo'; img.src = src;
+        img.alt = ''; img.width = img.height = 18; button.replaceChildren(img);
+      } else {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg'), path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        svg.setAttribute('class','herald-stay-icon'); svg.setAttribute('viewBox','0 0 16 16'); svg.setAttribute('aria-hidden','true');
+        path.setAttribute('d',housePath); svg.append(path); button.replaceChildren(svg);
+      }
+      button.setAttribute('aria-label',label(record,src));
       button.title = src ? 'Change hotel logo' : 'Upload hotel logo';
       if (src) {button.setAttribute('aria-haspopup','menu'); button.setAttribute('aria-expanded','false');}
       else {button.removeAttribute('aria-haspopup'); button.removeAttribute('aria-expanded');}

@@ -17,7 +17,7 @@
   }
   function nights(start,end){return date(start)&&date(end)&&end>=start?Math.round((Date.parse(end.slice(0,10)+'T12:00:00Z')-Date.parse(start.slice(0,10)+'T12:00:00Z'))/86400000):null;}
   const house='<svg class="herald-stay-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="m2 7 6-5 6 5M4 6v8h8V6M7 14v-4h2v4"/></svg>';
-  const stayIcon=record=>root.HVAccommodationLogos?.icon(record,house)||house;
+  const stayIcon=record=>root.HVAccommodationLogos?.icon(record)||house;
   function location(place,record={}){
     const A=root.HVAddress,field=(key)=>A?.field(place,key)||place?.[key]||'';
     const city=field('city')||field('area')||A?.text(record.location)||record.location||'';

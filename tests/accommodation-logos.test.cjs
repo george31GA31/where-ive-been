@@ -40,3 +40,7 @@ test('unknown stays and untrusted image URLs cannot change or render stored artw
   const data=seed(),before=M.copy(data);assert.throws(()=>Logos.set(data,'missing',image));assert.throws(()=>Logos.set(data,'first','https://example.test/logo.png'));assert.deepEqual(data,before);
   data.savedPlaces=[{id:'unsafe',place:M.copy(place),accommodationLogo:{src:'data:image/svg+xml,<svg onload="alert(1)"></svg>',updatedAt:'2026-10-05'}}];assert.equal(Logos.logo(data,'first'),null);
 });
+test('the logo control accepts data, never arbitrary icon markup from a caller',()=>{
+  const html=Logos.icon({id:'first',propertyName:'Hotel "<script>"'},'<img src=x onerror=alert(1)>');
+  assert.doesNotMatch(html,/onerror|<script>/);assert.match(html,/class="herald-stay-icon"/);assert.match(html,/&quot;&lt;script&gt;&quot;/);
+});
