@@ -7,10 +7,10 @@
   const preferred={train:/station|halt|railway|rail/,bus:/bus_station|bus_stop|coach|bus station|bus stop|terminal/,boat:/ferry|port|harbour|harbor|dock/,flight:/aerodrome|airport/,accommodation:/hotel|hostel|resort|guest.house|apartment|camp.site|motel|chalet/};
   const cache=new Map();
   function normalise(feature){
-    const p=feature.properties||{},[lon,lat]=feature.geometry?.coordinates||[],countryCode=String(p.countrycode||'').toUpperCase(),area=p.city||p.town||p.village||p.county||p.state||'';
-    const originalAddress=[p.housenumber,p.street,p.postcode,area,p.state,p.country].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', '),originalName=p.name||[p.housenumber,p.street].filter(Boolean).join(' ')||area||'Unnamed place';
+    const p=feature.properties||{},[lon,lat]=feature.geometry?.coordinates||[],countryCode=String(p.countrycode||'').toUpperCase(),city=p.city||p.town||p.village||(p.osm_key==='place'&&/^(city|town|village)$/.test(p.osm_value)?p.name:''),district=p.district||p.suburb||'',area=city||district||p.locality||p.county||p.state||'';
+    const originalAddress=[p.housenumber,p.street,p.postcode,p.locality,district,area,p.state,p.country].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', '),originalName=p.name||[p.housenumber,p.street].filter(Boolean).join(' ')||area||'Unnamed place';
     const nameEn=p['name:en']||p.name_en||'',areaEn=p['city:en']||p['town:en']||p['village:en']||(/^(city|town|village)$/.test(p.osm_value)&&A.isLatin(nameEn||p.name)?nameEn||p.name:'');
-    return A.place({id:`osm:${p.osm_type}:${p.osm_id}`,externalPlaceId:`osm:${p.osm_type}:${p.osm_id}`,name:originalName,nameEn,nameSource:'geocoder',originalName,type:p.osm_value||'place',osmKey:p.osm_key||'',countryCode,countryName:p.country||'',city:p.city||p.town||p.village||'',cityEn:areaEn,area,areaEn,address:originalAddress,originalAddress,addressAliases:areaEn&&area?{[area]:areaEn}:{},street:p.street||'',postcode:p.postcode||'',houseNumber:p.housenumber||'',bounds:p.extent||feature.bbox,lat,lon});
+    return A.place({id:`osm:${p.osm_type}:${p.osm_id}`,externalPlaceId:`osm:${p.osm_type}:${p.osm_id}`,name:originalName,nameEn,nameSource:'geocoder',originalName,type:p.osm_value||'place',osmKey:p.osm_key||'',countryCode,countryName:p.country||'',city,cityEn:areaEn,area,areaEn,district,locality:p.locality||'',county:p.county||'',state:p.state||'',address:originalAddress,originalAddress,addressAliases:areaEn&&area?{[area]:areaEn}:{},street:p.street||'',postcode:p.postcode||'',houseNumber:p.housenumber||'',bounds:p.extent||feature.bbox,lat,lon});
   }
   function rank(list,term,context='other'){
     const words=normal(term).split(/[^\p{L}\p{N}]+/u).filter(Boolean),unique=new Map();
@@ -48,6 +48,30 @@
     const res=await fetch('https://photon.komoot.io/reverse?'+new URLSearchParams({lat,lon,limit:'1',lang:'en'}),{signal});
     if(!res.ok)throw Error('Address lookup unavailable');const feature=(await res.json()).features?.[0];return feature?enrich(normalise(feature)):null;
   }
+  async function resolveCity(place,signal){
+    const p=A.place(place),fallback=p.city||p.area||'';
+    if(p.personal||!p.countryCode||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return fallback;
+    // A county/state can share its name with a city. Only use it when a nearby
+    // settlement confirms the name; never substitute an arbitrary nearest city.
+    const subdivision=[p.district,p.locality].some(n=>n&&normal(n).trim()===normal(fallback).trim());
+    const hierarchy=(subdivision?[p.county,p.state,p.city,p.area]:[p.city,p.area,p.county,p.state]).filter(Boolean);
+    if(!hierarchy.length||!p.county&&!p.state)return fallback;
+    const params=new URLSearchParams({lat:p.lat,lon:p.lon,radius:'50',limit:'20',lang:'en'});
+    for(const type of ['city','town','village'])params.append('osm_tag','place:'+type);
+    try{
+      const response=await fetch('https://photon.komoot.io/reverse?'+params,{signal,headers:{Accept:'application/json'}});
+      if(!response.ok)return fallback;
+      const settlements=((await response.json()).features||[]).filter(f=>{
+        const v=f.properties||{};
+        return v.osm_key==='place'&&/^(city|town|village)$/.test(v.osm_value)&&String(v.countrycode||'').toUpperCase()===p.countryCode;
+      }).map(normalise);
+      for(const name of hierarchy){
+        const match=settlements.find(s=>[s.name,s.originalName,s.nameEn].some(n=>n&&normal(n).trim()===normal(name).trim()));
+        if(match)return match.name;
+      }
+      return fallback;
+    }catch(error){if(signal?.aborted)throw error;return fallback;}
+  }
   function bind(input,host,{context=()=> 'other',onSelect,onType=()=>{},area=()=>''}={}){
     let request=0,timer,controller,matches=[];
     const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -65,5 +89,5 @@
     const clear=()=>{clearTimeout(timer);controller?.abort();request++;matches=[];host.replaceChildren();};
     return {clear,cancel(){clear();input.removeEventListener('input',onInput);input.removeEventListener('keydown',onKey);host.removeEventListener('click',onChoice);host.removeEventListener('keydown',onResultsKey);}};
   }
-  const api={normalise,rank,search,reverse,bind,tags};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVTravelSearch=api;
+  const api={normalise,rank,search,reverse,resolveCity,bind,tags};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVTravelSearch=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -873,14 +873,14 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 .global-journey-filters .calendar-layer-switch button{min-height:42px;padding:8px 12px;border:0;background:transparent;color:var(--hv-muted);font-weight:600;border-radius:6px}
 .global-journey-filters .calendar-layer-switch button[aria-pressed=true]{background:var(--hv-surface);color:var(--hv-ink);box-shadow:0 1px 3px #0002}
 .global-journey-filters .field{flex:1;min-width:180px;margin:0}
-.global-journey-map{height:60vh;min-height:360px;max-height:650px;border:1px solid var(--hv-line);border-radius:12px;isolation:isolate;background:#e1e5e3}
+.global-journey-map{height:75vh;min-height:440px;max-height:850px;border:1px solid var(--hv-line);border-radius:12px;isolation:isolate;background:#e1e5e3}
 .global-journey-map .leaflet-control a{color:#222}
 .journey-map-marker.journey-cluster span{background:#315767;color:#fff;border:2px solid #fff;border-radius:50%;min-width:30px;min-height:30px;display:grid;place-items:center;font-size:12px;box-shadow:0 1px 5px #0003}
 .global-map-popup{overflow-wrap:anywhere;color:#222}
 .global-map-popup p{padding:7px 0;border-bottom:1px solid #ddd}
 #journeysView .journey-library-card li>div{min-width:0;overflow-wrap:anywhere}
 #journeysView button:focus-visible{outline:2px solid #4b899f;outline-offset:3px}
-@media(max-width:600px){.global-journey-filters{gap:8px}.global-journey-filters .calendar-layer-switch{width:100%}.global-journey-filters .calendar-layer-switch button{flex:1;padding:8px;font-size:12px}.global-journey-map{height:52vh;min-height:340px}.global-journey-filters .field{min-width:160px}}
+@media(max-width:600px){.global-journey-filters{gap:8px}.global-journey-filters .calendar-layer-switch{width:100%}.global-journey-filters .calendar-layer-switch button{flex:1;padding:8px;font-size:12px}.global-journey-map{height:68vh;min-height:400px}.global-journey-filters .field{min-width:160px}}
 
 .journey-map-marker.journey-cluster{background:transparent;border:0;box-shadow:none}
 @media(max-width:600px){.global-journey-filters [aria-label="Map layers"]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.global-journey-filters [aria-label="Map layers"] button{width:100%}}

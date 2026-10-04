@@ -12,7 +12,7 @@
     const old=(state.placeVisits||[]).find(v=>v.id===prefill.recordId&&v.category==='locations');
     const oldAccommodation=(state.accommodations||[]).find(a=>a.id===prefill.accommodationId);
     const accommodation=!!(prefill.accommodation||oldAccommodation),date=old?.date||oldAccommodation?.checkIn||prefill.date||isoDate(new Date()),end=old?.endDate||old?.date||oldAccommodation?.checkOut||prefill.end||date;
-    let selected=old?.place?{...old.place}:oldAccommodation?.place?{...oldAccommodation.place}:prefill.place?{...prefill.place}:null,results=[],shown=10,timer,controller,request=0,map,marker,manual=false,pinRequest=0,pinController,mapSearch;
+    let selected=old?.place?{...old.place}:oldAccommodation?.place?{...oldAccommodation.place}:prefill.place?{...prefill.place}:null,results=[],shown=10,timer,controller,request=0,map,marker,manual=false,pinRequest=0,pinController,mapSearch,cityRequest=0,cityController,areaRevision=0;
     const opener=document.activeElement;
     dialog=document.createElement('dialog');const ownDialog=dialog;
     dialog.className='place-search-dialog';dialog.setAttribute('aria-label',accommodation?'Accommodation':'Add a location');
@@ -32,19 +32,32 @@
     f.placeType.onchange=()=>{form.querySelector('[data-airport-codes]').hidden=f.placeType.value!=='Airport';};f.placeType.onchange();
     const context=HVJourney.scoped(state.stays,state.activeProfileId).find(s=>s.start<=date&&s.end>=date&&s.status!=='cancelled');f.searchArea.value=prefill.searchArea||context?.location||context?.countryName||'';
     if(prefill.onSelect){form.querySelector('[type=submit]').textContent='Use this location';form.querySelectorAll('input[type=date]').forEach(input=>{input.required=false;input.closest('.form-grid').hidden=true;});}
-    function showSelected(fill=true){
+    function showSelected(fill=true,preferCity=false){
       const box=form.querySelector('.place-selected');box.hidden=!selected;
       if(!selected)return;
       const display=HVAddress.place(selected);
       box.innerHTML=`${selected.countryCode?flagHtml(selected.countryCode,'flag-img flag-sm'):''}<strong>${E(display.name)}</strong><span>${E(display.address||display.area||'Position selected on map')}</span>`;
-      if(fill){f.placeName.value=display.name;f.address.value=display.address||'';f.area.value=display.area||display.city||'';f.iata.value=selected.iata||'';f.icao.value=selected.icao||'';f.placeNotes.value=selected.notes||'';f.country.value=countryByCode(selected.countryCode)?.name||display.countryName||'';if(types.includes(selected.type))f.placeType.value=selected.type;form.querySelector('[data-airport-codes]').hidden=f.placeType.value!=='Airport';}
+      if(fill){f.placeName.value=display.name;f.address.value=display.address||'';f.area.value=preferCity?display.city||display.area||'':display.area||display.city||'';f.iata.value=selected.iata||'';f.icao.value=selected.icao||'';f.placeNotes.value=selected.notes||'';f.country.value=countryByCode(selected.countryCode)?.name||display.countryName||'';if(types.includes(selected.type))f.placeType.value=selected.type;form.querySelector('[data-airport-codes]').hidden=f.placeType.value!=='Airport';}
     }
+    function cancelCity(){cityRequest++;cityController?.abort();}
+    function autofillCity(){
+      cancelCity();if(!selected||selected.personal)return;
+      const token=cityRequest,current=f.area.value;
+      cityController=new AbortController();
+      HVTravelSearch.resolveCity(selected,cityController.signal).then(city=>{
+        if(!city||city===current||token!==cityRequest||!ownDialog.open||f.area.value!==current)return;
+        selected={...selected,city,cityEn:city,area:city,areaEn:city};f.area.value=city;
+      }).catch(()=>{});
+    }
+    f.area.addEventListener('input',()=>{areaRevision++;cancelCity();});
+    f.country.addEventListener('input',cancelCity);
     function placePin(latlng){
       if(!map)return;
+      cancelCity();const revision=areaRevision;
       const lat=Math.max(-85,Math.min(85,latlng.lat)),lon=((latlng.lng+180)%360+360)%360-180;
       selected={...(selected||{}),id:manual?'manual:'+ (old?.itemId?.replace(/^manual:/,'')||oldAccommodation?.placeId?.replace(/^manual:/,'')||uid()):selected?.id||'manual:'+uid(),name:f.placeName.value.trim()||'New location',type:f.placeType.value,lat,lon};
       const pinToken=++pinRequest;pinController?.abort();
-      if(manual){pinController=new AbortController();HVTravelSearch.reverse(lat,lon,pinController.signal).then(p=>{if(!p||pinToken!==pinRequest||!ownDialog.open)return;selected={...selected,address:p.address,originalAddress:p.originalAddress||p.address,addressAliases:p.addressAliases,area:p.area,city:p.city,countryCode:p.countryCode,countryName:p.countryName};f.address.value=p.address||'';f.area.value=p.area||'';if(p.countryName)f.country.value=p.countryName;if(!f.placeName.value.trim()||f.placeName.value==='New location'){f.placeName.value=p.name;selected.name=p.name;}showSelected(false);form.querySelector('[data-pin-status]').textContent='Address found. Adjust the pin or edit the address before saving.';}).catch(()=>{if(pinToken===pinRequest&&ownDialog.open)form.querySelector('[data-pin-status]').textContent='Pin placed. Address lookup is unavailable; enter the address and country below.';});}
+      if(manual){pinController=new AbortController();HVTravelSearch.reverse(lat,lon,pinController.signal).then(p=>{if(!p||pinToken!==pinRequest||!ownDialog.open)return;selected={...selected,address:p.address,originalAddress:p.originalAddress||p.address,addressAliases:p.addressAliases,area:p.area,areaEn:p.areaEn,city:p.city,cityEn:p.cityEn,district:p.district,county:p.county,state:p.state,countryCode:p.countryCode,countryName:p.countryName};f.address.value=p.address||'';if(revision===areaRevision){f.area.value=p.city||p.area||'';autofillCity();}if(p.countryName)f.country.value=p.countryName;if(!f.placeName.value.trim()||f.placeName.value==='New location'){f.placeName.value=p.name;selected.name=p.name;}showSelected(false);form.querySelector('[data-pin-status]').textContent='Address found. Adjust the pin or edit the address before saving.';}).catch(()=>{if(pinToken===pinRequest&&ownDialog.open)form.querySelector('[data-pin-status]').textContent='Pin placed. Address lookup is unavailable; enter the address and country below.';});}
       if(!marker){
         marker=L.marker([lat,lon],{draggable:true,autoPan:true,keyboard:true,title:'Location pin: drag or use arrow keys',icon:L.divIcon({className:'herald-map-pin',html:'<span aria-hidden="true"></span>',iconSize:[28,36],iconAnchor:[14,34]})}).addTo(map);
         marker.on('dragend',()=>{manual=true;placePin(marker.getLatLng());});
@@ -102,14 +115,14 @@
       const timeout=setTimeout(()=>controller?.abort(),22000);
       try{
         const response=await fetch('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),{signal:controller.signal});if(!response.ok)throw Error();const data=await response.json();if(token!==request||!ownDialog.open)return;
-        const extra=(data.elements||[]).map(el=>{const t=el.tags||{},code=(t['addr:country']||areaCountry?.code||'').toUpperCase(),area=t['addr:city']||t['addr:state']||'';return {id:`osm:${({node:'N',way:'W',relation:'R'})[el.type]}:${el.id}`,originalName:t.name,name:t['name:en']||t['name:fr']||t.name,nameSource:'geocoder',street:t['addr:street'],houseNumber:t['addr:housenumber'],postcode:t['addr:postcode'],phone:t.phone,website:t.website,type:(t.tourism||'accommodation').replaceAll('_',' '),countryCode:code,countryName:countryByCode(code)?.name||'',area,address:[t['addr:housenumber'],t['addr:street'],t['addr:postcode'],area,t['addr:country']].filter(Boolean).join(', ')||'Address not provided by OpenStreetMap — check the map',lat:el.lat??el.center?.lat,lon:el.lon??el.center?.lon};}).map(p=>HVAddress.place({...p,originalAddress:p.address}));
+        const extra=(data.elements||[]).map(el=>{const t=el.tags||{},code=(t['addr:country']||areaCountry?.code||'').toUpperCase(),city=t['addr:city']||t['addr:town']||t['addr:village']||'',district=t['addr:suburb']||t['addr:district']||'',area=city||district||t['addr:state']||'';return {id:`osm:${({node:'N',way:'W',relation:'R'})[el.type]}:${el.id}`,originalName:t.name,name:t['name:en']||t['name:fr']||t.name,nameSource:'geocoder',street:t['addr:street'],houseNumber:t['addr:housenumber'],postcode:t['addr:postcode'],phone:t.phone,website:t.website,type:(t.tourism||'accommodation').replaceAll('_',' '),countryCode:code,countryName:countryByCode(code)?.name||'',city,district,county:t['addr:county']||'',state:t['addr:state']||'',area,address:[t['addr:housenumber'],t['addr:street'],t['addr:postcode'],district,area,t['addr:state'],t['addr:country']].filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ')||'Address not provided by OpenStreetMap — check the map',lat:el.lat??el.center?.lat,lon:el.lon??el.center?.lon};}).map(p=>HVAddress.place({...p,originalAddress:p.address}));
         results=ranked([...results,...extra],term);shown=Math.max(10,shown);renderResults();if(!extra.length)status.textContent+=' No additional indexed accommodation found. Plot on map is always available.';
       }catch(e){if(token===request)status.textContent='Wider search is unavailable or timed out. Try a country in Search near, or plot the property on the map.';}finally{clearTimeout(timeout);button.disabled=false;}
     });
     f.query.addEventListener('input',()=>{clearTimeout(timer);controller?.abort();request++;host.replaceChildren();status.textContent=f.query.value.trim().length<2?'Type at least two characters to search.':'Searching places…';timer=setTimeout(search,450);});
     f.query.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(timer);search();}if(e.key==='ArrowDown'){e.preventDefault();host.querySelector('button')?.focus();}});
     host.addEventListener('keydown',e=>{const buttons=[...host.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();buttons[(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}if(e.key==='Escape'){f.query.focus();}});
-    host.onclick=e=>{const button=e.target.closest('[data-place-result]');if(!button)return;clearTimeout(timer);controller?.abort();request++;selected={...results[Number(button.dataset.placeResult)]};manual=false;showSelected();host.innerHTML='';status.textContent='Place selected.';if(map){map.setView([selected.lat,selected.lon],15,{animate:false});placePin({lat:selected.lat,lng:selected.lon});}};
+    host.onclick=e=>{const button=e.target.closest('[data-place-result]');if(!button)return;clearTimeout(timer);controller?.abort();pinController?.abort();pinRequest++;cancelCity();request++;selected={...results[Number(button.dataset.placeResult)]};manual=false;showSelected(true,!selected.personal);host.innerHTML='';status.textContent='Place selected.';if(map){map.setView([selected.lat,selected.lon],15,{animate:false});placePin({lat:selected.lat,lng:selected.lon});}autofillCity();};
     form.querySelector('[data-place-plot]').onclick=()=>{manual=true;showMap();};
     form.querySelector('[data-pin-centre]').onclick=()=>{manual=true;placePin(map.getCenter());};
     form.querySelector('[data-place-close]').onclick=()=>ownDialog.close();
@@ -139,7 +152,7 @@
       }
       finish();
     };
-    ownDialog.addEventListener('close',()=>{clearTimeout(timer);controller?.abort();request++;pinController?.abort();mapSearch?.cancel();map?.remove();ownDialog.remove();opener?.focus?.();});
+    ownDialog.addEventListener('close',()=>{clearTimeout(timer);controller?.abort();request++;pinController?.abort();cancelCity();mapSearch?.cancel();map?.remove();ownDialog.remove();opener?.focus?.();});
     showSelected();if(!selected&&oldAccommodation){f.placeName.value=oldAccommodation.propertyName;f.query.value=oldAccommodation.propertyName;f.country.value=context?.countryName||'';}ownDialog.showModal();f.query.focus();
   }
   function renderMap(){
