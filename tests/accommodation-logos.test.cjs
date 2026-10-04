@@ -42,5 +42,5 @@ test('unknown stays and untrusted image URLs cannot change or render stored artw
 });
 test('the logo control accepts data, never arbitrary icon markup from a caller',()=>{
   const html=Logos.icon({id:'first',propertyName:'Hotel "<script>"'},'<img src=x onerror=alert(1)>');
-  assert.doesNotMatch(html,/onerror|<script>/);assert.match(html,/class="herald-stay-icon"/);assert.match(html,/&quot;&lt;script&gt;&quot;/);
+  assert.doesNotMatch(html,/onerror|<script>/i);assert.match(html,/class="herald-stay-icon"/);assert.match(html,/&quot;&lt;script&gt;&quot;/);
 });

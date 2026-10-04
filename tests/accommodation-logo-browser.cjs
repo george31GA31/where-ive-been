@@ -3,10 +3,23 @@
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const {chromium}=require('playwright'),binary=require('@sparticuz/chromium');binary.setGraphicsMode=false;
 const root=path.resolve(__dirname,'..'),out=path.join(root,'test-results/accommodation-logos');fs.mkdirSync(out,{recursive:true});
+const contentTypes={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'};
+// Requests only select already loaded public assets; a URL never becomes a filesystem path.
+const assets=new Map();
+function loadAssets(dir){
+  for(const entry of fs.readdirSync(dir,{withFileTypes:true})){
+    if(entry.name.startsWith('.')||['node_modules','test-results','tests','scripts'].includes(entry.name))continue;
+    const file=path.join(dir,entry.name);
+    if(entry.isDirectory())loadAssets(file);
+    else if(entry.isFile())assets.set('/'+path.relative(root,file).split(path.sep).join('/'),{body:fs.readFileSync(file),type:contentTypes[path.extname(file)]||'application/octet-stream'});
+  }
+}
+loadAssets(root);
 const server=http.createServer((req,res)=>{
-  let p=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));if(!p.startsWith(root+path.sep)&&p!==root){res.writeHead(403);return res.end();}
-  if(!path.extname(p))p=path.join(p,'index.html');
-  try{res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'})[path.extname(p)]||'application/octet-stream');res.end(fs.readFileSync(p));}catch{res.writeHead(404);res.end();}
+  let key;try{key=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname);}catch{res.writeHead(400);return res.end();}
+  if(!path.extname(key))key=key.replace(/\/$/,'')+'/index.html';
+  const asset=assets.get(key);if(!asset){res.writeHead(404);return res.end();}
+  res.setHeader('Content-Type',asset.type);res.end(asset.body);
 });
 const hotel={id:'osm:N:sur',name:'Best Western Sur',type:'Hotel',city:'Sur',area:'Sur',countryCode:'OM',countryName:'Oman',address:'Sur Meandering Road, 411, Sur, Oman',lat:22.57,lon:59.52,custom:{keep:'place'}};
 const stay=(id,tripId,start,end,place=hotel)=>({id,tripId,profileId:'p',propertyName:place.name,location:'Sur',checkIn:start,checkOut:end,place:{...place},notes:'Keep '+id,bookingReference:'KEEP-'+id,price:{amount:100,currency:'GBP'},custom:{keep:true}});
