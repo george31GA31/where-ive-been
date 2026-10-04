@@ -37,7 +37,7 @@
       return {
         title: 'How travel days are calculated',
         text: 'Each calendar date is counted once, even if you cross borders that day. A date is excluded when your only recorded location is a designated home country or somewhere you were living at the time.',
-        pills: [`${travel} travel days`, `${homeOnly} home-only days`, `${homes} home period${homes === 1 ? '' : 's'}`]
+        pills: [`${plural(travel,'travel day')}`, `${plural(homeOnly,'home-only day')}`, `${homes} home period${homes === 1 ? '' : 's'}`]
       };
     }
 
@@ -72,7 +72,7 @@
       return {
         title: 'Allowance available today',
         text: 'This is the number of additional Schengen days available in today’s rolling window. As older travel days fall outside 180 days, allowance can return over time.',
-        pills: [`${Math.max(0, rolling.remaining)} days left`, `${usedPercent}% used`, `As of ${fmt(today, {day:'numeric',month:'short',year:'numeric'})}`]
+        pills: [`${plural(Math.max(0, rolling.remaining),'day')} left`, `${usedPercent}% used`, `As of ${fmt(today, {day:'numeric',month:'short',year:'numeric'})}`]
       };
     }
 
