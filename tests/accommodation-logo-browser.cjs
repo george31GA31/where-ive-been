@@ -94,7 +94,19 @@ let browser;
     await button.focus();await page.keyboard.press('Enter');await popup.locator('[data-hotel-logo-replace]').waitFor();await page.keyboard.press('ArrowDown');assert.equal(await popup.locator('[data-hotel-logo-remove]').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Escape');assert.equal(await popup.locator('[role=menu]').count(),0);assert.equal(await popup.isVisible(),true);
     await page.keyboard.press('Enter');await popup.locator('[data-hotel-logo-remove]').click();assert.equal(await button.locator('img').count(),0);assert.equal(await button.locator('.herald-stay-icon').count(),1);assert.deepEqual(await page.evaluate(layout),geometry);
     await page.reload();await openHotel();assert.equal(await button.locator('.herald-stay-icon').count(),1);assert.equal(await page.evaluate(()=>HVAccommodationLogos.logo(state,'repeat')),null);
-    assert.deepEqual(await page.evaluate(keys=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)])),protectedKeys),protectedStorage);assert.deepEqual(errors,[]);
+    assert.deepEqual(await page.evaluate(keys=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)])),protectedKeys),protectedStorage);
+    // A resize frame that was already queued must be harmless after its editor closes.
+    const stableAfterRemoval=await page.evaluate(snapshot);
+    await page.evaluate(async()=>{
+      const frames=[],raf=window.requestAnimationFrame,cancel=window.cancelAnimationFrame;
+      window.requestAnimationFrame=callback=>{frames.push(callback);return frames.length;};window.cancelAnimationFrame=()=>{};
+      try{
+        HVPlaces.open({accommodation:true});const editor=document.querySelector('.place-search-dialog[open]');
+        editor.querySelector('[data-place-plot]').click();const closed=new Promise(resolve=>editor.addEventListener('close',resolve,{once:true}));editor.close();await closed;
+        if(!frames.length)throw new Error('Expected a queued map resize');for(const frame of frames)frame(performance.now());
+      }finally{window.requestAnimationFrame=raf;window.cancelAnimationFrame=cancel;}
+    });
+    assert.equal(await page.evaluate(snapshot),stableAfterRemoval);assert.deepEqual(errors,[]);
     await page.close();console.log(`Hotel upload/replace/remove, square/wide/tall pixels, fixed popup layout, sharing, reload and storage failure passed at ${width}px in ${theme} (${owned?'isolated guest':'local guest'}).`);
   }
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await browser?.close();server.close();});
