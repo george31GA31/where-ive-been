@@ -65,9 +65,14 @@ jobs:
         with:
           category: "/language:javascript-typescript"
 
-      - name: Retain CodeQL diagnostic report
+      - name: Summarise CodeQL diagnostic findings
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: codeql-diagnostic-report
-          path: ../results/javascript.sarif
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ['CODEQL_ACTION_SARIF_RESULTS_OUTPUT_DIR']) / 'javascript.sarif').read_text())
+          for run in report['runs']:
+              for result in run.get('results', []):
+                  print(json.dumps({'rule': result['ruleId'], 'message': result['message'], 'locations': result.get('locations'), 'flows': result.get('codeFlows')}, ensure_ascii=True))
+          PY
