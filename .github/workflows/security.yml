@@ -64,3 +64,10 @@ jobs:
         uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
         with:
           category: "/language:javascript-typescript"
+
+      - name: Retain CodeQL diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-diagnostic-report
+          path: ../results/javascript.sarif
