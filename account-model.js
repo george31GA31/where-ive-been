@@ -9,7 +9,7 @@
   }
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
-  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
+  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
   function merge(base, local, remote, resolve) {
     const conflicts = [];
     function field(b, l, r, path) {
@@ -45,7 +45,7 @@
       if (r.profileIds) r.profileIds.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']) {
+    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']) {
       result[key] ||= [];
       for (const original of source[key] || []) {
         const record = copy(original);
@@ -77,7 +77,7 @@
   }
   function describeConflict(conflict,data={}) {
     const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
-    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
+    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
     const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
     const display=value=>{
       if(value===undefined)return 'Deleted';if(value===null||value==='')return 'Not recorded';
