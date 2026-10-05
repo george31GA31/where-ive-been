@@ -5,7 +5,7 @@ for(const way of ways)way.nodes.forEach((id,i)=>nodes.set(id,{type:'node',id,...
 const full={elements:[...nodes.values(),...ways.map(({geometry,...way})=>way),departure.elements.find(e=>e.type==='relation'&&e.id===1973077)]},start={lat:46.0592,lon:14.5134},end={lat:46.4365,lon:14.0554};
 function load(fetch){
  const window={},context={window,document:{addEventListener(){}},HVRouteGeometry:G,HVRouteStore:require('../route-persistence'),fetch,AbortController,DOMException,URLSearchParams,Date,performance,clearTimeout,setTimeout:(fn,ms)=>setTimeout(fn,ms<=3000?0:ms)};
- const source=fs.readFileSync(path.join(__dirname,'../journey-map.js'),'utf8').replace('window.HVJourneyMap={open,mountGlobal,waterFallback};','window.HVJourneyMap={open,mountGlobal,waterFallback};window.testRailFallback=railFallback;');vm.runInNewContext(source,context);return window.testRailFallback;
+ const source=fs.readFileSync(path.join(__dirname,'../journey-map.js'),'utf8').replace('window.HVJourneyMap={open,mountGlobal,waterFallback,route};','window.HVJourneyMap={open,mountGlobal,waterFallback,route};window.testRailFallback=railFallback;');vm.runInNewContext(source,context);return window.testRailFallback;
 }
 test('Overpass outages recover through physical railway infrastructure without a scheduled service',async()=>{
  const calls=[],fetch=async url=>{calls.push(url);if(url.includes('overpass'))return {ok:false};let data;

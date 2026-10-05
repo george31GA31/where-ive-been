@@ -17,6 +17,7 @@
     if(!validCoordinates(result.coordinates)&&!(result.unavailable&&Array.isArray(result.coordinates)&&result.coordinates.length===0))return null;
     if(!record.resolvedRoutes||typeof record.resolvedRoutes!=='object')record.resolvedRoutes={};
     const coords=result.coordinates.map(p=>[Number(p[0]),Number(p[1])]),saved={version:VERSION,signature:signature(type,index,start,end),polyline:encode(coords),points:coords.length,label:String(result.label||'Saved route'),illustrative:!!result.illustrative,unavailable:!!result.unavailable,resolvedAt:new Date().toISOString(),refreshToken:record.routeRefreshToken||''};record.resolvedRoutes[key]=saved;
+    for(const field of ['distance','duration'])if(finite(result[field])&&Number(result[field])>=0)saved[field]=Number(result[field]);
     // Draw the same centimetre-precision geometry that reloads and other devices use.
     return get(record,index,type,start,end);
   }
