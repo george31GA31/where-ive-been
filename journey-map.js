@@ -37,6 +37,23 @@
     const nodes=new Map(data.elements.filter(e=>e.type==='node'&&G.point(e)).map(e=>[e.id,{lat:e.lat,lon:e.lon}]));
     return data.elements.filter(e=>e.type==='way'&&(e.tags?.route==='ferry'||e.tags?.['seamark:type']==='recommended_track'||e.tags?.waterway==='fairway')).map(e=>({...e,geometry:e.nodes?.map(id=>nodes.get(id))||[]}));
   }
+  async function railFallback(start,end,signal,exactElements){
+    // Reuse partial service geometry before asking for more railway data.
+    const elements=[...exactElements],resolve=()=>G.networkPath(elements,start,end,{type:'train',signal});
+    let coordinates=await resolve();if(coordinates)return coordinates;
+    for(const expanded of [false,true]){
+      if(signal.aborted)throw new DOMException('Closed','AbortError');
+      const query=G.networkQuery('train',start,end,{expanded});if(!query)return null;
+      // Keep using OSM, with a second compatible instance when the first lookup
+      // fails or its corridor cannot connect the stops. All requests are read-only.
+      const reserved=Math.max(Date.now(),lastRequest+1100),delay=reserved-Date.now();lastRequest=reserved;if(delay)await new Promise(r=>setTimeout(r,delay));
+      if(signal.aborted)throw new DOMException('Closed','AbortError');
+      const service=expanded?'https://overpass.private.coffee/api/interpreter':'https://overpass-api.de/api/interpreter';
+      try{const data=await serviceJSON(service+'?'+new URLSearchParams({data:query}),signal,expanded?18000:14000);if(Array.isArray(data.elements))elements.push(...data.elements);}catch{if(signal.aborted)throw new DOMException('Closed','AbortError');}
+      coordinates=await resolve();if(coordinates)return coordinates;
+    }
+    return null;
+  }
   async function route(type,start,end,signal){
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon]);if(cache.has(key))return cache.get(key);
     // FOSSGIS public routing limit: at most one request per second, shared across maps.
@@ -51,10 +68,14 @@
       }else if(['train','boat'].includes(type)){
         const mode=type==='train'?'train|railway':'ferry',query=`[out:json][timeout:15];rel(around:2500,${start.lat},${start.lon})[route~"^(${mode})$"];out geom;`;
         const data=await serviceJSON('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),signal,22000);exactElements=data.elements||[];
-        const coordinates=G.mappedPath(exactElements,start,end);if(!coordinates||coordinates.length<2)throw Error();result={coordinates,label:type==='train'?'Mapped railway route (OSM)':'Mapped ferry route (OSM)'};
+        const coordinates=G.mappedPath(exactElements,start,end,{type});if(!coordinates||coordinates.length<2)throw Error();result={coordinates,label:type==='train'?'Mapped railway route (OSM)':'Mapped ferry route (OSM)'};
       }else throw Error();
     }catch(error){
       if(signal.aborted)throw error;
+      if(type==='train'){
+        const coordinates=await railFallback(start,end,signal,exactElements);if(!coordinates||coordinates.length<2||signal.aborted)throw error;
+        result={coordinates,label:'Nearby mapped railway route (approximate)',illustrative:true};
+      }else{
       const query=G.networkQuery(type,start,end);if(!query)throw error;
       let elements=exactElements,networkUnavailable=false;const maskRequest=type==='boat'?loadCoastline().catch(()=>null):null;
       try{const data=await serviceJSON('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),signal,8000);elements=[...elements,...data.elements||[]];}catch{if(signal.aborted)throw error;networkUnavailable=true;}
@@ -62,6 +83,7 @@
       const mask=await maskRequest;
       const coordinates=await G.networkPath(elements,start,end,{type,mask,signal});if(!coordinates||coordinates.length<2||signal.aborted)throw error;
       result={coordinates,label:type==='boat'?'Nearby mapped ferry / marine route (approximate)':type==='train'?'Nearby mapped railway route (approximate)':type==='walk'?'Nearby mapped walking network (approximate)':'Nearby mapped road network (approximate)',illustrative:true};
+      }
     }
     cache.set(key,result);if(cache.size>80)cache.delete(cache.keys().next().value);return result;
   }

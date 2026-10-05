@@ -16,3 +16,14 @@ Source extracts (`https://api.openstreetmap.org/api/0.6/map?bbox=`):
 | Ljubljana–Tivoli | 14.49,46.054,14.515,46.062 |
 
 Only transport ways and tags relevant to matching are retained. The map API includes complete way geometry outside the extract boundary. Browser tests replay these same ways as both Overpass geometry and a node-reference harbour response, so they work without contacting public routing services.
+
+Regional rail fixtures retrieved on the same date use the read-only relation/full API below. They retain physical ways, node IDs, geometry and track tags, and deliberately omit every service relation. These test network routing without identifying a scheduled train, including passenger passing loops on the Jesenice line and the curved Kyle line via Dingwall.
+
+| Fixture | Source |
+| --- | --- |
+| Ljubljana–Zidani Most (Dobova line) | https://api.openstreetmap.org/api/0.6/relation/3436912/full.json |
+| Ljubljana–Jesenice | https://api.openstreetmap.org/api/0.6/relation/1973077/full.json |
+| Ljubljana–Kočevje | https://api.openstreetmap.org/api/0.6/relation/14620139/full.json |
+| Kyle of Lochalsh–Inverness | https://api.openstreetmap.org/api/0.6/relation/1309210/full.json |
+
+Browser checks also simulate an incomplete first rail network response, an unavailable first provider, and a clipped train relation. Exact rail, ferry and road responses are checked against their unchanged coordinates; all routes keep their existing line styling and itinerary data through reload.
