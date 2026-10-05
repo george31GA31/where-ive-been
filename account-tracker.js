@@ -23,7 +23,7 @@
     const selections = new Map(['stayProfile', 'plannerProfile'].map(id => [id, $(id)?.value]));
     populateProfileSelects();
     for (const [id, value] of selections) if ($(id) && [...$(id).options].some(o => o.value === value)) $(id).value = value;
-    renderAll(); lock(false);
+    renderAll(); window.dispatchEvent(new CustomEvent('hv-data-changed')); lock(false);
   }
   // Account copies never enter the legacy shared local key.
   persist = function () {
