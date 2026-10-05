@@ -382,6 +382,18 @@
     });
   }
 
+  function installFooter() {
+    if (q('.herald-footer')) return;
+    const footer=document.createElement('footer');footer.className='herald-footer';
+    const base=rootUrl.href.replace(/#.*$/,'');
+    const links=[
+      ['Home','dashboard'],['Calendar','calendar'],['Trips','trips'],['Journey Map','journey-map'],['Atlas','map'],['Travel Tools','travel-tools']
+    ];
+    footer.innerHTML=`<div class="herald-footer-main"><div class="herald-footer-brand"><strong>HERALD VOYAGES</strong><span>Every journey, kept in one place.</span></div><nav class="herald-footer-nav" aria-label="Herald Voyages footer">${links.map(([label,path])=>`<a href="${base}#/${path}">${label}</a>`).join('')}</nav></div><div class="herald-footer-bottom"><span>© ${new Date().getFullYear()} Herald Voyages</span><span>Map the journey. Remember the story.</span></div>`;
+    const target=document.body.dataset.accountPage?q('.account-page'):q('.main');
+    target?.append(footer);
+  }
+
   function installAccountChrome() {
     if (!document.body.dataset.accountPage) return;
     document.body.classList.add('voyages-account-body');
@@ -511,6 +523,7 @@
   function boot() {
     installBranding();
     installAccountChrome();
+    installFooter();
     if (!document.body.dataset.accountPage) {
       installNavigation();
       installTravellerSelector();
