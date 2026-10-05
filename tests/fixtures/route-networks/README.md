@@ -27,3 +27,5 @@ Regional rail fixtures retrieved on the same date use the read-only relation/ful
 | Kyle of Lochalsh–Inverness | https://api.openstreetmap.org/api/0.6/relation/1309210/full.json |
 
 Browser checks also simulate an incomplete first rail network response, an unavailable first provider, and a clipped train relation. Exact rail, ferry and road responses are checked against their unchanged coordinates; all routes keep their existing line styling and itinerary data through reload.
+
+The `ljubljana-station` and `jesenice-station` fixtures are small read-only OSM map extracts for the rail outage backup. They retain rail ways, their nodes, and infrastructure relations (`route=railway/tracks`), without scheduled train services. Their source bounding boxes are recorded in each JSON file. Browser tests make both Overpass instances unavailable, recover through these extracts and the shared infrastructure relation, and verify that only one relation/full request is needed.

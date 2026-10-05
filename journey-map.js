@@ -37,10 +37,43 @@
     const nodes=new Map(data.elements.filter(e=>e.type==='node'&&G.point(e)).map(e=>[e.id,{lat:e.lat,lon:e.lon}]));
     return data.elements.filter(e=>e.type==='way'&&(e.tags?.route==='ferry'||e.tags?.['seamark:type']==='recommended_track'||e.tags?.waterway==='fairway')).map(e=>({...e,geometry:e.nodes?.map(id=>nodes.get(id))||[]}));
   }
-  async function railFallback(start,end,signal,exactElements){
+  function railApiElements(data){
+    if(data.error||!Array.isArray(data.elements)||data.elements.length>60000)throw Error('Railway data unavailable');
+    const nodes=new Map(data.elements.filter(e=>e.type==='node'&&G.point(e)).map(e=>[e.id,{lat:e.lat,lon:e.lon}]));
+    return data.elements.filter(e=>e.type==='way'&&/^(rail|light_rail|narrow_gauge|subway)$/.test(e.tags?.railway||'')).map(e=>({...e,geometry:e.nodes?.map(id=>nodes.get(id))||[]})).concat(data.elements.filter(e=>e.type==='relation'&&/^(train|railway|tracks|subway|light_rail)$/.test(e.tags?.route||'')));
+  }
+  async function railApiFallback(start,end,signal){
+    // Tiny station extracts expose nearby infrastructure even when Overpass is
+    // unavailable. At most two complete rail relations fill the intervening track.
+    const extracts=await Promise.allSettled([start,end].map(stop=>{
+      const dy=.005,dx=dy/Math.max(.2,Math.cos(stop.lat*Math.PI/180)),bbox=[Math.max(-180,stop.lon-dx),Math.max(-90,stop.lat-dy),Math.min(180,stop.lon+dx),Math.min(90,stop.lat+dy)].join(',');
+      return serviceJSON('https://api.openstreetmap.org/api/0.6/map.json?'+new URLSearchParams({bbox}),signal,14000).then(railApiElements);
+    }));
+    if(signal.aborted)return null;
+    const elements=extracts.flatMap(r=>r.status==='fulfilled'?r.value:[]),resolve=()=>G.networkPath(elements,start,end,{type:'train',signal});
+    let coordinates=await resolve();if(coordinates)return coordinates;
+    const candidates=new Map();for(let i=0;i<extracts.length;i++)if(extracts[i].status==='fulfilled'){
+      const local=extracts[i].value,ways=new Set(local.filter(e=>e.type==='way').map(e=>e.id));
+      for(const rel of local)if(rel.type==='relation'&&Number.isSafeInteger(rel.id)&&rel.members?.length<=2000&&rel.members.some(m=>m.type==='way'&&ways.has(m.ref))){
+        if(!candidates.has(rel.id))candidates.set(rel.id,{rel,ends:new Set()});candidates.get(rel.id).ends.add(i);
+      }
+    }
+    const ranked=[...candidates.values()].sort((a,b)=>b.ends.size-a.ends.size||Number(/^(railway|tracks)$/.test(b.rel.tags.route))-Number(/^(railway|tracks)$/.test(a.rel.tags.route))||a.rel.members.length-b.rel.members.length),selected=[];
+    for(const side of [0,1]){const candidate=ranked.find(c=>c.ends.has(side));if(candidate&&!selected.some(c=>c.rel.id===candidate.rel.id))selected.push(candidate);}
+    const complete=await Promise.allSettled(selected.map(c=>serviceJSON('https://api.openstreetmap.org/api/0.6/relation/'+c.rel.id+'/full.json',signal,16000).then(railApiElements)));
+    for(const result of complete)if(result.status==='fulfilled')elements.push(...result.value);
+    if(signal.aborted)return null;coordinates=await resolve();return coordinates;
+  }
+  async function railFallback(start,end,signal,exactElements,singleSource=false){
     // Reuse partial service geometry before asking for more railway data.
     const elements=[...exactElements],resolve=()=>G.networkPath(elements,start,end,{type:'train',signal});
     let coordinates=await resolve();if(coordinates)return coordinates;
+    if(!singleSource){
+      const controller=new AbortController(),abort=()=>controller.abort();signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();
+      const usable=p=>p.then(coords=>{if(!coords)throw Error('Railway network unavailable');return coords;});
+      try{return await Promise.any([usable(railFallback(start,end,controller.signal,exactElements,true)),usable((async()=>{await new Promise(r=>setTimeout(r,3000));if(controller.signal.aborted)return null;return railApiFallback(start,end,controller.signal);})())]);}
+      catch{return null;}finally{controller.abort();signal.removeEventListener('abort',abort);}
+    }
     for(const expanded of [false,true]){
       if(signal.aborted)throw new DOMException('Closed','AbortError');
       const query=G.networkQuery('train',start,end,{expanded});if(!query)return null;
