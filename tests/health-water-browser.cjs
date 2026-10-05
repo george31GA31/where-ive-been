@@ -20,7 +20,7 @@ let browser;
   await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
   await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendar?.ready&&window.HVEntryHealth&&window.HVJourneyMap);
   await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
-  const before=await page.evaluate(snapshot),stored=await page.evaluate(originalStored);
+  const before=await page.evaluate(snapshot),stored=await page.evaluate(()=>JSON.stringify({...state,transports:state.transports.map(({resolvedRoutes,...record})=>record)}));
   const day=date=>page.locator('.calendar-day[data-calendar-date="2026-10-'+date+'"]');
   const geometry=cell=>cell.evaluate(n=>{const b=n.getBoundingClientRect();return {width:b.width,height:b.height,parts:[...n.querySelectorAll('.calendar-day-top,.day-number,.calendar-day-status,.calendar-country-section,.calendar-lodging-segment,.calendar-day-transport,.calendar-more-countries')].map(p=>{const r=p.getBoundingClientRect();return {class:p.className,x:r.x-b.x,y:r.y-b.y,width:r.width,height:r.height};})};});
   for(const date of ['18','03','07','08']){

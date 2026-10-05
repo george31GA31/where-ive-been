@@ -10,7 +10,14 @@
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
   const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
+  function compatibleNotes(data) {
+    if (data.notes == null || Array.isArray(data.notes)) return data;
+    const result=copy(data);result.legacyTravelNotes??=copy(result.notes);
+    result.notes=typeof result.notes==='string'&&result.notes.trim()?[{id:'legacy-travel-note',title:'Imported travel notes',body:result.notes,profileId:result.activeProfileId||null,category:'General'}]:[];
+    return result;
+  }
   function merge(base, local, remote, resolve) {
+    base=compatibleNotes(base);local=compatibleNotes(local);remote=compatibleNotes(remote);
     const conflicts = [];
     function field(b, l, r, path) {
       if (equal(l, r) || equal(b, r)) return copy(l);
@@ -40,6 +47,7 @@
     return {data: result, conflicts};
   }
   function importData(remote, source, resolve) {
+    remote=compatibleNotes(remote);source=compatibleNotes(source);
     // Compare complete records without IDs. Different notes/passports are never discarded.
     const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map(), transportIds=new Map(), accommodationIds=new Map(), locationIds=new Map(), budgetIds=new Map();
     const signature = record => {
@@ -99,6 +107,7 @@
   }
   function validateImport(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Choose a valid travel backup.');
+    data=compatibleNotes(data);
     for (const key of collections) {
       if (data[key] === undefined) continue;
       if (!Array.isArray(data[key])) throw new Error(key + ' must be a list.');
