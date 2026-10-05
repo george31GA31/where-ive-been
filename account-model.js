@@ -37,7 +37,7 @@
   }
   function importData(remote, source, resolve) {
     // Compare complete records without IDs. Different notes/passports are never discarded.
-    const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map();
+    const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map(), checklistIds = new Map(), budgetIds = new Map();
     const signature = record => {
       const r = copy(record); delete r.id;
       if (r.citizenships) r.citizenships.sort();
@@ -53,10 +53,12 @@
         if (Array.isArray(record.profileIds)) record.profileIds=[...new Set(record.profileIds.map(id=>profileIds.get(id)||id))].sort();
         if (record.tripId) record.tripId = tripIds.get(record.tripId) || record.tripId;
         if (record.stayId) record.stayId = stayIds.get(record.stayId) || record.stayId;
+        if (record.checklistId) record.checklistId = checklistIds.get(record.checklistId) || record.checklistId;
+        if (record.budgetId) record.budgetId = budgetIds.get(record.budgetId) || record.budgetId;
         if (record.autoFromPlannedId) record.autoFromPlannedId = stayIds.get(record.autoFromPlannedId) || record.autoFromPlannedId;
         const same = result[key].find(x => x.id === record.id);
         const duplicate = result[key].find(x => signature(x) === signature(record));
-        const mapping = key === 'profiles' ? profileIds : key === 'trips' ? tripIds : key === 'stays' ? stayIds : null;
+        const mapping = key === 'profiles' ? profileIds : key === 'trips' ? tripIds : key === 'stays' ? stayIds : key === 'checklists' ? checklistIds : key === 'budgets' ? budgetIds : null;
         if (duplicate) { mapping?.set(original.id, duplicate.id); continue; }
         if (same) {
           const conflict = {path: key + '.' + record.id, local: record, remote: same};
