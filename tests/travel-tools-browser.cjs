@@ -78,21 +78,33 @@ let browser;
     await page.screenshot({ path: path.join(out, `plan-${width}-${theme}.png`), fullPage: true });
     await nav('tools').click();
     assert.ok(page.url().endsWith('#/travel-tools'));
-    assert.equal(await page.locator('#toolsView .travel-tool-link').count(), 3);
+    assert.equal(await page.locator('#toolsView .travel-tool-link').count(), 5);
     assert.equal(await page.locator('#toolsView .workspace-tabs').count(), 0, 'The overview keeps a single restrained list of tools');
-    assert.equal(await page.locator('[data-coming-tool]').count(), 3);
+    assert.equal(await page.locator('[data-coming-tool]').count(), 2);
     await fits();
     await page.screenshot({ path: path.join(out, `tools-${width}-${theme}.png`), fullPage: true });
-    for (const title of ['Road Trip Planner', 'Budget Planner', 'Currency Converter']) {
+    for (const title of ['Road Trip Planner', 'Currency Converter']) {
       await page.getByRole('button', { name: title + ' Coming Soon', exact: true }).click();
       const dialog = page.getByRole('dialog', { name: title, exact: true });
       assert.match(await dialog.innerText(), /This travel tool is on its way/);
       await dialog.getByRole('button', { name: 'Close' }).click();
       assert.equal(await page.getByRole('dialog').count(), 0);
     }
-    await page.locator('.travel-tool-link[href="#/travel-tools/stay-planner"]').click();
+    await page.locator('.travel-tool-link[href="#/travel-tools/notes"]').click();
+    assert.equal(await page.locator('#pageTitle').innerText(), 'Notes & Checklist');
+    assert.equal(await page.locator('#notesView .workspace-tabs button').count(), 6);
+    assert.ok(await page.locator('#newNoteBtn').isVisible());
+    assert.ok(await page.locator('#newChecklistBtn').isVisible());
+    await fits();
+    await page.screenshot({ path: path.join(out, `notes-${width}-${theme}.png`), fullPage: true });
+    await page.locator('[data-workspace-view="budget"]').click();
+    assert.equal(await page.locator('#pageTitle').innerText(), 'Budget Planner');
+    assert.ok(await page.locator('#budgetTripSelect').isVisible());
+    await fits();
+    await page.screenshot({ path: path.join(out, `budget-${width}-${theme}.png`), fullPage: true });
+    await page.locator('[data-workspace-view="stayPlanner"]').click();
     assert.equal(await page.locator('.workspace-nav.active').innerText(), 'Travel Tools');
-    assert.equal(await page.locator('#stayPlannerView .workspace-tabs button').count(), 4, 'Each moved tool provides access to the overview and the other tools');
+    assert.equal(await page.locator('#stayPlannerView .workspace-tabs button').count(), 6, 'Each travel tool provides access to the overview and the other tools');
     await page.locator('#plannerCountry').fill('France');
     await page.locator('#plannerEntry').fill('2026-10-10');
     await page.locator('#plannerExit').fill('2026-10-14');
