@@ -75,7 +75,7 @@
     if (!button.hidden) {
       const source = deviceSource();
       button.textContent = 'Add this data to my account';
-      const preview=M.importData(state,source),added=['stays','trips','profiles','residences','transports','accommodations','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(preview.data[key]?.length||0)-(state[key]?.length||0),0),total=['stays','trips','profiles','residences','transports','accommodations','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(source[key]?.length||0),0),duplicates=Math.max(0,total-added-preview.conflicts.length);
+      const preview=M.importData(state,source),added=['stays','trips','profiles','residences','transports','accommodations','notes','checklists','budgets','expenses','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(preview.data[key]?.length||0)-(state[key]?.length||0),0),total=['stays','trips','profiles','residences','transports','accommodations','notes','checklists','budgets','expenses','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(source[key]?.length||0),0),duplicates=Math.max(0,total-added-preview.conflicts.length);
       button.previousElementSibling && (button.previousElementSibling.textContent = `We found existing travel history on this device: ${source.stays.length} stays, ${source.profiles.length} travellers, ${source.residences.length} home records, ${source.transports?.length||0} transport records and ${source.accommodations?.length||0} accommodation entries. ${duplicates} likely duplicates will be skipped; ${preview.conflicts.length} conflicts need a choice. Your original copy will be kept.`);
     }
   }
