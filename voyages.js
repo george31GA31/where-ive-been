@@ -395,6 +395,12 @@
     }
   }
 
+  function installFooter(){
+    if(q('.herald-site-footer'))return;const host=document.body.dataset.accountPage?q('.account-page'):q('.main');if(!host)return;
+    const href=view=>document.body.dataset.accountPage?new URL('#/'+ROUTES[view],rootUrl).href:'#/'+ROUTES[view],footer=document.createElement('footer');footer.className='herald-site-footer';
+    footer.innerHTML=`<div class="herald-footer-main"><div class="herald-footer-brand"><strong>HERALD VOYAGES</strong><span>Map the journey. Keep the story.</span></div><nav class="herald-footer-links" aria-label="Herald destinations">${[['dashboard','Dashboard'],['map','Atlas'],['journeys','Journey Map'],['calendar','Calendar'],['stays','Trips'],['tools','Travel Tools']].map(([view,label])=>`<a href="${href(view)}">${label}</a>`).join('')}</nav></div><div class="herald-footer-bottom"><span>Personal travel atlas and journey journal</span><span>© ${new Date().getFullYear()} Herald Voyages</span></div>`;host.append(footer);
+  }
+
   function watchDynamicBranding() {
     const observer = new MutationObserver((records) => {
       let shouldRefresh = false;
@@ -511,6 +517,7 @@
   function boot() {
     installBranding();
     installAccountChrome();
+    installFooter();
     if (!document.body.dataset.accountPage) {
       installNavigation();
       installTravellerSelector();
