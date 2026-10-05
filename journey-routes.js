@@ -24,6 +24,109 @@
     while(queue.length){const [cost,k]=pop();if(cost!==costs.get(k))continue;if(k===b[0])break;for(const [next,d] of graph.get(k)||[])if(cost+d<(costs.get(next)??Infinity)){costs.set(next,cost+d);previous.set(next,k);push([cost+d,next]);}}
     if(!costs.has(b[0]))return null;const path=[];let k=b[0];while(k){path.push(coords.get(k));if(k===a[0])break;k=previous.get(k);}return path.reverse();
   }
+  // A second pass over the same OSM geometry, used only after exact routing fails.
+  // Stops attach to segments, not just vertices. Small gaps are penalised heavily.
+  async function networkPath(elements,start,end,options={}){
+    const type=options.type,marine=type==='boat',rail=type==='train',road=['car','bus','walk'].includes(type),mask=options.mask,signal=options.signal;
+    if(!point(start)||!point(end)||!Array.isArray(elements)||elements.length>10000||(!marine&&!rail&&!road)||marine&&!mask?.land)return null;
+    const clock=()=>root.performance?.now?.()??Date.now(),began=clock(),budget=options.maxMs??3000,expired=()=>signal?.aborted||clock()-began>=budget;
+    const from=[start.lat,start.lon],to=[end.lat,end.lon],direct=distance(from,to);
+    if(expired()||direct<100||direct>2500000||Math.max(Math.abs(start.lat),Math.abs(end.lat))>80)return null;
+    if(marine&&!options.marinePass){const preferred=await networkPath(elements,start,end,{...options,marinePass:true,ferryOnly:true});return preferred||networkPath(elements,start,end,{...options,marinePass:true,maxMs:budget-(clock()-began)});}
+    const snapLimit=marine?Math.min(12000,Math.max(1800,direct*.12)):rail?Math.min(6000,Math.max(800,direct*.08)):Math.min(3000,Math.max(500,direct*.06));
+    const gapLimit=marine?Math.min(8000,Math.max(300,direct*.08)):rail?Math.min(900,Math.max(60,direct*.012)):100;
+    const wrapNear=lon=>start.lon+((lon-start.lon+540)%360)-180,xScale=111320*Math.cos((start.lat+end.lat)*Math.PI/360),xy=p=>[(wrapNear(p[1])-start.lon)*xScale,(p[0]-start.lat)*111320];
+    const project=(p,s)=>{const [x,y]=xy(p),[a,b]=xy(s.a),[c,d]=xy(s.b),dx=c-a,dy=d-b,t=Math.max(0,Math.min(1,((x-a)*dx+(y-b)*dy)/(dx*dx+dy*dy||1))),q=[s.a[0]+(s.b[0]-s.a[0])*t,wrapNear(s.a[1])+(wrapNear(s.b[1])-wrapNear(s.a[1]))*t];return {s,t,p:q,d:distance(p,q)};};
+    const nodes=new Map(),segments=[],ends=new Map(),seen=new Set(),parent=new Map();
+    const find=k=>{let p=k;while(parent.get(p)!==p)p=parent.get(p);while(k!==p){const next=parent.get(k);parent.set(k,p);k=next;}return p;};
+    const union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent.set(b,a);};
+    function mode(tags){
+      if(tags.area==='yes'||['no','private'].includes(tags.access)||tags.disused==='yes'||tags.abandoned==='yes')return 0;
+      if(marine)return tags.route==='ferry'?1:options.ferryOnly?0:tags['seamark:type']==='recommended_track'||tags.waterway==='fairway'?1.2:0;
+      if(rail)return /^(rail|light_rail|narrow_gauge|subway)$/.test(tags.railway||'')&&!/^(yard|siding|spur)$/.test(tags.service||'')?1:0;
+      const allowed=type==='walk'?/^(footway|path|pedestrian|steps|living_street|residential|service|unclassified|tertiary|secondary|primary|track)$/:/^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$/;
+      return allowed.test(tags.highway||'')&&!['no','private'].includes(tags[type==='walk'?'foot':'motor_vehicle'])?1:0;
+    }
+    function addWay(way,inherited={}){
+      if(!way||nodes.size>60000||segments.length>60000)return;
+      const tags={...inherited,...way.tags},factor=mode(tags),id=way.id??way.ref;
+      if(!factor||!Array.isArray(way.geometry)||way.geometry.length<2||way.geometry.length>60000||id!=null&&seen.has(id))return;
+      if(id!=null)seen.add(id);
+      const layer=String(tags.layer||'0'),key=(p,i)=>way.nodes?.[i]!=null?'n:'+way.nodes[i]:p.map(v=>v.toFixed(6)).join(',')+':'+layer;
+      const direction=road&&type!=='walk'?(tags.oneway==='-1'?-1:/^(yes|1|true)$/.test(tags.oneway||'')||tags.junction==='roundabout'?1:0):0;
+      let previous=null,first=null,last=null;
+      const finish=()=>{if(first&&last&&first.k!==last.k){ends.set(first.k,{...first,layer});ends.set(last.k,{...last,layer});}first=last=null;};
+      for(let i=0;i<way.geometry.length&&nodes.size<=60000&&segments.length<=60000;i++){
+        const value=way.geometry[i];if(!point(value)){finish();previous=null;continue;}
+        const p=[value.lat,value.lon],k=key(p,i);if(!nodes.has(k)){nodes.set(k,p);parent.set(k,k);}
+        if(previous&&previous.k!==k){const length=distance(previous.p,p);if(length>.01){const s={a:previous.p,b:p,ka:previous.k,kb:k,length,factor,layer,direction,way:id??way,cuts:[]};segments.push(s);union(previous.k,k);if(!first)first={...previous,tangent:[p[0]-previous.p[0],wrapNear(p[1])-wrapNear(previous.p[1])]};last={k,p,tangent:[previous.p[0]-p[0],wrapNear(previous.p[1])-wrapNear(p[1])]};}}
+        previous={k,p};
+      }finish();
+    }
+    // Prefer full ways with node IDs and tags over duplicate relation members.
+    for(const element of elements)if(element?.type==='way')addWay(element);
+    for(const element of elements)if(element?.type==='relation'||element?.members)for(const member of element.members||[])if((member.type==='way'||member.geometry)&&!/(platform|stop)/.test(member.role||''))addWay(member,{route:element.tags?.route,railway:/^(train|railway)$/.test(element.tags?.route||'')?'rail':undefined});
+    if(!segments.length||nodes.size>60000||segments.length>60000||expired())return null;
+    const graph=new Map(),add=(a,b,coords,kind,factor=1)=>{const length=coords.slice(1).reduce((n,p,i)=>n+distance(coords[i],p),0);if(!graph.has(a))graph.set(a,[]);graph.get(a).push({to:b,coords,length,kind,cost:length*factor});};
+    let serial=0;const cut=c=>{if(c.t<1e-7)return c.s.ka;if(c.t>1-1e-7)return c.s.kb;const old=c.s.cuts.find(v=>Math.abs(v.t-c.t)<1e-7);if(old)return old.k;const k='j:'+(serial++);nodes.set(k,c.p);c.s.cuts.push({...c,k});return k;};
+    function attachments(p){
+      const candidatesByWay=new Map();for(const s of segments){const c=project(p,s);if(c.d>snapLimit)continue;const k=s.way,list=candidatesByWay.get(k)||[];list.push(c);list.sort((a,b)=>a.d-b.d);if(list.length>2)list.pop();candidatesByWay.set(k,list);}
+      return [...candidatesByWay.values()].map(list=>list[0]).sort((a,b)=>a.d-b.d).slice(0,32);
+    }
+    const starts=attachments(from),finishes=attachments(to);if(!starts.length||!finishes.length||expired())return null;
+    const joins=[];for(const [kind,p,list]of [['start',from,starts],['end',to,finishes]])for(const c of list)joins.push({kind,p,c,k:cut(c)});
+    // Index segment bounds to keep gap matching local even on a large railway graph.
+    const grid=new Map(),cell=gapLimit;let entries=0;
+    for(const s of segments){const a=xy(s.a),b=xy(s.b),lowX=Math.floor(Math.min(a[0],b[0])/cell),highX=Math.floor(Math.max(a[0],b[0])/cell),lowY=Math.floor(Math.min(a[1],b[1])/cell),highY=Math.floor(Math.max(a[1],b[1])/cell);if((highX-lowX+1)*(highY-lowY+1)>2000)continue;
+      for(let x=lowX;x<=highX;x++)for(let y=lowY;y<=highY;y++){const k=x+','+y;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(s);if(++entries>200000)return null;}
+    }
+    const bridges=[],bridgeKeys=new Set();let checked=0;
+    for(const endpoint of [...ends.values()].slice(0,2000)){
+      if(++checked%50===0){if(expired())return null;await new Promise(r=>setTimeout(r,0));}
+      const [x,y]=xy(endpoint.p),near=new Set();for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(const s of grid.get((Math.floor(x/cell)+dx)+','+(Math.floor(y/cell)+dy))||[])near.add(s);
+      const candidates=[];for(const s of near){if(find(endpoint.k)===find(s.ka)||s.layer!==endpoint.layer)continue;const c=project(endpoint.p,s);if(c.d<.1||c.d>gapLimit)continue;
+        if(!marine){const v=xy(endpoint.p),q=xy(c.p),t=[endpoint.tangent[1]*xScale,endpoint.tangent[0]*111320],alignment=-(t[0]*(q[0]-v[0])+t[1]*(q[1]-v[1]))/(Math.hypot(...t)*Math.hypot(q[0]-v[0],q[1]-v[1])||1);if(c.d>25&&alignment<.7||c.t>1e-7&&c.t<1-1e-7)continue;}
+        candidates.push(c);
+      }
+      candidates.sort((a,b)=>a.d-b.d);for(const c of candidates.slice(0,3)){const k=cut(c),pair=[endpoint.k,k].sort().join('|');if(bridgeKeys.has(pair))continue;bridgeKeys.add(pair);bridges.push({a:endpoint.k,b:k,coords:[endpoint.p,c.p]});if(bridges.length>=512)break;}if(bridges.length>=512)break;
+    }
+    for(const s of segments){const cuts=[{t:0,k:s.ka,p:s.a},...s.cuts.sort((a,b)=>a.t-b.t),{t:1,k:s.kb,p:s.b}];for(let i=1;i<cuts.length;i++){const a=cuts[i-1],b=cuts[i];if(s.direction!==-1)add(a.k,b.k,[a.p,b.p],'network',s.factor);if(s.direction!==1)add(b.k,a.k,[b.p,a.p],'network',s.factor);}}
+    const connection=async(coords,limit,terminal=false)=>{
+      if(!marine||waterSegment(coords[0],coords[1],mask))return coords;
+      if(coords.some(p=>mask.land(...p)))return terminal?coords:null;
+      if(expired())return null;
+      const route=await waterPath({lat:coords[0][0],lon:coords[0][1]},{lat:coords[1][0],lon:coords[1][1]},mask,{signal,maxMs:Math.min(350,budget-(clock()-began)),maxSnapKm:limit/1000});
+      if(!route)return null;const length=route.slice(1).reduce((n,p,i)=>n+distance(route[i],p),0);return length<=limit&&length<=distance(...coords)*2+500?route:null;
+    };
+    for(const bridge of bridges){const coords=await connection(bridge.coords,gapLimit);if(coords){add(bridge.a,bridge.b,coords,'gap',4);add(bridge.b,bridge.a,[...coords].reverse(),'gap',4);}}
+    for(const j of joins){const coords=await connection(j.kind==='start'?[j.p,j.c.p]:[j.c.p,j.p],snapLimit,true);if(!coords)continue;if(j.kind==='start')add('start',j.k,coords,'connector',4);else add(j.k,'end',coords,'connector',4);}
+    if(!graph.has('start')||expired())return null;
+    const costs=new Map([['start',0]]),previous=new Map(),queue=[[0,'start']];
+    const push=v=>{queue.push(v);let i=queue.length-1;while(i){const p=(i-1)>>1;if(queue[p][0]<=v[0])break;queue[i]=queue[p];i=p;}queue[i]=v;};
+    const pop=()=>{const v=queue[0],tail=queue.pop();if(queue.length){let i=0;while(i*2+1<queue.length){let j=i*2+1;if(j+1<queue.length&&queue[j+1][0]<queue[j][0])j++;if(queue[j][0]>=tail[0])break;queue[i]=queue[j];i=j;}queue[i]=tail;}return v;};
+    let visits=0;while(queue.length){const [cost,k]=pop();if(cost!==costs.get(k))continue;if(k==='end')break;if(++visits%500===0){if(expired())return null;await new Promise(r=>setTimeout(r,0));}for(const edge of graph.get(k)||[])if(cost+edge.cost<(costs.get(edge.to)??Infinity)){costs.set(edge.to,cost+edge.cost);previous.set(edge.to,{from:k,edge});push([cost+edge.cost,edge.to]);}}
+    if(!previous.has('end')||expired())return null;
+    const edges=[];for(let k='end';k!=='start';){const p=previous.get(k);if(!p)return null;edges.push(p.edge);k=p.from;}edges.reverse();
+    const lengths={network:0,gap:0,connector:0},coordinates=[];for(const edge of edges){lengths[edge.kind]+=edge.length;for(const p of edge.coords)if(!coordinates.length||distance(coordinates.at(-1),p)>.01)coordinates.push(p);}
+    const total=lengths.network+lengths.gap+lengths.connector,detour=marine?1.7:rail?2.4:2.2;
+    if(lengths.network<direct*.45||lengths.network<total*.55||lengths.connector>Math.max(1800,direct*.28)||lengths.gap>Math.max(300,direct*(marine?.2:.06))||total>direct*detour+1500)return null;
+    if(marine){
+      // Recorded city stops may sit on shore. Keep their markers, but start/end
+      // the fallback line at water rather than drawing an overland boat leg.
+      const trim=coords=>{let i=0;while(i<coords.length&&mask.land(...coords[i]))i++;if(i===coords.length)return [];if(i){const a=coords[i-1],b=coords[i],n=Math.max(1,Math.ceil(distance(a,b)/100));let p=b;for(let j=1;j<=n;j++){const q=a.map((v,k)=>v+(b[k]-v)*j/n);if(!mask.land(...q)){p=q;break;}}return [p,...coords.slice(i)];}return coords;};
+      let safe=trim(coordinates);safe=trim(safe.reverse()).reverse();if(safe.length<2)return null;
+      for(let i=1;i<safe.length;i++)if(!waterSegment(safe[i-1],safe[i],mask))return null;
+      return safe;
+    }
+    return coordinates;
+  }
+  function networkQuery(type,start,end){
+    if(!point(start)||!point(end)||!['boat','train','car','bus','walk'].includes(type))return null;
+    const metres=distance([start.lat,start.lon],[end.lat,end.lon]);if(metres>2500000||Math.abs(start.lon-end.lon)>180)return null;
+    const radius=Math.round(Math.min(type==='boat'?35000:25000,Math.max(type==='boat'?6000:3000,metres*.2))),area=`(around:${radius},${start.lat},${start.lon},${end.lat},${end.lon})`;
+    const filters=type==='boat'?['[route=ferry]','["seamark:type"=recommended_track]','[waterway=fairway]']:type==='train'?['[railway~"^(rail|light_rail|narrow_gauge|subway)$"]']:['[highway]'];
+    return `[out:json][timeout:10][maxsize:16777216];(${filters.map(f=>'way'+area+f+';').join('')});out body geom;`;
+  }
   const waterNames=new Set(['boat','ferry','cruise','water','water taxi','watertaxi','speedboat','passenger vessel','vessel','ship','sailboat','yacht','water transport','marine']);
   function isWater(type,record={}){const name=v=>String(v||'').toLowerCase().replace(/[-_]+/g,' ').trim();return record.waterTransport===true||[type,record.transportMode,record.mode,record.transportCategory].some(v=>waterNames.has(name(v)));}
   const wrap=lon=>((lon+180)%360+360)%360-180;
@@ -58,11 +161,11 @@
     if(!point(start)||!point(end)||!mask?.land||options.signal?.aborted)return null;
     const clock=()=>root.performance?.now?.()??Date.now(),began=clock(),budget=options.maxMs??2500,limit=options.maxNodes??40000,signal=options.signal;
     const a=[start.lat,start.lon],b=[end.lat,end.lon];while(b[1]-a[1]>180)b[1]-=360;while(b[1]-a[1]<-180)b[1]+=360;
-    const km=distance(a,b)/1000;if(km<.01)return [a,b];if(Math.max(Math.abs(a[0]),Math.abs(b[0]))>80||km>10000)return null;
+    const km=distance(a,b)/1000;if(km<.01)return options.waterOnly&&!waterSegment(a,b,mask)?null:[a,b];if(Math.max(Math.abs(a[0]),Math.abs(b[0]))>80||km>10000)return null;
     const xScale=111.32*Math.cos((a[0]+b[0])*Math.PI/360),yScale=111.32,project=p=>[(p[1]-a[1])*xScale,(p[0]-a[0])*yScale],unproject=p=>[a[0]+p[1]/yScale,a[1]+p[0]/xScale];
-    function snap(p){if(!mask.land(...p))return p;for(let radius=.4;radius<=12;radius+=.4){let best=null,cost=Infinity;for(let i=0;i<32;i++){const angle=i*Math.PI/16,c=[p[0]+Math.sin(angle)*radius/yScale,p[1]+Math.cos(angle)*radius/xScale];if(!mask.land(...c)){const d=distance(c,p);if(d<cost){best=c;cost=d;}}}if(best)return best;}return null;}
+    function snap(p){if(!mask.land(...p))return p;for(let radius=.4;radius<=(options.maxSnapKm??12);radius+=.4){let best=null,cost=Infinity;for(let i=0;i<32;i++){const angle=i*Math.PI/16,c=[p[0]+Math.sin(angle)*radius/yScale,p[1]+Math.cos(angle)*radius/xScale];if(!mask.land(...c)){const d=distance(c,p);if(d<cost){best=c;cost=d;}}}if(best)return best;}return null;}
     const from=snap(a),to=snap(b);if(!from||!to)return null;
-    if(waterSegment(from,to,mask))return [a,...(distance(a,from)>.01?[from]:[]),...(distance(b,to)>.01?[to]:[]),b];
+    if(waterSegment(from,to,mask))return options.waterOnly?[from,to]:[a,...(distance(a,from)>.01?[from]:[]),...(distance(b,to)>.01?[to]:[]),b];
     const fromXY=project(from),toXY=project(to),step=Math.max(.6,km/140),clearance=Math.min(1.2,step*.45);let path=null,visited=0;
     for(const multiplier of [1,2,4]){
       if(signal?.aborted||clock()-began>budget||visited>=limit)return null;
@@ -95,7 +198,7 @@
       const candidate=[smooth.at(-1),...curve,next];if(candidate.slice(1).every((c,j)=>waterSegment(candidate[j],c,mask)))smooth.push(...curve);else smooth.push(p);
     }smooth.push(simple.at(-1));
     if(!smooth.slice(1).every((p,i)=>waterSegment(smooth[i],p,mask)))return null;
-    return [a,...smooth,b];
+    return options.waterOnly?smooth:[a,...smooth,b];
   }
-  const api={point,distance,flightArc,mappedPath,isWater,landMask,waterSegment,waterPath};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVRouteGeometry=api;
+  const api={point,distance,flightArc,mappedPath,networkPath,networkQuery,isWater,landMask,waterSegment,waterPath};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVRouteGeometry=api;
 })(typeof window!=='undefined'?window:globalThis);
