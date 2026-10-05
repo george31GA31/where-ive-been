@@ -28,7 +28,9 @@
     close();return out.join('');
   }
   const money=(amount,currency)=>{if(amount==null||amount==='')return '—';try{return new Intl.NumberFormat('en-GB',{style:'currency',currency:currency||'GBP'}).format(Number(amount));}catch{return Number(amount).toFixed(2)+' '+(currency||'GBP');}};
-  function toolFromHash(){return new URLSearchParams((location.hash.split('?')[1]||'').replace(/&.*$/,'')).get('tool')||'';}
+  const hashParams=()=>new URLSearchParams(location.hash.split('?')[1]||'');
+  function toolFromHash(){return hashParams().get('tool')||'';}
+  function tripFromHash(){const id=hashParams().get('trip')||'';return (state.trips||[]).some(t=>t.id===id)?id:'';}
   function toolHeader(title,eyebrow,copy){
     return '<header class="travel-tool-head"><div><p class="eyebrow">'+E(eyebrow)+'</p><h2>'+E(title)+'</h2><p class="panel-copy">'+E(copy)+'</p></div><a class="secondary compact" href="#/travel-tools">Back to Travel Tools</a></header>';
   }
@@ -64,7 +66,7 @@
     if(tool==='budget')renderBudget();
   }
   function renderNotes(){
-    const filter=get('notesTripFilter')?.value??'',noteTrip=get('noteTrip')?.value??filter,checkTrip=get('checklistTrip')?.value??filter;
+    const context=tripFromHash(),filter=get('notesTripFilter')?.value??context,noteTrip=get('noteTrip')?.value??filter,checkTrip=get('checklistTrip')?.value??filter;
     const notes=(state.notes||[]).filter(n=>!filter||n.tripId===filter).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
     const checklists=(state.checklists||[]).filter(c=>!filter||c.tripId===filter).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
     notesPanel.innerHTML=toolHeader('Notes & Checklist','TRAVEL TOOLS','Keep practical information, documents and trip-ready tasks beside the journeys they belong to.')+
@@ -105,7 +107,7 @@
   function selectedBudgetTrip(){return get('budgetTrip')?.value||'';}
   function budgetFor(tripId){return (state.budgets||[]).find(b=>b.tripId===tripId);}
   function renderBudget(){
-    const selected=selectedBudgetTrip()||trips()[0]?.id||'',budget=budgetFor(selected),items=budget?(state.budgetItems||[]).filter(i=>i.budgetId===budget.id):[],summary=budget?M.budgetSummary(state,budget):null;
+    const selected=selectedBudgetTrip()||tripFromHash()||trips()[0]?.id||'',budget=budgetFor(selected),items=budget?(state.budgetItems||[]).filter(i=>i.budgetId===budget.id):[],summary=budget?M.budgetSummary(state,budget):null;
     const existing=selected?M.existingCosts(state,selected).filter(cost=>!items.some(i=>i.sourceType===cost.sourceType&&i.sourceId===cost.sourceId)):[];
     budgetPanel.innerHTML=toolHeader('Budget Planner','TRAVEL TOOLS','Use costs Herald already knows, plan what is left, then record what you actually spend without turning the trip into a spreadsheet.')+
       '<div class="travel-context-bar"><label class="field"><span>Trip</span><select id="budgetTrip"><option value="">Choose a trip</option>'+trips().map(t=>'<option value="'+E(t.id)+'" '+(t.id===selected?'selected':'')+'>'+E(t.name||'Unnamed trip')+'</option>').join('')+'</select></label><span>Original currencies are always kept. Overall totals use the budget currency only when a reliable equivalent is recorded.</span></div>'+
