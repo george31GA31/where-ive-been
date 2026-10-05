@@ -57,23 +57,28 @@ let browser;
     const protectedStorage=await page.evaluate(keys=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)])),protectedKeys);
     const layout=()=>{const card=document.querySelector('#globalJourneyMap .herald-popup-card'),base=card.getBoundingClientRect();return [card,...card.querySelectorAll('h3,.herald-popup-head p,.herald-popup-date,.herald-popup-address,.herald-popup-actions')].map(el=>{const r=el.getBoundingClientRect();return {x:r.x-base.x,y:r.y-base.y,w:r.width,h:r.height};});};
     const geometry=await page.evaluate(layout),text=await popup.innerText();assert.equal(await button.locator('.herald-stay-icon').count(),1);assert.equal((await button.boundingBox()).width,18);
+    const logoGeometry=geometry.map((box,index)=>index===1||index===2?{...box,x:box.x+12}:box);
     // Native cancellation must not create artwork or a saved place.
     const cancelEvent=page.waitForEvent('filechooser');width===390?await button.tap():await button.click();const cancelled=await cancelEvent;await cancelled.setFiles([]);
     assert.equal(await page.evaluate(snapshot),JSON.stringify(before));
     for(const [kind,w,h]of [['square',80,80],['wide',200,50],['tall',50,200]]){
       const source=await page.evaluate(({w,h})=>{const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.fillStyle='#d02040';ctx.fillRect(0,0,w,h);return c.toDataURL('image/png');},{w,h});
-      if(kind!=='square'){width===390?await button.tap():await button.click();await popup.locator('[data-hotel-logo-replace]').waitFor();}
+      if(kind!=='square'){
+        width===390?await button.tap():await button.click();await popup.locator('[data-hotel-logo-replace]').waitFor();
+        const menu=await popup.locator('[role=menu]').boundingBox(),control=await button.boundingBox();
+        assert.equal(menu.y,control.y+control.height+6,'Logo actions sit below the larger logo');
+      }
       const chooserEvent=page.waitForEvent('filechooser');
       const trigger=kind==='square'?button:popup.locator('[data-hotel-logo-replace]');width===390?await trigger.tap():await trigger.click();
       const chooser=await chooserEvent;await chooser.setFiles({name:kind+'.png',mimeType:'image/png',buffer:Buffer.from(source.split(',')[1],'base64')});
       await page.waitForFunction(()=>!!document.querySelector('#globalJourneyMap .herald-hotel-logo')&&!document.querySelector('#globalJourneyMap [data-hotel-logo]').disabled);
-      assert.deepEqual(await page.evaluate(layout),geometry,'Logo does not move or resize any popup content');assert.equal(await popup.innerText(),text);
+      assert.deepEqual(await page.evaluate(layout),logoGeometry,'Only the heading moves to accommodate the larger logo; popup size and stay details remain unchanged');assert.equal(await popup.innerText(),text);
       const measured=await button.locator('img').evaluate(async img=>{
         await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;
         let minX=128,minY=128,maxX=-1,maxY=-1;for(let y=0;y<128;y++)for(let x=0;x<128;x++){const i=(y*128+x)*4;if(pixels[i+1]<240){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}}
         return {width:img.naturalWidth,height:img.naturalHeight,bounds:[minX,minY,maxX-minX+1,maxY-minY+1],corner:[...pixels.slice(0,4)],fit:getComputedStyle(img).objectFit,background:getComputedStyle(img).backgroundColor,box:[img.width,img.height]};
       });
-      assert.deepEqual([measured.width,measured.height],[128,128]);assert.deepEqual(measured.bounds,kind==='square'?[8,8,112,112]:kind==='wide'?[8,50,112,28]:[50,8,28,112]);assert.deepEqual(measured.corner,[255,255,255,255]);assert.deepEqual(measured.box,[18,18]);assert.equal(measured.fit,'contain');assert.equal(measured.background,'rgb(255, 255, 255)');
+      assert.deepEqual([measured.width,measured.height],[128,128]);assert.deepEqual(measured.bounds,kind==='square'?[8,8,112,112]:kind==='wide'?[8,50,112,28]:[50,8,28,112]);assert.deepEqual(measured.corner,[255,255,255,255]);assert.deepEqual(measured.box,[30,30]);assert.equal(measured.fit,'contain');assert.equal(measured.background,'rgb(255, 255, 255)');
       const saved=JSON.parse(await page.evaluate(snapshot));assert.deepEqual({...saved,savedPlaces:before.savedPlaces},before,'Only the shared location artwork is added');assert.equal(saved.savedPlaces.length,1);
       assert.equal(await page.evaluate(()=>HVAccommodationLogos.logo(state,'repeat')===HVAccommodationLogos.logo(state,'first')),true);assert.equal(await page.evaluate(()=>HVAccommodationLogos.logo(state,'other')),null);
       await popup.screenshot({path:path.join(out,`${kind}-${width}-${theme}.png`)});
