@@ -37,7 +37,7 @@
   function relatedOptions(tripId,selected=''){
     const rows=[];
     const add=(type,id,label)=>id&&rows.push({value:type+':'+id,label});
-    const scope=tripId?M.tripRecords(state,tripId):{stays:state.stays||[],transports:state.transports||[],accommodations:state.accommodations||[],places:state.placeVisits||[]};
+    const scope=tripId?M.tripRecords(state,tripId):{stays:HVJourney.scoped(state.stays||[],state.activeProfileId),transports:HVJourney.scoped(state.transports||[],state.activeProfileId),accommodations:HVJourney.scoped(state.accommodations||[],state.activeProfileId),places:HVJourney.scoped(state.placeVisits||[],state.activeProfileId)};
     for(const a of scope.accommodations||[])add('accommodation',a.id,'Hotel · '+(a.propertyName||a.location||'Accommodation'));
     for(const t of scope.transports||[])add('transport',t.id,(HVJourney.types?.[t.type]||t.type||'Transport')+' · '+HVJourney.transportLabel(t,window.HVJourneys?.airportFor));
     for(const s of scope.stays||[])add('stay',s.id,'Destination · '+(s.location||s.countryName||s.countryCode));
@@ -67,8 +67,8 @@
   }
   function renderNotes(){
     const context=tripFromHash(),filter=get('notesTripFilter')?.value??context,noteTrip=get('noteTrip')?.value??filter,checkTrip=get('checklistTrip')?.value??filter;
-    const notes=(state.notes||[]).filter(n=>!filter||n.tripId===filter).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
-    const checklists=(state.checklists||[]).filter(c=>!filter||c.tripId===filter).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+    const notes=HVJourney.scoped(state.notes||[],state.activeProfileId).filter(n=>!filter||n.tripId===filter).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
+    const checklists=HVJourney.scoped(state.checklists||[],state.activeProfileId).filter(c=>!filter||c.tripId===filter).sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
     notesPanel.innerHTML=toolHeader('Notes & Checklist','TRAVEL TOOLS','Keep practical information, documents and trip-ready tasks beside the journeys they belong to.')+
       '<div class="travel-context-bar"><label class="field"><span>Show</span><select id="notesTripFilter">'+tripOptions(filter,'All travel')+'</select></label><span>Notes and checklist progress sync with your Herald account.</span></div>'+
       '<div class="travel-notes-grid"><section class="panel travel-note-editor"><div class="panel-head"><div><p class="eyebrow">NOTES</p><h3>'+(activeNoteId?'Edit note':'Add a travel note')+'</h3></div></div>'+
@@ -105,7 +105,7 @@
     return '<div class="checklist-item '+(i.done?'is-done':'')+'"><label><input type="checkbox" data-check-item="'+E(i.id)+'" '+(i.done?'checked':'')+'><span>'+E(i.text)+'</span></label><div><button type="button" class="icon-btn" data-item-move="'+E(i.id)+'" data-delta="-1" '+(index===0?'disabled':'')+' aria-label="Move earlier">↑</button><button type="button" class="icon-btn" data-item-move="'+E(i.id)+'" data-delta="1" '+(index===total-1?'disabled':'')+' aria-label="Move later">↓</button><button type="button" class="text-btn" data-item-delete="'+E(i.id)+'">Remove</button></div></div>';
   }
   function selectedBudgetTrip(){return get('budgetTrip')?.value||'';}
-  function budgetFor(tripId){return (state.budgets||[]).find(b=>b.tripId===tripId);}
+  function budgetFor(tripId){return HVJourney.scoped(state.budgets||[],state.activeProfileId).find(b=>b.tripId===tripId);}
   function renderBudget(){
     const selected=selectedBudgetTrip()||tripFromHash()||trips()[0]?.id||'',budget=budgetFor(selected),items=budget?(state.budgetItems||[]).filter(i=>i.budgetId===budget.id):[],summary=budget?M.budgetSummary(state,budget):null;
     const existing=selected?M.existingCosts(state,selected).filter(cost=>!items.some(i=>i.sourceType===cost.sourceType&&i.sourceId===cost.sourceId)):[];
@@ -169,7 +169,7 @@
     if(b.dataset.checklistDelete){if(confirm('Delete this checklist and its items?')){state.checklists=state.checklists.filter(c=>c.id!==b.dataset.checklistDelete);state.checklistItems=state.checklistItems.filter(i=>i.checklistId!==b.dataset.checklistDelete);save();}return;}
     if(b.dataset.itemDelete){state.checklistItems=state.checklistItems.filter(i=>i.id!==b.dataset.itemDelete);save();return;}
     if(b.dataset.itemMove){moveItem(b.dataset.itemMove,Number(b.dataset.delta));return;}
-    if(b.dataset.budgetStart){state.budgets.push({id:uid(),tripId:b.dataset.budgetStart,baseCurrency:'GBP',totalBudget:null,travellers:1,createdAt:now(),updatedAt:now()});save();return;}
+    if(b.dataset.budgetStart){state.budgets.push({id:uid(),profileId:state.activeProfileId,tripId:b.dataset.budgetStart,baseCurrency:'GBP',totalBudget:null,travellers:1,createdAt:now(),updatedAt:now()});save();return;}
     if(b.hasAttribute('data-cost-add-all')){const trip=selectedBudgetTrip(),budget=budgetFor(trip);for(const c of M.existingCosts(state,trip))addExistingCost(budget,c);save();return;}
     if(b.dataset.costAdd!==undefined){const trip=selectedBudgetTrip(),budget=budgetFor(trip),existing=M.existingCosts(state,trip).filter(cost=>!state.budgetItems.some(i=>i.budgetId===budget.id&&i.sourceType===cost.sourceType&&i.sourceId===cost.sourceId)),cost=existing[Number(b.dataset.costAdd)];if(cost){addExistingCost(budget,cost);save();}return;}
     if(b.dataset.budgetEdit){activeBudgetItemId=b.dataset.budgetEdit;render();return;}
@@ -186,12 +186,12 @@
   }
   function saveNote(form){
     const f=form.elements,id=f.id.value||uid(),old=state.notes.find(n=>n.id===id),related=String(f.related.value||'').split(':');
-    const note={...old,id,title:f.title.value.trim(),body:f.body.value.trim(),tripId:f.tripId.value||null,date:f.date.value||null,category:f.category.value||null,pinned:f.pinned.checked,relatedType:related.length>1?related[0]:null,relatedId:related.length>1?related.slice(1).join(':'):null,createdAt:old?.createdAt||now(),updatedAt:now()};
+    const note={...old,id,profileId:old?.profileId??state.activeProfileId,title:f.title.value.trim(),body:f.body.value.trim(),tripId:f.tripId.value||null,date:f.date.value||null,category:f.category.value||null,pinned:f.pinned.checked,relatedType:related.length>1?related[0]:null,relatedId:related.length>1?related.slice(1).join(':'):null,createdAt:old?.createdAt||now(),updatedAt:now()};
     if(old)state.notes[state.notes.indexOf(old)]=note;else state.notes.push(note);activeNoteId=null;save();
   }
   function createChecklist(form){
     const f=form.elements,key=f.template.value,tripId=f.tripId.value||null,t=M.template(key,state,tripId),title=f.title.value.trim()||t.title||'Travel checklist',id=uid(),stamp=now();
-    state.checklists.push({id,title,tripId,templateKey:key||null,hideCompleted:false,createdAt:stamp,updatedAt:stamp});
+    state.checklists.push({id,profileId:state.activeProfileId,title,tripId,templateKey:key||null,hideCompleted:false,createdAt:stamp,updatedAt:stamp});
     t.items.forEach(([section,text],order)=>state.checklistItems.push({id:uid(),checklistId:id,text,section,done:false,order,createdAt:stamp,updatedAt:stamp}));
     save();
   }
