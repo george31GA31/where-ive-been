@@ -111,7 +111,7 @@
         const service=type==='walk'?'foot':'car',url=`https://routing.openstreetmap.de/routed-${service}/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson&steps=false`;
         const data=await serviceJSON(url,signal,22000);if(data.code!=='Ok'||!data.routes?.[0]?.geometry)throw Error();
         if(data.waypoints?.some(p=>p.distance>2500))throw Error();
-        result={coordinates:data.routes[0].geometry.coordinates.map(p=>[p[1],p[0]]),label:type==='walk'?'Calculated walking route':'Calculated road route'};
+        result={coordinates:data.routes[0].geometry.coordinates.map(p=>[p[1],p[0]]),label:type==='walk'?'Calculated walking route':'Calculated road route',distance:data.routes[0].distance??null,duration:data.routes[0].duration??null};
       }else if(['train','boat'].includes(type)){
         const mode=type==='train'?'train|railway':'ferry',query=`[out:json][timeout:15];rel(around:2500,${start.lat},${start.lon})[route~"^(${mode})$"];out geom;`;
         const data=await serviceJSON('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),signal,22000);exactElements=data.elements||[];
@@ -228,5 +228,5 @@
     return {fit,remove(){controller.abort();unregisterMap();map.remove();}};
   }
 
-  window.HVJourneyMap={open,mountGlobal,waterFallback};
+  window.HVJourneyMap={open,mountGlobal,waterFallback,route};
 })();

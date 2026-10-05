@@ -108,6 +108,7 @@
       state.accommodations=[...accommodations.filter(a=>a.tripId!==id),...nextAccommodations];trip.profileIds=[...new Set([trip.profileId,...[...stays,...transport].filter(r=>r.tripId===id).map(r=>r.profileId),...nextAccommodations.map(a=>a.profileId)].filter(Boolean))];updatePassedPlannedTrips();persist();dialog.close();refresh();};dialog.showModal();
   }
   function openTransport(id,prefill={}){
+    const road=(state.transports||[]).find(t=>t.id===id)?.roadTripId;if(road&&window.HVRoadPlanner&&(state.roadTrips||[]).some(r=>r.id===road)){HVRoadPlanner.open(road);return;}
     const t=state.transports?.find(t=>t.id===id),dialog=get('transportDialog');opener=document.activeElement;
     const group=prefill.tripId?window.HVCalendar?.journeyGroups().find(g=>g.trip?.id===prefill.tripId):null;if(group&&!t)prefill={startLocal:group.start+'T12:00',endLocal:group.end+'T12:00',...prefill};
     const form=get('transportForm');form.reset();form.dataset.id=id||'';

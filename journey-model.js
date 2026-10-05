@@ -90,6 +90,7 @@
   }
   function groundLegs(record){
     const points=[record.start,...(record.via||[]),record.end];
+    if(record.dateOnly&&Array.isArray(record.roadLegDates))return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:record.roadLegDates[i]?.startLocal||record.startLocal,endLocal:record.roadLegDates[i]?.endLocal||record.endLocal,operator:record.operator||'',serviceNumber:record.serviceNumber||''}));
     return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:points[i]?.departureLocal||'',endLocal:i===points.length-2?record.endLocal:end?.arrivalLocal||'',operator:points[i]?.operator||record.operator||'',serviceNumber:points[i]?.serviceNumber||record.serviceNumber||''}));
   }
   function transportDates(record){
@@ -160,7 +161,7 @@
   const validLocal = s => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s||'') && validDate(s.slice(0,10)) && Number(s.slice(11,13))<24 && Number(s.slice(14,16))<60;
   function validateTransport(r) {
     if(!Object.hasOwn(types,r.type)) return 'Choose a transport type.';
-    if(!validLocal(r.startLocal)||!validLocal(r.endLocal)) return 'Enter valid departure and arrival dates and local times.';
+    if(!(r.dateOnly&&r.roadTripId?validDate(r.startLocal)&&validDate(r.endLocal):validLocal(r.startLocal)&&validLocal(r.endLocal))) return 'Enter valid departure and arrival dates and local times.';
     if(!r.start?.name?.trim()||!r.end?.name?.trim()) return 'Enter both locations.';
     // Local clocks cannot be ordered across time zones, including date-line crossings.
     for(const point of [r.start,...(r.via||[]),r.end]) {

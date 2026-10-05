@@ -9,7 +9,7 @@
   }
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
-  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
+  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
   function compatibleNotes(data) {
     if (data.notes == null || Array.isArray(data.notes)) return data;
     const result=copy(data);result.legacyTravelNotes??=copy(result.notes);
@@ -49,7 +49,7 @@
   function importData(remote, source, resolve) {
     remote=compatibleNotes(remote);source=compatibleNotes(source);
     // Compare complete records without IDs. Different notes/passports are never discarded.
-    const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map(), transportIds=new Map(), accommodationIds=new Map(), locationIds=new Map(), budgetIds=new Map();
+    const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map(), transportIds=new Map(), accommodationIds=new Map(), locationIds=new Map(), budgetIds=new Map(), noteIds=new Map();
     const signature = record => {
       const r = copy(record); delete r.id;
       if (r.citizenships) r.citizenships.sort();
@@ -57,7 +57,7 @@
       if (r.profileIds) r.profileIds.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'visaAcknowledgements']) {
+    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'visaAcknowledgements']) {
       result[key] ||= [];
       for (const original of source[key] || []) {
         const record = copy(original);
@@ -66,13 +66,15 @@
         if (record.tripId) record.tripId = tripIds.get(record.tripId) || record.tripId;
         if (record.stayId) record.stayId = stayIds.get(record.stayId) || record.stayId;
         if (record.autoFromPlannedId) record.autoFromPlannedId = stayIds.get(record.autoFromPlannedId) || record.autoFromPlannedId;
+        if(record.linkedTransportId)record.linkedTransportId=transportIds.get(record.linkedTransportId)||record.linkedTransportId;
+        if(record.notesId)record.notesId=noteIds.get(record.notesId)||record.notesId;
         if(record.budgetId)record.budgetId=budgetIds.get(record.budgetId)||record.budgetId;
         const references={transport:transportIds,accommodation:accommodationIds,country:stayIds,location:locationIds};
         if(record.relatedId&&references[record.relatedType])record.relatedId=references[record.relatedType].get(record.relatedId)||record.relatedId;
         if(record.sourceId&&references[record.sourceType])record.sourceId=references[record.sourceType].get(record.sourceId)||record.sourceId;
         const same = result[key].find(x => x.id === record.id);
         const duplicate = result[key].find(x => signature(x) === signature(record));
-        const mapping = {profiles:profileIds,trips:tripIds,stays:stayIds,transports:transportIds,accommodations:accommodationIds,placeVisits:locationIds,budgets:budgetIds}[key];
+        const mapping = {profiles:profileIds,trips:tripIds,stays:stayIds,transports:transportIds,accommodations:accommodationIds,placeVisits:locationIds,budgets:budgetIds,notes:noteIds}[key];
         if (duplicate) { mapping?.set(original.id, duplicate.id); continue; }
         if (same) {
           const conflict = {path: key + '.' + record.id, local: record, remote: same};
@@ -120,10 +122,15 @@
         if(key==='savedPlaces'&&(!row.place||typeof row.place.name!=='string'||!row.place.name.trim()))throw new Error('Check saved place details.');
         if(key==='transports'){
           const local=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'Z'))&&new Date(v+'Z').toISOString().slice(0,16)===v;
-          if(!['flight','train','bus','boat','car','walk','other'].includes(row.type)||!local(row.startLocal)||!local(row.endLocal))throw new Error('Check transport type and local times.');
+          const date=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v;
+          const dates=row.dateOnly&&row.roadTripId?row.type==='car'&&date(row.startLocal)&&date(row.endLocal)&&row.endLocal>=row.startLocal:local(row.startLocal)&&local(row.endLocal);
+          if(!['flight','train','bus','boat','car','walk','other'].includes(row.type)||!dates)throw new Error('Check transport type and local times.');
           for(const side of ['start','end'])if(!row[side]||typeof row[side].name!=='string'||!row[side].name.trim())throw new Error('Check transport locations.');
           if(row.legs!=null){if(!Array.isArray(row.legs))throw new Error('Check flight legs.');for(const leg of row.legs)if(!leg||!local(leg.startLocal)||!local(leg.endLocal)||!leg.start?.name?.trim()||!leg.end?.name?.trim())throw new Error('Check each flight leg and its local times.');}
         }
+        if(key==='roadTrips'&&(typeof row.name!=='string'||!row.name.trim()||!Array.isArray(row.stops)||row.stops.length<2||row.stops.some(p=>typeof p?.name!=='string'||!p.name.trim())||!['idea','planned','actual'].includes(row.status)))throw new Error('Check saved road trip details.');
+        if(key==='currencyRates'&&(!/^[A-Z]{3}$/.test(row.from)||!/^[A-Z]{3}$/.test(row.to)||!Number.isFinite(row.rate)||row.rate<=0))throw new Error('Check saved currency rates.');
+        if(key==='currencyPreferences'&&(['from','to'].some(k=>row[k]&&!/^[A-Z]{3}$/.test(row[k]))||['favourites','recent'].some(k=>row[k]!=null&&(!Array.isArray(row[k])||row[k].some(c=>typeof c!=='string'||!/^[A-Z]{3}$/.test(c))))))throw new Error('Check currency preferences.');
         if(key==='placeVisits'&&(typeof row.category!=='string'||typeof row.itemId!=='string'||(!['want','not-recorded'].includes(row.status)&&!/^\d{4}-\d{2}-\d{2}$/.test(row.date||''))))throw new Error('Check place visit details.');
         if(key==='accommodations'){
           for(const k of ['checkInTime','checkOutTime'])if(row[k]&&!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(row[k]))throw new Error('Check accommodation local times.');
