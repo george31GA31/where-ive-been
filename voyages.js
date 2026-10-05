@@ -424,7 +424,7 @@
     const host=q('.main');
     window.HVPages={
       get(id){for(const page of pages.values()){if(page.id===id)return page;const found=page.querySelector(`[id="${CSS.escape(id)}"]`);if(found)return found;}return null;},
-      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.append(target);target.classList.add('active');}
+      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();const footer=host.querySelector(':scope > .herald-footer');footer?host.insertBefore(target,footer):host.append(target);target.classList.add('active');}
     };
     const previous=window.switchView;
     window.switchView=function(view,{replaceRoute=false}={}){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view,replaceRoute);window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
@@ -523,7 +523,7 @@
   function boot() {
     installBranding();
     installAccountChrome();
-    installFooter();
+    if (document.body.dataset.accountPage) installFooter();
     if (!document.body.dataset.accountPage) {
       installNavigation();
       installTravellerSelector();
@@ -540,7 +540,7 @@
       applyViewChrome(routeFromHash() || activeView());
     }
     watchDynamicBranding();
-    if (!document.body.dataset.accountPage) installPageRouter();
+    if (!document.body.dataset.accountPage) { installPageRouter(); installFooter(); }
   }
 
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();
