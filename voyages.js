@@ -11,7 +11,7 @@
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
 
   const ROUTES = {
-    tools:'travel-tools', journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
+    tools:'travel-tools', notes:'travel-tools/notes', budget:'travel-tools/budget', journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
     stats: 'stats', homes: 'lived-in', settings: 'settings', schengen: 'travel-tools/schengen', planner: 'plan-a-trip', stayPlanner: 'travel-tools/stay-planner', rules: 'travel-tools/entry-requirements', profiles: 'people'
   };
   // Existing utility bookmarks still open the same maintained tool.
@@ -20,7 +20,7 @@
     planner: 'stayPlanner', visa: 'rules', rules: 'rules', schengen: 'schengen'
   };
   const VIEW_TITLES = {
-    tools:'Travel Tools', journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
+    tools:'Travel Tools', notes:'Notes & Checklist', budget:'Budget Planner', journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
     stats: 'Travel statistics', homes: 'Home bases', settings: 'Preferences', schengen: 'Schengen calculator', planner: 'Plan a Trip', stayPlanner: 'Stay planner', rules: 'Entry Requirements', profiles: 'People & passports'
   };
   const WORKSPACES = {
@@ -33,13 +33,13 @@
     account: { label: 'Account', icon: 'profiles', view: 'profiles' }
   };
   const VIEW_WORKSPACE = {
-    tools:'tools', journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
+    tools:'tools', notes:'tools', budget:'tools', journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
     planner: 'plan', stayPlanner: 'tools', rules: 'tools', schengen: 'tools', profiles: 'account', homes: 'account', settings: 'account'
   };
   const WORKSPACE_TABS = {
     trips: ['calendar', 'stays', 'journeys'],
     atlas: ['map', 'countries', 'places', 'stats'],
-    tools: ['tools', 'stayPlanner', 'rules', 'schengen'],
+    tools: ['tools', 'stayPlanner', 'rules', 'schengen', 'notes', 'budget'],
     account: ['profiles', 'homes', 'settings']
   };
   const ACCOUNT_TITLES = {
