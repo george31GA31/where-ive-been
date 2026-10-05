@@ -110,7 +110,10 @@ let browser;
   const changed=await page.evaluate(()=>state.transports.find(t=>t.id==='exact-road').routeGeometry.legs[0]);
   assert.notDeepEqual(changed.coordinates,savedBeforeReload['exact-road'].legs[0].coordinates,'editing the destination replaces the old saved route');
   assert.equal(changed.source,'straight-fallback');
-  assert.equal(await stripRoutes(),before.replace('exact-road arrival','Changed road arrival').replace('51.3','51.31').replace('1.3','1.31'),'only the deliberate endpoint edit changes journey data outside route geometry');
+  const afterEdit=JSON.parse(await stripRoutes()),beforeEdit=JSON.parse(before),edited=afterEdit.transports.find(t=>t.id==='exact-road');
+  assert.equal(edited.end.name,'Changed road arrival');assert.equal(edited.end.lat,51.31);assert.equal(edited.end.lon,1.31);
+  afterEdit.transports=afterEdit.transports.filter(t=>t.id!=='exact-road');beforeEdit.transports=beforeEdit.transports.filter(t=>t.id!=='exact-road');
+  assert.deepEqual(afterEdit,beforeEdit,'all unrelated travel data remains byte-for-byte equivalent after the route edit');
   assert.deepEqual(errors,[]);await page.close();console.log(`Network routing persistence ${width}px ${theme} passed`);
  }
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await browser?.close();server.close();});
