@@ -9,12 +9,23 @@
   }
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
-  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
+  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
+  function compatibleNotes(data) {
+    if (data.notes == null || Array.isArray(data.notes)) return data;
+    const result=copy(data);result.legacyTravelNotes??=copy(result.notes);
+    result.notes=typeof result.notes==='string'&&result.notes.trim()?[{id:'legacy-travel-note',title:'Imported travel notes',body:result.notes,profileId:result.activeProfileId||null,category:'General'}]:[];
+    return result;
+  }
   function merge(base, local, remote, resolve) {
+    base=compatibleNotes(base);local=compatibleNotes(local);remote=compatibleNotes(remote);
     const conflicts = [];
     function field(b, l, r, path) {
       if (equal(l, r) || equal(b, r)) return copy(l);
       if (equal(b, l)) return copy(r);
+      if (/^checklists\.[^.]+\.(items|sections)$/.test(path) && [b,l,r].every(Array.isArray)) {
+        const maps=[b,l,r].map(rows=>new Map(rows.map(row=>[row.id,row])));
+        return [...new Set([...maps[2].keys(),...maps[1].keys(),...maps[0].keys()])].map(id=>field(maps[0].get(id),maps[1].get(id),maps[2].get(id),path+'.'+id)).filter(row=>row!==undefined);
+      }
       if (b && l && r && !Array.isArray(l) && typeof l === 'object' && typeof r === 'object') {
         return Object.fromEntries([...new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)])]
           .map(k => [k, field(b[k], l[k], r[k], path + '.' + k)]).filter(([, v]) => v !== undefined));
@@ -36,8 +47,9 @@
     return {data: result, conflicts};
   }
   function importData(remote, source, resolve) {
+    remote=compatibleNotes(remote);source=compatibleNotes(source);
     // Compare complete records without IDs. Different notes/passports are never discarded.
-    const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map();
+    const result = copy(remote), conflicts = [], profileIds = new Map(), tripIds = new Map(), stayIds = new Map(), transportIds=new Map(), accommodationIds=new Map(), locationIds=new Map(), budgetIds=new Map();
     const signature = record => {
       const r = copy(record); delete r.id;
       if (r.citizenships) r.citizenships.sort();
@@ -45,7 +57,7 @@
       if (r.profileIds) r.profileIds.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']) {
+    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'visaAcknowledgements']) {
       result[key] ||= [];
       for (const original of source[key] || []) {
         const record = copy(original);
@@ -54,9 +66,13 @@
         if (record.tripId) record.tripId = tripIds.get(record.tripId) || record.tripId;
         if (record.stayId) record.stayId = stayIds.get(record.stayId) || record.stayId;
         if (record.autoFromPlannedId) record.autoFromPlannedId = stayIds.get(record.autoFromPlannedId) || record.autoFromPlannedId;
+        if(record.budgetId)record.budgetId=budgetIds.get(record.budgetId)||record.budgetId;
+        const references={transport:transportIds,accommodation:accommodationIds,country:stayIds,location:locationIds};
+        if(record.relatedId&&references[record.relatedType])record.relatedId=references[record.relatedType].get(record.relatedId)||record.relatedId;
+        if(record.sourceId&&references[record.sourceType])record.sourceId=references[record.sourceType].get(record.sourceId)||record.sourceId;
         const same = result[key].find(x => x.id === record.id);
         const duplicate = result[key].find(x => signature(x) === signature(record));
-        const mapping = key === 'profiles' ? profileIds : key === 'trips' ? tripIds : key === 'stays' ? stayIds : null;
+        const mapping = {profiles:profileIds,trips:tripIds,stays:stayIds,transports:transportIds,accommodations:accommodationIds,placeVisits:locationIds,budgets:budgetIds}[key];
         if (duplicate) { mapping?.set(original.id, duplicate.id); continue; }
         if (same) {
           const conflict = {path: key + '.' + record.id, local: record, remote: same};
@@ -77,7 +93,7 @@
   }
   function describeConflict(conflict,data={}) {
     const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
-    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
+    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
     const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
     const display=value=>{
       if(value===undefined)return 'Deleted';if(value===null||value==='')return 'Not recorded';
@@ -91,6 +107,7 @@
   }
   function validateImport(data) {
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Choose a valid travel backup.');
+    data=compatibleNotes(data);
     for (const key of collections) {
       if (data[key] === undefined) continue;
       if (!Array.isArray(data[key])) throw new Error(key + ' must be a list.');

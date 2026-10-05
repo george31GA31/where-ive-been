@@ -23,7 +23,7 @@
     const selections = new Map(['stayProfile', 'plannerProfile'].map(id => [id, $(id)?.value]));
     populateProfileSelects();
     for (const [id, value] of selections) if ($(id) && [...$(id).options].some(o => o.value === value)) $(id).value = value;
-    renderAll(); lock(false);
+    renderAll(); window.dispatchEvent(new CustomEvent('hv-data-changed')); lock(false);
   }
   // Account copies never enter the legacy shared local key.
   persist = function () {
@@ -75,7 +75,7 @@
     if (!button.hidden) {
       const source = deviceSource();
       button.textContent = 'Add this data to my account';
-      const preview=M.importData(state,source),added=['stays','trips','profiles','residences','transports','accommodations','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(preview.data[key]?.length||0)-(state[key]?.length||0),0),total=['stays','trips','profiles','residences','transports','accommodations','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(source[key]?.length||0),0),duplicates=Math.max(0,total-added-preview.conflicts.length);
+      const preview=M.importData(state,source),added=['stays','trips','profiles','residences','transports','accommodations','notes','checklists','budgets','expenses','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(preview.data[key]?.length||0)-(state[key]?.length||0),0),total=['stays','trips','profiles','residences','transports','accommodations','notes','checklists','budgets','expenses','placeVisits','savedPlaces','visaAcknowledgements'].reduce((n,key)=>n+(source[key]?.length||0),0),duplicates=Math.max(0,total-added-preview.conflicts.length);
       button.previousElementSibling && (button.previousElementSibling.textContent = `We found existing travel history on this device: ${source.stays.length} stays, ${source.profiles.length} travellers, ${source.residences.length} home records, ${source.transports?.length||0} transport records and ${source.accommodations?.length||0} accommodation entries. ${duplicates} likely duplicates will be skipped; ${preview.conflicts.length} conflicts need a choice. Your original copy will be kept.`);
     }
   }
@@ -92,7 +92,7 @@
     if (userId !== importingUser) return;
     const beforeImport = M.copy(state);
     let target = M.copy(state);
-    if (!target.stays.length && !target.residences.length && !target.transports?.length && !target.accommodations?.length && !target.placeVisits?.length && !target.savedPlaces?.length && !target.visaAcknowledgements?.length && target.profiles.length === 1 && target.profiles[0].name === 'Me' && !target.profiles[0].citizenships.length) {
+    if (!target.trips?.length&&!target.notes?.length&&!target.checklists?.length&&!target.budgets?.length&&!target.expenses?.length&&!target.stays.length && !target.residences.length && !target.transports?.length && !target.accommodations?.length && !target.placeVisits?.length && !target.savedPlaces?.length && !target.visaAcknowledgements?.length && target.profiles.length === 1 && target.profiles[0].name === 'Me' && !target.profiles[0].citizenships.length) {
       target.profiles = []; target.activeProfileId = null;
     }
     let result = M.importData(target, source);
@@ -112,22 +112,26 @@
   async function changed(session) {
     const next = session?.user?.id || null;
     if (next === userId && engine?.ready) return;
+    const accountChanged = next !== userId;
     lock(true);
-    if (next !== userId) {
+    if (accountChanged) {
       engine.stop();
       userId = null;
       apply(empty());
       lock(true);
     }
-    userId = next; cloudSession = null;document.querySelectorAll('[data-account-logout]').forEach(button=>button.hidden=!next);
-    document.querySelectorAll('dialog[open]').forEach(d => d.close());
+    userId = next; cloudSession = null;
+    document.querySelectorAll('[data-account-guest]').forEach(el=>el.hidden=!!next);
+    document.querySelectorAll('[data-account-user],[data-account-logout]').forEach(el=>el.hidden=!next);
+    $('accountLink').href=next?'profile/':'login/';
+    if (accountChanged) document.querySelectorAll('dialog[open]').forEach(d => d.close());
     if (next) {
       await engine.start(next, empty());
       if (userId !== next) return;
-      $('accountLink').textContent = 'My profile';
+      $('accountLink').textContent = 'Account';
     } else {
       engine.stop(); apply(localStorage.getItem(OWNER_KEY) ? guestState() : loadState());
-      $('accountLink').textContent = 'Sign in to sync';
+      $('accountLink').textContent = 'Sign in';
       status('Saved on this device. Sign in to sync everywhere.', 'neutral');
     }
     offerImport();
@@ -164,7 +168,7 @@
       try{
         if(!window.supabase){
           status('Reconnecting account service…');
-          await new Promise((resolve,reject)=>{const script=document.createElement('script'),timer=setTimeout(()=>{script.remove();reject(new Error('Account library could not load. Your saved device data is unchanged.'));},15000);script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js';script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('Account library could not load. Check your connection and retry.'));};document.head.append(script);});
+          await new Promise((resolve,reject)=>{const script=document.createElement('script'),timer=setTimeout(()=>{script.remove();reject(new Error('Account library could not load. Your saved device data is unchanged.'));},15000);script.src='vendor/supabase/supabase.min.js?v=2.57.4';script.onload=()=>{clearTimeout(timer);resolve();};script.onerror=()=>{clearTimeout(timer);script.remove();reject(new Error('Account library could not load. Check your connection and retry.'));};document.head.append(script);});
         }
         if(userId)await(engine.ready?engine.flush():changed({user:{id:userId}}));else await startAuth();
       }catch(error){status(error.message,'bad');}finally{button.disabled=false;}

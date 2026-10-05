@@ -1,7 +1,7 @@
 /* Existing upcoming tools remain informational; working tools use their own routes. */
 (() => {
   'use strict';
-  const names = ['Road Trip Planner', 'Budget Planner', 'Currency Converter'];
+  const names = ['Road Trip Planner', 'Currency Converter'];
   function boot() {
     if (document.body.dataset.accountPage) return;
     const tools = document.getElementById('toolsView') || window.HVPages?.get('toolsView');

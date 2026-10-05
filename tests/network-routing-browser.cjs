@@ -1,7 +1,7 @@
 /* Captured public OSM geometry, fictional itineraries, and no remote account writes. */
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
-const {chromium}=require('playwright'),binary=require('@sparticuz/chromium'),G=require('../journey-routes');binary.setGraphicsMode=false;
+const {chromium}=require('playwright'),binary=require('@sparticuz/chromium'),G=require('../journey-routes'),R=require('../route-persistence');binary.setGraphicsMode=false;
 const root=path.resolve(__dirname,'..'),out=path.join(root,'test-results/network-routing');fs.mkdirSync(out,{recursive:true});
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'},assets=new Map();
 function load(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){if(entry.name.startsWith('.')||['node_modules','tests','test-results','scripts'].includes(entry.name))continue;const file=path.join(dir,entry.name);if(entry.isDirectory())load(file);else if(entry.isFile())assets.set('/'+path.relative(root,file).split(path.sep).join('/'),{body:fs.readFileSync(file),type:mime[path.extname(file)]||'application/octet-stream'});}}load(root);
@@ -37,7 +37,7 @@ const snapshot=()=>JSON.stringify(state);
 let browser;
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port,mask=G.landMask(require('../data/water-land.json'));
- for(const c of cases){c.expected=await G.networkPath(c.elements,pt(c.a),pt(c.b),{type:c.type,mask});assert.ok(c.expected?.length>2,c.id+' has usable reference geometry');}
+ for(const c of cases){c.expected=R.decode(R.encode(await G.networkPath(c.elements,pt(c.a),pt(c.b),{type:c.type,mask})||[]));assert.ok(c.expected?.length>2,c.id+' has usable reference geometry');}
  browser=await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH||await binary.executablePath(),args:binary.args.filter(a=>a!=='--single-process'),headless:true});
  for(const width of (process.env.HV_NETWORK_WIDTHS||'390,1440').split(',').map(Number))for(const theme of (process.env.HV_NETWORK_THEMES||'light,dark').split(',')){
   const page=await browser.newPage({viewport:{width,height:960},hasTouch:width===390,reducedMotion:'reduce'}),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.setSystemTime(new Date('2026-10-05T12:00:00Z'));
@@ -71,7 +71,7 @@ let browser;
   });
   await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('network-seeded')){localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.guest.v1',JSON.stringify(seed));localStorage.setItem('network-seeded','yes');}localStorage.setItem('whereIveBeen.theme.v1',theme);document.addEventListener('DOMContentLoaded',()=>{window.testRouteLayers=[];const original=L.polyline;L.polyline=function(coords,options){const line=original(coords,options);testRouteLayers.push(line);return line;};});},{seed,theme});
   await page.goto(origin+'/#/journey-map');await page.waitForFunction(n=>window.HVJourneyMap&&state.transports.length===n,seed.transports.length);
-  const before=await page.evaluate(snapshot),stored=await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2'));
+  const before=await page.evaluate(snapshot);
   try{await page.waitForFunction(n=>document.getElementById('globalJourneyStatus')?.textContent.includes(n+' entries')&&!document.getElementById('globalJourneyStatus').textContent.includes('Loading'),entries,{timeout:50000});}catch(error){console.error(await page.evaluate(()=>({status:document.getElementById('globalJourneyStatus')?.textContent,layers:window.testRouteLayers?.length,transports:state.transports.length})),requests,errors);throw error;}
   const layers=()=>page.evaluate(()=>testRouteLayers.filter(l=>l._map).map(l=>({coords:l.getLatLngs().map(p=>[p.lat,p.lng]),colour:l.options.color,weight:l.options.weight,dash:l.options.dashArray})));
   const verify=(drawn,weight)=>{
@@ -87,9 +87,13 @@ let browser;
   await page.evaluate(()=>HVJourneyUI.activeMap().fitBounds([[45.6,14],[46.5,15.25]],{animate:false}));await page.locator('#globalJourneyMap').screenshot({path:path.join(out,`rail-regional-${width}-${theme}.png`)});
   await page.evaluate(()=>{HVJourneyUI.activeMap().fitBounds([[9.6,123.7],[10.35,124]],{animate:false});});await page.locator('#globalJourneyMap').screenshot({path:path.join(out,`cebu-${width}-${theme}.png`)});
   assert.equal(await page.evaluate(async()=>{const host=document.createElement('div'),status=document.createElement('p');host.style.cssText='width:300px;height:300px';document.body.append(host);const n=testRouteLayers.length,r={key:'closed',type:'train',record:{id:'closed',type:'train'},leg:{start:{lat:40,lon:1},end:{lat:40,lon:1.3}}};const surface=HVJourneyMap.mountGlobal(host,[r],'2026-10-05',status);surface.remove();host.remove();await new Promise(resolve=>setTimeout(resolve,50));return testRouteLayers.slice(n).every(l=>!l._map);}),true,'Closing a map cancels pending routing and removes its lines');
-  const count=requests.length;await page.evaluate(()=>HVJourneyMap.open('trip:routes'));await page.waitForFunction(()=>[...document.querySelectorAll('.journey-map-dialog [data-route-status]')].every(n=>!n.textContent.includes('Checking')));verify((await layers()).filter(l=>l.weight===1.5),1.5);assert.ok(requests.slice(count).every(q=>q.includes('48.85,2.35')),'Both maps reuse resolved geometry; only unavailable routes retry');
+  const count=requests.length;await page.evaluate(()=>HVJourneyMap.open('trip:routes'));await page.waitForFunction(()=>[...document.querySelectorAll('.journey-map-dialog [data-route-status]')].every(n=>!n.textContent.includes('Checking')));verify((await layers()).filter(l=>l.weight===1.5),1.5);assert.equal(requests.length,count,'The journey dialog reuses every saved route without another routing request');
   const dialog=page.locator('.journey-map-dialog');width===390?await dialog.locator('[data-map-stop]').first().tap():await dialog.locator('[data-map-stop]').first().click();assert.equal(await dialog.locator('[data-map-stop]').count(),entries);await dialog.screenshot({path:path.join(out,`focused-${width}-${theme}.png`)});await dialog.locator('[data-map-close]').click();
-  assert.equal(await page.evaluate(snapshot),before);assert.equal(await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2')),stored);
-  await page.reload();await page.waitForFunction(n=>document.getElementById('globalJourneyStatus')?.textContent.includes(n+' entries')&&!document.getElementById('globalJourneyStatus').textContent.includes('Loading'),entries,{timeout:50000});verify(await layers(),1.6);assert.equal(await page.evaluate(snapshot),before);assert.deepEqual(errors,[]);await page.close();console.log(`Network routing ${width}px ${theme} passed`);
+  const savedState=await page.evaluate(snapshot),storedState=await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2'));
+  assert.notEqual(savedState,before,'Resolving routes intentionally adds saved geometry to the journey data');
+  assert.equal(storedState,savedState,'Resolved geometry is persisted with the transport records');
+  assert.ok(await page.evaluate(()=>state.transports.some(t=>t.resolvedRoutes&&Object.keys(t.resolvedRoutes).length)),'At least one transport has persisted route geometry');
+  const reloadRequests=requests.length;
+  await page.reload();await page.waitForFunction(n=>document.getElementById('globalJourneyStatus')?.textContent.includes(n+' entries')&&!document.getElementById('globalJourneyStatus').textContent.includes('Loading'),entries,{timeout:50000});verify(await layers(),1.6);assert.equal(await page.evaluate(snapshot),savedState,'Reload keeps exactly the saved route geometry');assert.equal(requests.length,reloadRequests,'Reload does not ask routing services to rediscover saved routes');assert.deepEqual(errors,[]);await page.close();console.log(`Network routing ${width}px ${theme} passed`);
  }
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await browser?.close();server.close();});

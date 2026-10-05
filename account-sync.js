@@ -13,6 +13,7 @@
     stop() {
       this.epoch++; this.user = null; this.ready = false; this.saving = false;
       clearTimeout(this.timer);
+      this.base=undefined;this.local=undefined;this.revision=0;this.adopted=[];
     }
     async read(id) {
       const {data, error} = await this.client.from('travel_tracker_data').select('payload,revision').eq('user_id', id).maybeSingle();
@@ -52,7 +53,21 @@
         if (!M.equal(this.base, this.local)) await this.flush();
         else this.status('Saved to account', 'good');
       } catch (error) {
-        if (epoch === this.epoch) this.status('Could not load account. Your device data is safe. Retry when connected.', 'bad');
+        if(epoch!==this.epoch)return;
+        // Recover only this account's durable snapshots when the connection is down.
+        const drafts=[];
+        for(let i=0;i<this.storage.length;i++){
+          const key=this.storage.key(i);if(!key.startsWith(this.prefix(id)))continue;
+          const raw=this.storage.getItem(key);try{const draft=JSON.parse(raw);if(draft.base&&draft.local)drafts.push({key,raw,...draft});}catch{}
+        }
+        drafts.sort((a,b)=>Number(b.revision)-Number(a.revision));
+        if(drafts.length){
+          this.base=M.copy(drafts[0].base);this.local=M.copy(drafts[0].local);this.revision=Number(drafts[0].revision)||0;
+          for(const draft of drafts.slice(1))this.local=await this.combine(draft.base,draft.local,this.local);
+          if(epoch!==this.epoch)return;
+          this.adopted=drafts.map(({key,raw})=>({key,raw}));this.checkpoint();this.ready=true;this.onData(M.copy(this.local));
+          this.status('Offline — showing your saved account data. Changes will sync when you reconnect.', 'bad');
+        }else this.status('Could not load account. Your device data is safe. Retry when connected.', 'bad');
       }
     }
     edit(data) {
@@ -109,7 +124,7 @@
       this.adopted = [];
       this.checkpoint();
     }
-    pending() { return this.user && this.local && !M.equal(this.local, this.base); }
+    pending() { return this.ready && this.user && this.local && !M.equal(this.local, this.base); }
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = AccountSync;
   else root.WIBAccountSync = AccountSync;

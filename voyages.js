@@ -11,7 +11,7 @@
   const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
 
   const ROUTES = {
-    tools:'travel-tools', journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
+    tools:'travel-tools', notes:'travel-tools/notes', budget:'travel-tools/budget', journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
     stats: 'stats', homes: 'lived-in', settings: 'settings', schengen: 'travel-tools/schengen', planner: 'plan-a-trip', stayPlanner: 'travel-tools/stay-planner', rules: 'travel-tools/entry-requirements', profiles: 'people'
   };
   // Existing utility bookmarks still open the same maintained tool.
@@ -20,7 +20,7 @@
     planner: 'stayPlanner', visa: 'rules', rules: 'rules', schengen: 'schengen'
   };
   const VIEW_TITLES = {
-    tools:'Travel Tools', journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
+    tools:'Travel Tools', notes:'Notes & Checklist', budget:'Budget Planner', journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
     stats: 'Travel statistics', homes: 'Home bases', settings: 'Preferences', schengen: 'Schengen calculator', planner: 'Plan a Trip', stayPlanner: 'Stay planner', rules: 'Entry Requirements', profiles: 'People & passports'
   };
   const WORKSPACES = {
@@ -33,13 +33,13 @@
     account: { label: 'Account', icon: 'profiles', view: 'profiles' }
   };
   const VIEW_WORKSPACE = {
-    tools:'tools', journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
+    tools:'tools', notes:'tools', budget:'tools', journeys:'journeys', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
     planner: 'plan', stayPlanner: 'tools', rules: 'tools', schengen: 'tools', profiles: 'account', homes: 'account', settings: 'account'
   };
   const WORKSPACE_TABS = {
     trips: ['calendar', 'stays', 'journeys'],
     atlas: ['map', 'countries', 'places', 'stats'],
-    tools: ['tools', 'stayPlanner', 'rules', 'schengen'],
+    tools: ['tools', 'stayPlanner', 'rules', 'schengen', 'notes', 'budget'],
     account: ['profiles', 'homes', 'settings']
   };
   const ACCOUNT_TITLES = {
@@ -151,7 +151,7 @@
       return button;
     }));
     const account = $('accountLink');
-    if (account) account.textContent = 'Sign in to sync';
+    if (account) account.textContent = 'Sign in';
     q('.sidebar')?.classList.remove('island');
   }
 
@@ -395,6 +395,12 @@
     }
   }
 
+  function installFooter(){
+    if(q('.herald-site-footer'))return;const host=document.body.dataset.accountPage?q('.account-page'):q('.main');if(!host)return;
+    const href=view=>document.body.dataset.accountPage?new URL('#/'+ROUTES[view],rootUrl).href:'#/'+ROUTES[view],footer=document.createElement('footer');footer.className='herald-site-footer';
+    footer.innerHTML=`<div class="herald-footer-main"><div class="herald-footer-brand"><strong>HERALD VOYAGES</strong><span>Map the journey. Keep the story.</span></div><nav class="herald-footer-links" aria-label="Herald destinations">${[['dashboard','Dashboard'],['map','Atlas'],['journeys','Journey Map'],['calendar','Calendar'],['stays','Trips'],['tools','Travel Tools']].map(([view,label])=>`<a href="${href(view)}">${label}</a>`).join('')}</nav></div><div class="herald-footer-bottom"><span>Personal travel atlas and journey journal</span><span>© ${new Date().getFullYear()} Herald Voyages</span></div>`;host.append(footer);
+  }
+
   function watchDynamicBranding() {
     const observer = new MutationObserver((records) => {
       let shouldRefresh = false;
@@ -412,7 +418,7 @@
     const host=q('.main');
     window.HVPages={
       get(id){for(const page of pages.values()){if(page.id===id)return page;const found=page.querySelector(`[id="${CSS.escape(id)}"]`);if(found)return found;}return null;},
-      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.append(target);target.classList.add('active');}
+      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.insertBefore(target,q('.herald-site-footer',host));target.classList.add('active');}
     };
     const previous=window.switchView;
     window.switchView=function(view,{replaceRoute=false}={}){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view,replaceRoute);window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
@@ -511,6 +517,7 @@
   function boot() {
     installBranding();
     installAccountChrome();
+    installFooter();
     if (!document.body.dataset.accountPage) {
       installNavigation();
       installTravellerSelector();
