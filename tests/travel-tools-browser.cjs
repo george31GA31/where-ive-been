@@ -20,8 +20,8 @@ const seed = {
   profiles: [{ id: 'p', name: 'Test traveller', citizenships: ['GB'], homeCountryCodes: ['GB'], enabledRules: ['schengen'] }],
   trips: [{ id: 'existing', profileId: 'p', name: 'Existing trip', notes: 'Keep original itinerary' }],
   stays: [{ id: 'history', profileId: 'p', tripId: 'existing', countryCode: 'ES', countryName: 'Spain', start: '2026-09-01', end: '2026-09-30', status: 'actual', notes: 'Original planner record', entryContext: { customNote: 'Keep entry context' } }],
-  transports: [{ id: 'transport', profileId: 'p', tripId: 'existing', type: 'flight', start: { name: 'London', iata: 'LHR' }, end: { name: 'Madrid', iata: 'MAD' }, startLocal: '2026-09-01T08:00', endLocal: '2026-09-01T11:00', status: 'actual', bookingReference: 'KEEP' }],
-  accommodations: [{ id: 'hotel', profileId: 'p', tripId: 'existing', propertyName: 'Existing hotel', checkIn: '2026-09-01', checkOut: '2026-09-30', notes: 'Keep hotel notes' }],
+  transports: [{ id: 'transport', profileId: 'p', tripId: 'existing', type: 'flight', start: { name: 'London', iata: 'LHR' }, end: { name: 'Madrid', iata: 'MAD' }, startLocal: '2026-09-01T08:00', endLocal: '2026-09-01T11:00', status: 'actual', bookingReference: 'KEEP', price: { amount: 186, currency: 'GBP' } }],
+  accommodations: [{ id: 'hotel', profileId: 'p', tripId: 'existing', propertyName: 'Existing hotel', checkIn: '2026-09-01', checkOut: '2026-09-30', notes: 'Keep hotel notes', price: { amount: 420, currency: 'EUR' } }],
   residences: [], placeVisits: [{ id: 'place', profileId: 'p', placeId: 'capitals:Madrid', status: 'visited', category: 'capitals' }],
   savedPlaces: [{ id: 'saved', profileId: 'p', place: { name: 'Saved hotel', lat: 40.4, lon: -3.7 } }],
   visaAcknowledgements: [{ id: 'ack', fingerprint: 'Keep acknowledgement' }],
@@ -78,18 +78,32 @@ let browser;
     await page.screenshot({ path: path.join(out, `plan-${width}-${theme}.png`), fullPage: true });
     await nav('tools').click();
     assert.ok(page.url().endsWith('#/travel-tools'));
-    assert.equal(await page.locator('#toolsView .travel-tool-link').count(), 3);
+    assert.equal(await page.locator('#toolsView .travel-tool-link').count(), 5);
     assert.equal(await page.locator('#toolsView .workspace-tabs').count(), 0, 'The overview keeps a single restrained list of tools');
-    assert.equal(await page.locator('[data-coming-tool]').count(), 3);
+    assert.equal(await page.locator('[data-coming-tool]').count(), 2);
     await fits();
     await page.screenshot({ path: path.join(out, `tools-${width}-${theme}.png`), fullPage: true });
-    for (const title of ['Road Trip Planner', 'Budget Planner', 'Currency Converter']) {
+    for (const title of ['Road Trip Planner', 'Currency Converter']) {
       await page.getByRole('button', { name: title + ' Coming Soon', exact: true }).click();
       const dialog = page.getByRole('dialog', { name: title, exact: true });
       assert.match(await dialog.innerText(), /This travel tool is on its way/);
       await dialog.getByRole('button', { name: 'Close' }).click();
       assert.equal(await page.getByRole('dialog').count(), 0);
     }
+    assert.equal(await page.locator('.herald-footer-nav a').count(), 6, 'Footer contains only real Herald destinations');
+    await page.locator('.travel-tool-link[href="#/travel-tools?tool=notes"]').click();
+    await page.waitForSelector('#notesChecklistTool:not([hidden])');
+    assert.ok(page.url().endsWith('#/travel-tools?tool=notes'));
+    assert.ok(await page.getByRole('option', { name: 'Entry requirements' }).count(), 'Travel note categories are available');
+    assert.deepEqual(await page.locator('#checklistCreate select[name="template"] option').allTextContents(), ['Blank checklist','Smart suggestions for this trip','Before booking','Before departure','Documents','Packing']);
+    assert.equal(await page.evaluate(snapshot), before, 'Opening Notes & Checklist does not mutate travel data');
+    await page.locator('#notesChecklistTool a[href="#/travel-tools"]').click();
+    await page.locator('.travel-tool-link[href="#/travel-tools?tool=budget"]').click();
+    await page.waitForSelector('#budgetPlannerTool:not([hidden])');
+    assert.match(await page.locator('.budget-start').innerText(), /2 priced travel items are already available/);
+    assert.match(await page.locator('.travel-context-bar').innerText(), /Original currencies are always kept/);
+    assert.equal(await page.evaluate(snapshot), before, 'Opening Budget Planner does not create empty budget records');
+    await page.locator('#budgetPlannerTool a[href="#/travel-tools"]').click();
     await page.locator('.travel-tool-link[href="#/travel-tools/stay-planner"]').click();
     assert.equal(await page.locator('.workspace-nav.active').innerText(), 'Travel Tools');
     assert.equal(await page.locator('#stayPlannerView .workspace-tabs button').count(), 4, 'Each moved tool provides access to the overview and the other tools');
