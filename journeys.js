@@ -84,7 +84,7 @@
     const dates=all.flatMap(r=>[r.start,r.end]).concat(today()).sort(),min=dates[0],max=dates.at(-1),total=Math.max(1,diffDays(min,max));
     els.timelineSlider.dataset.start=min;els.timelineSlider.max=total;timelineDate=timelineDate&&timelineDate>=min&&timelineDate<=max?timelineDate:today();els.timelineSlider.value=diffDays(min,timelineDate);
     els.timelineStartLabel.textContent=fmt(min);els.timelineEndLabel.textContent=fmt(max);
-    els.timelineBars.innerHTML=all.map((r,i)=>{const a=r.start<r.end?r.start:r.end,b=r.start>r.end?r.start:r.end;return `<div class="timeline-bar ${r.transport?'transport-bar':''}" style="left:${diffDays(min,a)/total*100}%;width:${Math.max(.35,(diffDays(a,b)+1)/(total+1)*100)}%;top:${i%3*21+7}px;${r.transport?'background:'+J.routeColor(r.transport.type):''}" title="${E(r.countryName)}: ${a} — ${b}"></div>`;}).join('');
+    els.timelineBars.replaceChildren();
     const input=get('timelineManualDate');input.min=min;input.max=max;input.value=timelineDate;updateTimelineLabels();renderMap();
   }
   function renderTransportList(){
