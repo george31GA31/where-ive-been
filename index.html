@@ -9,8 +9,8 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
-  <link rel="stylesheet" href="voyages.css?v=travel-tools-20261003" />
-  <link rel="stylesheet" href="travel-tools.css?v=platform-tools-20261005" />
+  <link rel="stylesheet" href="voyages.css?v=travel-tools-20261003&platform=herald-complete-20261005" />
+  <link rel="stylesheet" href="travel-tools.css?v=platform-tools-20261005&platform=herald-complete-20261005" />
   <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=map-city-20261004" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
@@ -37,7 +37,8 @@
       </nav>
 
       <div class="sidebar-footer">
-        <a class="secondary full" id="accountLink" href="profile/">Log in / Create account</a>
+        <a class="secondary full" id="accountLink" href="login/">Sign in</a>
+        <a class="text-btn" data-account-guest href="register/">Create account</a>
         <p data-sync-status role="status" aria-live="polite">Saved on this device. Sign in to sync everywhere.</p>
         <button class="text-btn" id="retrySaveBtn" type="button" hidden>Retry save</button>
       </div>
@@ -48,6 +49,12 @@
         <div>
           <h1 id="pageTitle">Home</h1>
         </div>
+        <nav class="herald-account-access" aria-label="Your account">
+          <a class="text-btn" data-account-guest href="login/">Sign in</a>
+          <a class="text-btn" data-account-guest href="register/">Create account</a>
+          <a class="text-btn" data-account-user href="profile/" hidden>Account</a>
+          <button class="text-btn" data-account-logout type="button" hidden>Sign out</button>
+        </nav>
         <button class="primary" id="addStayBtn">Add trip</button>
       </header>
 
@@ -337,11 +344,11 @@
 
   <script async src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script defer src="vendor/supabase/supabase.min.js?v=2.57.4" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="account-config.js?v=rollback-20261001-1"></script>
-  <script src="account-model.js?v=rollback-20261001-1"></script>
+  <script src="account-model.js?v=rollback-20261001-1&platform=herald-complete-20261005"></script>
   <script src="account-client.js?v=rollback-20261001-1"></script>
-  <script src="account-sync.js?v=rollback-20261001-1"></script>
-  <script src="app.js?v=rail-network-20261005"></script>
+  <script src="account-sync.js?v=rollback-20261001-1&platform=herald-complete-20261005"></script>
+  <script src="app.js?v=rail-network-20261005&platform=herald-complete-20261005"></script>
 </body>
 </html>

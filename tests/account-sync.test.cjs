@@ -89,3 +89,9 @@ test('a tab never deletes another tab’s newer pending edits', async () => {
   const b=engine(api,storage,'b');await b.start('A',state());const local=state();local.stays[0].notes='new a';
   storage.setItem('whereIveBeen.outbox.v1.A.a',JSON.stringify({base:state(),local,revision:1}));await b.flush();assert.match(storage.getItem('whereIveBeen.outbox.v1.A.a'),/new a/);b.stop();
 });
+test('an offline account reload uses its own saved snapshot and flushes new edits on reconnection',async()=>{
+ const api=backend(),storage=new Storage(),a=engine(api,storage);await a.start('A',state());a.stop();api.fail=true;
+ const offline=engine(api,storage,'offline');await offline.start('A',state());assert.equal(offline.ready,true);assert.equal(offline.local.stays[0].notes,'one');
+ const changed=M.copy(offline.local);changed.stays[0].notes='Edited offline';offline.edit(changed);await offline.flush();assert.equal(offline.pending(),true);api.fail=false;await offline.flush();assert.equal(api.get().stays[0].notes,'Edited offline');offline.stop();
+ api.fail=true;const other=engine(api,storage,'other');await other.start('B',state());assert.equal(other.ready,false);assert.equal(other.local,undefined);other.stop();
+});

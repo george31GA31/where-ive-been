@@ -1,7 +1,7 @@
 /* Captured public OSM geometry, fictional itineraries, and no remote account writes. */
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
-const {chromium}=require('playwright'),binary=require('@sparticuz/chromium'),G=require('../journey-routes');binary.setGraphicsMode=false;
+const {chromium}=require('playwright'),binary=require('@sparticuz/chromium'),G=require('../journey-routes'),R=require('../route-persistence');binary.setGraphicsMode=false;
 const root=path.resolve(__dirname,'..'),out=path.join(root,'test-results/network-routing');fs.mkdirSync(out,{recursive:true});
 const mime={'.js':'text/javascript','.css':'text/css','.html':'text/html','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'},assets=new Map();
 function load(dir){for(const entry of fs.readdirSync(dir,{withFileTypes:true})){if(entry.name.startsWith('.')||['node_modules','tests','test-results','scripts'].includes(entry.name))continue;const file=path.join(dir,entry.name);if(entry.isDirectory())load(file);else if(entry.isFile())assets.set('/'+path.relative(root,file).split(path.sep).join('/'),{body:fs.readFileSync(file),type:mime[path.extname(file)]||'application/octet-stream'});}}load(root);
@@ -37,7 +37,7 @@ const snapshot=()=>JSON.stringify(state);
 let browser;
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port,mask=G.landMask(require('../data/water-land.json'));
- for(const c of cases){c.expected=await G.networkPath(c.elements,pt(c.a),pt(c.b),{type:c.type,mask});assert.ok(c.expected?.length>2,c.id+' has usable reference geometry');}
+ for(const c of cases){c.expected=R.decode(R.encode(await G.networkPath(c.elements,pt(c.a),pt(c.b),{type:c.type,mask})||[]));assert.ok(c.expected?.length>2,c.id+' has usable reference geometry');}
  browser=await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH||await binary.executablePath(),args:binary.args.filter(a=>a!=='--single-process'),headless:true});
  for(const width of (process.env.HV_NETWORK_WIDTHS||'390,1440').split(',').map(Number))for(const theme of (process.env.HV_NETWORK_THEMES||'light,dark').split(',')){
   const page=await browser.newPage({viewport:{width,height:960},hasTouch:width===390,reducedMotion:'reduce'}),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));await page.clock.setSystemTime(new Date('2026-10-05T12:00:00Z'));

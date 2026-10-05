@@ -2710,6 +2710,9 @@ a.atlas-country .flag-img { width:28px; height:20px; }
 /* Travel Timeline: keep the useful date controls and remove the noisy journey marks. */
 .timeline-bars{display:none!important}.timeline-chart-wrap{min-height:42px;padding:6px 0 26px}.timeline-slider{position:absolute;left:0;right:0;bottom:8px}
 /* Herald footer */
+.herald-account-access{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.herald-account-access .text-btn{font-size:12px;white-space:nowrap}
+.sidebar-footer>a[data-account-guest]{display:block;text-align:center;margin-top:8px;font-size:12px}
+@media(max-width:720px){.herald-account-access{gap:10px;order:4;flex-basis:100%;justify-content:flex-start}.herald-account-access .text-btn{padding:2px 0}}
 .herald-site-footer{margin-top:42px;border-top:2px solid var(--hv-gold);padding:24px 0 8px;color:var(--hv-muted)}
 .herald-footer-main{display:flex;justify-content:space-between;gap:28px;align-items:flex-start}.herald-footer-brand strong{display:block;color:var(--hv-ink);font-family:var(--hv-serif);font-size:18px;letter-spacing:.04em}.herald-footer-brand span{display:block;margin-top:4px;font-size:12px}
 .herald-footer-links{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:flex-end}.herald-footer-links a{font-size:12px;font-weight:700;text-decoration:none;color:var(--hv-ink)}.herald-footer-links a:hover{text-decoration:underline;text-underline-offset:4px}

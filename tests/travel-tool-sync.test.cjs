@@ -17,3 +17,11 @@ test('device import preserves new travel-tool records',()=>{
   const result=M.importData(remote,source).data;
   assert.equal(result.notes.length,1);assert.equal(result.checklists.length,1);assert.equal(result.budgets.length,1);assert.equal(result.expenses.length,1);
 });
+test('two devices ticking different checklist items combine their completions without a conflict',()=>{
+ const base={checklists:[{id:'c',items:[{id:'passport',done:false},{id:'maps',done:false}],sections:[{id:'s',name:'Departure'}]}]},local=M.copy(base),remote=M.copy(base);local.checklists[0].items[0].done=true;remote.checklists[0].items[1].done=true;
+ const result=M.merge(base,local,remote);assert.equal(result.conflicts.length,0);assert.ok(result.data.checklists[0].items.every(i=>i.done));
+});
+test('guest import keeps note and expense references when equivalent source records have different IDs',()=>{
+ const remote={profiles:[],trips:[{id:'trip-cloud',name:'Europe'}],transports:[{id:'train-cloud',tripId:'trip-cloud',name:'Train'}],accommodations:[],placeVisits:[{id:'place-cloud',tripId:'trip-cloud',name:'Museum'}],budgets:[{id:'budget-cloud',tripId:'trip-cloud',baseCurrency:'GBP'}]},source={profiles:[],trips:[{id:'trip-device',name:'Europe'}],transports:[{id:'train-device',tripId:'trip-device',name:'Train'}],placeVisits:[{id:'place-device',tripId:'trip-device',name:'Museum'}],budgets:[{id:'budget-device',tripId:'trip-device',baseCurrency:'GBP'}],notes:[{id:'n',tripId:'trip-device',relatedType:'location',relatedId:'place-device'}],expenses:[{id:'e',tripId:'trip-device',budgetId:'budget-device',sourceType:'transport',sourceId:'train-device'}]};
+ const result=M.importData(remote,source).data;assert.equal(result.notes[0].relatedId,'place-cloud');assert.equal(result.expenses[0].budgetId,'budget-cloud');assert.equal(result.expenses[0].sourceId,'train-cloud');assert.equal(result.trips.length,1);
+});

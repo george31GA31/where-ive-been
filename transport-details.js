@@ -37,7 +37,7 @@
    return result;
  }
  function finish(form,record){
-   const error=read(form,record);if(error){document.getElementById('transportError').textContent=error;return;}if(form._recalculateRoute)delete record.resolvedRoutes;
+   const error=read(form,record);if(error){document.getElementById('transportError').textContent=error;return;}if(form._recalculateRoute)HVRouteStore.requestRefresh(record);
    const callback=form._saveCallback;
    if(form.elements.addReturn.checked&&!form._pendingOutbound){const pending=record;document.getElementById('transportDialog').close();HVJourneys.openTransport(null,reversed(record));const next=document.getElementById('transportForm');next._pendingOutbound=pending;next._saveCallback=callback;next.elements.startLocal.value='';next.elements.endLocal.value='';document.getElementById('transportDialogTitle').textContent='Add return journey';next.querySelector('[type=submit]').textContent='Save both journeys';const note=document.createElement('p');note.className='helper return-outbound-summary';note.textContent='Outbound ready: '+HVJourneys.transportLabel(pending)+'. Save this return to save both journeys.';next.querySelector('.transport-basics').after(note);const only=document.createElement('button');only.type='button';only.className='text-btn';only.textContent='Save outbound only';only.dataset.saveOutboundOnly='';note.after(only);only.onclick=()=>storeRecords([pending],callback);update(next);return;}
    const pending=form._pendingOutbound;if(pending){const link=pending.roundTripId||uid();pending.roundTripId=link;record.roundTripId=link;pending.relatedTransportId=record.id;record.relatedTransportId=pending.id;}

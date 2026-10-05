@@ -151,7 +151,7 @@
       return button;
     }));
     const account = $('accountLink');
-    if (account) account.textContent = 'Sign in to sync';
+    if (account) account.textContent = 'Sign in';
     q('.sidebar')?.classList.remove('island');
   }
 
@@ -418,7 +418,7 @@
     const host=q('.main');
     window.HVPages={
       get(id){for(const page of pages.values()){if(page.id===id)return page;const found=page.querySelector(`[id="${CSS.escape(id)}"]`);if(found)return found;}return null;},
-      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.append(target);target.classList.add('active');}
+      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.insertBefore(target,q('.herald-site-footer',host));target.classList.add('active');}
     };
     const previous=window.switchView;
     window.switchView=function(view,{replaceRoute=false}={}){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view,replaceRoute);window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
