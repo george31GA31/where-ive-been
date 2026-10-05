@@ -89,3 +89,17 @@ test('a tab never deletes another tab’s newer pending edits', async () => {
   const b=engine(api,storage,'b');await b.start('A',state());const local=state();local.stays[0].notes='new a';
   storage.setItem('whereIveBeen.outbox.v1.A.a',JSON.stringify({base:state(),local,revision:1}));await b.flush();assert.match(storage.getItem('whereIveBeen.outbox.v1.A.a'),/new a/);b.stop();
 });
+
+
+test('saved routes notes checklists and budgets merge through the same account payload', () => {
+  const b=state();Object.assign(b,{notes:[],checklists:[],checklistItems:[],budgets:[],budgetItems:[],transports:[{id:'t1',profileId:'p1',type:'train',start:{name:'A',lat:1,lon:2},end:{name:'B',lat:2,lon:3},startLocal:'2026-01-02T10:00',endLocal:'2026-01-02T11:00',status:'actual',bookingReference:'KEEP'}]});
+  const l=M.copy(b),r=M.copy(b);
+  l.notes.push({id:'n1',title:'Platform',body:'Track 4',profileId:'p1'});
+  l.checklists.push({id:'c1',title:'Documents',profileId:'p1'});l.checklistItems.push({id:'ci1',checklistId:'c1',text:'Passport',done:true,order:0});
+  l.transports[0].routeGeometry={version:1,legs:[{signature:'sig',coordinates:[[1,2],[1.5,2.5],[2,3]],label:'Saved rail'}]};
+  r.budgets.push({id:'b1',tripId:null,baseCurrency:'GBP'});r.budgetItems.push({id:'bi1',budgetId:'b1',label:'Lunch',actual:{amount:12,currency:'GBP'}});
+  r.transports[0].bookingReference='OTHER-DEVICE';
+  const out=M.merge(b,l,r);assert.equal(out.conflicts.length,0);
+  assert.equal(out.data.notes[0].body,'Track 4');assert.equal(out.data.checklistItems[0].done,true);assert.equal(out.data.budgetItems[0].actual.amount,12);
+  assert.deepEqual(out.data.transports[0].routeGeometry,l.transports[0].routeGeometry);assert.equal(out.data.transports[0].bookingReference,'OTHER-DEVICE');
+});
