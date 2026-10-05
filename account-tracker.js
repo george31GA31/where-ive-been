@@ -112,8 +112,9 @@
   async function changed(session) {
     const next = session?.user?.id || null;
     if (next === userId && engine?.ready) return;
+    const accountChanged = next !== userId;
     lock(true);
-    if (next !== userId) {
+    if (accountChanged) {
       engine.stop();
       userId = null;
       apply(empty());
@@ -123,7 +124,7 @@
     document.querySelectorAll('[data-account-guest]').forEach(el=>el.hidden=!!next);
     document.querySelectorAll('[data-account-user],[data-account-logout]').forEach(el=>el.hidden=!next);
     $('accountLink').href=next?'profile/':'login/';
-    document.querySelectorAll('dialog[open]').forEach(d => d.close());
+    if (accountChanged) document.querySelectorAll('dialog[open]').forEach(d => d.close());
     if (next) {
       await engine.start(next, empty());
       if (userId !== next) return;

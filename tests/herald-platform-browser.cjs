@@ -43,6 +43,10 @@ async function session(origin,width,theme){
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
  browser=await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH||await binary.executablePath(),args:binary.args.filter(a=>a!=='--single-process'),headless:true});
+ const guestContext=await browser.newContext({viewport:{width:390,height:1000}});contexts.push(guestContext);await guestContext.route('**/*',r=>r.request().url().startsWith(origin)?r.continue():r.abort());const guest=await guestContext.newPage();
+ await guest.goto(origin+'/#/calendar');await guest.waitForFunction(()=>window.HVPlaces&&window.WIBAuth&&document.querySelector('[data-sync-status]')?.textContent.includes('Saved on this device'));
+ await guest.evaluate(()=>HVPlaces.open({accommodation:true}));await guest.evaluate(()=>WIBAuth.client().auth.signOut({scope:'local'}));await guest.waitForTimeout(50);
+ assert.ok(await guest.locator('.place-search-dialog[open]').isVisible(),'Checking an unchanged guest session keeps its active editor open');await guest.locator('[name=query]').fill('Guest planning draft');await guestContext.close();
  const A=await session(origin,1440,'light'),a=A.page;
  await a.evaluate(()=>{
   const profileId=state.activeProfileId;state.trips.push({id:'sync-trip',profileId,name:'Europe test journey',start:'2026-11-01',end:'2026-11-05',notes:'Preserve the itinerary'});
