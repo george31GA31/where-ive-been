@@ -213,7 +213,7 @@
     state.budgetItems.push({id:uid(),budgetId:budget.id,...cost,actual:null,paid:null,paymentStatus:'Booked',include:true,createdAt:now(),updatedAt:now()});
   }
   function saveBudgetSettings(form){
-    const budget=budgetFor(selectedBudgetTrip());if(!budget)return;budget.totalBudget=form.elements.totalBudget.value===''?null:Number(form.elements.totalBudget.value);budget.baseCurrency=form.elements.baseCurrency.value;budget.travellers=Math.max(1,Number(form.elements.travellers.value)||1);budget.updatedAt=now();save();
+    const budget=budgetFor(selectedBudgetTrip());if(!budget)return;const previousBase=budget.baseCurrency||'GBP',nextBase=form.elements.baseCurrency.value;budget.totalBudget=form.elements.totalBudget.value===''?null:Number(form.elements.totalBudget.value);budget.baseCurrency=nextBase;budget.travellers=Math.max(1,Number(form.elements.travellers.value)||1);budget.updatedAt=now();if(previousBase!==nextBase)for(const item of state.budgetItems.filter(i=>i.budgetId===budget.id))for(const key of ['planned','actual','paid'])if(item[key]?.baseAmount!==undefined)delete item[key].baseAmount;save();
   }
   function moneyField(amount,currency,baseAmount,baseCurrency){
     if(amount===''||amount==null)return null;const result={amount:Number(amount),currency};if(currency!==baseCurrency&&baseAmount!==''&&baseAmount!=null)result.baseAmount=Number(baseAmount);return result;
