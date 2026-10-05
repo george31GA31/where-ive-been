@@ -8,11 +8,11 @@
     const dx=end-a.lon,dy=b.lat-a.lat,bend=Math.min(8,Math.hypot(dx,dy)*.16),length=Math.hypot(dx,dy)||1;
     return Array.from({length:49},(_,i)=>{const t=i/48,k=4*t*(1-t);return [a.lat+dy*t+dx/length*bend*k,a.lon+dx*t-dy/length*bend*k];});
   }
-  function mappedPath(elements,start,end){
+  function mappedPath(elements,start,end,options={}){
     // Follow connected OSM route geometry; never bridge gaps with invented track.
     const graph=new Map(),coords=new Map(),key=p=>p.map(v=>v.toFixed(6)).join(',');
-    for(const element of elements||[])for(const way of element.members||[]){const geometry=(way.geometry||[]).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).map(p=>[p.lat,p.lon]);for(let i=1;i<geometry.length;i++){
-      const a=geometry[i-1],b=geometry[i],ka=key(a),kb=key(b),d=distance(a,b);coords.set(ka,a);coords.set(kb,b);if(!graph.has(ka))graph.set(ka,[]);if(!graph.has(kb))graph.set(kb,[]);graph.get(ka).push([kb,d]);graph.get(kb).push([ka,d]);
+    for(const element of elements||[])for(const way of element.members||[]){if(options.type==='train'&&/(platform|stop)/.test(way.role||''))continue;const geometry=options.type==='train'?(way.geometry||[]).map(p=>point(p)?[p.lat,p.lon]:null):(way.geometry||[]).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).map(p=>[p.lat,p.lon]);for(let i=1;i<geometry.length;i++){
+      const a=geometry[i-1],b=geometry[i];if(!a||!b)continue;const ka=key(a),kb=key(b),d=distance(a,b);coords.set(ka,a);coords.set(kb,b);if(!graph.has(ka))graph.set(ka,[]);if(!graph.has(kb))graph.set(kb,[]);graph.get(ka).push([kb,d]);graph.get(kb).push([ka,d]);
     }}
     if(!coords.size||coords.size>60000)return null;
     const nearest=p=>[...coords].map(([k,c])=>[k,distance(c,[p.lat,p.lon])]).sort((a,b)=>a[1]-b[1])[0];
@@ -28,64 +28,107 @@
   // Stops attach to segments, not just vertices. Small gaps are penalised heavily.
   async function networkPath(elements,start,end,options={}){
     const type=options.type,marine=type==='boat',rail=type==='train',road=['car','bus','walk'].includes(type),mask=options.mask,signal=options.signal;
-    if(!point(start)||!point(end)||!Array.isArray(elements)||elements.length>10000||(!marine&&!rail&&!road)||marine&&!mask?.land)return null;
+    if(!point(start)||!point(end)||!Array.isArray(elements)||elements.length>(rail?20000:10000)||(!marine&&!rail&&!road)||marine&&!mask?.land)return null;
     const clock=()=>root.performance?.now?.()??Date.now(),began=clock(),budget=options.maxMs??3000,expired=()=>signal?.aborted||clock()-began>=budget;
     const from=[start.lat,start.lon],to=[end.lat,end.lon],direct=distance(from,to);
     if(expired()||direct<100||direct>2500000||Math.max(Math.abs(start.lat),Math.abs(end.lat))>80)return null;
     if(marine&&!options.marinePass){const preferred=await networkPath(elements,start,end,{...options,marinePass:true,ferryOnly:true});return preferred||networkPath(elements,start,end,{...options,marinePass:true,maxMs:budget-(clock()-began)});}
-    const snapLimit=marine?Math.min(12000,Math.max(1800,direct*.12)):rail?Math.min(6000,Math.max(800,direct*.08)):Math.min(3000,Math.max(500,direct*.06));
+    // Use connected tracks first. Approximate switches/gaps must not shortcut a
+    // genuine railway just because neighbouring tracks are physically close.
+    if(rail&&!options.railPass){const preferred=await networkPath(elements,start,end,{...options,railPass:true,skipGaps:true});return preferred||networkPath(elements,start,end,{...options,railPass:true,maxMs:budget-(clock()-began)});}
+    const snapLimit=marine?Math.min(12000,Math.max(1800,direct*.12)):rail?Math.min(10000,Math.max(1500,direct*.1)):Math.min(3000,Math.max(500,direct*.06));
     const gapLimit=marine?Math.min(8000,Math.max(300,direct*.08)):rail?Math.min(900,Math.max(60,direct*.012)):100;
     const wrapNear=lon=>start.lon+((lon-start.lon+540)%360)-180,xScale=111320*Math.cos((start.lat+end.lat)*Math.PI/360),xy=p=>[(wrapNear(p[1])-start.lon)*xScale,(p[0]-start.lat)*111320];
     const project=(p,s)=>{const [x,y]=xy(p),[a,b]=xy(s.a),[c,d]=xy(s.b),dx=c-a,dy=d-b,t=Math.max(0,Math.min(1,((x-a)*dx+(y-b)*dy)/(dx*dx+dy*dy||1))),q=[s.a[0]+(s.b[0]-s.a[0])*t,wrapNear(s.a[1])+(wrapNear(s.b[1])-wrapNear(s.a[1]))*t];return {s,t,p:q,d:distance(p,q)};};
-    const nodes=new Map(),segments=[],ends=new Map(),seen=new Set(),parent=new Map();
+    const nodes=new Map(),segments=[],ends=new Map(),seen=new Set(),parent=new Map(),nodeLimit=rail?180000:60000;
     const find=k=>{let p=k;while(parent.get(p)!==p)p=parent.get(p);while(k!==p){const next=parent.get(k);parent.set(k,p);k=next;}return p;};
     const union=(a,b)=>{a=find(a);b=find(b);if(a!==b)parent.set(b,a);};
     function mode(tags){
-      if(tags.area==='yes'||['no','private'].includes(tags.access)||tags.disused==='yes'||tags.abandoned==='yes')return 0;
+      if(tags.area==='yes'||tags.disused==='yes'||tags.abandoned==='yes')return 0;
+      if(rail){
+        if(!/^(rail|light_rail|narrow_gauge|subway)$/.test(tags.railway||'')||tags.passenger==='no'||tags['railway:traffic_mode']==='freight'||/^(industrial|military|test)$/.test(tags.usage||''))return 0;
+        const passenger=/^(train|subway|light_rail)$/.test(tags.route||'')||tags.passenger==='yes'||/^(passenger|mixed)$/.test(tags['railway:traffic_mode']||'');
+        if(['no','private'].includes(tags.access)&&!passenger||/^(yard|spur)$/.test(tags.service||'')&&!passenger)return 0;
+        // OSM sidings include passenger passing loops and platform tracks.
+        return tags.service==='siding'?1.12:/^(yard|spur)$/.test(tags.service||'')?1.5:1;
+      }
+      if(['no','private'].includes(tags.access))return 0;
       if(marine)return tags.route==='ferry'?1:options.ferryOnly?0:tags['seamark:type']==='recommended_track'||tags.waterway==='fairway'?1.2:0;
-      if(rail)return /^(rail|light_rail|narrow_gauge|subway)$/.test(tags.railway||'')&&!/^(yard|siding|spur)$/.test(tags.service||'')?1:0;
       const allowed=type==='walk'?/^(footway|path|pedestrian|steps|living_street|residential|service|unclassified|tertiary|secondary|primary|track)$/:/^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|living_street|service|road|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link)$/;
       return allowed.test(tags.highway||'')&&!['no','private'].includes(tags[type==='walk'?'foot':'motor_vehicle'])?1:0;
     }
+    const coordinateKey=p=>p.map(v=>v.toFixed(rail?7:6)).join(','),knownNodes=new Map(),passengerWays=new Set();
+    if(rail){
+      for(const element of elements)if(/^(train|subway|light_rail)$/.test(element?.tags?.route||''))for(const member of element.members||[])if(member?.type==='way'&&!/(platform|stop)/.test(member.role||''))passengerWays.add(member.ref);
+      for(const way of elements)if(way?.type==='way'&&mode({...way.tags,...(passengerWays.has(way.id)?{route:'train'}:{})}))for(let i=0;i<(way.geometry?.length||0);i++){
+        const p=way.geometry[i],id=way.nodes?.[i];if(!point(p)||id==null)continue;const key=coordinateKey([p.lat,p.lon]);if(!knownNodes.has(key))knownNodes.set(key,new Set());knownNodes.get(key).add('n:'+id);
+      }
+    }
     function addWay(way,inherited={}){
-      if(!way||nodes.size>60000||segments.length>60000)return;
+      if(!way||nodes.size>nodeLimit||segments.length>nodeLimit)return;
       const tags={...inherited,...way.tags},factor=mode(tags),id=way.id??way.ref;
-      if(!factor||!Array.isArray(way.geometry)||way.geometry.length<2||way.geometry.length>60000||id!=null&&seen.has(id))return;
+      if(!factor||!Array.isArray(way.geometry)||way.geometry.length<2||way.geometry.length>nodeLimit||id!=null&&seen.has(id))return;
       if(id!=null)seen.add(id);
-      const layer=String(tags.layer||'0'),key=(p,i)=>way.nodes?.[i]!=null?'n:'+way.nodes[i]:p.map(v=>v.toFixed(6)).join(',')+':'+layer;
+      const layer=String(tags.layer||'0'),key=(p,i)=>{
+        if(way.nodes?.[i]!=null)return 'n:'+way.nodes[i];
+        // Relation geom omits node IDs. Alias only unambiguous known vertices;
+        // never merge two different OSM nodes at a grade-separated crossing.
+        const coordinate=coordinateKey(p),known=rail&&knownNodes.get(coordinate);
+        return known?.size===1?[...known][0]:coordinate+':'+layer;
+      };
       const direction=road&&type!=='walk'?(tags.oneway==='-1'?-1:/^(yes|1|true)$/.test(tags.oneway||'')||tags.junction==='roundabout'?1:0):0;
       let previous=null,first=null,last=null;
-      const finish=()=>{if(first&&last&&first.k!==last.k){ends.set(first.k,{...first,layer});ends.set(last.k,{...last,layer});}first=last=null;};
-      for(let i=0;i<way.geometry.length&&nodes.size<=60000&&segments.length<=60000;i++){
+      const finish=()=>{if(first&&last&&first.k!==last.k){ends.set(first.k,{...first,layer,tags});ends.set(last.k,{...last,layer,tags});}first=last=null;};
+      for(let i=0;i<way.geometry.length&&nodes.size<=nodeLimit&&segments.length<=nodeLimit;i++){
         const value=way.geometry[i];if(!point(value)){finish();previous=null;continue;}
         const p=[value.lat,value.lon],k=key(p,i);if(!nodes.has(k)){nodes.set(k,p);parent.set(k,k);}
-        if(previous&&previous.k!==k){const length=distance(previous.p,p);if(length>.01){const s={a:previous.p,b:p,ka:previous.k,kb:k,length,factor,layer,direction,way:id??way,cuts:[]};segments.push(s);union(previous.k,k);if(!first)first={...previous,tangent:[p[0]-previous.p[0],wrapNear(p[1])-wrapNear(previous.p[1])]};last={k,p,tangent:[previous.p[0]-p[0],wrapNear(previous.p[1])-wrapNear(p[1])]};}}
+        if(previous&&previous.k!==k){const length=distance(previous.p,p);if(length>.01){const s={a:previous.p,b:p,ka:previous.k,kb:k,length,factor,layer,tags,direction,way:id??way,cuts:[]};segments.push(s);union(previous.k,k);if(!first)first={...previous,tangent:[p[0]-previous.p[0],wrapNear(p[1])-wrapNear(previous.p[1])]};last={k,p,tangent:[previous.p[0]-p[0],wrapNear(previous.p[1])-wrapNear(p[1])]};}}
         previous={k,p};
       }finish();
     }
     // Prefer full ways with node IDs and tags over duplicate relation members.
-    for(const element of elements)if(element?.type==='way')addWay(element);
-    for(const element of elements)if(element?.type==='relation'||element?.members)for(const member of element.members||[])if((member.type==='way'||member.geometry)&&!/(platform|stop)/.test(member.role||''))addWay(member,{route:element.tags?.route,railway:/^(train|railway)$/.test(element.tags?.route||'')?'rail':undefined});
-    if(!segments.length||nodes.size>60000||segments.length>60000||expired())return null;
+    for(const element of elements)if(element?.type==='way')addWay(element,rail&&passengerWays.has(element.id)?{route:'train'}:{});
+    const fullWays=rail?new Map(elements.filter(e=>e?.type==='way').map(e=>[e.id,e])):null;
+    for(const element of elements)if(element?.type==='relation'||element?.members)for(const member of element.members||[])if((member.type==='way'||member.geometry)&&!/(platform|stop)/.test(member.role||'')){
+      const known=fullWays?.get(member.ref);addWay(known?{...member,tags:{...known.tags,...member.tags}}:member,{route:element.tags?.route,railway:/^(train|railway)$/.test(element.tags?.route||'')?'rail':undefined});
+    }
+    if(!segments.length||nodes.size>nodeLimit||segments.length>nodeLimit||expired())return null;
     const graph=new Map(),add=(a,b,coords,kind,factor=1)=>{const length=coords.slice(1).reduce((n,p,i)=>n+distance(coords[i],p),0);if(!graph.has(a))graph.set(a,[]);graph.get(a).push({to:b,coords,length,kind,cost:length*factor});};
     let serial=0;const cut=c=>{if(c.t<1e-7)return c.s.ka;if(c.t>1-1e-7)return c.s.kb;const old=c.s.cuts.find(v=>Math.abs(v.t-c.t)<1e-7);if(old)return old.k;const k='j:'+(serial++);nodes.set(k,c.p);c.s.cuts.push({...c,k});return k;};
     function attachments(p){
       const candidatesByWay=new Map();for(const s of segments){const c=project(p,s);if(c.d>snapLimit)continue;const k=s.way,list=candidatesByWay.get(k)||[];list.push(c);list.sort((a,b)=>a.d-b.d);if(list.length>2)list.pop();candidatesByWay.set(k,list);}
-      return [...candidatesByWay.values()].map(list=>list[0]).sort((a,b)=>a.d-b.d).slice(0,32);
+      const candidates=[...candidatesByWay.values()].map(list=>list[0]).sort((a,b)=>a.d-b.d);
+      if(!rail)return candidates.slice(0,32);
+      // Dense station approaches must not crowd a more distant connected line
+      // out of the candidate list with dozens of ways from one isolated yard.
+      const counts=new Map();return candidates.filter(c=>{const k=find(c.s.ka),n=counts.get(k)||0;counts.set(k,n+1);return n<8;}).slice(0,96);
     }
     const starts=attachments(from),finishes=attachments(to);if(!starts.length||!finishes.length||expired())return null;
     const joins=[];for(const [kind,p,list]of [['start',from,starts],['end',to,finishes]])for(const c of list)joins.push({kind,p,c,k:cut(c)});
     // Index segment bounds to keep gap matching local even on a large railway graph.
     const grid=new Map(),cell=gapLimit;let entries=0;
-    for(const s of segments){const a=xy(s.a),b=xy(s.b),lowX=Math.floor(Math.min(a[0],b[0])/cell),highX=Math.floor(Math.max(a[0],b[0])/cell),lowY=Math.floor(Math.min(a[1],b[1])/cell),highY=Math.floor(Math.max(a[1],b[1])/cell);if((highX-lowX+1)*(highY-lowY+1)>2000)continue;
+    for(const s of (rail&&options.skipGaps?[]:segments)){const a=xy(s.a),b=xy(s.b),lowX=Math.floor(Math.min(a[0],b[0])/cell),highX=Math.floor(Math.max(a[0],b[0])/cell),lowY=Math.floor(Math.min(a[1],b[1])/cell),highY=Math.floor(Math.max(a[1],b[1])/cell);if((highX-lowX+1)*(highY-lowY+1)>2000)continue;
       for(let x=lowX;x<=highX;x++)for(let y=lowY;y<=highY;y++){const k=x+','+y;if(!grid.has(k))grid.set(k,[]);grid.get(k).push(s);if(++entries>200000)return null;}
     }
     const bridges=[],bridgeKeys=new Set();let checked=0;
-    for(const endpoint of [...ends.values()].slice(0,2000)){
+    const neighbours=new Map();if(rail&&!options.skipGaps)for(const s of segments)for(const [a,b]of [[s.ka,s.kb],[s.kb,s.ka]]){if(!neighbours.has(a))neighbours.set(a,new Set());neighbours.get(a).add(b);}
+    const endpoints=rail?[...ends.values()].filter(p=>!options.skipGaps&&neighbours.get(p.k)?.size===1):[...ends.values()];
+    for(const endpoint of endpoints.slice(0,rail?6000:2000)){
       if(++checked%50===0){if(expired())return null;await new Promise(r=>setTimeout(r,0));}
       const [x,y]=xy(endpoint.p),near=new Set();for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++)for(const s of grid.get((Math.floor(x/cell)+dx)+','+(Math.floor(y/cell)+dy))||[])near.add(s);
-      const candidates=[];for(const s of near){if(find(endpoint.k)===find(s.ka)||s.layer!==endpoint.layer)continue;const c=project(endpoint.p,s);if(c.d<.1||c.d>gapLimit)continue;
-        if(!marine){const v=xy(endpoint.p),q=xy(c.p),t=[endpoint.tangent[1]*xScale,endpoint.tangent[0]*111320],alignment=-(t[0]*(q[0]-v[0])+t[1]*(q[1]-v[1]))/(Math.hypot(...t)*Math.hypot(q[0]-v[0],q[1]-v[1])||1);if(c.d>25&&alignment<.7||c.t>1e-7&&c.t<1-1e-7)continue;}
+      const candidates=[];for(const s of near){if(find(endpoint.k)===find(s.ka)||s.layer!==endpoint.layer)continue;let c=project(endpoint.p,s);if(c.d<.1||c.d>gapLimit)continue;
+        if(rail&&c.t>1e-7&&c.t<1-1e-7){
+          // A missing switch joins ahead of the truncated track. The nearest
+          // perpendicular projection can make that connection turn sideways.
+          const p=xy(endpoint.p),a=xy(s.a),b=xy(s.b),v=[-endpoint.tangent[1]*xScale,-endpoint.tangent[0]*111320],w=[b[0]-a[0],b[1]-a[1]],cross=(u,v)=>u[0]*v[1]-u[1]*v[0],den=cross(v,w);
+          if(Math.abs(den)>1e-8){const delta=[a[0]-p[0],a[1]-p[1]],forward=cross(delta,w)/den,t=cross(delta,v)/den;if(forward>=0&&t>=0&&t<=1){const q=[s.a[0]+(s.b[0]-s.a[0])*t,wrapNear(s.a[1])+(wrapNear(s.b[1])-wrapNear(s.a[1]))*t],d=distance(endpoint.p,q);if(d<=Math.min(250,gapLimit))c={s,t,p:q,d};}}
+        }
+        if(!marine){const v=xy(endpoint.p),q=xy(c.p),t=[endpoint.tangent[1]*xScale,endpoint.tangent[0]*111320],alignment=-(t[0]*(q[0]-v[0])+t[1]*(q[1]-v[1]))/(Math.hypot(...t)*Math.hypot(q[0]-v[0],q[1]-v[1])||1),interior=c.t>1e-7&&c.t<1-1e-7;
+          if(c.d>25&&alignment<.7||interior&&(!rail||c.d>250))continue;
+          if(rail){const a=endpoint.tags,b=s.tags,compatible=a.railway===b.railway&&(!a.gauge||!b.gauge||a.gauge.split(';').some(g=>b.gauge.split(';').includes(g)));if(!compatible)continue;
+            const u=xy(s.a),w=xy(s.b),parallel=Math.abs(t[0]*(w[0]-u[0])+t[1]*(w[1]-u[1]))/(Math.hypot(...t)*Math.hypot(w[0]-u[0],w[1]-u[1])||1);if(c.d>25&&parallel<.7)continue;
+          }
+        }
         candidates.push(c);
       }
       candidates.sort((a,b)=>a.d-b.d);for(const c of candidates.slice(0,3)){const k=cut(c),pair=[endpoint.k,k].sort().join('|');if(bridgeKeys.has(pair))continue;bridgeKeys.add(pair);bridges.push({a:endpoint.k,b:k,coords:[endpoint.p,c.p]});if(bridges.length>=512)break;}if(bridges.length>=512)break;
@@ -99,7 +142,7 @@
       if(!route)return null;const length=route.slice(1).reduce((n,p,i)=>n+distance(route[i],p),0);return length<=limit&&length<=distance(...coords)*2+500?route:null;
     };
     for(const bridge of bridges){const coords=await connection(bridge.coords,gapLimit);if(coords){add(bridge.a,bridge.b,coords,'gap',4);add(bridge.b,bridge.a,[...coords].reverse(),'gap',4);}}
-    for(const j of joins){const coords=await connection(j.kind==='start'?[j.p,j.c.p]:[j.c.p,j.p],snapLimit,true);if(!coords)continue;if(j.kind==='start')add('start',j.k,coords,'connector',4);else add(j.k,'end',coords,'connector',4);}
+    for(const j of joins){const coords=await connection(j.kind==='start'?[j.p,j.c.p]:[j.c.p,j.p],snapLimit,true);if(!coords)continue;if(j.kind==='start')add('start',j.k,coords,'connector',rail?8:4);else add(j.k,'end',coords,'connector',rail?8:4);}
     if(!graph.has('start')||expired())return null;
     const costs=new Map([['start',0]]),previous=new Map(),queue=[[0,'start']];
     const push=v=>{queue.push(v);let i=queue.length-1;while(i){const p=(i-1)>>1;if(queue[p][0]<=v[0])break;queue[i]=queue[p];i=p;}queue[i]=v;};
@@ -108,8 +151,8 @@
     if(!previous.has('end')||expired())return null;
     const edges=[];for(let k='end';k!=='start';){const p=previous.get(k);if(!p)return null;edges.push(p.edge);k=p.from;}edges.reverse();
     const lengths={network:0,gap:0,connector:0},coordinates=[];for(const edge of edges){lengths[edge.kind]+=edge.length;for(const p of edge.coords)if(!coordinates.length||distance(coordinates.at(-1),p)>.01)coordinates.push(p);}
-    const total=lengths.network+lengths.gap+lengths.connector,detour=marine?1.7:rail?2.4:2.2;
-    if(lengths.network<direct*.45||lengths.network<total*.55||lengths.connector>Math.max(1800,direct*.28)||lengths.gap>Math.max(300,direct*(marine?.2:.06))||total>direct*detour+1500)return null;
+    const total=lengths.network+lengths.gap+lengths.connector,detour=marine?1.7:rail?3.5:2.2;
+    if(lengths.network<direct*.45||lengths.network<total*.55||lengths.connector>(rail?Math.min(20000,Math.max(1800,direct*.2+1500)):Math.max(1800,direct*.28))||lengths.gap>Math.max(300,direct*(marine?.2:.06))||total>direct*detour+(rail?3000:1500))return null;
     if(marine){
       // Recorded city stops may sit on shore. Keep their markers, but start/end
       // the fallback line at water rather than drawing an overland boat leg.
@@ -120,9 +163,17 @@
     }
     return coordinates;
   }
-  function networkQuery(type,start,end){
+  function networkQuery(type,start,end,options={}){
     if(!point(start)||!point(end)||!['boat','train','car','bus','walk'].includes(type))return null;
     const metres=distance([start.lat,start.lon],[end.lat,end.lon]);if(metres>2500000||Math.abs(start.lon-end.lon)>180)return null;
+    if(type==='train'){
+      const filter='[railway~"^(rail|light_rail|narrow_gauge|subway)$"][usage!~"^(industrial|military|test)$"]["railway:traffic_mode"!="freight"][passenger!="no"]',radius=Math.round(Math.min(options.expanded?80000:45000,Math.max(options.expanded?12000:5000,metres*(options.expanded?.6:.3)))),area=`(around:${radius},${start.lat},${start.lon},${end.lat},${end.lon})`;
+      if(!options.expanded)return `[out:json][timeout:10][maxsize:33554432];way${area}${filter};out body geom;`;
+      // The second lookup includes infrastructure/service ways from both ends.
+      // They may curve beyond the direct corridor or belong to different services.
+      const dy=radius/111320,dx=dy/Math.max(.2,Math.cos((start.lat+end.lat)*Math.PI/360)),bounds=[Math.max(-90,Math.min(start.lat,end.lat)-dy),Math.max(-180,Math.min(start.lon,end.lon)-dx),Math.min(90,Math.max(start.lat,end.lat)+dy),Math.min(180,Math.max(start.lon,end.lon)+dx)].map(v=>v.toFixed(6)).join(','),routes='[route~"^(train|railway|tracks|subway|light_rail)$"]';
+      return `[out:json][timeout:12][maxsize:33554432];(rel(around:5000,${start.lat},${start.lon})${routes};rel(around:5000,${end.lat},${end.lon})${routes};)->.lines;(way${area}${filter};way(r.lines)(${bounds})${filter};);out body geom;.lines out body;`;
+    }
     const radius=Math.round(Math.min(type==='boat'?35000:25000,Math.max(type==='boat'?6000:3000,metres*.2))),area=`(around:${radius},${start.lat},${start.lon},${end.lat},${end.lon})`;
     const filters=type==='boat'?['[route=ferry]','["seamark:type"=recommended_track]','[waterway=fairway]']:type==='train'?['[railway~"^(rail|light_rail|narrow_gauge|subway)$"]']:['[highway]'];
     return `[out:json][timeout:10][maxsize:16777216];(${filters.map(f=>'way'+area+f+';').join('')});out body geom;`;

@@ -37,6 +37,56 @@
     const nodes=new Map(data.elements.filter(e=>e.type==='node'&&G.point(e)).map(e=>[e.id,{lat:e.lat,lon:e.lon}]));
     return data.elements.filter(e=>e.type==='way'&&(e.tags?.route==='ferry'||e.tags?.['seamark:type']==='recommended_track'||e.tags?.waterway==='fairway')).map(e=>({...e,geometry:e.nodes?.map(id=>nodes.get(id))||[]}));
   }
+  function railApiElements(data){
+    if(data.error||!Array.isArray(data.elements)||data.elements.length>60000)throw Error('Railway data unavailable');
+    const nodes=new Map(data.elements.filter(e=>e.type==='node'&&G.point(e)).map(e=>[e.id,{lat:e.lat,lon:e.lon}]));
+    return data.elements.filter(e=>e.type==='way'&&/^(rail|light_rail|narrow_gauge|subway)$/.test(e.tags?.railway||'')).map(e=>({...e,geometry:e.nodes?.map(id=>nodes.get(id))||[]})).concat(data.elements.filter(e=>e.type==='relation'&&/^(train|railway|tracks|subway|light_rail)$/.test(e.tags?.route||'')));
+  }
+  async function railApiFallback(start,end,signal){
+    // Tiny station extracts expose nearby infrastructure even when Overpass is
+    // unavailable. At most two complete rail relations fill the intervening track.
+    const extracts=await Promise.allSettled([start,end].map(stop=>{
+      const dy=.005,dx=dy/Math.max(.2,Math.cos(stop.lat*Math.PI/180)),bbox=[Math.max(-180,stop.lon-dx),Math.max(-90,stop.lat-dy),Math.min(180,stop.lon+dx),Math.min(90,stop.lat+dy)].join(',');
+      return serviceJSON('https://api.openstreetmap.org/api/0.6/map.json?'+new URLSearchParams({bbox}),signal,14000).then(railApiElements);
+    }));
+    if(signal.aborted)return null;
+    const elements=extracts.flatMap(r=>r.status==='fulfilled'?r.value:[]),resolve=()=>G.networkPath(elements,start,end,{type:'train',signal});
+    let coordinates=await resolve();if(coordinates)return coordinates;
+    const candidates=new Map();for(let i=0;i<extracts.length;i++)if(extracts[i].status==='fulfilled'){
+      const local=extracts[i].value,ways=new Set(local.filter(e=>e.type==='way').map(e=>e.id));
+      for(const rel of local)if(rel.type==='relation'&&Number.isSafeInteger(rel.id)&&rel.members?.length<=2000&&rel.members.some(m=>m.type==='way'&&ways.has(m.ref))){
+        if(!candidates.has(rel.id))candidates.set(rel.id,{rel,ends:new Set()});candidates.get(rel.id).ends.add(i);
+      }
+    }
+    const ranked=[...candidates.values()].sort((a,b)=>b.ends.size-a.ends.size||Number(/^(railway|tracks)$/.test(b.rel.tags.route))-Number(/^(railway|tracks)$/.test(a.rel.tags.route))||a.rel.members.length-b.rel.members.length),selected=[];
+    for(const side of [0,1]){const candidate=ranked.find(c=>c.ends.has(side));if(candidate&&!selected.some(c=>c.rel.id===candidate.rel.id))selected.push(candidate);}
+    const complete=await Promise.allSettled(selected.map(c=>serviceJSON('https://api.openstreetmap.org/api/0.6/relation/'+c.rel.id+'/full.json',signal,16000).then(railApiElements)));
+    for(const result of complete)if(result.status==='fulfilled')elements.push(...result.value);
+    if(signal.aborted)return null;coordinates=await resolve();return coordinates;
+  }
+  async function railFallback(start,end,signal,exactElements,singleSource=false){
+    // Reuse partial service geometry before asking for more railway data.
+    const elements=[...exactElements],resolve=()=>G.networkPath(elements,start,end,{type:'train',signal});
+    let coordinates=await resolve();if(coordinates)return coordinates;
+    if(!singleSource){
+      const controller=new AbortController(),abort=()=>controller.abort();signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();
+      const usable=p=>p.then(coords=>{if(!coords)throw Error('Railway network unavailable');return coords;});
+      try{return await Promise.any([usable(railFallback(start,end,controller.signal,exactElements,true)),usable((async()=>{await new Promise(r=>setTimeout(r,3000));if(controller.signal.aborted)return null;return railApiFallback(start,end,controller.signal);})())]);}
+      catch{return null;}finally{controller.abort();signal.removeEventListener('abort',abort);}
+    }
+    for(const expanded of [false,true]){
+      if(signal.aborted)throw new DOMException('Closed','AbortError');
+      const query=G.networkQuery('train',start,end,{expanded});if(!query)return null;
+      // Keep using OSM, with a second compatible instance when the first lookup
+      // fails or its corridor cannot connect the stops. All requests are read-only.
+      const reserved=Math.max(Date.now(),lastRequest+1100),delay=reserved-Date.now();lastRequest=reserved;if(delay)await new Promise(r=>setTimeout(r,delay));
+      if(signal.aborted)throw new DOMException('Closed','AbortError');
+      const service=expanded?'https://overpass.private.coffee/api/interpreter':'https://overpass-api.de/api/interpreter';
+      try{const data=await serviceJSON(service+'?'+new URLSearchParams({data:query}),signal,expanded?18000:14000);if(Array.isArray(data.elements))elements.push(...data.elements);}catch{if(signal.aborted)throw new DOMException('Closed','AbortError');}
+      coordinates=await resolve();if(coordinates)return coordinates;
+    }
+    return null;
+  }
   async function route(type,start,end,signal){
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon]);if(cache.has(key))return cache.get(key);
     // FOSSGIS public routing limit: at most one request per second, shared across maps.
@@ -51,10 +101,14 @@
       }else if(['train','boat'].includes(type)){
         const mode=type==='train'?'train|railway':'ferry',query=`[out:json][timeout:15];rel(around:2500,${start.lat},${start.lon})[route~"^(${mode})$"];out geom;`;
         const data=await serviceJSON('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),signal,22000);exactElements=data.elements||[];
-        const coordinates=G.mappedPath(exactElements,start,end);if(!coordinates||coordinates.length<2)throw Error();result={coordinates,label:type==='train'?'Mapped railway route (OSM)':'Mapped ferry route (OSM)'};
+        const coordinates=G.mappedPath(exactElements,start,end,{type});if(!coordinates||coordinates.length<2)throw Error();result={coordinates,label:type==='train'?'Mapped railway route (OSM)':'Mapped ferry route (OSM)'};
       }else throw Error();
     }catch(error){
       if(signal.aborted)throw error;
+      if(type==='train'){
+        const coordinates=await railFallback(start,end,signal,exactElements);if(!coordinates||coordinates.length<2||signal.aborted)throw error;
+        result={coordinates,label:'Nearby mapped railway route (approximate)',illustrative:true};
+      }else{
       const query=G.networkQuery(type,start,end);if(!query)throw error;
       let elements=exactElements,networkUnavailable=false;const maskRequest=type==='boat'?loadCoastline().catch(()=>null):null;
       try{const data=await serviceJSON('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),signal,8000);elements=[...elements,...data.elements||[]];}catch{if(signal.aborted)throw error;networkUnavailable=true;}
@@ -62,6 +116,7 @@
       const mask=await maskRequest;
       const coordinates=await G.networkPath(elements,start,end,{type,mask,signal});if(!coordinates||coordinates.length<2||signal.aborted)throw error;
       result={coordinates,label:type==='boat'?'Nearby mapped ferry / marine route (approximate)':type==='train'?'Nearby mapped railway route (approximate)':type==='walk'?'Nearby mapped walking network (approximate)':'Nearby mapped road network (approximate)',illustrative:true};
+      }
     }
     cache.set(key,result);if(cache.size>80)cache.delete(cache.keys().next().value);return result;
   }
