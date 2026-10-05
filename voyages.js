@@ -382,6 +382,18 @@
     });
   }
 
+  function installFooter() {
+    if (q('.herald-footer')) return;
+    const footer=document.createElement('footer');footer.className='herald-footer';
+    const base=rootUrl.href.replace(/#.*$/,'');
+    const links=[
+      ['Home','dashboard'],['Calendar','calendar'],['Trips','trips'],['Journey Map','journey-map'],['Atlas','map'],['Travel Tools','travel-tools']
+    ];
+    footer.innerHTML=`<div class="herald-footer-main"><div class="herald-footer-brand"><strong>HERALD VOYAGES</strong><span>Every journey, kept in one place.</span></div><nav class="herald-footer-nav" aria-label="Herald Voyages footer">${links.map(([label,path])=>`<a href="${base}#/${path}">${label}</a>`).join('')}</nav></div><div class="herald-footer-bottom"><span>© ${new Date().getFullYear()} Herald Voyages</span><span>Map the journey. Remember the story.</span></div>`;
+    const target=document.body.dataset.accountPage?q('.account-page'):q('.main');
+    target?.append(footer);
+  }
+
   function installAccountChrome() {
     if (!document.body.dataset.accountPage) return;
     document.body.classList.add('voyages-account-body');
@@ -412,7 +424,7 @@
     const host=q('.main');
     window.HVPages={
       get(id){for(const page of pages.values()){if(page.id===id)return page;const found=page.querySelector(`[id="${CSS.escape(id)}"]`);if(found)return found;}return null;},
-      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.append(target);target.classList.add('active');}
+      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();const footer=host.querySelector(':scope > .herald-footer');footer?host.insertBefore(target,footer):host.append(target);target.classList.add('active');}
     };
     const previous=window.switchView;
     window.switchView=function(view,{replaceRoute=false}={}){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view,replaceRoute);window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
@@ -511,6 +523,7 @@
   function boot() {
     installBranding();
     installAccountChrome();
+    if (document.body.dataset.accountPage) installFooter();
     if (!document.body.dataset.accountPage) {
       installNavigation();
       installTravellerSelector();
@@ -527,7 +540,7 @@
       applyViewChrome(routeFromHash() || activeView());
     }
     watchDynamicBranding();
-    if (!document.body.dataset.accountPage) installPageRouter();
+    if (!document.body.dataset.accountPage) { installPageRouter(); installFooter(); }
   }
 
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();

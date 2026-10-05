@@ -3,11 +3,18 @@
  'use strict';
  const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function setup(form,record={}){
+   form._routeSignature=record?.id&&window.HVRouteStore?HVRouteStore.transportSignature(record):'';form._recalculateRoute=false;
    form._searchBindings?.forEach(b=>b.cancel());form._searchBindings=[];
    form.querySelector('[data-transport-extras]')?.remove();
    const host=document.createElement('section');host.dataset.transportExtras='';host.className='transport-extras';
    host.innerHTML=`<section class="ground-vias" data-ground-vias><h3>Via stops <span class="helper">optional</span></h3><div data-ground-list></div><button type="button" class="text-btn" data-ground-add>+ Add via stop</button></section><section class="journey-section transport-essential" data-operator-essential><h3>Journey details</h3></section><details class="transport-more journey-more"><summary>More details</summary><div class="journey-more-content"><div class="form-grid" data-operator-secondary>${[['operator','Operator / company'],['serviceNumber','Service / train / bus number']].map(([key,label])=>`<label class="field"><span data-essential-label="${key}">${label} <em>optional</em></span><input name="${key}" value="${E(record[key])}" maxlength="200"></label>`).join('')}</div><div class="form-grid"><label class="field"><span>Booking reference <em>optional</em></span><input name="bookingReference" value="${E(record.bookingReference)}" maxlength="200"></label><label class="field"><span>Seat information <em>optional</em></span><input name="seat" value="${E(record.seat)}" maxlength="200"></label></div><label class="field"><span>Notes <em>optional</em></span><textarea name="notes" rows="3" maxlength="4000">${E(record.notes)}</textarea></label>${HVPrices.fields(record)}</div></details><div class="return-journey"><label class="check-row" data-return-option><input name="addReturn" type="checkbox"><span>Add return journey</span></label><p class="helper" data-return-help>Set the return's own dates and times before saving both journeys.</p></div>`;
    form.querySelector('#transportError').before(host);
+   if(record?.id){
+     const refresh=document.createElement('div');refresh.className='route-refresh';refresh.hidden=!record.routeGeometry;
+     refresh.innerHTML='<div><strong>Saved map route</strong><small>Herald reuses this geometry until the journey changes.</small></div><button type="button" class="secondary compact">Recalculate route</button>';
+     host.querySelector('.return-journey').before(refresh);
+     refresh.querySelector('button').onclick=()=>{form._recalculateRoute=true;refresh.querySelector('button').disabled=true;refresh.querySelector('button').textContent='Route will refresh after saving';};
+   }
    for(const side of ['start','end']){
      const input=form.elements[side+'name'],results=form.querySelector(`[data-airport-results="${side}"]`);
      form._searchBindings.push(HVTravelSearch.bind(input,results,{context:()=>form.elements.type.value,onType(){form.elements[side+'lat'].value='';form.elements[side+'lon'].value='';delete form._airportPrefill[side];form.querySelector(`[data-endpoint-address="${side}"]`).textContent='';if(form.elements[side+'address'])form.elements[side+'address'].value='';},onSelect(p){setPoint(form,side,p);}}));
@@ -37,6 +44,7 @@
  }
  function finish(form,record){
    const error=read(form,record);if(error){document.getElementById('transportError').textContent=error;return;}
+   if(window.HVRouteStore&&(form._recalculateRoute||(form._routeSignature&&form._routeSignature!==HVRouteStore.transportSignature(record))))HVRouteStore.clear(record);
    const callback=form._saveCallback;
    if(form.elements.addReturn.checked&&!form._pendingOutbound){const pending=record;document.getElementById('transportDialog').close();HVJourneys.openTransport(null,reversed(record));const next=document.getElementById('transportForm');next._pendingOutbound=pending;next._saveCallback=callback;next.elements.startLocal.value='';next.elements.endLocal.value='';document.getElementById('transportDialogTitle').textContent='Add return journey';next.querySelector('[type=submit]').textContent='Save both journeys';const note=document.createElement('p');note.className='helper return-outbound-summary';note.textContent='Outbound ready: '+HVJourneys.transportLabel(pending)+'. Save this return to save both journeys.';next.querySelector('.transport-basics').after(note);const only=document.createElement('button');only.type='button';only.className='text-btn';only.textContent='Save outbound only';only.dataset.saveOutboundOnly='';note.after(only);only.onclick=()=>storeRecords([pending],callback);update(next);return;}
    const pending=form._pendingOutbound;if(pending){const link=pending.roundTripId||uid();pending.roundTripId=link;record.roundTripId=link;pending.relatedTransportId=record.id;record.relatedTransportId=pending.id;}

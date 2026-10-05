@@ -71,7 +71,8 @@ let browser;
   });
   await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('network-seeded')){localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.guest.v1',JSON.stringify(seed));localStorage.setItem('network-seeded','yes');}localStorage.setItem('whereIveBeen.theme.v1',theme);document.addEventListener('DOMContentLoaded',()=>{window.testRouteLayers=[];const original=L.polyline;L.polyline=function(coords,options){const line=original(coords,options);testRouteLayers.push(line);return line;};});},{seed,theme});
   await page.goto(origin+'/#/journey-map');await page.waitForFunction(n=>window.HVJourneyMap&&state.transports.length===n,seed.transports.length);
-  const before=await page.evaluate(snapshot),stored=await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2'));
+  const stripRoutes=()=>page.evaluate(()=>{const copy=JSON.parse(JSON.stringify(state));for(const t of copy.transports||[])delete t.routeGeometry;return JSON.stringify(copy);});
+  const before=await stripRoutes();
   try{await page.waitForFunction(n=>document.getElementById('globalJourneyStatus')?.textContent.includes(n+' entries')&&!document.getElementById('globalJourneyStatus').textContent.includes('Loading'),entries,{timeout:50000});}catch(error){console.error(await page.evaluate(()=>({status:document.getElementById('globalJourneyStatus')?.textContent,layers:window.testRouteLayers?.length,transports:state.transports.length})),requests,errors);throw error;}
   const layers=()=>page.evaluate(()=>testRouteLayers.filter(l=>l._map).map(l=>({coords:l.getLatLngs().map(p=>[p.lat,p.lng]),colour:l.options.color,weight:l.options.weight,dash:l.options.dashArray})));
   const verify=(drawn,weight)=>{
@@ -79,7 +80,10 @@ let browser;
    for(const [name,coords]of [['ferry',exactBoat],['train',exactRail],['road',exactRoad]])assert.ok(drawn.some(l=>JSON.stringify(l.coords)===JSON.stringify(coords)),'Existing '+name+' route is byte-for-byte unchanged');
    assert.ok(!drawn.some(l=>l.coords.length===2&&l.coords[0][0]===48.85),'No unverified boat line across land');
   };
-  verify(await layers(),1.6);assert.equal(requests.filter(q=>q==='harbour').length,1);assert.ok(!requests.some(q=>q.includes?.('out body geom')&&(q.includes('10,-77.5')||q.includes('51,0')||q.includes('51.2,1'))),'Successful exact routes do not request network fallbacks');
+  verify(await layers(),1.6);
+  const persisted=await page.evaluate(()=>({saved:state.transports.filter(t=>t.routeGeometry?.legs?.some(Boolean)).map(t=>t.id),local:JSON.parse(localStorage.getItem('whereIveBeen.data.v2')).transports.filter(t=>t.routeGeometry?.legs?.some(Boolean)).map(t=>t.id)}));
+  for(const id of ['cebu-ferry','ljubljana-jesenice','bus-gap','exact-train','exact-road']){assert.ok(persisted.saved.includes(id),id+' route geometry is saved on the transport');assert.ok(persisted.local.includes(id),id+' route geometry is persisted to device storage');}
+  assert.equal(requests.filter(q=>q==='harbour').length,1);assert.ok(!requests.some(q=>q.includes?.('out body geom')&&(q.includes('10,-77.5')||q.includes('51,0')||q.includes('51.2,1'))),'Successful exact routes do not request network fallbacks');
   assert.ok(requests.some(q=>q.includes('->.lines')&&q.includes(cases.find(c=>c.id==='ljubljana-dobova').a.join(','))),'An incomplete first network response expands its search');
   assert.ok(requests.includes('rail-departure')&&requests.includes('rail-arrival')&&requests.filter(q=>q==='rail-infrastructure').length===1,'Unavailable Overpass lookups recover through tiny OSM station extracts and one shared infrastructure relation');
   assert.ok(!requests.some(q=>q.includes('out body geom')&&q.includes('40,1,40,1.2')),'A partial train relation is reused before fetching more data');
@@ -89,7 +93,27 @@ let browser;
   assert.equal(await page.evaluate(async()=>{const host=document.createElement('div'),status=document.createElement('p');host.style.cssText='width:300px;height:300px';document.body.append(host);const n=testRouteLayers.length,r={key:'closed',type:'train',record:{id:'closed',type:'train'},leg:{start:{lat:40,lon:1},end:{lat:40,lon:1.3}}};const surface=HVJourneyMap.mountGlobal(host,[r],'2026-10-05',status);surface.remove();host.remove();await new Promise(resolve=>setTimeout(resolve,50));return testRouteLayers.slice(n).every(l=>!l._map);}),true,'Closing a map cancels pending routing and removes its lines');
   const count=requests.length;await page.evaluate(()=>HVJourneyMap.open('trip:routes'));await page.waitForFunction(()=>[...document.querySelectorAll('.journey-map-dialog [data-route-status]')].every(n=>!n.textContent.includes('Checking')));verify((await layers()).filter(l=>l.weight===1.5),1.5);assert.ok(requests.slice(count).every(q=>q.includes('48.85,2.35')),'Both maps reuse resolved geometry; only unavailable routes retry');
   const dialog=page.locator('.journey-map-dialog');width===390?await dialog.locator('[data-map-stop]').first().tap():await dialog.locator('[data-map-stop]').first().click();assert.equal(await dialog.locator('[data-map-stop]').count(),entries);await dialog.screenshot({path:path.join(out,`focused-${width}-${theme}.png`)});await dialog.locator('[data-map-close]').click();
-  assert.equal(await page.evaluate(snapshot),before);assert.equal(await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2')),stored);
-  await page.reload();await page.waitForFunction(n=>document.getElementById('globalJourneyStatus')?.textContent.includes(n+' entries')&&!document.getElementById('globalJourneyStatus').textContent.includes('Loading'),entries,{timeout:50000});verify(await layers(),1.6);assert.equal(await page.evaluate(snapshot),before);assert.deepEqual(errors,[]);await page.close();console.log(`Network routing ${width}px ${theme} passed`);
+  assert.equal(await stripRoutes(),before,'saving map geometry does not alter any other journey data');
+  const savedBeforeReload=await page.evaluate(()=>Object.fromEntries(state.transports.filter(t=>t.routeGeometry).map(t=>[t.id,t.routeGeometry])));
+  const requestsBeforeReload=requests.length;
+  await page.reload();await page.waitForFunction(n=>document.getElementById('globalJourneyStatus')?.textContent.includes(n+' entries')&&!document.getElementById('globalJourneyStatus').textContent.includes('Loading'),entries,{timeout:50000});verify(await layers(),1.6);
+  const afterReloadRequests=requests.slice(requestsBeforeReload);
+  assert.ok(afterReloadRequests.every(q=>q==='harbour'||String(q).includes('48.85,2.35')),'Saved train, ferry and road geometry is not recalculated after refresh');
+  const savedAfterReload=await page.evaluate(()=>Object.fromEntries(state.transports.filter(t=>t.routeGeometry).map(t=>[t.id,t.routeGeometry])));
+  for(const id of ['cebu-ferry','ljubljana-jesenice','bus-gap','exact-train','exact-road'])assert.deepEqual(savedAfterReload[id],savedBeforeReload[id],id+' reloads the exact saved geometry');
+
+  // A route-affecting edit clears the saved geometry and allows one deliberate replacement.
+  await page.evaluate(()=>HVJourneys.openTransport('exact-road'));
+  assert.ok(await page.locator('#transportDialog .route-refresh button', {hasText:'Recalculate route'}).isVisible(),'Edit Transport exposes a restrained route refresh control');
+  await page.evaluate(()=>{const form=document.getElementById('transportForm'),p={name:'Changed road arrival',lat:51.31,lon:1.31,address:'Changed road arrival'};form.elements.endname.value=p.name;form.elements.endlat.value=String(p.lat);form.elements.endlon.value=String(p.lon);form.elements.endaddress.value=p.address;form._airportPrefill.end=p;form.requestSubmit();});
+  await page.waitForFunction(()=>{const t=state.transports.find(t=>t.id==='exact-road'),leg=t?.routeGeometry?.legs?.[0];return leg?.coordinates?.at(-1)?.[0]===51.31&&leg.coordinates.at(-1)[1]===1.31;},null,{timeout:10000});
+  const changed=await page.evaluate(()=>state.transports.find(t=>t.id==='exact-road').routeGeometry.legs[0]);
+  assert.notDeepEqual(changed.coordinates,savedBeforeReload['exact-road'].legs[0].coordinates,'editing the destination replaces the old saved route');
+  assert.equal(changed.source,'straight-fallback');
+  const afterEdit=JSON.parse(await stripRoutes()),beforeEdit=JSON.parse(before),edited=afterEdit.transports.find(t=>t.id==='exact-road');
+  assert.equal(edited.end.name,'Changed road arrival');assert.equal(edited.end.lat,51.31);assert.equal(edited.end.lon,1.31);
+  afterEdit.transports=afterEdit.transports.filter(t=>t.id!=='exact-road');beforeEdit.transports=beforeEdit.transports.filter(t=>t.id!=='exact-road');
+  assert.deepEqual(afterEdit,beforeEdit,'all unrelated travel data remains byte-for-byte equivalent after the route edit');
+  assert.deepEqual(errors,[]);await page.close();console.log(`Network routing persistence ${width}px ${theme} passed`);
  }
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await browser?.close();server.close();});
