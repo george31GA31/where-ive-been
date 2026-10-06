@@ -44,3 +44,19 @@ test('the logo control accepts data, never arbitrary icon markup from a caller',
   const html=Logos.icon({id:'first',propertyName:'Hotel "<script>"'},'<img src=x onerror=alert(1)>');
   assert.doesNotMatch(html,/onerror|<script>/i);assert.match(html,/class="herald-stay-icon"/);assert.match(html,/&quot;&lt;script&gt;&quot;/);
 });
+test('an ungeocoded planner hotel retains its own logo without matching another hotel by name',()=>{
+  const data=seed();data.accommodations=[stay('raw'),stay('unrelated')];for(const row of data.accommodations)delete row.place;
+  Logos.set(data,'raw',image);assert.equal(Logos.logo(data,'raw'),image);assert.equal(Logos.logo(data,'unrelated'),null);
+  assert.equal(Logos.forRecord(data,data.accommodations[0]),image);assert.equal(Logos.forRecord(data,data.accommodations[1]),null);
+  assert.deepEqual(data.savedPlaces[0].accommodationIds,['raw']);assert.equal(Logos.logo(M.copy(data),'raw'),image);
+  Logos.set(data,'raw',null);assert.equal(Logos.logo(M.copy(data),'raw'),null);
+});
+test('imported catalogue bindings follow a deduplicated accommodation identity',()=>{
+  const data=seed();data.accommodations=[stay('account')];delete data.accommodations[0].place;const guest=M.copy(data);guest.accommodations[0].id='guest';Logos.set(guest,'guest',image);
+  const result=M.importData(data,guest);assert.equal(result.conflicts.length,0);assert.equal(result.data.accommodations.length,1);
+  assert.deepEqual(result.data.savedPlaces[0].accommodationIds,['account']);assert.equal(Logos.logo(result.data,'account'),image);
+});
+test('form previews accept only artwork prepared by the existing logo system',()=>{
+  assert.doesNotMatch(Logos.editor({logoDraft:'https://example.test/logo.png'}),/src=/);assert.doesNotMatch(Logos.editor({logoDraft:'data:image/svg+xml,<svg onload="alert(1)"></svg>'}),/src=|onload/);
+  assert.match(Logos.editor({logoDraft:image}),/Hotel logo preview/);
+});

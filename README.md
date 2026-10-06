@@ -93,3 +93,23 @@ Previously saved transport geometry is used offline even if a refresh was reques
 `sw.js` caches an explicit list of public app assets only, in bounded installation batches. It excludes account APIs, third-party tiles, external services and token-bearing account links. Navigation and assets prefer the network with an eight-second deadline and fall back to the installed version. A complete successful installation replaces older Herald caches; a failed installation retains the previous shell. D3, TopoJSON and world boundaries are served locally with their existing licences. First-time visitors still require a connection, and devices denying Cache Storage cannot promise offline reload.
 
 After changing public assets, run `node scripts/build-offline-shell.cjs` to refresh the allowlist and release hash. CI verifies this manifest.
+
+### Country trackers, hotel uploads and personal statistics
+
+Travel Tools presents the seven existing utilities as accessible whole-card links,
+with three desktop, two tablet and one mobile column. Accommodation search, the trip
+planner and trip editors can prepare, preview, replace or remove optional artwork
+through the same shared hotel-logo catalogue used by Journey Map.
+
+Countries offers manual visited status with optional exact date, approximate year,
+visit count and note, plus a separate Travelers' Century Club tracker with the
+official regional list. Manual countries feed lifetime counts and Atlas; TCC has
+its own destination IDs and denominator and does not affect Atlas or normal counts.
+Both use the existing account sync and offline outbox without new storage keys or
+database migrations.
+
+Statistics adds the most travelled calendar month/year, longest continuous time
+away, time since the last dated first country visit, new countries this year and
+unique countries visited this year. One read-only history engine applies the home
+classification, date precision, unique-day counting and today cutoff to all six.
+See [calculation, preservation and regression details](tests/TRACKERS-REVIEW.md).

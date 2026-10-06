@@ -199,7 +199,7 @@
 
     const asOf = timelineDate || isoDate(new Date());
     const homes = new Set(window.HVJourney.homeCountryCodes(state,state.activeProfileId,asOf));
-    const actual = new Set(homes);
+    const actual = new Set([...homes,...(window.HVCountryVisits?.manualCodes(state,asOf)||[])]);
     const planned = new Set();
     const current = new Set();
 

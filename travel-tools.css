@@ -21,3 +21,39 @@
 @media(max-width:720px){.tool-page-heading{align-items:flex-start;flex-direction:column}.tool-page-heading h2{font-size:26px}.budget-summary{grid-template-columns:repeat(2,1fr)}.budget-row{grid-template-columns:1fr 1fr}.budget-row>div:first-child{grid-column:1/-1}.budget-row-status{grid-column:1}.budget-row>button{justify-self:end}.travel-tool-dialog .form-grid{grid-template-columns:1fr}.checklist-item{align-items:flex-start}.checklist-item>label{font-size:12px}.budget-category-list>div{grid-template-columns:90px 1fr;}.budget-category-list strong{grid-column:2}}
 
 .checklist-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--hv-line);margin-bottom:7px}.checklist-section-heading h4{border:0;margin:0;padding:0}.checklist-section-heading .text-btn{font-size:11px}.travel-note-body,.budget-row strong,.checklist-item span{overflow-wrap:anywhere}.daily-spend-day{margin-top:20px}.daily-spend-day h3{font-family:var(--hv-serif);font-size:17px;border-bottom:1px solid var(--hv-line);padding-bottom:8px}.checklist-item>div{flex-wrap:wrap;justify-content:flex-end}
+/* Travel Tools overview: the existing links become restrained Herald widgets. */
+.travel-tool-links{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.travel-tool-link{grid-template-columns:1fr;align-content:start;gap:14px;min-height:220px;padding:22px;border:1px solid var(--hv-line);border-radius:6px;background:var(--hv-surface);position:relative;cursor:pointer;transition:border-color .15s,background-color .15s}
+.travel-tool-icon{width:25px;height:25px;fill:none;stroke:var(--hv-blue);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.travel-tool-link .travel-tool-copy strong{font-size:17px}
+.travel-tool-link .travel-tool-copy small{font-size:13px;line-height:1.6;margin-top:8px}
+.travel-tool-link .travel-tool-open{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px;font-size:12px;color:var(--hv-blue);font-weight:600}
+.travel-tool-open>span{color:var(--hv-gold);font-size:19px}
+.travel-tool-link:hover{border-color:var(--hv-blue);background:var(--hv-soft)}
+.travel-tool-link:focus-visible{outline:2px solid var(--hv-blue);outline-offset:4px;border-color:var(--hv-blue)}
+.country-tracker-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.country-tracker-dialog{width:min(780px,calc(100vw - 32px));max-height:90dvh}
+.country-tracker-card{padding:24px}.country-tracker-count{color:var(--hv-blue);font-weight:600}
+.country-tracker-list{max-height:50dvh;overflow:auto;border-block:1px solid var(--hv-line)}
+.country-tracker-row{display:flex;gap:8px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--hv-line);min-height:52px}
+.country-tracker-row label{display:flex;flex:1;align-items:center;gap:12px;min-width:0;cursor:pointer}
+.country-tracker-row label>span{flex:1;min-width:0}.country-tracker-row strong{font-size:14px;font-weight:600}.country-tracker-row small{display:block;color:var(--hv-muted);font-size:11px;margin-top:3px}
+.country-tracker-row input[type=checkbox]{width:20px;height:20px;flex-shrink:0;accent-color:var(--hv-blue);cursor:pointer}
+.country-tracker-row input:disabled{cursor:default}.country-tracker-row .text-btn{font-size:12px;min-height:36px}
+.tcc-region summary{cursor:pointer;padding:15px 4px;color:var(--hv-ink);font-weight:600;border-bottom:1px solid var(--hv-line)}.tcc-region summary>span{float:right;color:var(--hv-muted);font-size:12px;font-weight:400}
+.manual-country-control{margin:0 0 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.manual-country-control>p{width:100%;margin:0}
+.visit-details-dialog{width:min(480px,calc(100vw - 32px))}.visit-details-dialog textarea{width:100%;resize:vertical}
+.personal-travel-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0 12px}
+.personal-travel-stat{padding:20px;border:1px solid var(--hv-line);border-radius:6px;background:var(--hv-surface);min-width:0}
+.travel-stat-heading{display:flex;gap:8px;align-items:start;justify-content:space-between}.travel-stat-heading h3{font-size:13px;font-weight:600;color:var(--hv-muted);margin:0 0 16px}
+.travel-stat-value{font-family:var(--hv-serif);display:block;color:var(--hv-blue);font-size:25px;line-height:1.3;font-weight:500;overflow-wrap:anywhere}
+.personal-travel-stat>p{font-size:12px;color:var(--hv-muted);line-height:1.6;margin:10px 0 0;overflow-wrap:anywhere}
+.travel-stat-help{position:relative}.travel-stat-help>button{width:22px;height:22px;padding:0;border:1px solid var(--hv-line);border-radius:50%;font:12px Georgia,serif;color:var(--hv-muted);background:var(--hv-surface);cursor:help}
+.travel-stat-help>[role=tooltip]{display:none;position:absolute;right:0;top:28px;width:240px;max-width:70vw;padding:12px;background:var(--hv-surface);border:1px solid var(--hv-line);border-radius:4px;color:var(--hv-ink);font-size:12px;line-height:1.5;z-index:15}
+.travel-stat-help:hover>[role=tooltip],.travel-stat-help:focus-within>[role=tooltip]{display:block}
+.hotel-logo-editor{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0 0}.hotel-logo-editor .hotel-logo-preview{width:48px;height:48px;object-fit:contain;background:#fff;border:1px solid var(--hv-line);border-radius:3px}
+.hotel-logo-editor .hotel-logo-file{max-width:100%;font-size:12px}.hotel-logo-editor>label{font-size:12px;color:var(--hv-muted)}.hotel-logo-editor>p{width:100%;font-size:12px;margin:0}.hotel-logo-editor .text-btn{font-size:12px}
+.hotel-logo-editor input:focus-visible,.country-tracker-row input:focus-visible,.travel-stat-help button:focus-visible{outline:2px solid var(--hv-blue);outline-offset:3px}
+@media(max-width:1050px){.travel-tool-links,.personal-travel-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.country-tracker-actions{margin-top:10px}}
+@media(max-width:600px){.travel-tool-links,.personal-travel-stats{grid-template-columns:1fr}.travel-tool-link{min-height:190px;padding:20px}.country-tracker-card{padding:18px}.country-tracker-dialog .dialog-head h2{font-size:23px}.country-tracker-actions{width:100%}.country-tracker-actions>button{flex:1;min-height:44px}.personal-travel-stat{padding:18px}.country-tracker-row label{gap:8px}.country-tracker-row strong{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.travel-tool-link{transition:none}}

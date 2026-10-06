@@ -5,13 +5,14 @@
   const Saved = typeof module !== 'undefined' && module.exports ? require('./saved-places-model.js') : root.HVSavedModel;
   const E = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const valid = src => typeof src === 'string' && src.length <= 100000 && /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
+  const linked = (row, record) => row.accommodationIds?.includes(record.id) && !Hotels.point(row.place) && !Hotels.point(Hotels.place(record)) && Hotels.norm(row.place.name) === Hotels.norm(record.propertyName) && Hotels.norm(row.place.area) === Hotels.norm(record.location);
 
   function context(data, recordId) {
     const records = data?.accommodations || [], record = records.find(r => r.id === recordId);
     if (!record) return null;
     // The same all-member matching rule as the map prevents transitive/name-only merges.
     const group = Hotels.groups(records).find(g => g.records.includes(record));
-    const rows = (data.savedPlaces || []).filter(row => row.place && group.records.every(r => Hotels.same(row.place, Hotels.place(r))));
+    const rows = (data?.savedPlaces || []).filter(row => row.place && group.records.every(r => Hotels.same(row.place, Hotels.place(r)) || linked(row,r)));
     return {record, group, rows};
   }
   function logo(data, recordId) {
@@ -25,16 +26,49 @@
     if (!target) throw new Error('This stay is no longer available.');
     data.savedPlaces ||= [];
     if (!target.rows.length) {
-      const place = {...target.group.place, type:target.group.place.type || 'Hotel'};
+      const place = {...target.group.place, area:target.group.place.area || target.record.location || '', type:target.group.place.type || 'Hotel'};
       // Generate a normal saved-place identity, without relaxing the hotel's matching rules.
       const row = Saved.upsert([], place, target.record.profileId ?? null), base = row.id;
       let suffix = 1;
       while (data.savedPlaces.some(r => r.id === row.id)) row.id = base + ':' + suffix++;
       row.sourceIds = [...new Set(target.group.records.map(r => r.place?.id).filter(Boolean))];
+      row.accommodationIds = target.group.records.map(r => r.id);
       data.savedPlaces.push(row); target.rows.push(row);
     }
     // A removal is retained, so an older logo on a duplicate catalogue entry cannot reappear.
-    for (const row of target.rows) row.accommodationLogo = {src, updatedAt};
+    for (const row of target.rows) {row.accommodationLogo = {src, updatedAt};row.accommodationIds = [...new Set([...(row.accommodationIds || []),...target.group.records.map(r=>r.id)])];}
+  }
+
+  function forRecord(data, record) {
+    const rows = (data?.savedPlaces || []).filter(row => row.place && (Hotels.same(row.place,Hotels.place(record)) || linked(row,record)));
+    const latest = rows.filter(r => r.accommodationLogo).sort((a,b) => String(b.accommodationLogo.updatedAt || '').localeCompare(String(a.accommodationLogo.updatedAt || '')) || a.id.localeCompare(b.id))[0];
+    return valid(latest?.accommodationLogo?.src) ? latest.accommodationLogo.src : null;
+  }
+  function editor(record = {}) {
+    const candidate = Object.hasOwn(record,'logoDraft') ? record.logoDraft : forRecord(current(),record), src=valid(candidate)?candidate:null;
+    return `<div class="hotel-logo-editor"><img class="hotel-logo-preview" alt="Hotel logo preview" width="48" height="48"${src?` src="${E(src)}"`:' hidden'}><label><span>Hotel logo <em>optional</em></span><input type="file" class="hotel-logo-file" data-logo-file aria-label="Choose hotel logo" accept="image/png,image/jpeg,image/webp,image/gif"></label><button type="button" class="text-btn" data-logo-replace${src?'':' hidden'}>Replace logo</button><button type="button" class="text-btn" data-logo-remove${src?'':' hidden'}>Remove logo</button><p data-logo-message role="status"></p></div>`;
+  }
+  function bindEditor(container, record = {}, onChange = () => {}) {
+    const host=container.querySelector('.hotel-logo-editor'),input=host?.querySelector('[data-logo-file]');
+    if(!host || !input)return null;
+    const data=current(),profileId=data?.activeProfileId;
+    let draft=record,changed=Object.hasOwn(record,'logoDraft'),src=changed?(valid(record.logoDraft)?record.logoDraft:null):forRecord(data,record),busy=false,token=0;
+    const message=host.querySelector('[data-logo-message]');
+    function render() {
+      const preview=host.querySelector('img');preview.hidden=!src;if(src)preview.src=src;else preview.removeAttribute('src');
+      host.querySelector('[data-logo-replace]').hidden=!src;host.querySelector('[data-logo-remove]').hidden=!src;host.setAttribute('aria-busy',String(busy));
+    }
+    const active=()=>current()===data && data?.activeProfileId===profileId && host.isConnected;
+    input.onchange=async()=>{
+      const file=input.files?.[0];if(!file)return;const request=++token;busy=true;message.textContent='Preparing logo…';render();
+      try{const prepared=await prepare(file);if(request!==token||!active())return;src=prepared;changed=true;message.textContent='Logo ready. Save the accommodation to keep it.';onChange(src);}
+      catch(error){if(request===token&&active())message.textContent=error.message;}
+      finally{if(request===token){busy=false;render();}}
+    };
+    host.querySelector('[data-logo-replace]').onclick=()=>input.click();
+    host.querySelector('[data-logo-remove]').onclick=()=>{token++;busy=false;src=null;changed=true;input.value='';message.textContent='Logo will be removed when you save.';onChange(null);render();};
+    render();
+    return {get busy(){return busy;},get changed(){return changed;},get draft(){return changed?src:undefined;},setRecord(value){draft=value;if(!changed){src=forRecord(data,draft);render();}},apply(recordId){if(busy)throw new Error('Wait for the logo to finish preparing.');if(!active())throw new Error('Your account or traveller changed. Reopen this accommodation.');if(changed)set(data,recordId,src);}};
   }
 
   async function prepare(file) {
@@ -99,7 +133,7 @@
   }
   function save(button, data, src) {
     if (current() !== data) return; // An upload must never cross an account switch or a replaced snapshot.
-    const before = JSON.parse(JSON.stringify(data.savedPlaces || []));
+    const before = JSON.parse(JSON.stringify(data?.savedPlaces || []));
     try {
       set(data,button.dataset.hotelLogo,src);
       if (persist() === false) throw new Error('The logo could not be saved. Device storage may be full.');
@@ -151,6 +185,6 @@
       } else if (event.key === 'Tab') closeControl(true);
     });
   }
-  const api = {context, logo, set, prepare, icon, refresh};
+  const api = {context, logo, set, prepare, icon, refresh, forRecord, editor, bindEditor};
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.HVAccommodationLogos = api;
 })(typeof window !== 'undefined' ? window : globalThis);
