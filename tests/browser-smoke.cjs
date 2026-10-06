@@ -124,7 +124,7 @@ let browser;
  }
  await edit.locator('[data-place-close]').click();
  await edit.evaluate(()=>{state.transports.push({id:'road-map',tripId:'road-trip',profileId:'a',type:'bus',status:'actual',start:{name:'Guatemala City bus station',lat:14.6349,lon:-90.5069},end:{name:'Melchor de Mencos',lat:17.068,lon:-89.1523},startLocal:'2026-09-22T10:00',endLocal:'2026-09-22T18:00'});HVJourneyMap.open('trip:road-trip');});
- await edit.getByText('Calculated road route · saved',{exact:true}).waitFor();assert.equal(await edit.locator('.journey-map-canvas .leaflet-overlay-pane path.leaflet-interactive').count(),1);assert.equal(await edit.locator('.journey-map-canvas .leaflet-overlay-pane path.leaflet-interactive').getAttribute('stroke'),'#29556b');
+ await edit.getByText('Calculated road route · saved',{exact:true}).waitFor();assert.equal(await edit.locator('.journey-map-canvas .leaflet-overlay-pane path.leaflet-interactive').count(),1);assert.equal(await edit.locator('.journey-map-canvas .leaflet-overlay-pane path.leaflet-interactive').getAttribute('stroke'),'#076800');
  for(const width of [390,768,1440]){await edit.setViewportSize({width,height:960});await edit.locator('.journey-map-dialog').evaluate(el=>el.scrollTop=0);assert.ok(await edit.locator('.journey-map-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth+1));await edit.locator('.journey-map-dialog').screenshot({path:path.join(out,`road-journey-${width}.png`)});}
  await edit.locator('[data-map-close]').click();
  // Unknown airports can retain private codes and a plotted position without adding countries.

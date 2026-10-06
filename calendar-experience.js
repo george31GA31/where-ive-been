@@ -67,8 +67,9 @@
     }
 
     for (const accommodation of scoped(state.accommodations || [])) {
-      const candidates = !accommodation.tripId ? [...groups.values()].filter(g=>!g.trip?.excludedRecordIds?.accommodations?.includes(accommodation.id)&&g.stays.some(stay=>stay.status!=='cancelled'&&stay.start<=accommodation.checkIn&&stay.end>=accommodation.checkOut)) : [];
-      const key=accommodation.tripId ? tripKey(accommodation.tripId) : candidates.length===1 ? candidates[0].key : `accommodation:${accommodation.id}`;
+      const candidates = !accommodation.tripId ? [...groups.values()].filter(g=>!g.trip?.excludedRecordIds?.accommodations?.includes(accommodation.id)&&g.stays.some(stay=>stay.status!=='cancelled'&&stay.start<=accommodation.checkIn&&stay.end>=accommodation.checkOut&&HVJourney.isTravelStay(state,stay)&&HVJourney.isTravelStay(state,stay,accommodation.checkIn)&&HVJourney.isTravelStay(state,stay,accommodation.checkOut))) : [];
+      const linkedStay=state.stays.find(s=>s.source==='accommodation'&&s.sourceAccommodationId===accommodation.id);
+      const key=accommodation.tripId ? tripKey(accommodation.tripId) : linkedStay ? stayKey(linkedStay.id) : candidates.length===1 ? candidates[0].key : `accommodation:${accommodation.id}`;
       createGroup(groups,key,knownTrips.get(accommodation.tripId)||null).accommodations.push(accommodation);
     }
 
@@ -623,7 +624,7 @@
     const form = q('form', dialog), error = q('[data-accommodation-error]', form);
     qa('[data-accommodation-close]', form).forEach(button => button.onclick = () => dialog.close());
     q('[data-accommodation-map]',form)?.addEventListener('click',()=>{dialog.close();HVPlaces.open({accommodationId:existing.id});});
-    q('[data-accommodation-delete]', form)?.addEventListener('click', () => { if (!confirm('Remove this accommodation from the trip?')) return; state.accommodations = (state.accommodations || []).filter(item => item.id !== existing.id); persist(); dialog.close(); renderAll(); });
+    q('[data-accommodation-delete]', form)?.addEventListener('click', () => { if (!confirm('Remove this accommodation from the trip?')) return; HVJourney.removeAccommodationStay(state,existing.id);state.accommodations = (state.accommodations || []).filter(item => item.id !== existing.id); persist(); dialog.close(); renderAll(); });
     form.onsubmit = event => {
       event.preventDefault();
       const propertyName = form.elements.propertyName.value.trim(), location = form.elements.location.value.trim(), checkIn = form.elements.checkIn.value, checkOut = form.elements.checkOut.value, notes = form.elements.notes.value.trim();
@@ -631,8 +632,8 @@
       state.accommodations ||= [];
       const times=HVAccommodation.read(form);if(HVAccommodation.valid(times)){error.textContent=HVAccommodation.valid(times);return;}
       const price=HVPrices.read(form);if(HVPrices.valid(price)){error.textContent=HVPrices.valid(price);return;}
-      const record = {...times,price,id:existing?.id || uid(),tripId,profileId:existing?.profileId ?? trip?.profileId ?? state.activeProfileId,propertyName,location,checkIn,checkOut,notes};
-      if (existing) Object.assign(existing, record); else state.accommodations.push(record);
+      const record = {...existing,...times,price,id:existing?.id || uid(),tripId,profileId:existing?.profileId ?? trip?.profileId ?? state.activeProfileId,propertyName,location,checkIn,checkOut,notes};
+      if (existing) Object.assign(existing, record); else state.accommodations.push(record);HVJourney.syncAccommodationStay(state,record);
       persist(); dialog.close(); renderAll();
     };
     dialog.addEventListener('close', () => dialog.remove());

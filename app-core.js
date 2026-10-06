@@ -194,7 +194,7 @@ function renderCountries() {
       code,
       name: countryByCode(code)?.name || staysForProfile().find(stay => stay.countryCode === code)?.countryName || code,
       total: record.days.size,
-      home: [...record.days].filter(d => HVJourney.isHome(state,code,d)).length
+      home: [...record.days].filter(d => !staysForProfile().some(s=>s.countryCode===code&&s.status==='actual'&&s.start<=d&&s.end>=d&&HVJourney.isTravelStay(state,s,d))).length
     })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
 
     const hiddenCodes = new Set(state.excludedCountryCodes || []);

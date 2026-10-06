@@ -84,6 +84,7 @@
         } else { result[key].push(record); mapping?.set(original.id, record.id); }
       }
     }
+    for(const original of source.stays||[]){if(original.source==='accommodation'&&original.sourceAccommodationId){const imported=result.stays.find(s=>s.id===(stayIds.get(original.id)||original.id));if(imported)imported.sourceAccommodationId=accommodationIds.get(original.sourceAccommodationId)||original.sourceAccommodationId;}}
     for (const key of Object.keys(source)) {
       if (collections.has(key)) continue;
       if (['excludedCountryCodes','countryCountExcludedCodes','countryCountIncludedExtraCodes'].includes(key)) result[key] = [...new Set([...(remote[key] || []), ...(source[key] || [])])];
