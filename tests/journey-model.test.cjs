@@ -9,7 +9,7 @@ test('home and travel overlap counts as travel; dated residences and profiles re
 });
 test('transport local clocks allow westbound/date-line travel and validate real dates and coordinates',()=>{
  const t={type:'flight',startLocal:'2026-01-02T01:00',endLocal:'2026-01-01T21:00',start:{name:'Tokyo',lat:0,lon:0},end:{name:'Los Angeles'},flightNumber:'TEST1'};
- assert.equal(J.validateTransport(t),'');assert.ok(J.validateTransport({...t,startLocal:'2026-02-30T12:00'}));assert.ok(J.validateTransport({...t,start:{name:'X',lat:90,lon:181}}));assert.ok(J.validateTransport({...t,start:{name:'X',lat:10}}));assert.equal(J.routeColor('flight'),'#66DCE3');assert.equal(J.routeColor('car'),'#74F94B');
+ assert.equal(J.validateTransport(t),'');assert.ok(J.validateTransport({...t,startLocal:'2026-02-30T12:00'}));assert.ok(J.validateTransport({...t,start:{name:'X',lat:90,lon:181}}));assert.ok(J.validateTransport({...t,start:{name:'X',lat:10}}));assert.equal(J.routeColor('flight'),'#006768');assert.equal(J.routeColor('car'),'#680000');
 });
 test('country stays never imply place visits; airport endpoints count individually after their date',()=>{
  const s=base();s.stays=[{countryCode:'FR',start:'2026-01-01',end:'2026-01-02'}];assert.equal(J.visits(s,'buildings','2026-01-05').size,0);

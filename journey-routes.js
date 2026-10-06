@@ -217,10 +217,10 @@
     function snap(p){if(!mask.land(...p))return p;for(let radius=.4;radius<=(options.maxSnapKm??12);radius+=.4){let best=null,cost=Infinity;for(let i=0;i<32;i++){const angle=i*Math.PI/16,c=[p[0]+Math.sin(angle)*radius/yScale,p[1]+Math.cos(angle)*radius/xScale];if(!mask.land(...c)){const d=distance(c,p);if(d<cost){best=c;cost=d;}}}if(best)return best;}return null;}
     const from=snap(a),to=snap(b);if(!from||!to)return null;
     if(waterSegment(from,to,mask))return options.waterOnly?[from,to]:[a,...(distance(a,from)>.01?[from]:[]),...(distance(b,to)>.01?[to]:[]),b];
-    const fromXY=project(from),toXY=project(to),step=Math.max(.6,km/140),clearance=Math.min(1.2,step*.45);let path=null,visited=0;
-    for(const multiplier of [1,2,4]){
+    const fromXY=project(from),toXY=project(to),step=options.stepKm??Math.max(.6,km/140),clearance=Math.min(1.2,step*.45);let path=null,visited=0;
+    for(const multiplier of options.multipliers||[1,2,4]){
       if(signal?.aborted||clock()-began>budget||visited>=limit)return null;
-      const pad=Math.max(15,km*.3)*multiplier,minX=Math.min(fromXY[0],toXY[0])-pad,minY=Math.min(fromXY[1],toXY[1])-pad,maxX=Math.max(fromXY[0],toXY[0])+pad,maxY=Math.max(fromXY[1],toXY[1])+pad;
+      const pad=(options.paddingKm??Math.max(15,km*.3))*multiplier,minX=Math.min(fromXY[0],toXY[0])-pad,minY=Math.min(fromXY[1],toXY[1])-pad,maxX=Math.max(fromXY[0],toXY[0])+pad,maxY=Math.max(fromXY[1],toXY[1])+pad;
       const cols=Math.ceil((maxX-minX)/step)+1,rows=Math.ceil((maxY-minY)/step)+1;if(cols*rows>300000)continue;
       const xy=id=>[minX+(id%cols)*step,minY+Math.floor(id/cols)*step],coord=id=>unproject(xy(id)),idOf=p=>Math.round((p[1]-minY)/step)*cols+Math.round((p[0]-minX)/step),startId=idOf(fromXY),endId=idOf(toXY),passable=new Map(),edges=new Map();
       const pass=id=>{if(!passable.has(id))passable.set(id,!mask.land(...coord(id)));return passable.get(id);};
@@ -251,5 +251,84 @@
     if(!smooth.slice(1).every((p,i)=>waterSegment(smooth[i],p,mask)))return null;
     return options.waterOnly?smooth:[a,...smooth,b];
   }
-  const api={point,distance,flightArc,mappedPath,networkPath,networkQuery,isWater,landMask,waterSegment,waterPath};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVRouteGeometry=api;
+  // Ferry-only recovery. Railway routing and its thresholds remain unchanged.
+  function safeMarinePath(coordinates,mask){
+    if(!Array.isArray(coordinates)||coordinates.length<2||!mask?.land)return null;
+    let coords=coordinates.map(p=>[Number(p[0]),Number(p[1])]);
+    if(coords.some(p=>!p.every(Number.isFinite)))return null;
+    const trim=path=>{
+      let i=0;while(i<path.length&&mask.land(...path[i]))i++;
+      if(i===path.length)return [];if(!i)return path;
+      // Harbour/city markers may be on shore; the line itself starts in water.
+      const a=path[i-1],b=path[i],n=Math.max(1,Math.ceil(distance(a,b)/100));
+      for(let j=1;j<=n;j++){const p=a.map((v,k)=>v+(b[k]-v)*j/n);if(!mask.land(...p))return[p,...path.slice(i)];}
+      return path.slice(i);
+    };
+    coords=trim(coords);coords=trim(coords.reverse()).reverse();
+    return coords.length>=2&&coords.slice(1).every((p,i)=>waterSegment(coords[i],p,mask))?coords:null;
+  }
+  async function marineWaterPath(start,end,mask,options={}){
+    if(!point(start)||!point(end)||!mask?.land||options.signal?.aborted)return null;
+    const clock=()=>root.performance?.now?.()??Date.now(),began=clock(),budget=options.maxMs??10000,km=distance([start.lat,start.lon],[end.lat,end.lon])/1000;
+    const passes=[{}, {stepKm:Math.max(.2,km/220),maxNodes:100000}, {stepKm:Math.max(.8,km/100),paddingKm:Math.max(60,km*.7),multipliers:[1,2,4],maxNodes:150000}];
+    for(const pass of passes){
+      const remaining=budget-(clock()-began);if(remaining<=0||options.signal?.aborted)return null;
+      const route=await waterPath(start,end,mask,{...pass,signal:options.signal,waterOnly:true,maxSnapKm:options.maxSnapKm??36,maxMs:Math.min(remaining,pass.maxNodes?5000:2500)});
+      if(route?.length>=2)return route;
+    }
+    return null;
+  }
+  async function marinePath(elements,start,end,mask,options={}){
+    const signal=options.signal,clock=()=>root.performance?.now?.()??Date.now(),began=clock(),budget=options.maxMs??8000;
+    const baseline=options.baseline||await marineWaterPath(start,end,mask,{signal,maxMs:budget});
+    if(!baseline?.length||signal?.aborted)return null;
+    const lengths=[0];for(let i=1;i<baseline.length;i++)lengths.push(lengths[i-1]+distance(baseline[i-1],baseline[i]));
+    const total=lengths.at(-1),origin=baseline[0],xScale=111320*Math.max(.15,Math.cos(origin[0]*Math.PI/180));
+    const nearLon=lon=>origin[1]+((lon-origin[1]+540)%360)-180,xy=p=>[(nearLon(p[1])-origin[1])*xScale,(p[0]-origin[0])*111320];
+    const project=(p,a,b)=>{const q=xy(p),u=xy(a),v=xy(b),dx=v[0]-u[0],dy=v[1]-u[1],t=Math.max(0,Math.min(1,((q[0]-u[0])*dx+(q[1]-u[1])*dy)/(dx*dx+dy*dy||1)));return{t,p:[a[0]+(b[0]-a[0])*t,nearLon(a[1])+(nearLon(b[1])-nearLon(a[1]))*t]};};
+    const progress=p=>{let best={d:Infinity,along:0};for(let i=1;i<baseline.length;i++){const c=project(p,baseline[i-1],baseline[i]),d=distance(p,c.p);if(d<best.d)best={d,along:lengths[i-1]+(lengths[i]-lengths[i-1])*c.t};}return best;};
+    const corridor=Math.min(40000,Math.max(3000,total*.15)),minimum=Math.max(200,total*.002),candidates=[],seen=new Set();
+    const marine=tags=>tags?.route==='ferry'||tags?.['seamark:type']==='recommended_track'||tags?.waterway==='fairway';
+    const ways=[];for(const e of elements||[]){if(e?.type==='way')ways.push(e);if(e?.members&&marine(e.tags))for(const m of e.members)if(m.type==='way'||m.geometry)ways.push({...m,tags:{...e.tags,...m.tags}});}
+    const addRun=(run,ferry)=>{
+      if(run.length<2)return;
+      // Clip a long marine segment at the recorded terminal projections.
+      const nearest=terminal=>{let best={d:Infinity};for(let i=1;i<run.length;i++){const c=project(terminal,run[i-1],run[i]),d=distance(terminal,c.p);if(d<best.d)best={...c,d,at:i-1+c.t};}return best;};
+      let departure=nearest(baseline[0]),arrival=nearest(baseline.at(-1));
+      if(departure.at>arrival.at){run.reverse();departure=nearest(baseline[0]);arrival=nearest(baseline.at(-1));}
+      run=[departure.p,...run.filter((_,i)=>i>departure.at&&i<arrival.at),arrival.p].filter((p,i,list)=>!i||distance(list[i-1],p)>.01);
+      if(run.length<2)return;
+      let first=progress(run[0]),last=progress(run.at(-1));if(first.along>last.along){run.reverse();[first,last]=[last,first];}
+      const visible=run.map(p=>({p,...progress(p)})).filter(p=>p.d<=corridor&&p.along>=first.along&&p.along<=last.along);
+      if(visible.length<2)return;
+      const a=visible[0],b=visible.at(-1);if(b.along-a.along<minimum)return;
+      const coords=run.slice(run.indexOf(a.p),run.indexOf(b.p)+1),length=coords.slice(1).reduce((n,p,i)=>n+distance(coords[i],p),0);
+      if(length>(b.along-a.along)*1.8+1500||!safeMarinePath(coords,mask))return;
+      candidates.push({coords,first:a.along,last:b.along,ferry});
+    };
+    for(const way of ways){
+      if(clock()-began>budget||signal?.aborted)break;
+      if(!marine(way.tags)||way.tags?.area==='yes'||['no','private'].includes(way.tags?.access)||!Array.isArray(way.geometry))continue;
+      const id=way.id??way.ref;if(id!=null&&seen.has(id))continue;if(id!=null)seen.add(id);
+      let run=[];for(const p of way.geometry){const value=point(p)?[p.lat,p.lon]:null;if(!value||mask.land(...value)||(run.length&&!waterSegment(run.at(-1),value,mask))){addRun(run,way.tags.route==='ferry');run=[];}if(value&&!mask.land(...value))run.push(value);}addRun(run,way.tags.route==='ferry');
+    }
+    // Prefer forward, substantial mapped sections. Every connector is itself a
+    // water route, so an island cannot be crossed to reach a useful fragment.
+    candidates.sort((a,b)=>a.first-b.first||Number(b.ferry)-Number(a.ferry)||b.last-a.last);
+    let coords=[baseline[0]],along=0,used=0,exitRoute;
+    for(const c of candidates.slice(0,24)){
+      if(c.first<along-100||c.last<=along+minimum||signal?.aborted||clock()-began>budget)continue;
+      const remaining=budget-(clock()-began),a=coords.at(-1),b=c.coords[0],bridge=distance(a,b)<.01?[a]:await marineWaterPath({lat:a[0],lon:a[1]},{lat:b[0],lon:b[1]},mask,{signal,maxMs:Math.min(2500,remaining)});
+      if(!bridge)continue;
+      const tail=c.coords.at(-1),finish=baseline.at(-1),exit=distance(tail,finish)<.01?[finish]:await marineWaterPath({lat:tail[0],lon:tail[1]},{lat:finish[0],lon:finish[1]},mask,{signal,maxMs:Math.min(2500,budget-(clock()-began))});
+      if(!exit)continue;
+      const trial=[...coords,...bridge.slice(1),...c.coords.slice(1),...exit.slice(1)],length=trial.slice(1).reduce((n,p,i)=>n+distance(trial[i],p),0);if(length>total*1.8+1500)continue;
+      coords=[...coords,...bridge.slice(1),...c.coords.slice(1)];along=c.last;used++;
+      exitRoute=exit;
+    }
+    if(signal?.aborted)return null;
+    const coordinates=used?safeMarinePath([...coords,...exitRoute.slice(1)],mask):baseline;
+    return{coordinates:coordinates||baseline,partial:used>0};
+  }
+  const api={point,distance,flightArc,mappedPath,networkPath,networkQuery,isWater,landMask,waterSegment,waterPath,safeMarinePath,marineWaterPath,marinePath};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVRouteGeometry=api;
 })(typeof window!=='undefined'?window:globalThis);

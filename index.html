@@ -11,8 +11,8 @@
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
   <link rel="stylesheet" href="voyages.css?v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005" />
   <link rel="stylesheet" href="travel-tools.css?v=platform-tools-20261005&platform=herald-complete-20261005&tools=currency-road-20261005" />
-  <link rel="stylesheet" href="currency-road-tools.css?v=currency-road-20261005" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=map-city-20261004" />
+  <link rel="stylesheet" href="currency-road-tools.css?v=currency-road-20261005&refinements=map-planner-20261006" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=map-city-20261004&refinements=map-planner-20261006" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
 </head>
@@ -146,7 +146,7 @@
               </div>
               <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
               <div id="calendar" class="calendar" aria-live="polite"></div>
-              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-trip"></i> Journey</span><span class="calendar-key"><i class="calendar-key-transport"></i> Transport</span><span class="calendar-key"><i class="calendar-key-accommodation"></i> Accommodation</span><span class="calendar-key calendar-schengen-key"><b aria-hidden="true"></b> Schengen</span><p>Select a journey to follow its route. Select a date to add a country, place, transport or accommodation.</p></footer>
+              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-country" aria-hidden="true"></i> Country stay</span><span class="calendar-key"><img class="calendar-key-transport" src="assets/transport/flight.png" alt=""> Transport</span><span class="calendar-key"><i class="calendar-key-accommodation" aria-hidden="true">⌂</i> Accommodation</span><span class="calendar-key"><i class="calendar-key-home" aria-hidden="true">⌂</i> Home</span><span class="calendar-key calendar-schengen-key"><b aria-hidden="true"></b> Schengen</span><p>Select an entry to view or edit it. Select a date or range to add travel.</p></footer>
             </article>
 
             <aside id="calendarJourneyDetail" class="calendar-journey-detail" aria-live="polite"></aside>
@@ -297,7 +297,7 @@
         <div class="journey-date-filter" role="group" aria-label="Journey Map date range"><span data-journey-date-summary>All dates</span><label>From <input type="date" name="journey-from" aria-label="Journey Map from date"></label><label>To <input type="date" name="journey-to" aria-label="Journey Map to date"></label><button class="text-btn" type="button" data-journey-date-clear disabled>Clear</button><small data-journey-date-error role="alert"></small></div>
         <div id="globalJourneyMap" class="global-journey-map" role="region" aria-label="All journey routes, accommodation and locations"></div>
         <p id="globalJourneyStatus" class="helper" role="status"></p>
-        <div class="journey-map-footer"><div class="journey-map-key"><span><i style="--route-colour:#44758c"></i>Flights</span><span><i style="--route-colour:#29556b"></i>Road</span><span><i style="--route-colour:#647d52"></i>Walking</span><span><i style="--route-colour:#7c6187"></i>Rail</span><span><i style="--route-colour:#31848a"></i>Boats</span><span>⌂ Accommodation</span><span>• Locations</span></div><p>Past routes use quieter lines. Flight arcs show connections, not actual tracks. Surface routes use available road, path, railway or ferry data; otherwise only recorded stops are shown. Undated records appear in All.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></div>
+        <div class="journey-map-footer"><div class="journey-map-key"><span><i style="--route-colour:#006768"></i>Flights</span><span><i style="--route-colour:#076800"></i>Bus / coach</span><span><i style="--route-colour:#680000"></i>Road</span><span><i style="--route-colour:#535353"></i>Walking</span><span><i style="--route-colour:#685600"></i>Rail</span><span><i style="--route-colour:#001B68"></i>Boats</span><span><i style="--route-colour:#5C004C"></i>Other transport</span><span>⌂ Accommodation</span><span>• Locations</span></div><p>Past routes use quieter lines. Flight arcs show connections, not actual tracks. Surface routes use available road, path, railway or ferry data. Ferry gaps use illustrative water routes around land. Undated records appear in All.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></div>
         <p class="helper" id="journeyLibraryCount" role="status"></p><div id="journeyLibraryRecords"></div>
       </section>
     </main>
@@ -344,9 +344,9 @@
   <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script defer src="vendor/supabase/supabase.min.js?v=2.57.4" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="account-config.js?v=rollback-20261001-1"></script>
-  <script src="account-model.js?v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005"></script>
+  <script src="account-model.js?v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005&refinements=map-planner-20261006"></script>
   <script src="account-client.js?v=rollback-20261001-1"></script>
   <script src="account-sync.js?v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005"></script>
-  <script src="app.js?v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2"></script>
+  <script src="app.js?v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006"></script>
 </body>
 </html>

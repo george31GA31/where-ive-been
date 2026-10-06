@@ -26,8 +26,30 @@
     if(r.domesticHoliday===true)return 'trip';
     if(!isHome(state,r.countryCode||r.place?.countryCode,date,profileId))return 'foreign';
     if(r.tripId&&(state.trips||[]).some(t=>t.id===r.tripId))return 'trip';
-    const evidence=[...scoped(state.accommodations,profileId),...scoped(state.transports,profileId)].some(a=>a.status!=='cancelled'&&((r.tripId&&a.tripId===r.tripId)||((a.place?.countryCode===r.countryCode||a.start?.countryCode===r.countryCode||a.end?.countryCode===r.countryCode)&&(a.checkIn||a.startLocal?.slice(0,10))>=r.start&&(a.checkOut||a.endLocal?.slice(0,10))<=r.end)));
+    // A domestic hotel/transport is evidence only for its recorded dates. It
+    // must not turn the surrounding unclassified home interval into a trip.
+    const evidence=[...scoped(state.accommodations,profileId),...scoped(state.transports,profileId)].some(a=>{
+      const start=a.checkIn||a.startLocal?.slice(0,10),end=a.checkOut||a.endLocal?.slice(0,10)||start;
+      return !(state.stays||[]).some(s=>s.source==='accommodation'&&s.sourceAccommodationId===a.id&&s.id!==r.id)&&a.status!=='cancelled'&&a.travelKind!=='home'&&validDate(date)&&start<=date&&end>=date&&((r.tripId&&a.tripId===r.tripId)||(a.place?.countryCode===r.countryCode||a.start?.countryCode===r.countryCode||a.end?.countryCode===r.countryCode));
+    });
     return evidence?'trip':'ambiguous';
+  }
+  // New/edited domestic hotels get a country record with explicit, authoritative
+  // dates. Only records carrying our provenance are ever updated or removed.
+  function removeAccommodationStay(state,id){
+    state.stays=(state.stays||[]).filter(s=>!(s.source==='accommodation'&&s.sourceAccommodationId===id));
+  }
+  function syncAccommodationStay(state,a,today=new Date().toISOString().slice(0,10)){
+    if(!a?.id)return;
+    const country=a.place?.countryCode,owner=a.profileId||state.activeProfileId;
+    const previous=(state.stays||[]).find(s=>s.source==='accommodation'&&s.sourceAccommodationId===a.id);
+    if(a.travelKind!=='trip'||!country||!isHome(state,country,a.checkIn,owner)||!validDate(a.checkIn)||!validDate(a.checkOut)||a.checkOut<a.checkIn||a.status==='cancelled'){
+      if(previous)removeAccommodationStay(state,a.id);return;
+    }
+    const explicit=scoped(state.stays,owner).some(s=>s!==previous&&s.status!=='cancelled'&&s.countryCode===country&&!s.sourceAccommodationId&&isDomesticHoliday(s)&&s.start<=a.checkIn&&s.end>=a.checkOut);
+    if(explicit){if(previous)removeAccommodationStay(state,a.id);return;}
+    const record={...previous,id:previous?.id||'accommodation-stay:'+a.id,source:'accommodation',sourceAccommodationId:a.id,profileId:a.profileId??null,tripId:a.tripId||null,countryCode:country,countryName:a.place.countryName||country,location:a.location||a.propertyName,start:a.checkIn,end:a.checkOut,travelKind:'trip',domesticHoliday:true,status:a.checkOut<today?'actual':'planned',notes:previous?.notes||'',schengenExempt:previous?.schengenExempt||false};
+    state.stays||=[];if(previous)Object.assign(previous,record);else state.stays.push(record);
   }
   function isTravelStay(state,r,date=r.start,profileId=r.profileId||state.activeProfileId){return !['home','ambiguous'].includes(homeKind(state,r,date,profileId));}
   function hiddenHomeRecord(state,r){
@@ -179,6 +201,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#66DCE3',train:'#b99aff',bus:'#f3b64c',boat:'#5db8ff',car:'#74F94B',other:'#ee9bd1'}[type]||'#ee9bd1')};
+  const api={syncAccommodationStay,removeAccommodationStay,airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#006768',bus:'#076800',boat:'#001B68',car:'#680000',train:'#685600',walk:'#535353',other:'#5C004C'}[type]||'#5C004C')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

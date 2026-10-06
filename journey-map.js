@@ -3,7 +3,7 @@
   'use strict';
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const G=HVRouteGeometry,R=HVRouteStore,cache=new Map(),pendingRoutes=new Map(),waterCache=new Map();let dialog,lastRequest=0,coastline,coastlineRequest,nextCoastlineAttempt=0;
-  const styles={flight:{color:'#44758c'},bus:{color:'#29556b'},car:{color:'#29556b'},walk:{color:'#647d52',dashArray:'2 5'},train:{color:'#7c6187',dashArray:'10 3'},boat:{color:'#31848a',dashArray:'3 6'},other:{color:'#777',dashArray:'3 5'}};
+  const FLIGHT_WEIGHT=1.5,styles={flight:{color:'#006768'},bus:{color:'#076800'},car:{color:'#680000'},walk:{color:'#535353',dashArray:'2 5'},train:{color:'#685600',dashArray:'10 3'},boat:{color:'#001B68',dashArray:'3 6'},other:{color:'#5C004C',dashArray:'3 5'}};
   const routeType=(type,record)=>G.isWater(type,record)?'boat':type;
   async function loadCoastline(){
     if(coastline)return coastline;
@@ -17,7 +17,7 @@
     const key=JSON.stringify([start.lat,start.lon,end.lat,end.lon]);if(waterCache.has(key))return waterCache.get(key);
     try{
       if(signal?.aborted)throw Error('Closed');
-      const mask=await loadCoastline(),coordinates=await G.waterPath(start,end,mask,{signal,waterOnly:true});if(!coordinates||signal?.aborted)throw Error('Water path unavailable');
+      const mask=await loadCoastline(),coordinates=await G.marineWaterPath(start,end,mask,{signal});if(!coordinates||signal?.aborted)throw Error('Water path unavailable');
       const result={coordinates,label:coordinates.length===2?'Direct water connection (illustrative)':'Illustrative water route around the coastline',illustrative:true};waterCache.set(key,result);if(waterCache.size>80)waterCache.delete(waterCache.keys().next().value);return result;
     }catch{return {coordinates:[],label:'Recorded stops remain visible; water-aware route unavailable',illustrative:true,unavailable:true};}
   }
@@ -87,13 +87,37 @@
     }
     return null;
   }
+  async function marineRoute(start,end,signal){
+    const mask=await loadCoastline(),fallbackRequest=waterFallback(start,end,signal);
+    const reserved=Math.max(Date.now(),lastRequest+1100),delay=reserved-Date.now();lastRequest=reserved;if(delay)await new Promise(r=>setTimeout(r,delay));
+    if(signal.aborted)throw new DOMException('Closed','AbortError');
+    let elements=[];
+    try{
+      const query=`[out:json][timeout:8];rel(around:2500,${start.lat},${start.lon})[route=ferry];out geom;`;
+      const data=await serviceJSON('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),signal,10000);elements=data.elements||[];
+      const exact=G.safeMarinePath(G.mappedPath(elements,start,end,{type:'boat'}),mask);
+      if(exact)return{coordinates:exact,label:'Mapped ferry route (OSM)'};
+    }catch{if(signal.aborted)throw new DOMException('Closed','AbortError');}
+    let coordinates=await G.networkPath(elements,start,end,{type:'boat',mask,signal});
+    if(coordinates)return{coordinates,label:'Nearby mapped ferry / marine route (approximate)',illustrative:true};
+    const query=G.networkQuery('boat',start,end);let unavailable=false;
+    if(query)try{const data=await serviceJSON('https://overpass-api.de/api/interpreter?'+new URLSearchParams({data:query}),signal,8000);elements.push(...data.elements||[]);}catch{unavailable=true;if(signal.aborted)throw new DOMException('Closed','AbortError');}
+    if(unavailable){const harbours=await Promise.allSettled([start,end].map(p=>harbourWays(p,signal)));for(const result of harbours)if(result.status==='fulfilled')elements.push(...result.value);}
+    if(signal.aborted)throw new DOMException('Closed','AbortError');
+    coordinates=await G.networkPath(elements,start,end,{type:'boat',mask,signal});
+    if(coordinates)return{coordinates,label:'Nearby mapped ferry / marine route (approximate)',illustrative:true};
+    const fallback=await fallbackRequest;if(signal.aborted)throw new DOMException('Closed','AbortError');
+    const partial=await G.marinePath(elements,start,end,mask,{signal,baseline:fallback.coordinates?.length?fallback.coordinates:null});
+    if(partial?.coordinates?.length>=2)return{coordinates:partial.coordinates,label:partial.partial?'Mapped marine sections joined by water-aware connections (approximate)':fallback.label,illustrative:true};
+    return fallback;
+  }
   function route(type,start,end,signal,refreshToken=''){
     if(signal.aborted)return Promise.reject(new DOMException('Closed','AbortError'));
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon,refreshToken]);if(cache.has(key))return Promise.resolve(cache.get(key));
     let pending=pendingRoutes.get(key);
     if(!pending){
       pending={controller:new AbortController(),subscribers:new Set()};pendingRoutes.set(key,pending);
-      pending.promise=calculateRoute(type,start,end,pending.controller.signal).then(result=>{cache.set(key,result);if(cache.size>80)cache.delete(cache.keys().next().value);return result;}).finally(()=>{if(pendingRoutes.get(key)===pending)pendingRoutes.delete(key);});
+      pending.promise=calculateRoute(type,start,end,pending.controller.signal).then(result=>{if(!result.unavailable){cache.set(key,result);if(cache.size>80)cache.delete(cache.keys().next().value);}return result;}).finally(()=>{if(pendingRoutes.get(key)===pending)pendingRoutes.delete(key);});
     }
     const lookup=pending,subscriber={};lookup.subscribers.add(subscriber);
     return new Promise((resolve,reject)=>{
@@ -103,6 +127,7 @@
     });
   }
   async function calculateRoute(type,start,end,signal){
+    if(type==='boat')return marineRoute(start,end,signal);
     // FOSSGIS public routing limit: at most one request per second, shared across maps.
     const reserved=Math.max(Date.now(),lastRequest+1100),delay=reserved-Date.now();lastRequest=reserved;if(delay)await new Promise(r=>setTimeout(r,delay));if(signal.aborted)throw new DOMException('Closed','AbortError');
     let result,exactElements=[];
@@ -144,26 +169,34 @@
       const p=members[0],count=new Set(members.map(x=>x.r?.record?.id||x)).size,flight=p.type==='flight',size=flight?8:hotel?16:10;
       const canonical=hotel&&(historical.find(g=>g.records.includes(p.r.record))||hotel),name=HVAddress.text(canonical?.name||p.name);
       const pin='<svg viewBox="0 0 16 20" aria-hidden="true"><path class="hotel-pin-shape" d="M8 .7a6.8 6.8 0 0 0-6.8 6.8C1.2 12.1 8 19.2 8 19.2s6.8-7.1 6.8-11.7A6.8 6.8 0 0 0 8 .7Z"/><path class="hotel-pin-house" d="m4.1 7.5 3.9-3 3.9 3M5.3 7v4.1h5.4V7M7.2 11.1V8.7h1.6v2.4"/></svg>';
-      const m=L.marker(p.position,{title:name+(count>1?' · '+count+' separate stays':''),autoPanOnFocus:false,bubblingMouseEvents:false,icon:L.divIcon({className:`journey-map-marker marker-${p.type}`,html:`${hotel?pin:'<span></span>'}${count>1?'<small>×'+count+'</small>':''}`,iconSize:[size,hotel?20:size],iconAnchor:[size/2,hotel?19:size/2],popupAnchor:[0,hotel?-18:0]})}).addTo(layer);
+      const m=L.marker(p.position,{title:name+(count>1?' · '+count+' separate stays':''),autoPanOnFocus:false,bubblingMouseEvents:false,icon:L.divIcon({className:`journey-map-marker marker-${routeType(p.type,p.r?.record)}`,html:`${hotel?pin:'<span></span>'}${count>1?'<small>×'+count+'</small>':''}`,iconSize:[size,hotel?20:size],iconAnchor:[size/2,hotel?19:size/2],popupAnchor:[0,hotel?-18:0]})}).addTo(layer);
       m.bindPopup(() => hotel?HVJourneyUI.hotelPopup(name,members):HVJourneyUI.popup(p.r),{className:'herald-map-popup',autoPan:false,closeOnClick:false,maxHeight:350,maxWidth:340,minWidth:Math.min(300,innerWidth-60)});
       m.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);m.openPopup();});
     }
     return {refresh(){}};
   }
-  function savedRoute(record,index,type,start,end){return R.get(record,index,type,start,end);}
+  function savedRoute(record,index,type,start,end){const saved=R.get(record,index,type,start,end);return type==='boat'&&saved?.unavailable?null:saved;}
   function rememberRoute(record,index,type,start,end,result){
     const current=(state.transports||[]).find(t=>t.id===record.id);
     if(!current)return null;
     const leg=(current.type==='flight'?HVJourney.flightLegs(current):HVJourney.groundLegs(current))[index];
     const a=current.type==='flight'?airport(leg?.start):leg?.start,b=current.type==='flight'?airport(leg?.end):leg?.end;
     if(!leg||routeType(current.type,current)!==type||R.signature(type,index,a,b)!==R.signature(type,index,start,end)||(current.routeRefreshToken||'')!==(record.routeRefreshToken||''))return null;
+    // Failed ferry lookups are retryable, never permanent empty saved routes.
+    if(type==='boat'&&result.unavailable)return result;
     const saved=R.set(current,index,type,start,end,result);if(saved)persist();return saved||result;
   }
+  function primeWaterRoute(record,index,start,end,signal,draw,report=()=>{}){
+    waterFallback(start,end,signal).then(result=>{
+      if(signal.aborted||result.unavailable||savedRoute(record,index,'boat',start,end))return;
+      const stored=rememberRoute(record,index,'boat',start,end,result);if(stored){draw(stored.coordinates);report(stored.label+' · checking mapped routes…');}
+    });
+  }
   function drawRoute(map,coords,type,options={},content){
-    const road=['car','bus'].includes(type),base={...styles[routeType(type)]||styles.other,...options,bubblingMouseEvents:false};
+    const road=['car','bus'].includes(type);if(type==='flight')options={...options,weight:FLIGHT_WEIGHT};const base={...styles[routeType(type)]||styles.other,...options,bubblingMouseEvents:false};
     const casing=road?L.polyline(coords,{...base,color:'#fff',weight:(base.weight||1.5)+1.5,opacity:.85,interactive:false}).addTo(map):null;
     const line=L.polyline(coords,base).addTo(map);line._routeCasing=casing;if(content)line.bindPopup(content,{className:'herald-map-popup',autoPan:false,closeOnClick:false,maxHeight:350,maxWidth:340,minWidth:Math.min(300,innerWidth-60)});
-    line.on('mouseover',()=>line.setStyle({weight:(base.weight||1.5)+1,opacity:1}));line.on('mouseout',()=>line.setStyle({weight:base.weight||1.5,opacity:base.opacity||.85}));line.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(content)line.openPopup(e.latlng);});return line;
+    line.on('mouseover',()=>line.setStyle({weight:type==='flight'?FLIGHT_WEIGHT:(base.weight||1.5)+1,opacity:1}));line.on('mouseout',()=>line.setStyle({weight:base.weight||1.5,opacity:base.opacity||.85}));line.on('click',e=>{if(e.originalEvent)L.DomEvent.stopPropagation(e.originalEvent);if(content)line.openPopup(e.latlng);});return line;
   }
 
   function open(key,filters={}){
@@ -178,10 +211,10 @@
     rows.push(...places.map(v=>({type:'location',record:v,date:v.date,place:v.place})));
     for(let i=rows.length-1;i>=0;i--){const r=rows[i],kind=r.type==='flight'?'flights':r.leg?'transport':r.type==='accommodation'?'accommodation':'locations',span={start:String(r.leg?(r.leg.startLocal||r.record.startLocal||''):(r.record.checkIn||r.record.date||r.record.start||'')).slice(0,10),end:String(r.leg?(r.leg.endLocal||r.record.endLocal||r.leg.startLocal||r.record.startLocal||''):(r.record.checkOut||r.record.endDate||r.record.end||r.record.checkIn||r.record.date||r.record.start||'')).slice(0,10)};if(!HVGlobalJourney.intersects(span,filters.range)||filters.prefs&&HVGlobalJourney.filter([{...span,kind}],filters.prefs,isoDate(new Date()),filters.range).length===0)rows.splice(i,1);}
     rows.sort((a,b)=>(a.leg?a.record.startLocal.slice(0,10):a.date).localeCompare(b.leg?b.record.startLocal.slice(0,10):b.date)||(a.record===b.record&&a.leg&&b.leg?a.index-b.index:0)||((a.leg?a.record.startLocal.slice(11):a.record.checkInTime)&&(b.leg?b.record.startLocal.slice(11):b.record.checkInTime)&&(!a.record.timeZone||!b.record.timeZone||a.record.timeZone===b.record.timeZone)?(a.leg?a.record.startLocal.slice(11):a.record.checkInTime).localeCompare(b.leg?b.record.startLocal.slice(11):b.record.checkInTime):0)||(a.record.journeyOrder??a.index??0)-(b.record.journeyOrder??b.index??0));
-    own.innerHTML=`<header class="journey-map-head"><div><p class="eyebrow">JOURNEY MAP</p><h2 id="journeyMapTitle">${E(group.title)}</h2><p>${E(HVJourneyUI.range(group.start,group.end))}</p><p class="helper" data-map-tile-status hidden role="status"></p></div><button type="button" class="secondary" data-map-close>Close ×</button></header><div class="journey-map-layout"><div class="journey-map-canvas" aria-label="Journey routes and places"></div><ol class="journey-map-stops">${rows.map((r,i)=>`<li data-map-row="${i}"><button class="journey-map-stop" type="button" data-map-stop="${i}"><span class="journey-stop-number">${i+1}</span><span><strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):HVAddress.text(r.place?.name||r.record.propertyName||'Location'))}</strong><small>${E(HVJourneyUI.date(r.date))}${r.leg?.startLocal?.slice(11)?' · '+E(r.leg.startLocal.slice(11)):''}${r.record.checkInTime?' · '+E(r.record.checkInTime):''}${r.record.checkOutTime?' → '+E(HVJourneyUI.date(r.record.checkOut)+' '+r.record.checkOutTime):''}${r.record.timeZone?' · '+E(r.record.timeZone):''}${r.leg?.endLocal?' → '+E(HVJourneyUI.date(r.leg.endLocal)+' '+r.leg.endLocal.slice(11)):''}</small>${r.leg?`<small>${E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · '))}</small>${r.type==='flight'?`<small>${E(HVJourney.airportDetails(r.leg.start,HVJourneys.airportFor))} → ${E(HVJourney.airportDetails(r.leg.end,HVJourneys.airportFor))}</small>`:''}`:''}</span></button><p class="helper" data-route-status="${i}" role="status">${r.leg?'Checking route…':'Saved location'}</p><button type="button" class="text-btn" data-map-edit="${i}">Edit ${r.leg?'transport':r.type==='accommodation'?'accommodation':r.type==='country'?'country stay':'location'}</button></li>`).join('')||'<li class="empty-state">Add transport and plotted places to see this journey on the map.</li>'}</ol></div><footer class="journey-map-footer"><div class="journey-map-key">${[['flight','Flights'],['car','Road'],['walk','Walking'],['train','Rail'],['boat','Boats'],['accommodation','Accommodation'],['location','Locations']].map(([type,label])=>`<span><i class="key-${type}" style="--route-colour:${styles[type]?.color||'#985c4d'}"></i>${label}</span>`).join('')}</div><p>Flight arcs show connections, not actual flight tracks. Calculated routes may differ from the service taken. Water fallback routes use Natural Earth coastlines and are illustrative, not navigation. Straight connections join recorded stops when no route can be calculated. Times are local to each stop.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></footer>`;
+    own.innerHTML=`<header class="journey-map-head"><div><p class="eyebrow">JOURNEY MAP</p><h2 id="journeyMapTitle">${E(group.title)}</h2><p>${E(HVJourneyUI.range(group.start,group.end))}</p><p class="helper" data-map-tile-status hidden role="status"></p></div><button type="button" class="secondary" data-map-close>Close ×</button></header><div class="journey-map-layout"><div class="journey-map-canvas" aria-label="Journey routes and places"></div><ol class="journey-map-stops">${rows.map((r,i)=>`<li data-map-row="${i}"><button class="journey-map-stop" type="button" data-map-stop="${i}"><span class="journey-stop-number">${i+1}</span><span><strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):HVAddress.text(r.place?.name||r.record.propertyName||'Location'))}</strong><small>${E(HVJourneyUI.date(r.date))}${r.leg?.startLocal?.slice(11)?' · '+E(r.leg.startLocal.slice(11)):''}${r.record.checkInTime?' · '+E(r.record.checkInTime):''}${r.record.checkOutTime?' → '+E(HVJourneyUI.date(r.record.checkOut)+' '+r.record.checkOutTime):''}${r.record.timeZone?' · '+E(r.record.timeZone):''}${r.leg?.endLocal?' → '+E(HVJourneyUI.date(r.leg.endLocal)+' '+r.leg.endLocal.slice(11)):''}</small>${r.leg?`<small>${E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · '))}</small>${r.type==='flight'?`<small>${E(HVJourney.airportDetails(r.leg.start,HVJourneys.airportFor))} → ${E(HVJourney.airportDetails(r.leg.end,HVJourneys.airportFor))}</small>`:''}`:''}</span></button><p class="helper" data-route-status="${i}" role="status">${r.leg?'Checking route…':'Saved location'}</p><button type="button" class="text-btn" data-map-edit="${i}">Edit ${r.leg?'transport':r.type==='accommodation'?'accommodation':r.type==='country'?'country stay':'location'}</button></li>`).join('')||'<li class="empty-state">Add transport and plotted places to see this journey on the map.</li>'}</ol></div><footer class="journey-map-footer"><div class="journey-map-key">${[['flight','Flights'],['bus','Bus / coach'],['car','Road'],['walk','Walking'],['train','Rail'],['boat','Boats'],['other','Other transport'],['accommodation','Accommodation'],['location','Locations']].map(([type,label])=>`<span><i class="key-${type}" style="--route-colour:${styles[type]?.color||'#985c4d'}"></i>${label}</span>`).join('')}</div><p>Flight arcs show connections, not actual flight tracks. Calculated routes may differ from the service taken. Water fallback routes use Natural Earth coastlines and are illustrative, not navigation. Straight connections join recorded stops when no route can be calculated. Times are local to each stop.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></footer>`;
     document.body.append(own);own.showModal();
     const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const map=L.map(own.querySelector('.journey-map-canvas'),{zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([30,0],2);const unregisterMap=HVJourneyUI.registerMap(map);
+    const map=L.map(own.querySelector('.journey-map-canvas'),{scrollWheelZoom:true,zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([30,0],2);const unregisterMap=HVJourneyUI.registerMap(map);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).on('tileerror',()=>{const status=own.querySelector('[data-map-tile-status]');status.hidden=false;status.textContent='Map tiles are unavailable. Saved stops and route details are still shown.';}).addTo(map);
     const bounds=[],rowBounds=new Map(),markerLocations=new Set(),stopPoints=[];
     function marker(p,index,label,type){if(!G.point(p))return;const latlng=[p.lat,p.lon];bounds.push(latlng);if(!rowBounds.has(index))rowBounds.set(index,[]);rowBounds.get(index).push(latlng);
@@ -201,7 +234,7 @@
       const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,r.start,r.end);
       if(saved){draw(saved.coordinates,type,i);status.textContent='Saved route · '+saved.label;continue;}
       if(r.type==='flight'){const stored=rememberRoute(r.record,legIndex,'flight',r.start,r.end,{coordinates:G.flightArc(r.start,r.end),label:'Flight connection'});if(stored){draw(stored.coordinates,'flight',i);status.textContent='Flight connection · saved';}continue;}
-      const previous=R.get(r.record,legIndex,type,r.start,r.end,true);if(previous)draw(previous.coordinates,type,i);else if(type!=='boat')draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],type,i);status.textContent='Checking for a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),60000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
+      if(type==='boat')primeWaterRoute(r.record,legIndex,r.start,r.end,controller.signal,coords=>draw(coords,type,i),label=>status.textContent=label);const previous=R.get(r.record,legIndex,type,r.start,r.end,true);if(previous)draw(previous.coordinates,type,i);else if(type!=='boat')draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],type,i);status.textContent='Checking for a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),60000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
       try{const result=await route(type,r.start,r.end,requestController.signal,r.record.routeRefreshToken||'');if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}
       catch{if(!controller.signal.aborted){const result=type==='boat'?await waterFallback(r.start,r.end,controller.signal):{coordinates:[[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],label:'Recorded stops joined by a straight line; route unavailable.',unavailable:true};if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}}
       finally{clearTimeout(timeout);controller.signal.removeEventListener('abort',abort);}
@@ -214,13 +247,13 @@
   // The global surface owns only Leaflet layers, never copies of saved records.
   function mountGlobal(host,rows,today,status){
     const controller=new AbortController(),reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const map=L.map(host,{zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([25,0],2);const unregisterMap=HVJourneyUI.registerMap(map);
+    const map=L.map(host,{scrollWheelZoom:true,zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([25,0],2);const unregisterMap=HVJourneyUI.registerMap(map);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map).on('tileerror',()=>{status.textContent='Map background unavailable. Your saved stops and routes remain available.';});
     const points=[],bounds=[],routes=[];let unavailable=0,pending=0;
     function addPoint(p,r){if(!G.point(p))return;const position=[Number(p.lat),Number(p.lon)];bounds.push(position);points.push({position,r,type:r.type,label:r.type==='flight'?HVJourney.airportLabel(p):r.type==='accommodation'?'⌂':'•',name:p.name||r.record.propertyName||'Location'});}
     const routeLines=new Map();
     function draw(coords,r,label){const old=routeLines.get(r.key),selectedAt=old?.isPopupOpen()?old.getPopup().getLatLng():null;old?._routeCasing?.remove();old?.remove();if(coords.length<2){routeLines.delete(r.key);return;}const past=r.end&&r.end<today;routeLines.set(r.key,drawRoute(map,coords,routeType(r.type,r.record),{weight:past?1.2:1.6,opacity:past?.72:.95},HVJourneyUI.popup(r)));if(selectedAt)routeLines.get(r.key).openPopup(selectedAt);}
-    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,start,end);if(saved){draw(saved.coordinates,r,saved.label);if(saved.unavailable)unavailable++;}else if(r.type==='flight'){const stored=rememberRoute(r.record,legIndex,'flight',start,end,{coordinates:G.flightArc(start,end),label:'Flight connection'});if(stored)draw(stored.coordinates,r,stored.label);}else{const previous=R.get(r.record,legIndex,type,start,end,true);if(previous)draw(previous.coordinates,r,previous.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; checking mapped route');routes.push({r,start,end,type,legIndex});}}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
+    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,start,end);if(saved){draw(saved.coordinates,r,saved.label);if(saved.unavailable)unavailable++;}else if(r.type==='flight'){const stored=rememberRoute(r.record,legIndex,'flight',start,end,{coordinates:G.flightArc(start,end),label:'Flight connection'});if(stored)draw(stored.coordinates,r,stored.label);}else{if(type==='boat')primeWaterRoute(r.record,legIndex,start,end,controller.signal,coords=>draw(coords,r));const previous=R.get(r.record,legIndex,type,start,end,true);if(previous)draw(previous.coordinates,r,previous.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; checking mapped route');routes.push({r,start,end,type,legIndex});}}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
     const pointSurface=pointLayer(map,points);
     const fit=()=>{map.invalidateSize();if(bounds.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:12,animate:false});pointSurface.refresh();};fit();
     const report=()=>{status.textContent=`${rows.length} entries · ${points.length} mapped stops${pending?' · Loading '+pending+' surface routes…':''}${unavailable?' · '+unavailable+' entries have missing positions or unavailable routes; recorded stops remain visible.':''}${rows.length?'':' · No matching records. Change the filters or add a journey.'}`;};pending=routes.length;report();
