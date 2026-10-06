@@ -5,6 +5,8 @@ payload collections: `manualCountryVisits` and `tccVisits`. Their stable IDs inc
 the traveller and destination. Neither collection creates stays, calendar records,
 routes or trips. Existing three-way account merging, durable offline outboxes,
 guest transfer and backup import handle both collections.
+Concurrent exact-date and approximate-year edits resolve as one timing choice;
+independent note and visit-count changes still merge by field.
 
 The TCC snapshot in `data/tcc-destinations.js` reproduces the official geographical
 list at https://travelerscenturyclub.org/countries-and-territories/ (330 destinations

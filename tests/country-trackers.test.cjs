@@ -18,6 +18,14 @@ test('offline deletions survive concurrent edits to other visit records and fiel
 test('visit metadata edits on separate devices combine by field',()=>{
  const b=seed();V.setManual(b,'JP',true,{},'2026-10-06');const l=M.copy(b),r=M.copy(b);l.manualCountryVisits[0].note='Temple visit';r.manualCountryVisits[0].visits=3;const result=M.merge(b,l,r);assert.equal(result.conflicts.length,0);assert.equal(result.data.manualCountryVisits[0].note,'Temple visit');assert.equal(result.data.manualCountryVisits[0].visits,3);
 });
+test('concurrent date and approximate-year edits resolve as one timing choice',()=>{
+ for(const [kind,key,destination] of [['country','manualCountryVisits','JP'],['tcc','tccVisits','tcc-scotland']]){
+  const b=seed(),set=kind==='country'?V.setManual:V.setTcc;set(b,destination,true,{},'2026-10-06');const l=M.copy(b),r=M.copy(b);
+  set(l,destination,true,{date:'2026-02-10',note:'Keep this note'},'2026-10-06');set(r,destination,true,{year:2018},'2026-10-06');
+  const remote=M.merge(b,l,r);assert.equal(remote.conflicts.length,1);assert.match(remote.conflicts[0].path,/\.visitTiming$/);assert.equal(remote.data[key][0].date,null);assert.equal(remote.data[key][0].year,2018);assert.equal(remote.data[key][0].note,'Keep this note');M.validateImport(remote.data);
+  const local=M.merge(b,l,r,c=>c.local);assert.equal(local.data[key][0].date,'2026-02-10');assert.equal(local.data[key][0].year,null);M.validateImport(local.data);
+ }
+});
 test('guest import remaps profiles and visit identities and is idempotent',()=>{
  const remote=seed();remote.profiles=[{id:'account',name:'Me',homeCountryCodes:[]}];remote.activeProfileId='account';const guest=seed();V.setManual(guest,'KI',true,{year:2018},'2026-10-06');V.setTcc(guest,'tcc-hong-kong',true,{note:'Keep this'},'2026-10-06');const result=M.importData(remote,guest);assert.equal(result.conflicts.length,0);const data=result.data;assert.equal(data.manualCountryVisits[0].profileId,'account');assert.equal(data.tccVisits[0].profileId,'account');assert.equal(data.manualCountryVisits[0].id,'manual-country:account:KI');assert.deepEqual(M.importData(data,guest).data,data);
 });

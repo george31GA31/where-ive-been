@@ -27,6 +27,23 @@
         return [...new Set([...maps[2].keys(),...maps[1].keys(),...maps[0].keys()])].map(id=>field(maps[0].get(id),maps[1].get(id),maps[2].get(id),path+'.'+id)).filter(row=>row!==undefined);
       }
       if (b && l && r && !Array.isArray(l) && typeof l === 'object' && typeof r === 'object') {
+        // Date and approximate year are alternative ways of recording one visit.
+        // Merge independent notes/counts normally, but resolve concurrent timing
+        // edits together so two devices cannot produce a contradictory date/year.
+        const visitRecord = (path.startsWith('manualCountryVisits.') && l.countryCode && r.countryCode)
+          || (path.startsWith('tccVisits.') && l.destinationId && r.destinationId);
+        if (visitRecord) {
+          const timing = row => ({date: row.date ?? null, year: row.year ?? null});
+          const bt = timing(b), lt = timing(l), rt = timing(r);
+          if (!equal(bt, lt) && !equal(bt, rt) && !equal(lt, rt)) {
+            const conflict = {path: path + '.visitTiming', local: lt, remote: rt};
+            conflicts.push(conflict);
+            const merged = Object.fromEntries([...new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)])]
+              .filter(k => k !== 'date' && k !== 'year')
+              .map(k => [k, field(b[k], l[k], r[k], path + '.' + k)]).filter(([, v]) => v !== undefined));
+            return {...merged, ...copy(resolve ? resolve(conflict) : rt)};
+          }
+        }
         return Object.fromEntries([...new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)])]
           .map(k => [k, field(b[k], l[k], r[k], path + '.' + k)]).filter(([, v]) => v !== undefined));
       }
@@ -98,7 +115,7 @@
   }
   function describeConflict(conflict,data={}) {
     const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
-    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',manualCountryVisits:'Manual country visit',tccVisits:'TCC destination',destinationId:'TCC destination',date:'Visit date',year:'Visit year',visited:'Visited',note:'Visit note',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
+    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',manualCountryVisits:'Manual country visit',tccVisits:'TCC destination',destinationId:'TCC destination',date:'Visit date',year:'Visit year',visitTiming:'Visit date or year',visited:'Visited',note:'Visit note',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
     const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
     const display=value=>{
       if(value===undefined)return 'Deleted';if(value===null||value==='')return 'Not recorded';
