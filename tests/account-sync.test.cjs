@@ -95,3 +95,34 @@ test('an offline account reload uses its own saved snapshot and flushes new edit
  const changed=M.copy(offline.local);changed.stays[0].notes='Edited offline';offline.edit(changed);await offline.flush();assert.equal(offline.pending(),true);api.fail=false;await offline.flush();assert.equal(api.get().stays[0].notes,'Edited offline');offline.stop();
  api.fail=true;const other=engine(api,storage,'other');await other.start('B',state());assert.equal(other.ready,false);assert.equal(other.local,undefined);other.stop();
 });
+test('compact checkpoints preserve additions, deletions, ordering and unknown fields without repeating unchanged artwork',async()=>{
+ const data=state();data.savedPlaces=[{id:'hotel-a',artwork:'x'.repeat(1650000)},{id:'hotel-b',custom:{retain:true}}];data.extra={unknown:['keep',null]};data.removable=true;
+ const api=backend(data),storage=new Storage(),s=engine(api,storage);await s.start('A',data);api.fail=true;
+ const local=M.copy(data);local.stays[0].notes='Offline note';local.savedPlaces=[local.savedPlaces[1],{id:'hotel-c',newField:'added'},local.savedPlaces[0]];local.extra={unknown:['changed',null]};delete local.removable;local.preference=false;
+ s.edit(local);const raw=storage.getItem(s.key());assert.ok(raw.length<JSON.stringify(data).length+2000,'Unchanged large artwork is stored once');
+ const decoded=s.draft(raw);assert.deepEqual(decoded.base,data);assert.deepEqual(decoded.local,local);assert.equal(Object.getPrototypeOf(decoded.local),Object.prototype);
+ s.stop();const restored=engine(api,storage,'reload');await restored.start('A',data);assert.deepEqual(restored.local,local);assert.equal(restored.ready,true);restored.stop();
+});
+test('compact checkpoints retain empty arrays, duplicate IDs, scalar arrays and records with changed nested route data',async()=>{
+ const data=state();data.extraRows=[{id:'repeat',v:1},{id:'repeat',v:2}];data.tags=['a','b'];data.transports=[{id:'t',route:{coordinates:[[1,2],[3,4]]},notes:'before'}];
+ const api=backend(data),s=engine(api);await s.start('A',data);const local=M.copy(data);local.stays=[];local.extraRows.reverse();local.tags=['b','a'];local.transports[0].route.coordinates.push([5,6]);local.transports[0].notes=null;s.edit(local);
+ assert.deepEqual(s.draft(s.storage.getItem(s.key())).local,local);s.stop();
+});
+test('a successfully downloaded account remains usable when device storage rejects every write',async()=>{
+ const data=state(),api=backend(data),storage=new Storage();storage.setItem('whereIveBeen.beforeAccounts.v1','unchanged backup');storage.setItem('whereIveBeen.outbox.v1.B.other','other account');const before=[...storage.items];
+ storage.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};const s=engine(api,storage);let shown;s.onData=d=>shown=d;await s.start('A',data);
+ assert.equal(s.ready,true);assert.deepEqual(shown,data);assert.deepEqual(api.get(),data);assert.deepEqual([...storage.items],before);assert.match(s.statuses.at(-1)[0],/Saved to account.*Device storage is full/);assert.ok(!s.statuses.some(([message])=>message.includes('Could not load')));s.stop();
+});
+test('device quota failure cannot block an online account save or erase retained recovery copies',async()=>{
+ const api=backend(),storage=new Storage(),s=engine(api,storage);await s.start('A',state());const raw=storage.getItem(s.key());storage.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};
+ const local=state();local.stays[0].notes='Saved online despite full device';s.edit(local);assert.equal(s.pending(),true);await s.flush();assert.equal(api.get().stays[0].notes,local.stays[0].notes);assert.equal(s.pending(),false);assert.equal(storage.getItem(s.key()),raw);assert.match(s.statuses.at(-1)[0],/Saved to account.*Device storage is full/);s.stop();
+});
+test('offline quota failures retain pending memory data and recover only existing copies owned by the account',async()=>{
+ const api=backend(),storage=new Storage(),s=engine(api,storage);await s.start('A',state());const raw=storage.getItem(s.key());api.fail=true;storage.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};
+ const local=state();local.stays[0].notes='Keep page open';s.edit(local);await s.flush();assert.equal(s.pending(),true);assert.equal(s.local.stays[0].notes,local.stays[0].notes);assert.equal(api.get().stays[0].notes,'one');assert.equal(storage.getItem(s.key()),raw);s.stop();
+ const same=engine(api,storage,'same');await same.start('A',state());assert.equal(same.ready,true);assert.equal(same.local.stays[0].notes,'one');same.stop();const other=engine(api,storage,'other');await other.start('B',state());assert.equal(other.ready,false);assert.equal(other.local,undefined);other.stop();
+});
+test('legacy unsaved checkpoints merge with fresh account changes and are retired only after the new checkpoint fits',async()=>{
+ const data=state(),local=M.copy(data);local.stays[0].notes='Legacy unsaved edit';const remote=M.copy(data);remote.stays[0].end='2026-01-04';const api=backend(remote),storage=new Storage();storage.setItem('whereIveBeen.outbox.v1.A.old',JSON.stringify({base:data,local,revision:1}));storage.setItem('unrelated','keep');
+ const s=engine(api,storage,'new');await s.start('A',data);assert.equal(api.get().stays[0].notes,local.stays[0].notes);assert.equal(api.get().stays[0].end,remote.stays[0].end);assert.equal(storage.getItem('whereIveBeen.outbox.v1.A.old'),null);assert.equal(storage.getItem('unrelated'),'keep');assert.deepEqual(s.draft(storage.getItem(s.key())).local,api.get());s.stop();
+});
