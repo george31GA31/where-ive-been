@@ -49,7 +49,7 @@
       el.addEventListener('submit', async event => {
         event.preventDefault(); const button = el.querySelector('button[type="submit"], button'); button.disabled = true;
         message('Please wait…');
-        try { await action(); } catch (error) { message(error.message || 'Something went wrong. Please try again.', true); }
+        try { if(navigator.onLine===false)throw new Error('Internet access is required for this account action. Please reconnect and retry.'); await action(); } catch (error) { message(error.message || 'Something went wrong. Please try again.', true); }
         finally { button.disabled = false; }
       });
     }
@@ -63,7 +63,7 @@
         render(session?.user || null);
         if (event === 'PASSWORD_RECOVERY') recovery();
       });
-      const session = checked(await client.auth.getSession()).session;
+      const session = navigator.onLine===false ? WIBAuth.cachedSession() : checked(await client.auth.getSession()).session;
       render(session?.user || null);
       if (isRecovery && session) recovery();
       if (authError) { message('This email link has expired or is invalid. Request a new link.', true); history.replaceState(null, '', location.pathname); }

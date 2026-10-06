@@ -13,11 +13,12 @@
     stop() {
       this.epoch++; this.user = null; this.ready = false; this.saving = false;
       clearTimeout(this.timer);
-      this.base=undefined;this.local=undefined;this.revision=0;this.adopted=[];
+      this.base=undefined;this.local=undefined;this.revision=0;this.adopted=[];this.retryAt=0;this.failures=0;
     }
     async read(id) {
-      const {data, error} = await this.client.from('travel_tracker_data').select('payload,revision').eq('user_id', id).maybeSingle();
-      if (error) throw error;
+      if(root.navigator?.onLine===false)throw new TypeError('Account service is offline');
+      const {data, error, status} = await this.client.from('travel_tracker_data').select('payload,revision').eq('user_id', id).maybeSingle();
+      if (error) {if(status)error.status=status;throw error;}
       return {payload: data?.payload || {}, revision: Number(data?.revision || 0)};
     }
     async combine(base, local, remote) {
@@ -65,6 +66,7 @@
       try { this.checkpoint(); return true; } catch { return false; }
     }
     savedStatus(cached) {
+      this.failures=0;this.retryAt=0;
       this.status(cached ? 'Saved to account' : 'Saved to account. Offline copy unavailable on this device.', cached ? 'good' : 'neutral');
     }
     async start(id, empty) {
@@ -103,20 +105,21 @@
           for(const draft of drafts.slice(1))this.local=await this.combine(draft.base,draft.local,this.local);
           if(epoch!==this.epoch)return;
           this.adopted=drafts.map(({key,raw})=>({key,raw}));this.cache();this.ready=true;this.onData(M.copy(this.local));
-          this.status('Offline — showing your saved account data. Changes will sync when you reconnect.', 'bad');
+          this.status('Showing saved account data. Changes will sync when the account service reconnects.', 'neutral');
         }else this.status('Could not load account. Your device data is safe. Retry when connected.', 'bad');
       }
     }
     edit(data) {
       if (!this.ready) throw new Error('Wait for your account to finish loading.');
       this.local = M.copy(data);
-      if (this.cache()) this.status('Saving…');
+      if (this.cache()) this.status(root.navigator?.onLine===false ? 'Saved on this device - changes waiting to sync' : 'Saving…');
       else this.status('Device storage is full. Keep this page open until your changes are saved to account.', 'bad');
-      clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 650);
+      clearTimeout(this.timer); this.timer = setTimeout(() => this.flush({scheduled:true}), 650);
     }
-    flush() {
+    flush({scheduled=false}={}) {
       if (this.saving) return this.flight;
       if (!this.ready) return Promise.resolve();
+      if(root.navigator?.onLine===false || scheduled && Date.now() < (this.retryAt||0)) { if(this.pending()){const cached=this.cache();this.status(cached?'Saved on this device - changes waiting to sync':'Offline changes are held in this tab - waiting for account sync. Keep this page open.',cached?'neutral':'bad');}return Promise.resolve(); }
       return this.flight = this.performFlush();
     }
     async performFlush() {
@@ -137,17 +140,23 @@
           if (M.equal(this.local, remote.payload)) { this.savedStatus(this.clean()); return; }
           const sent = M.copy(this.local);
           this.status('Saving…');
-          const {data, error} = await this.client.rpc('save_travel_account', {p_payload: sent, p_revision: remote.revision});
+          const {data, error, status} = await this.client.rpc('save_travel_account', {p_payload: sent, p_revision: remote.revision});
           if (epoch !== this.epoch) return;
           if (error?.code === '40001') continue;
-          if (error) throw error;
+          if (error) {if(status)error.status=status;throw error;}
           this.base = sent; this.revision = Number(data[0].revision);
           this.cache();
           if (M.equal(this.local, sent)) { this.savedStatus(this.clean()); return; }
         }
         throw new Error('Account is changing on another device.');
       } catch (error) {
-        if (epoch === this.epoch) this.status('Save failed — changes kept on this device. Retry.', 'bad');
+        if (epoch === this.epoch) {
+          const kind=root.HVNetwork?.classify(error)||'network';
+          this.failures=(this.failures||0)+1;this.retryAt=Date.now()+Math.min(120000,5000*2**Math.min(this.failures,5));
+          const cached=this.cache();
+          this.status(cached?'Changes saved on this device - waiting for account sync.':'Account save unavailable - waiting for account sync. Keep this page open to retain your changes.',cached?'neutral':'bad');
+          if(['auth','permission','validation'].includes(kind))this.retryAt=Infinity;
+        }
       } finally { if (epoch === this.epoch) this.saving = false; }
     }
     clean(cached = this.cache()) {
@@ -177,6 +186,7 @@
       this.adopted = [];
       return true;
     }
+    reconnect() { this.retryAt=0;this.failures=0;return this.flush(); }
     pending() { return this.ready && this.user && this.local && !M.equal(this.local, this.base); }
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = AccountSync;

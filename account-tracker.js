@@ -152,10 +152,15 @@
       engine = new WIBAccountSync({client, storage: localStorage, tabId, onData: apply, onStatus: status, resolve: WIBResolveConflicts});
       client.auth.onAuthStateChange((event, session) => {
         if (event === 'INITIAL_SESSION') return;
-        setTimeout(() => changed(session), 0);
+        setTimeout(() => changed(session).catch(()=>{lock(false);status('Account service unavailable. Your saved information is unchanged.','neutral');}), 0);
       });
+      const cachedBefore=WIBAuth.cachedSession();
+      if(navigator.onLine===false&&cachedBefore){await changed(cachedBefore);return;}
       const {data, error} = await client.auth.getSession();
-      if (error) throw error;
+      if (error) {
+        const cached=WIBAuth.cachedSession()||cachedBefore,networkFailure=navigator.onLine===false||error.name==='AuthRetryableFetchError'||/fetch|network|timeout/i.test(error.message||'');
+        if(cached&&networkFailure){await changed(cached);return;}throw error;
+      }
       await changed(data.session);
   } catch { lock(false); status(userId?(navigator.onLine?'Account sign-in could not be checked. Refresh to retry.':'Offline — changes will stay on this device until you reconnect.'):'Saved on this device. Sign in when you want to sync.', userId?'bad':'neutral'); authStarting = false; }
   }
@@ -175,9 +180,9 @@
     };
     $('retryAccountLoadBtn').onclick = () => changed({user: {id: userId}});
     startAuth();
-    window.addEventListener('online', () => userId && (engine.ready ? engine.flush() : changed({user: {id: userId}})));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden && engine?.ready) engine.flush(); });
-    setInterval(() => { if (!document.hidden && engine?.ready) engine.flush(); }, 30000);
+    window.addEventListener('hv-reconnect', async () => {try { if(!userId){await startAuth();return;} const {error}=await WIBAuth.client().auth.getSession();if(error)throw error;await(engine.ready?engine.reconnect():changed({user:{id:userId}})); }catch{status('Account service unavailable. Saved information remains available.','neutral');}});
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && engine?.ready) engine.flush({scheduled:true}); });
+    setInterval(() => { if (!document.hidden && engine?.ready) engine.flush({scheduled:true}); }, 30000);
     window.addEventListener('beforeunload', e => { if (engine?.pending()) { e.preventDefault(); e.returnValue = ''; } });
   });
 })();

@@ -9,7 +9,7 @@
     if(coastline)return coastline;
     if(!coastlineRequest){
       if(Date.now()<nextCoastlineAttempt)throw Error('Coastline unavailable');
-      coastlineRequest=(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);try{const res=await fetch('data/water-land.json?v=health-water-20261003',{signal:controller.signal});if(!res.ok)throw Error('Coastline unavailable');coastline=G.landMask(await res.json());return coastline;}catch(error){nextCoastlineAttempt=Date.now()+60000;throw error;}finally{clearTimeout(timer);coastlineRequest=null;}})();
+      coastlineRequest=(async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);try{const res=await (window.HVNetwork ? HVNetwork.request : fetch)('data/water-land.json?v=health-water-20261003',{signal:controller.signal});if(!res.ok)throw Error('Coastline unavailable');coastline=G.landMask(await res.json());return coastline;}catch(error){nextCoastlineAttempt=Date.now()+60000;throw error;}finally{clearTimeout(timer);coastlineRequest=null;}})();
     }
     return coastlineRequest;
   }
@@ -24,7 +24,7 @@
   async function serviceJSON(url,signal,maxMs){
     if(signal?.aborted)throw new DOMException('Closed','AbortError');
     const controller=new AbortController(),abort=()=>controller.abort(),timer=setTimeout(abort,maxMs);signal?.addEventListener('abort',abort,{once:true});
-    try{const response=await fetch(url,{signal:controller.signal});if(!response.ok)throw Error('Route service unavailable');return await response.json();}
+    try{const response=await (window.HVNetwork ? HVNetwork.request : fetch)(url,{signal:controller.signal});if(!response.ok)throw Error('Route service unavailable');return await response.json();}
     finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
   }
   function airport(p){return G.point(p)||p?.manualAirport?p:{...HVJourneys.airportFor(p?.iata||p?.icao||p?.name||''),...p,lat:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lat,lon:HVJourneys.airportFor(p?.iata||p?.icao||p?.name||'')?.lon};}
@@ -112,6 +112,7 @@
     return fallback;
   }
   function route(type,start,end,signal,refreshToken=''){
+    if(window.HVNetwork?.state==='offline')return Promise.reject(new Error('Route calculation needs an internet connection. Saved routes are unchanged.'));
     if(signal.aborted)return Promise.reject(new DOMException('Closed','AbortError'));
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon,refreshToken]);if(cache.has(key))return Promise.resolve(cache.get(key));
     let pending=pendingRoutes.get(key);
@@ -175,7 +176,7 @@
     }
     return {refresh(){}};
   }
-  function savedRoute(record,index,type,start,end){const saved=R.get(record,index,type,start,end);return type==='boat'&&saved?.unavailable?null:saved;}
+  function savedRoute(record,index,type,start,end){const saved=R.get(record,index,type,start,end,window.HVNetwork?.state==='offline');return type==='boat'&&saved?.unavailable?null:saved;}
   function rememberRoute(record,index,type,start,end,result){
     const current=(state.transports||[]).find(t=>t.id===record.id);
     if(!current)return null;
@@ -183,12 +184,16 @@
     const a=current.type==='flight'?airport(leg?.start):leg?.start,b=current.type==='flight'?airport(leg?.end):leg?.end;
     if(!leg||routeType(current.type,current)!==type||R.signature(type,index,a,b)!==R.signature(type,index,start,end)||(current.routeRefreshToken||'')!==(record.routeRefreshToken||''))return null;
     // Failed ferry lookups are retryable, never permanent empty saved routes.
-    if(type==='boat'&&result.unavailable)return result;
+    const impaired=[...(window.HVNetwork?.failures||[])].some(([host,f])=>/overpass|openstreetmap/.test(host)&&Date.now()-f.at<120000&&['network','timeout','server','rate-limit'].includes(f.kind));
+    const previous=R.get(current,index,type,start,end,true);
+    if(result.unavailable||window.HVNetwork?.state==='offline')return previous||result;
+    if(impaired&&/^(Illustrative water|Direct water)/.test(result.label||'')&&previous?.coordinates?.length>=2&&!previous.unavailable)return previous;
     const saved=R.set(current,index,type,start,end,result);if(saved)persist();return saved||result;
   }
   function primeWaterRoute(record,index,start,end,signal,draw,report=()=>{}){
     waterFallback(start,end,signal).then(result=>{
-      if(signal.aborted||result.unavailable||savedRoute(record,index,'boat',start,end))return;
+      const previous=R.get(record,index,'boat',start,end,true);
+      if(signal.aborted||result.unavailable||previous?.coordinates?.length>=2&&!previous.unavailable)return;
       const stored=rememberRoute(record,index,'boat',start,end,result);if(stored){draw(stored.coordinates);report(stored.label+' · checking mapped routes…');}
     });
   }
@@ -234,7 +239,7 @@
       const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,r.start,r.end);
       if(saved){draw(saved.coordinates,type,i);status.textContent='Saved route · '+saved.label;continue;}
       if(r.type==='flight'){const stored=rememberRoute(r.record,legIndex,'flight',r.start,r.end,{coordinates:G.flightArc(r.start,r.end),label:'Flight connection'});if(stored){draw(stored.coordinates,'flight',i);status.textContent='Flight connection · saved';}continue;}
-      if(type==='boat')primeWaterRoute(r.record,legIndex,r.start,r.end,controller.signal,coords=>draw(coords,type,i),label=>status.textContent=label);const previous=R.get(r.record,legIndex,type,r.start,r.end,true);if(previous)draw(previous.coordinates,type,i);else if(type!=='boat')draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],type,i);status.textContent='Checking for a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),60000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
+      if(type==='boat'&&window.HVNetwork?.state!=='offline')primeWaterRoute(r.record,legIndex,r.start,r.end,controller.signal,coords=>draw(coords,type,i),label=>status.textContent=label);const previous=R.get(r.record,legIndex,type,r.start,r.end,true);if(previous)draw(previous.coordinates,type,i);else if(type!=='boat')draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],type,i);status.textContent='Checking for a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),60000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
       try{const result=await route(type,r.start,r.end,requestController.signal,r.record.routeRefreshToken||'');if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}
       catch{if(!controller.signal.aborted){const result=type==='boat'?await waterFallback(r.start,r.end,controller.signal):{coordinates:[[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],label:'Recorded stops joined by a straight line; route unavailable.',unavailable:true};if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}}
       finally{clearTimeout(timeout);controller.signal.removeEventListener('abort',abort);}
@@ -253,7 +258,7 @@
     function addPoint(p,r){if(!G.point(p))return;const position=[Number(p.lat),Number(p.lon)];bounds.push(position);points.push({position,r,type:r.type,label:r.type==='flight'?HVJourney.airportLabel(p):r.type==='accommodation'?'⌂':'•',name:p.name||r.record.propertyName||'Location'});}
     const routeLines=new Map();
     function draw(coords,r,label){const old=routeLines.get(r.key),selectedAt=old?.isPopupOpen()?old.getPopup().getLatLng():null;old?._routeCasing?.remove();old?.remove();if(coords.length<2){routeLines.delete(r.key);return;}const past=r.end&&r.end<today;routeLines.set(r.key,drawRoute(map,coords,routeType(r.type,r.record),{weight:past?1.2:1.6,opacity:past?.72:.95},HVJourneyUI.popup(r)));if(selectedAt)routeLines.get(r.key).openPopup(selectedAt);}
-    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,start,end);if(saved){draw(saved.coordinates,r,saved.label);if(saved.unavailable)unavailable++;}else if(r.type==='flight'){const stored=rememberRoute(r.record,legIndex,'flight',start,end,{coordinates:G.flightArc(start,end),label:'Flight connection'});if(stored)draw(stored.coordinates,r,stored.label);}else{if(type==='boat')primeWaterRoute(r.record,legIndex,start,end,controller.signal,coords=>draw(coords,r));const previous=R.get(r.record,legIndex,type,start,end,true);if(previous)draw(previous.coordinates,r,previous.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; checking mapped route');routes.push({r,start,end,type,legIndex});}}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
+    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,start,end);if(saved){draw(saved.coordinates,r,saved.label);if(saved.unavailable)unavailable++;}else if(r.type==='flight'){const stored=rememberRoute(r.record,legIndex,'flight',start,end,{coordinates:G.flightArc(start,end),label:'Flight connection'});if(stored)draw(stored.coordinates,r,stored.label);}else{if(type==='boat'&&window.HVNetwork?.state!=='offline')primeWaterRoute(r.record,legIndex,start,end,controller.signal,coords=>draw(coords,r));const previous=R.get(r.record,legIndex,type,start,end,true);if(previous)draw(previous.coordinates,r,previous.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; checking mapped route');routes.push({r,start,end,type,legIndex});}}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
     const pointSurface=pointLayer(map,points);
     const fit=()=>{map.invalidateSize();if(bounds.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:12,animate:false});pointSurface.refresh();};fit();
     const report=()=>{status.textContent=`${rows.length} entries · ${points.length} mapped stops${pending?' · Loading '+pending+' surface routes…':''}${unavailable?' · '+unavailable+' entries have missing positions or unavailable routes; recorded stops remain visible.':''}${rows.length?'':' · No matching records. Change the filters or add a journey.'}`;};pending=routes.length;report();
