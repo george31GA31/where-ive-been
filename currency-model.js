@@ -15,7 +15,7 @@
   }
   function money(value,code){try{return new Intl.NumberFormat('en-GB',{style:'currency',currency:code}).format(value);}catch{return Number(value).toFixed(2)+' '+code;}}
   const rateText=value=>new Intl.NumberFormat('en-GB',{minimumFractionDigits:2,maximumFractionDigits:6}).format(value);
-  async function reference(from,to,date='',{fetcher=root.fetch?.bind(root),today=new Date().toISOString().slice(0,10)}={}){
+  async function reference(from,to,date='',{fetcher=root.HVNetwork?.request||root.fetch?.bind(root),today=new Date().toISOString().slice(0,10)}={}){
     if(!/^[A-Z]{3}$/.test(from)||!/^[A-Z]{3}$/.test(to)||date&&(!validDate(date)||date>today))throw Error('Choose a valid currency pair and a date up to today.');
     if(from===to)return{base:from,quote:to,rate:1,date:date||today,source:'Same currency'};
     const key=[from,to,date||'latest-'+today].join(':'),saved=cache.get(key);

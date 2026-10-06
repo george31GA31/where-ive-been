@@ -4,7 +4,7 @@
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   let airlines=[],airlineLoad;
-  function loadAirlines(){return airlineLoad ||= fetch('data/airlines.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(r=>airlines=r).catch(()=>{airlineLoad=null;return [];});}
+  function loadAirlines(){return airlineLoad ||= (window.HVNetwork ? HVNetwork.request : fetch)('data/airlines.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(r=>airlines=r).catch(()=>{airlineLoad=null;return [];});}
   function toggle(form,flight){
     let host=form.querySelector('.flight-legs');
     if(!host){host=document.createElement('section');host.className='flight-legs';form.querySelector('.transport-basics').after(host);}

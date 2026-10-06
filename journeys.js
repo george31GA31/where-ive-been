@@ -209,7 +209,7 @@ HVTransportDetails.setup(form,t||prefill);get('transportDelete').hidden=!t;get('
     const colors=window.updateMapColors;window.updateMapColors=function(){colors();renderMap();};
     window.addEventListener('hv-route',()=>{render();renderCalendarExtras();for(const view of ['map','calendar'])get(view+'View')?.querySelectorAll('[data-layer]').forEach(input=>input.checked=layer(view)[input.dataset.layer]);});
     refresh();
-    for(const key of ['capitals',...Object.keys(J.categories)])fetch(new URL('data/'+key+'.json?v=flight-home-3',root)).then(r=>{if(!r.ok)throw Error(r.status);return r.json();}).then(data=>{catalog[key]=data;render();renderMap();if(key==='airports'){window.HVCalendar?.renderMonth();window.dispatchEvent(new Event('hv-airports-ready'));}}).catch(()=>{failures.add(key);render();});
+    for(const key of ['capitals',...Object.keys(J.categories)])(window.HVNetwork ? HVNetwork.request : fetch)(new URL('data/'+key+'.json?v=flight-home-3',root)).then(r=>{if(!r.ok)throw Error(r.status);return r.json();}).then(data=>{catalog[key]=data;render();renderMap();if(key==='airports'){window.HVCalendar?.renderMonth();window.dispatchEvent(new Event('hv-airports-ready'));}}).catch(()=>{failures.add(key);render();});
   }
   document.addEventListener('click',event=>{
     const trip=event.target.closest('[data-edit-trip]');if(trip){editTrip(trip.dataset.editTrip);return;}

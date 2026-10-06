@@ -8,15 +8,18 @@
   const distance=value=>value==null?'Distance unavailable':new Intl.NumberFormat('en-GB',{maximumFractionDigits:1}).format(value/1000)+' km';
   const duration=value=>{if(value==null)return'Driving time unavailable';const minutes=Math.round(value/60);return Math.floor(minutes/60)+' hr '+minutes%60+' min';};
   function scopedTrips(){return HVJourney.scoped(state.trips||[],draft.profileId);}
-  function initialise(){ensure();if(!draft||owner!==state.activeProfileId){owner=state.activeProfileId;draft=blank();message='';}}
-  function readFields(){const form=get('roadTripForm');if(!form||!draft)return;const f=form.elements;for(const k of ['name','startDate','endDate','status'])draft[k]=f[k].value;draft.tripId=f.tripId.value||null;draft.profileId=f.profileId.value;draft.noteBody=f.noteBody.value;draft.estimator={mode:f.energyMode.value,efficiency:f.efficiency.value,price:f.energyPrice.value,currency:f.energyCurrency.value};}
+  function draftKey(){return 'herald.roadDraft.v1.'+(window.WIBAuth?.cachedSession()?.user?.id||'guest')+'.'+state.activeProfileId;}
+  function keepDraft(){if(!draft)return;try{sessionStorage.setItem(draftKey(),JSON.stringify(draft));}catch{announce('Draft cannot be backed up on this device. Keep this page open or save the route.');}}
+  function initialise(){ensure();const next=draftKey();if(!draft||owner!==next){owner=next;draft=blank();try{const saved=JSON.parse(sessionStorage.getItem(next));if(saved?.stops?.length>=2)draft=saved;}catch{}message='';}}
+
+  function readFields(){const form=get('roadTripForm');if(!form||!draft)return;const f=form.elements;for(const k of ['name','startDate','endDate','status'])draft[k]=f[k].value;draft.tripId=f.tripId.value||null;draft.profileId=f.profileId.value;draft.noteBody=f.noteBody.value;draft.estimator={mode:f.energyMode.value,efficiency:f.efficiency.value,price:f.energyPrice.value,currency:f.energyCurrency.value};keepDraft();}
   function cleanup(){clearTimeout(timer);controller?.abort();busy=false;for(const b of bindings)b.cancel();bindings=[];if(map){map.remove();map=null;routeLayer=null;}}
   function announce(text){message=text;const host=get('roadTripMessage');if(host)host.textContent=text;}
-  function markRouteChanged(){controller?.abort();busy=false;clearTimeout(timer);renderRoute();if(draft.stops.every(M.positioned)&&draft.stops.length>1)timer=setTimeout(()=>calculate(),650);}
+  function markRouteChanged(){keepDraft();controller?.abort();busy=false;clearTimeout(timer);renderRoute();if(draft.stops.every(M.positioned)&&draft.stops.length>1)timer=setTimeout(()=>calculate(),650);}
   async function calculate(force=false){
-    readFields();clearTimeout(timer);controller?.abort();const own=new AbortController();controller=own;busy=true;renderRoute();announce('Calculating road route…');
+    readFields();clearTimeout(timer);if(window.HVNetwork?.state==='offline'){keepDraft();announce('Route calculation needs an internet connection. Your stops are kept on this tab and the saved route is unchanged.');return;}controller?.abort();const own=new AbortController();controller=own;busy=true;renderRoute();announce('Calculating road route…');
     const stops=copy(draft.stops),signature=M.signature(stops);
-    try{const route=await M.calculate(stops,{route:(type,a,b,signal)=>HVJourneyMap.route(type,a,b,signal,force?own._token||=(Date.now().toString(36)+Math.random()):''),signal:own.signal,previous:force?null:draft.route,onProgress:(done,total)=>{if(!own.signal.aborted)announce('Calculated '+done+' of '+total+' road legs.');}});if(own.signal.aborted||M.signature(draft.stops)!==signature)return;draft.route=route;announce('Road route ready. Save it to keep the exact geometry.');}
+    try{const route=await M.calculate(stops,{route:(type,a,b,signal)=>HVJourneyMap.route(type,a,b,signal,force?own._token||=(Date.now().toString(36)+Math.random()):''),signal:own.signal,previous:force?null:draft.route,onProgress:(done,total)=>{if(!own.signal.aborted)announce('Calculated '+done+' of '+total+' road legs.');}});if(own.signal.aborted||M.signature(draft.stops)!==signature)return;draft.route=route;keepDraft();announce('Road route ready. Save it to keep the exact geometry.');}
     catch(error){if(!own.signal.aborted)announce(error.message);}
     finally{if(controller===own){busy=false;renderRoute();}}
   }
@@ -61,9 +64,9 @@
     if(note){note.tripId=record.tripId||null;note.relatedType=record.linkedTransportId?'transport':null;note.relatedId=record.linkedTransportId||null;}
     const index=state.roadTrips.findIndex(r=>r.id===record.id);if(index<0)state.roadTrips.push(record);else state.roadTrips[index]=record;
     if(persist()===false){state=before;announce('The route could not be saved. Keep this page open and retry.');return false;}
-    draft={...copy(record),noteBody:note?.body||''};message=record.status==='idea'?'Saved as an idea.': 'Saved and '+(previous?.linkedTransportId?'updated':'added')+' in Calendar, Trips and Journey Map.';renderAll();renderPage();return true;
+    draft={...copy(record),noteBody:note?.body||''};keepDraft();message=record.status==='idea'?'Saved as an idea.': 'Saved and '+(previous?.linkedTransportId?'updated':'added')+' in Calendar, Trips and Journey Map.';renderAll();renderPage();return true;
   }
-  function open(id){ensure();const record=state.roadTrips.find(r=>r.id===id);if(!record)return;cleanup();owner=state.activeProfileId;draft={...copy(record),noteBody:state.notes.find(n=>n.id===record.notesId)?.body||''};message='';switchView('roadTrip');}
+  function open(id){ensure();const record=state.roadTrips.find(r=>r.id===id);if(!record)return;cleanup();owner=draftKey();draft={...copy(record),noteBody:state.notes.find(n=>n.id===record.notesId)?.body||''};message='';switchView('roadTrip');}
   function duplicate(record){cleanup();draft={...copy(record),id:null,name:record.name+' copy',status:'idea',tripId:null,linkedTransportId:null,notesId:null,noteBody:state.notes.find(n=>n.id===record.notesId)?.body||''};message='';renderPage();save();}
   function deleteRoute(record){if(!confirm('Delete '+record.name+'?'+(record.linkedTransportId?' Its linked car journey will be removed; other trip records and notes will be kept.':'')))return;M.unlink(state,record);state.roadTrips=state.roadTrips.filter(r=>r.id!==record.id);if(draft.id===record.id){draft=blank();cleanup();}persist();renderAll();message='Route deleted. Other travel records are kept.';renderPage();}
   function renderSaved(){

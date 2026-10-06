@@ -279,7 +279,7 @@
       try {
         // 50m provides a distinct Kosovo geometry; Natural Earth's Kosovo feature has no ISO numeric id,
         // so featureCode() explicitly maps its name to the app's XK code.
-        const response = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json');
+        const response = await (window.HVNetwork ? HVNetwork.request : fetch)('data/countries-50m.json');
         if (!response.ok) throw new Error('map');
         const world = await response.json();
         worldFeatures = topojson.feature(world, world.objects.countries).features;

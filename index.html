@@ -340,9 +340,10 @@
     </form>
   </dialog>
 
-  <script async src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script async src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script async src="vendor/d3.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script async src="vendor/topojson-client.min.js" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script defer src="vendor/supabase/supabase.min.js?v=2.57.4" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script src="network.js?v=offline-20261006"></script>
   <script src="account-config.js?v=rollback-20261001-1"></script>
   <script src="account-model.js?v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005&refinements=map-planner-20261006"></script>
   <script src="account-client.js?v=rollback-20261001-1"></script>

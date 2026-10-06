@@ -35,7 +35,7 @@
     const variants=[params];
     if(tags[context]){const focused=new URLSearchParams(params);tags[context].forEach(t=>focused.append('osm_tag',t));variants.unshift(focused);}
     const responses=await Promise.allSettled(variants.map(async p=>{
-      const res=await fetch('https://photon.komoot.io/api/?'+p,{signal,headers:{Accept:'application/json'}});
+      const res=await (root.HVNetwork ? root.HVNetwork.request : fetch)('https://photon.komoot.io/api/?'+p,{signal,headers:{Accept:'application/json'}});
       if(!res.ok)throw Error('Search unavailable');return ((await res.json()).features||[]).map(normalise).map(enrich);
     }));
     if(signal?.aborted)throw new DOMException('Search cancelled','AbortError');
@@ -45,7 +45,7 @@
     return rank([...saved,...matches],term,context);
   }
   async function reverse(lat,lon,signal){
-    const res=await fetch('https://photon.komoot.io/reverse?'+new URLSearchParams({lat,lon,limit:'1',lang:'en'}),{signal});
+    const res=await (root.HVNetwork ? root.HVNetwork.request : fetch)('https://photon.komoot.io/reverse?'+new URLSearchParams({lat,lon,limit:'1',lang:'en'}),{signal});
     if(!res.ok)throw Error('Address lookup unavailable');const feature=(await res.json()).features?.[0];return feature?enrich(normalise(feature)):null;
   }
   async function resolveCity(place,signal){
@@ -59,7 +59,7 @@
     const params=new URLSearchParams({lat:p.lat,lon:p.lon,radius:'50',limit:'20',lang:'en'});
     for(const type of ['city','town','village'])params.append('osm_tag','place:'+type);
     try{
-      const response=await fetch('https://photon.komoot.io/reverse?'+params,{signal,headers:{Accept:'application/json'}});
+      const response=await (root.HVNetwork ? root.HVNetwork.request : fetch)('https://photon.komoot.io/reverse?'+params,{signal,headers:{Accept:'application/json'}});
       if(!response.ok)return fallback;
       const settlements=((await response.json()).features||[]).filter(f=>{
         const v=f.properties||{};

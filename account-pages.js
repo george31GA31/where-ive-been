@@ -49,7 +49,7 @@
       el.addEventListener('submit', async event => {
         event.preventDefault(); const button = el.querySelector('button[type="submit"], button'); button.disabled = true;
         message('Please wait…');
-        try { await action(); } catch (error) { message(error.message || 'Something went wrong. Please try again.', true); }
+        try { if(navigator.onLine===false)throw new Error('Internet access is required for this account action. Please reconnect and retry.'); await action(); } catch (error) { message(error.message || 'Something went wrong. Please try again.', true); }
         finally { button.disabled = false; }
       });
     }
