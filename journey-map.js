@@ -187,12 +187,13 @@
     const impaired=[...(window.HVNetwork?.failures||[])].some(([host,f])=>/overpass|openstreetmap/.test(host)&&Date.now()-f.at<120000&&['network','timeout','server','rate-limit'].includes(f.kind));
     const previous=R.get(current,index,type,start,end,true);
     if(result.unavailable||window.HVNetwork?.state==='offline')return previous||result;
-    if(impaired&&/^(Illustrative water|Direct water)/.test(result.label||'')&&previous)return previous;
+    if(impaired&&/^(Illustrative water|Direct water)/.test(result.label||'')&&previous?.coordinates?.length>=2&&!previous.unavailable)return previous;
     const saved=R.set(current,index,type,start,end,result);if(saved)persist();return saved||result;
   }
   function primeWaterRoute(record,index,start,end,signal,draw,report=()=>{}){
     waterFallback(start,end,signal).then(result=>{
-      if(signal.aborted||result.unavailable||R.get(record,index,'boat',start,end,true))return;
+      const previous=R.get(record,index,'boat',start,end,true);
+      if(signal.aborted||result.unavailable||previous?.coordinates?.length>=2&&!previous.unavailable)return;
       const stored=rememberRoute(record,index,'boat',start,end,result);if(stored){draw(stored.coordinates);report(stored.label+' · checking mapped routes…');}
     });
   }
