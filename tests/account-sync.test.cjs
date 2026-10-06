@@ -12,6 +12,15 @@ class Storage {
   setItem(k,v) { this.items.set(k,v); }
   removeItem(k) { this.items.delete(k); }
 }
+class SizedStorage extends Storage {
+  constructor(limit) { super(); this.limit = limit; }
+  setItem(k,v) {
+    const next = new Map(this.items); next.set(k,v);
+    const size = [...next].reduce((total,[key,value]) => total + key.length + value.length, 0);
+    if (size > this.limit) throw new DOMException('Full','QuotaExceededError');
+    this.items = next;
+  }
+}
 function backend(initial = state()) {
   let remote = {payload:M.copy(initial),revision:1};
   const api = {
@@ -111,11 +120,17 @@ test('compact checkpoints retain empty arrays, duplicate IDs, scalar arrays and 
 test('a successfully downloaded account remains usable when device storage rejects every write',async()=>{
  const data=state(),api=backend(data),storage=new Storage();storage.setItem('whereIveBeen.beforeAccounts.v1','unchanged backup');storage.setItem('whereIveBeen.outbox.v1.B.other','other account');const before=[...storage.items];
  storage.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};const s=engine(api,storage);let shown;s.onData=d=>shown=d;await s.start('A',data);
- assert.equal(s.ready,true);assert.deepEqual(shown,data);assert.deepEqual(api.get(),data);assert.deepEqual([...storage.items],before);assert.match(s.statuses.at(-1)[0],/Saved to account.*Device storage is full/);assert.ok(!s.statuses.some(([message])=>message.includes('Could not load')));s.stop();
+ assert.equal(s.ready,true);assert.deepEqual(shown,data);assert.deepEqual(api.get(),data);assert.deepEqual([...storage.items],before);assert.deepEqual(s.statuses.at(-1),['Saved to account. Offline copy unavailable on this device.','neutral']);assert.ok(!s.statuses.some(([message])=>message.includes('Could not load')));s.stop();
 });
 test('device quota failure cannot block an online account save or erase retained recovery copies',async()=>{
  const api=backend(),storage=new Storage(),s=engine(api,storage);await s.start('A',state());const raw=storage.getItem(s.key());storage.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};
- const local=state();local.stays[0].notes='Saved online despite full device';s.edit(local);assert.equal(s.pending(),true);await s.flush();assert.equal(api.get().stays[0].notes,local.stays[0].notes);assert.equal(s.pending(),false);assert.equal(storage.getItem(s.key()),raw);assert.match(s.statuses.at(-1)[0],/Saved to account.*Device storage is full/);s.stop();
+ const local=state();local.stays[0].notes='Saved online despite full device';s.edit(local);assert.equal(s.pending(),true);await s.flush();assert.equal(api.get().stays[0].notes,local.stays[0].notes);assert.equal(s.pending(),false);assert.equal(storage.getItem(s.key()),raw);assert.deepEqual(s.statuses.at(-1),['Saved to account. Offline copy unavailable on this device.','neutral']);s.stop();
+});
+test('a confirmed cloud copy replaces a large legacy checkpoint without requiring room for both',async()=>{
+ const data=state();data.savedPlaces=[{id:'large',artwork:'x'.repeat(12000)}];const legacy=JSON.stringify({base:data,local:data,revision:1});
+ const storage=new SizedStorage(31000);storage.setItem('whereIveBeen.beforeAccounts.v1','r'.repeat(5000));storage.setItem('whereIveBeen.outbox.v1.A.old',legacy);
+ const s=engine(backend(data),storage,'new');await s.start('A',data);
+ assert.equal(storage.getItem('whereIveBeen.outbox.v1.A.old'),null);assert.equal(s.draft(storage.getItem(s.key())).local.savedPlaces[0].artwork.length,12000);assert.deepEqual(s.statuses.at(-1),['Saved to account','good']);s.stop();
 });
 test('offline quota failures retain pending memory data and recover only existing copies owned by the account',async()=>{
  const api=backend(),storage=new Storage(),s=engine(api,storage);await s.start('A',state());const raw=storage.getItem(s.key());api.fail=true;storage.setItem=()=>{throw new DOMException('Full','QuotaExceededError');};

@@ -65,7 +65,7 @@
       try { this.checkpoint(); return true; } catch { return false; }
     }
     savedStatus(cached) {
-      this.status(cached ? 'Saved to account' : 'Saved to account. Device storage is full; the offline backup could not be updated.', cached ? 'good' : 'bad');
+      this.status(cached ? 'Saved to account' : 'Saved to account. Offline copy unavailable on this device.', cached ? 'good' : 'neutral');
     }
     async start(id, empty) {
       this.stop(); this.user = id; const epoch = this.epoch;
@@ -151,7 +151,24 @@
       } finally { if (epoch === this.epoch) this.saving = false; }
     }
     clean(cached = this.cache()) {
-      // Keep every old recovery copy if the new checkpoint did not fit.
+      // Once the cloud has the complete state, an adopted legacy snapshot can be
+      // replaced in place. This avoids needing room for both the old two-copy
+      // format and the compact checkpoint during an upgrade.
+      if (!cached && !this.pending()) {
+        const removable = [];
+        for (const {key, raw} of this.adopted || []) {
+          if (this.storage.getItem(key) === raw) removable.push({key, raw});
+        }
+        for (const {key} of removable) this.storage.removeItem(key);
+        cached = this.cache();
+        if (!cached) {
+          // Preserve the newest usable recovery snapshot if compact storage is
+          // still impossible (for example, another immutable backup is large).
+          for (const {key, raw} of removable.reverse()) {
+            try { this.storage.setItem(key, raw); break; } catch {}
+          }
+        }
+      }
       if (!cached) return false;
       // Never delete a different tab's newer unsaved edits.
       for (const {key, raw} of this.adopted || []) {
