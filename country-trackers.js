@@ -6,7 +6,9 @@
   const today=()=>isoDate(new Date());
   const destinations=T.regions.flatMap(r=>r.destinations);
   const manual=code=>V.manualRows(state,today()).find(r=>r.countryCode===code);
-  const proven=()=>HVTravelHistory.history(state,today()).proven;
+  // Follow Herald's existing visited-country model, without treating a saved
+  // hotel or location as a duplicate country assertion that the Atlas lacks.
+  const proven=()=>HVJourney.summary({...state,manualCountryVisits:[]},today()).countries;
   let tracker;
   function commit(kind,destination,visited,details={}) {
     const key=kind==='tcc'?'tccVisits':'manualCountryVisits',before=JSON.parse(JSON.stringify(state[key]||[]));
