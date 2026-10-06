@@ -185,7 +185,9 @@
     if(!leg||routeType(current.type,current)!==type||R.signature(type,index,a,b)!==R.signature(type,index,start,end)||(current.routeRefreshToken||'')!==(record.routeRefreshToken||''))return null;
     // Failed ferry lookups are retryable, never permanent empty saved routes.
     const impaired=[...(window.HVNetwork?.failures||[])].some(([host,f])=>/overpass|openstreetmap/.test(host)&&Date.now()-f.at<120000&&['network','timeout','server','rate-limit'].includes(f.kind));
-    if(result.unavailable||window.HVNetwork?.state==='offline'||result.illustrative&&impaired)return R.get(current,index,type,start,end,true)||result;
+    const previous=R.get(current,index,type,start,end,true);
+    if(result.unavailable||window.HVNetwork?.state==='offline')return previous||result;
+    if(impaired&&/^(Illustrative water|Direct water)/.test(result.label||'')&&previous)return previous;
     const saved=R.set(current,index,type,start,end,result);if(saved)persist();return saved||result;
   }
   function primeWaterRoute(record,index,start,end,signal,draw,report=()=>{}){

@@ -16,8 +16,8 @@
       this.base=undefined;this.local=undefined;this.revision=0;this.adopted=[];this.retryAt=0;this.failures=0;
     }
     async read(id) {
-      const {data, error} = await this.client.from('travel_tracker_data').select('payload,revision').eq('user_id', id).maybeSingle();
-      if (error) throw error;
+      const {data, error, status} = await this.client.from('travel_tracker_data').select('payload,revision').eq('user_id', id).maybeSingle();
+      if (error) {if(status)error.status=status;throw error;}
       return {payload: data?.payload || {}, revision: Number(data?.revision || 0)};
     }
     async combine(base, local, remote) {
@@ -65,6 +65,7 @@
       try { this.checkpoint(); return true; } catch { return false; }
     }
     savedStatus(cached) {
+      this.failures=0;this.retryAt=0;
       this.status(cached ? 'Saved to account' : 'Saved to account. Offline copy unavailable on this device.', cached ? 'good' : 'neutral');
     }
     async start(id, empty) {
@@ -127,7 +128,6 @@
       try {
         for (let attempt = 0; attempt < 5; attempt++) {
           const remote = await this.read(id);
-          this.failures=0;this.retryAt=0;
           if (epoch !== this.epoch) return;
           const localBefore = M.copy(this.local);
           const combined = await this.combine(this.base, localBefore, remote.payload);
@@ -140,10 +140,10 @@
           if (M.equal(this.local, remote.payload)) { this.savedStatus(this.clean()); return; }
           const sent = M.copy(this.local);
           this.status('Saving…');
-          const {data, error} = await this.client.rpc('save_travel_account', {p_payload: sent, p_revision: remote.revision});
+          const {data, error, status} = await this.client.rpc('save_travel_account', {p_payload: sent, p_revision: remote.revision});
           if (epoch !== this.epoch) return;
           if (error?.code === '40001') continue;
-          if (error) throw error;
+          if (error) {if(status)error.status=status;throw error;}
           this.base = sent; this.revision = Number(data[0].revision);
           this.cache();
           if (M.equal(this.local, sent)) { this.savedStatus(this.clean()); return; }
