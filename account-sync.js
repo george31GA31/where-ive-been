@@ -111,8 +111,7 @@
     }
     edit(data) {
       if (!this.ready) throw new Error('Wait for your account to finish loading.');
-      const before=this.local;this.local = M.copy(data);
-      if(root.navigator?.onLine===false&&!this.cache()){this.local=before;throw new Error('This device cannot store more offline changes. Your previous data is safe. Keep your input and retry when connected.');}
+      this.local = M.copy(data);
       if (this.cache()) this.status(root.navigator?.onLine===false ? 'Saved on this device - changes waiting to sync' : 'Saving…');
       else this.status('Device storage is full. Keep this page open until your changes are saved to account.', 'bad');
       clearTimeout(this.timer); this.timer = setTimeout(() => this.flush({scheduled:true}), 650);
@@ -120,7 +119,7 @@
     flush({scheduled=false}={}) {
       if (this.saving) return this.flight;
       if (!this.ready) return Promise.resolve();
-      if(root.navigator?.onLine===false || scheduled && Date.now() < (this.retryAt||0)) { if(this.pending())this.status('Saved on this device - changes waiting to sync');return Promise.resolve(); }
+      if(root.navigator?.onLine===false || scheduled && Date.now() < (this.retryAt||0)) { if(this.pending()){const cached=this.cache();this.status(cached?'Saved on this device - changes waiting to sync':'Offline changes are held in this tab - waiting for account sync. Keep this page open.',cached?'neutral':'bad');}return Promise.resolve(); }
       return this.flight = this.performFlush();
     }
     async performFlush() {
