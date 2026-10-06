@@ -9,7 +9,7 @@
   }
   const canonical = value => JSON.stringify(stable(value));
   const equal = (a, b) => canonical(a) === canonical(b);
-  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
+  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
   function compatibleNotes(data) {
     if (data.notes == null || Array.isArray(data.notes)) return data;
     const result=copy(data);result.legacyTravelNotes??=copy(result.notes);
@@ -27,6 +27,23 @@
         return [...new Set([...maps[2].keys(),...maps[1].keys(),...maps[0].keys()])].map(id=>field(maps[0].get(id),maps[1].get(id),maps[2].get(id),path+'.'+id)).filter(row=>row!==undefined);
       }
       if (b && l && r && !Array.isArray(l) && typeof l === 'object' && typeof r === 'object') {
+        // Date and approximate year are alternative ways of recording one visit.
+        // Merge independent notes/counts normally, but resolve concurrent timing
+        // edits together so two devices cannot produce a contradictory date/year.
+        const visitRecord = (path.startsWith('manualCountryVisits.') && l.countryCode && r.countryCode)
+          || (path.startsWith('tccVisits.') && l.destinationId && r.destinationId);
+        if (visitRecord) {
+          const timing = row => ({date: row.date ?? null, year: row.year ?? null});
+          const bt = timing(b), lt = timing(l), rt = timing(r);
+          if (!equal(bt, lt) && !equal(bt, rt) && !equal(lt, rt)) {
+            const conflict = {path: path + '.visitTiming', local: lt, remote: rt};
+            conflicts.push(conflict);
+            const merged = Object.fromEntries([...new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)])]
+              .filter(k => k !== 'date' && k !== 'year')
+              .map(k => [k, field(b[k], l[k], r[k], path + '.' + k)]).filter(([, v]) => v !== undefined));
+            return {...merged, ...copy(resolve ? resolve(conflict) : rt)};
+          }
+        }
         return Object.fromEntries([...new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)])]
           .map(k => [k, field(b[k], l[k], r[k], path + '.' + k)]).filter(([, v]) => v !== undefined));
       }
@@ -57,12 +74,14 @@
       if (r.profileIds) r.profileIds.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'visaAcknowledgements']) {
+    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'visaAcknowledgements']) {
       result[key] ||= [];
       for (const original of source[key] || []) {
         const record = copy(original);
         if (record.profileId) record.profileId = profileIds.get(record.profileId) || record.profileId;
+        if (key === 'manualCountryVisits' || key === 'tccVisits') record.id = (key === 'manualCountryVisits' ? 'manual-country:' : 'tcc-visit:') + (record.profileId || 'shared') + ':' + (record.countryCode || record.destinationId);
         if (Array.isArray(record.profileIds)) record.profileIds=[...new Set(record.profileIds.map(id=>profileIds.get(id)||id))].sort();
+        if (key === 'savedPlaces' && Array.isArray(record.accommodationIds)) record.accommodationIds = record.accommodationIds.map(id => accommodationIds.get(id) || id);
         if (record.tripId) record.tripId = tripIds.get(record.tripId) || record.tripId;
         if (record.stayId) record.stayId = stayIds.get(record.stayId) || record.stayId;
         if (record.autoFromPlannedId) record.autoFromPlannedId = stayIds.get(record.autoFromPlannedId) || record.autoFromPlannedId;
@@ -96,7 +115,7 @@
   }
   function describeConflict(conflict,data={}) {
     const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
-    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
+    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',manualCountryVisits:'Manual country visit',tccVisits:'TCC destination',destinationId:'TCC destination',date:'Visit date',year:'Visit year',visitTiming:'Visit date or year',visited:'Visited',note:'Visit note',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
     const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
     const display=value=>{
       if(value===undefined)return 'Deleted';if(value===null||value==='')return 'Not recorded';
@@ -120,6 +139,13 @@
         ids.add(row.id);
         if(row.profileId!=null&&typeof row.profileId!=='string')throw new Error('Invalid traveller reference in '+key+'.');
         if(row.tripId!=null&&typeof row.tripId!=='string')throw new Error('Invalid trip reference in '+key+'.');
+        if(key==='manualCountryVisits'||key==='tccVisits'){
+          const V=typeof module!=='undefined'&&module.exports?require('./country-visit-model.js'):root.HVCountryVisits;
+          const error=V.validate(row,'9999-12-31');if(error)throw new Error(error);
+          if(key==='manualCountryVisits'&&(!/^[A-Z]{2,3}$/.test(row.countryCode||'')||row.countryCode==='SEA'))throw new Error('Check manual country visits.');
+          if(key==='tccVisits'&&!/^tcc-[a-z0-9-]+$/.test(row.destinationId||''))throw new Error('Check TCC destinations.');
+          if(row.visited!=null&&typeof row.visited!=='boolean')throw new Error('Check visited status.');
+        }
         if(key==='savedPlaces'&&(!row.place||typeof row.place.name!=='string'||!row.place.name.trim()))throw new Error('Check saved place details.');
         if(key==='transports'){
           const local=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'Z'))&&new Date(v+'Z').toISOString().slice(0,16)===v;

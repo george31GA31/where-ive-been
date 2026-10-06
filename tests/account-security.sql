@@ -5,9 +5,17 @@ insert into auth.users(id,aud,role) values
  ('00000000-0000-4000-8000-000000000002','authenticated','authenticated');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000001',true);
-select revision from public.save_travel_account('{"stays":[],"profiles":[],"residences":[]}',0);
+select revision from public.save_travel_account('{"stays":[],"profiles":[],"residences":[],"manualCountryVisits":[{"id":"manual-country:shared:JP","countryCode":"JP","visited":true}],"tccVisits":[{"id":"tcc-visit:shared:tcc-scotland","destinationId":"tcc-scotland","visited":true}],"savedPlaces":[{"id":"fixture-hotel","place":{"name":"Fixture hotel"},"accommodationLogo":{"src":"data:image/png;base64,AAAA","updatedAt":"2026-10-06T00:00:00Z"}}],"unknownFixtureField":{"preserve":true}}',0);
 do $$ begin
   if (select count(*) from public.travel_tracker_data) <> 1 then raise exception 'Owner cannot read data'; end if;
+  if (select payload->'manualCountryVisits'->0->>'countryCode' from public.travel_tracker_data) <> 'JP' then raise exception 'Manual country visit did not round-trip'; end if;
+  if (select payload->'tccVisits'->0->>'destinationId' from public.travel_tracker_data) <> 'tcc-scotland' then raise exception 'TCC visit did not round-trip'; end if;
+  if (select payload->'savedPlaces'->0->'accommodationLogo'->>'src' from public.travel_tracker_data) <> 'data:image/png;base64,AAAA' then raise exception 'Hotel logo did not round-trip'; end if;
+  if (select jsonb_array_length(payload->'stays') from public.travel_tracker_data) <> 0 then raise exception 'Tracker created travel history'; end if;
+  perform public.save_travel_account((select jsonb_set(payload,'{tccVisits}','[]') from public.travel_tracker_data),1);
+  if (select jsonb_array_length(payload->'tccVisits') from public.travel_tracker_data) <> 0 then raise exception 'TCC removal was not saved'; end if;
+  if (select jsonb_array_length(payload->'manualCountryVisits') from public.travel_tracker_data) <> 1 then raise exception 'TCC update changed normal visits'; end if;
+  if (select payload->'unknownFixtureField'->>'preserve' from public.travel_tracker_data) <> 'true' then raise exception 'Unknown data was lost'; end if;
   begin
     perform public.save_travel_account('{"stays":[],"profiles":[],"residences":[]}',0);
     raise exception 'Stale write was accepted';
@@ -35,5 +43,5 @@ do $$ begin
   exception when insufficient_privilege then null; end;
 end $$;
 reset role;
-select 'PASS: owner access, cross-user isolation, stale-write rejection and anonymous denial' as result;
+select 'PASS: owner access, additive trackers and logos, cross-user isolation, stale-write rejection and anonymous denial' as result;
 rollback;

@@ -79,11 +79,20 @@ let browser;
     await nav('tools').click();
     assert.ok(page.url().endsWith('#/travel-tools'));
     assert.equal(await page.locator('#toolsView .travel-tool-link').count(), 7);
-    assert.equal(await page.locator('#toolsView .workspace-tabs').count(), 0, 'The overview keeps a single restrained list of tools');
+    assert.equal(await page.locator('#toolsView .workspace-tabs').count(), 0, 'The overview keeps one restrained tool grid');
     assert.equal(await page.locator('[data-coming-tool]').count(), 0);
+    const columns=await page.locator('.travel-tool-links').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);
+    assert.equal(columns,width>1050?3:width>600?2:1,'Three desktop, two tablet and one mobile widget per row');
+    const widget=page.locator('.travel-tool-link').first();await page.keyboard.press('Tab');await widget.focus();
+    assert.equal(await widget.evaluate(el=>getComputedStyle(el).outlineStyle),'solid','Keyboard focus is visible');
+    assert.equal(await widget.evaluate(el=>getComputedStyle(el).cursor),'pointer');
+    await widget.evaluate(el=>el.blur());await page.mouse.move(0,0);
+    const beforeHover=await widget.evaluate(el=>getComputedStyle(el).borderTopColor);await widget.hover();
+    if(width>390){await page.waitForTimeout(180);assert.notEqual(await widget.evaluate(el=>getComputedStyle(el).borderTopColor),beforeHover,'Hover changes the card border');}
+
     await fits();
     await page.screenshot({ path: path.join(out, `tools-${width}-${theme}.png`), fullPage: true });
-    await page.locator('.travel-tool-link[href="#/travel-tools/notes"]').click();
+    await page.locator('.travel-tool-link[href="#/travel-tools/notes"]').click({position:{x:12,y:12}});
     assert.equal(await page.locator('#pageTitle').innerText(), 'Notes & Checklist');
     assert.equal(await page.locator('#notesView .workspace-tabs button').count(), 8);
     assert.ok(await page.locator('#newNoteBtn').isVisible());

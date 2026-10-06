@@ -2,6 +2,7 @@
 (function(root) {
   'use strict';
   const A=typeof module!=='undefined'&&module.exports?require('./address-display.js'):null;
+  const V=typeof module!=='undefined'&&module.exports?require('./country-visit-model.js'):null;
   const roman=value=>(A||root.HVAddress)?.text(value)||value;
   const categories = {buildings:'Tallest buildings', mountains:'Highest natural points', unesco:'UNESCO sites', airports:'Airports'};
   const types = {flight:'Flight',train:'Train',bus:'Bus / coach',boat:'Boat / ferry',car:'Car / taxi',walk:'Walking',other:'Other'};
@@ -11,6 +12,7 @@
     const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=today),countries=new Set(),days=new Set(),home=new Set(),trips=new Set();
     for(const stay of stays){for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||profileId;const atHome=!isTravelStay(state,stay,date,owner);(atHome?home:days).add(date);if(!atHome){if(!homeCountryCodes(state,owner,today).includes(stay.countryCode))countries.add(stay.countryCode);trips.add(stay.tripId||'stay:'+stay.id);}}}
     for(const p of (profileId==='all'?state.profiles:[{id:profileId}]))homeCountryCodes(state,p.id,today).forEach(c=>countries.add(c));
+    for(const code of (V||root.HVCountryVisits)?.manualCodes(state,today,profileId)||[]) countries.add(code);
     countries.delete('SEA');for(const date of days)home.delete(date);
     return {stays,countries,days,home,trips};
   };

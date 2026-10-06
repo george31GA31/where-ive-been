@@ -14,7 +14,7 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,'http://127
 let browser;
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
- browser=await chromium.launch({executablePath:await binary.executablePath(),args:binary.args.filter(a=>a!=='--single-process'),headless:true});
+ browser=await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH||await binary.executablePath(),args:binary.args.filter(a=>a!=='--single-process'),headless:true});
  for(const [width,theme] of [[390,'dark'],[1440,'light']]){
  let cloud=structuredClone(seed),revision=1,writes=0,reads=0;const context=await browser.newContext({viewport:{width,height:960}}),page=await context.newPage(),errors=[];
  page.setDefaultTimeout(30000);page.on('pageerror',e=>{errors.push(e.message);console.log('Fixture page error: '+e.message);});
