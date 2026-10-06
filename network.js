@@ -21,8 +21,10 @@
     try{
       // Include body consumption in the deadline, not just response headers.
       const response=await root.fetch(input,{...options,signal:controller.signal});
-      if(response.ok){if([204,205].includes(response.status))return response;const bytes=await response.arrayBuffer();failures.delete(service);if(state==='reconnecting'){update('restored');clearTimeout(hideTimer);hideTimer=setTimeout(()=>update('online'),3500);}return new Response(bytes,{status:response.status,statusText:response.statusText,headers:response.headers});}
-      failures.set(service,{kind:classify(null,response.status),at:Date.now()});return response;
+      if([204,205].includes(response.status))return response;
+      const bytes=await response.arrayBuffer(),buffered=new Response(bytes,{status:response.status,statusText:response.statusText,headers:response.headers});
+      if(response.ok){failures.delete(service);if(state==='reconnecting'){update('restored');clearTimeout(hideTimer);hideTimer=setTimeout(()=>update('online'),3500);}return buffered;}
+      failures.set(service,{kind:classify(null,response.status),at:Date.now()});return buffered;
     }catch(error){
       if(timedOut){error=new Error('The service took too long to respond. Your saved information is unchanged.');error.name='TimeoutError';}
       const kind=classify(error);if(kind!=='cancelled'&&kind!=='programming')failures.set(service,{kind,at:Date.now()});
