@@ -1,0 +1,30 @@
+name: Verify published Herald Voyages
+
+on:
+  push:
+    branches: ["verify/v1-production-20261007"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production:
+    name: Published assets and Chrome
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out verified release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install pinned test dependencies
+        run: npm ci --ignore-scripts
+      - name: Validate verification script
+        run: node --check tests/production-smoke.cjs
+      - name: Verify deployed hashes, UI and guest records
+        run: node tests/production-smoke.cjs
+      - name: Retain production verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-verification
+          path: test-results/production/
