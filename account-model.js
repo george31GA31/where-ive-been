@@ -8,7 +8,20 @@
     return value;
   }
   const canonical = value => JSON.stringify(stable(value));
-  const equal = (a, b) => canonical(a) === canonical(b);
+  // JSON records can be compared without building two sorted copies of every
+  // logo and coordinate array. Keep JSON's treatment of missing values.
+  function equal(a, b) {
+    if (a === b) return true;
+    if (a == null || b == null || typeof a !== 'object' || typeof b !== 'object') {
+      const jsonNull = v => v === null || typeof v === 'number' && !Number.isFinite(v);
+      return jsonNull(a) && jsonNull(b);
+    }
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    if (Array.isArray(a)) return a.length === b.length && a.every((v, i) => equal(v === undefined ? null : v, b[i] === undefined ? null : b[i]));
+    const keys = value => Object.keys(value).filter(k => value[k] !== undefined && typeof value[k] !== 'function' && typeof value[k] !== 'symbol');
+    const left = keys(a), right = keys(b);
+    return left.length === right.length && left.every(k => Object.hasOwn(b, k) && equal(a[k], b[k]));
+  }
   const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
   function compatibleNotes(data) {
     if (data.notes == null || Array.isArray(data.notes)) return data;
@@ -54,9 +67,12 @@
     const result = {};
     for (const key of new Set([...Object.keys(base), ...Object.keys(local), ...Object.keys(remote)])) {
       if (collections.has(key)) {
-        const b = new Map((base[key] || []).map(x => [x.id, x]));
-        const l = new Map((local[key] || []).map(x => [x.id, x]));
-        const r = new Map((remote[key] || []).map(x => [x.id, x]));
+        if (![base[key],local[key],remote[key]].every(rows=>rows==null||Array.isArray(rows))) {result[key]=field(base[key],local[key],remote[key],key);continue;}
+        const index = rows => {
+          const seen=new Set();
+          return new Map((rows||[]).map((row,i)=>{const id=row?.id;const unique=typeof id==='string'&&!seen.has(id);seen.add(id);return[unique?id:'\u0000legacy:'+i,row];}));
+        };
+        const b = index(base[key]), l = index(local[key]), r = index(remote[key]);
         result[key] = [...new Set([...r.keys(), ...l.keys(), ...b.keys()])]
           .map(id => field(b.get(id), l.get(id), r.get(id), key + '.' + id)).filter(x => x !== undefined);
       } else result[key] = field(base[key], local[key], remote[key], key);
@@ -76,6 +92,16 @@
     };
     for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'visaAcknowledgements']) {
       result[key] ||= [];
+      // Index each existing record once. The old startup preview repeatedly
+      // signed entire records, making logo/route comparisons quadratic.
+      const ids = new Map(), signatures = new Map();
+      const add = (record, index) => {
+        ids.set(record.id, index);
+        const sig = signature(record);
+        if (!signatures.has(sig)) signatures.set(sig, new Set());
+        signatures.get(sig).add(index);
+      };
+      result[key].forEach(add);
       for (const original of source[key] || []) {
         const record = copy(original);
         if (record.profileId) record.profileId = profileIds.get(record.profileId) || record.profileId;
@@ -91,16 +117,20 @@
         const references={transport:transportIds,accommodation:accommodationIds,country:stayIds,location:locationIds};
         if(record.relatedId&&references[record.relatedType])record.relatedId=references[record.relatedType].get(record.relatedId)||record.relatedId;
         if(record.sourceId&&references[record.sourceType])record.sourceId=references[record.sourceType].get(record.sourceId)||record.sourceId;
-        const same = result[key].find(x => x.id === record.id);
-        const duplicate = result[key].find(x => signature(x) === signature(record));
+        const sameIndex = ids.get(record.id), same = result[key][sameIndex];
+        const matches = signatures.get(signature(record));
+        const duplicate = matches?.size ? result[key][Math.min(...matches)] : null;
         const mapping = {profiles:profileIds,trips:tripIds,stays:stayIds,transports:transportIds,accommodations:accommodationIds,placeVisits:locationIds,budgets:budgetIds,notes:noteIds}[key];
         if (duplicate) { mapping?.set(original.id, duplicate.id); continue; }
         if (same) {
           const conflict = {path: key + '.' + record.id, local: record, remote: same};
           conflicts.push(conflict);
-          if (resolve) result[key][result[key].indexOf(same)] = copy(resolve(conflict));
+          if (resolve) {
+            signatures.get(signature(same)).delete(sameIndex); ids.delete(same.id);
+            result[key][sameIndex] = copy(resolve(conflict)); add(result[key][sameIndex], sameIndex);
+          }
           mapping?.set(original.id, same.id);
-        } else { result[key].push(record); mapping?.set(original.id, record.id); }
+        } else { result[key].push(record); add(record, result[key].length - 1); mapping?.set(original.id, record.id); }
       }
     }
     for(const original of source.stays||[]){if(original.source==='accommodation'&&original.sourceAccommodationId){const imported=result.stays.find(s=>s.id===(stayIds.get(original.id)||original.id));if(imported)imported.sourceAccommodationId=accommodationIds.get(original.sourceAccommodationId)||original.sourceAccommodationId;}}

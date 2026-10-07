@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
 </head>
-<body>
+<body data-current-view="dashboard">
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
   <div class="app-shell">
     <aside class="sidebar">
@@ -340,14 +340,17 @@
     </form>
   </dialog>
 
-  <script async src="vendor/d3.min.js?offline=20261006" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script async src="vendor/topojson-client.min.js?offline=20261006" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script defer src="vendor/supabase/supabase.min.js?v=2.57.4&offline=20261006" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
-  <script src="network.js?v=offline-20261006&offline=20261006"></script>
-  <script src="account-config.js?v=rollback-20261001-1&offline=20261006"></script>
-  <script src="account-model.js?trackers=20261006&v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005&refinements=map-planner-20261006&offline=20261006"></script>
-  <script src="account-client.js?v=rollback-20261001-1&offline=20261006"></script>
-  <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&offline=20261006"></script>
-  <script src="app.js?trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&offline=20261006"></script>
+  <script async src="vendor/d3.min.js?performance=20261007&offline=20261006" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script async src="vendor/topojson-client.min.js?performance=20261007&offline=20261006" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script defer src="vendor/supabase/supabase.min.js?v=2.57.4&performance=20261007&offline=20261006" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
+  <script src="network.js?v=offline-20261006&performance=20261007&offline=20261006"></script>
+  <script src="account-config.js?v=rollback-20261001-1&performance=20261007&offline=20261006"></script>
+  <script src="account-model.js?trackers=20261006&v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005&refinements=map-planner-20261006&performance=20261007&offline=20261006"></script>
+  <script src="account-records.js?v=performance-20261007"></script>
+  <script src="account-cache.js?v=performance-20261007"></script>
+  <script src="account-diagnostics.js?v=performance-20261007"></script>
+  <script src="account-client.js?v=rollback-20261001-1&performance=20261007&offline=20261006"></script>
+  <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006"></script>
+  <script src="app.js?trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006"></script>
 </body>
 </html>

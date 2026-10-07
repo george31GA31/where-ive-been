@@ -3,8 +3,13 @@
   'use strict';
   const E=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const names=codes=>codes.map(code=>countryByCode(code)?.name||code).join(', ');
+  let cache;
   function cards(data,today) {
-    const stats=HVTravelHistory.calculate(data,today,data.activeProfileId,WIBCountryCount.isCounted);
+    const omitted=new Set(['notes','body','resolvedRoutes','geometry','coordinates','polyline','src','artwork','logoDraft']);
+    const relevant=['activeProfileId','stays','trips','transports','accommodations','placeVisits','profiles','residences','manualCountryVisits','excludedCountryCodes','countryCountExcludedCodes','countryCountIncludedExtraCodes'];
+    const signature=JSON.stringify([today,Object.fromEntries(relevant.map(key=>[key,data[key]]))],(key,value)=>omitted.has(key)?undefined:value);
+    if(cache?.signature!==signature){const started=performance.now();cache={signature,stats:HVTravelHistory.calculate(data,today,data.activeProfileId,WIBCountryCount.isCounted)};window.HVAccountDiagnostics?.record('statistics calculated',{elapsed:Math.round(performance.now()-started)});}
+    const stats=cache.stats;
     const date=value=>new Date(value+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
     const dayCount=n=>n+' '+(n===1?'day':'days');
     const month=stats.mostMonth,year=stats.mostYear,longest=stats.longest,last=stats.lastNew;

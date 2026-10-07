@@ -13,6 +13,7 @@
   let dateAction = '';
   let planner = null;
   let plannerDialog = null;
+  let journeyCache;
 
   const today = () => isoDate(new Date());
   const localDate = value => String(value || '').slice(0, 10);
@@ -55,6 +56,10 @@
   }
 
   function buildJourneys() {
+    const lists=[state.trips,state.stays,state.accommodations,state.transports,state.profiles,state.residences];
+    const omitted=new Set(['notes','body','resolvedRoutes','geometry','coordinates','polyline','src','artwork','logoDraft']);
+    const stamp=JSON.stringify([state.activeProfileId,today(),lists],(key,value)=>omitted.has(key)?undefined:value);
+    if(journeyCache?.stamp===stamp&&lists.every((rows,i)=>(rows||[]).length===journeyCache.rows[i].length&&(rows||[]).every((row,j)=>row===journeyCache.rows[i][j])))return journeyCache.groups;
     const groups = new Map();
     const trips = scoped(state.trips || []);
     const knownTrips = new Map(trips.map(trip => [trip.id, trip]));
@@ -94,7 +99,7 @@
       (group || createGroup(groups, transportKey(transport.id))).transports.push(transport);
     }
 
-    return [...groups.values()].map(group => {
+    const result = [...groups.values()].map(group => {
       group.stays.sort((a, b) => a.start.localeCompare(b.start) || Number(a.tripOrder || 0) - Number(b.tripOrder || 0) || a.end.localeCompare(b.end));
       group.transports.sort((a, b) => String(a.startLocal).localeCompare(String(b.startLocal)));
       group.accommodations.sort((a, b) => String(a.checkIn).localeCompare(String(b.checkIn)));
@@ -113,6 +118,8 @@
       group.countries = [...new Set(group.stays.filter(stay => stay.countryCode !== 'SEA').map(stay => stay.countryCode))];
       return group;
     }).sort((a, b) => (a.start || '9999-12-31').localeCompare(b.start || '9999-12-31'));
+    journeyCache={stamp,rows:lists.map(rows=>[...(rows||[])]),groups:result};
+    return result;
   }
 
   function groupsForDate(date, groups, layers) {
@@ -149,6 +156,7 @@
   }
 
   function renderMonth() {
+    if(document.body.dataset.currentView && document.body.dataset.currentView !== 'calendar')return;
     const calendar = $('calendar');
     if (!calendar) return;
     calendar.dataset.journeyCalendar = 'true';
