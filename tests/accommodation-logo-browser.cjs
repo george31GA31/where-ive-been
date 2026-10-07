@@ -60,8 +60,8 @@ let browser;
     // Native cancellation must not create artwork or a saved place.
     const cancelEvent=page.waitForEvent('filechooser');width===390?await button.tap():await button.click();const cancelled=await cancelEvent;await cancelled.setFiles([]);
     assert.equal(await page.evaluate(snapshot),JSON.stringify(before));
-    for(const [kind,w,h]of [['square',80,80],['wide',200,50],['tall',50,200]]){
-      const source=await page.evaluate(({w,h})=>{const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.fillStyle='#d02040';ctx.fillRect(0,0,w,h);return c.toDataURL('image/png');},{w,h});
+    for(const [kind,w,h]of [['square',80,80],['wide',200,50],['tall',50,200],['transparent',80,80]]){
+      const source=await page.evaluate(({w,h,kind})=>{const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d');ctx.fillStyle='#d02040';ctx.fillRect(0,0,w,h);if(kind==='transparent')ctx.clearRect(w/4,h/4,w/2,h/2);return c.toDataURL('image/png');},{w,h,kind});
       if(kind!=='square'){
         width===390?await button.tap():await button.click();await popup.locator('[data-hotel-logo-replace]').waitFor();
         const menu=await popup.locator('[role=menu]').boundingBox(),control=await button.boundingBox();
@@ -82,10 +82,10 @@ let browser;
       assert.equal(await popup.innerText(),text);
       const measured=await button.locator('img').evaluate(async img=>{
         await img.decode();const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);const pixels=ctx.getImageData(0,0,c.width,c.height).data;
-        let minX=128,minY=128,maxX=-1,maxY=-1;for(let y=0;y<128;y++)for(let x=0;x<128;x++){const i=(y*128+x)*4;if(pixels[i+1]<240){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}}
-        return {width:img.naturalWidth,height:img.naturalHeight,bounds:[minX,minY,maxX-minX+1,maxY-minY+1],corner:[...pixels.slice(0,4)],fit:getComputedStyle(img).objectFit,background:getComputedStyle(img).backgroundColor,box:[img.width,img.height]};
+        let minX=128,minY=128,maxX=-1,maxY=-1;for(let y=0;y<128;y++)for(let x=0;x<128;x++){const i=(y*128+x)*4;if(pixels[i+3]&&pixels[i+1]<240){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}}
+        return {width:img.naturalWidth,height:img.naturalHeight,bounds:[minX,minY,maxX-minX+1,maxY-minY+1],corner:[...pixels.slice(0,4)],centerAlpha:pixels[(64*128+64)*4+3],fit:getComputedStyle(img).objectFit,background:getComputedStyle(img).backgroundColor,box:[img.width,img.height]};
       });
-      assert.deepEqual([measured.width,measured.height],[128,128]);assert.deepEqual(measured.bounds,kind==='square'?[8,8,112,112]:kind==='wide'?[8,50,112,28]:[50,8,28,112]);assert.deepEqual(measured.corner,[255,255,255,255]);assert.deepEqual(measured.box,[60,60]);assert.equal(measured.fit,'contain');assert.equal(measured.background,'rgb(255, 255, 255)');
+      assert.deepEqual([measured.width,measured.height],[128,128]);assert.deepEqual(measured.bounds,['square','transparent'].includes(kind)?[8,8,112,112]:kind==='wide'?[8,50,112,28]:[50,8,28,112]);assert.deepEqual(measured.corner,[0,0,0,0]);assert.equal(measured.centerAlpha,kind==='transparent'?0:255);assert.deepEqual(measured.box,[60,60]);assert.equal(measured.fit,'contain');assert.equal(measured.background,'rgb(255, 255, 255)');
       const saved=JSON.parse(await page.evaluate(snapshot));assert.deepEqual({...saved,savedPlaces:before.savedPlaces},before,'Only the shared location artwork is added');assert.equal(saved.savedPlaces.length,1);
       assert.equal(await page.evaluate(()=>HVAccommodationLogos.logo(state,'repeat')===HVAccommodationLogos.logo(state,'first')),true);assert.equal(await page.evaluate(()=>HVAccommodationLogos.logo(state,'other')),null);
       await popup.screenshot({path:path.join(out,`${kind}-${width}-${theme}.png`)});

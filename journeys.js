@@ -63,6 +63,7 @@
     }).join('');
   }
   function renderCalendarExtras(){
+    if(document.body.dataset.currentView && document.body.dataset.currentView !== 'calendar')return;
     if(get('calendar')?.dataset.journeyCalendar==='true'){window.HVCalendar?.renderMonth?.();renderYear();renderTransportList();return;}
     const show=layer('calendar');get('calendarView')?.classList.toggle('hide-calendar-countries',!show.countries);
     get('calendar')?.querySelectorAll('[data-calendar-date]').forEach(day=>{
@@ -153,7 +154,7 @@ HVTransportDetails.setup(form,t||prefill);get('transportDelete').hidden=!t;get('
     HVTransportDetails.finish(form,t);
   }
   function refresh(){renderAll();render();renderCalendarExtras();renderTimeline();}
-  function render(){if(!ready)return;renderPersonalPlaces();renderAchievements();renderYear();renderTransportList();if(document.body.dataset.currentView==='country'||location.hash.includes('/country/'))renderCountry();renderHomeSummary();renderMapSelection();}
+  function render(){if(!ready)return;const view=document.body.dataset.currentView;if(view==='places')renderPersonalPlaces();if(view==='stats')renderAchievements();if(view==='calendar'){renderYear();renderTransportList();}if(view==='country'||location.hash.includes('/country/'))renderCountry();if(view==='profiles'||view==='homes')renderHomeSummary();if(view==='map')renderMapSelection();}
   function renderPersonalPlaces(){
     const host=get('personalPlaces');if(!host)return;
     const visits=J.scoped(state.placeVisits,state.activeProfileId).filter(v=>v.status!=='not-recorded');

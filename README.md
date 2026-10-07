@@ -113,3 +113,12 @@ away, time since the last dated first country visit, new countries this year and
 unique countries visited this year. One read-only history engine applies the home
 classification, date precision, unique-day counting and today cutoff to all six.
 See [calculation, preservation and regression details](tests/TRACKERS-REVIEW.md).
+
+### Account startup and recovery performance
+
+Account startup renders the active page, shares concurrent account loads, and
+keeps import previews off Home. Account recovery checkpoints use an atomic,
+verified IndexedDB outbox with exact logo pooling and legacy-storage fallback.
+Idle sync checks only the account revision. Retry revalidates Auth and reconciles
+saved edits through one controlled attempt; display defaults do not become edits.
+See [profiling, preservation, diagnostics and test details](tests/PERFORMANCE-REVIEW.md).

@@ -82,7 +82,6 @@
       const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('This image could not be prepared.');
-      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,128,128);
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
       const scale = Math.min(112 / width, 112 / height), w = width * scale, h = height * scale;
       ctx.drawImage(image,(128-w)/2,(128-h)/2,w,h);
@@ -96,7 +95,7 @@
   const defaultIcon = '<svg class="herald-stay-icon" viewBox="0 0 16 16" aria-hidden="true"><path d="'+housePath+'"/></svg>';
   let openControl;
   const current = () => typeof state === 'undefined' ? null : state;
-  function artwork(src) {return src ? `<img class="herald-hotel-logo" src="${E(src)}" alt="" width="18" height="18">` : defaultIcon;}
+  function artwork(src) {return src ? `<img class="herald-hotel-logo" src="${E(src)}" alt="" width="18" height="18" loading="lazy" decoding="async">` : defaultIcon;}
   function label(record, src) {return (src ? 'Change hotel logo for ' : 'Upload hotel logo for ') + (record?.propertyName || record?.place?.name || 'this accommodation');}
   function icon(record) {
     const src = logo(current(), record.id);
@@ -114,6 +113,7 @@
       const id = button.dataset.hotelLogo, src = logo(current(),id), record = current()?.accommodations?.find(r => r.id === id);
       if (src) {
         const img = document.createElement('img'); img.className = 'herald-hotel-logo'; img.src = src;
+        img.loading='lazy';img.decoding='async';
         img.alt = ''; img.width = img.height = 18; button.replaceChildren(img);
       } else {
         const svg = document.createElementNS('http://www.w3.org/2000/svg','svg'), path = document.createElementNS('http://www.w3.org/2000/svg','path');

@@ -6,6 +6,7 @@
   let query='',mapSurface,timer,range={from:'',to:''};
   function render(preserveMap=false){
     if(!preserveMap){mapSurface?.remove();mapSurface=null;}
+    if(document.body.dataset.currentView!=='journeys')return;
     const page=$('journeysView'),host=$('journeyLibraryRecords');if(!host||!window.HVCalendar?.journeyGroups)return;
     const prefs=HVGlobalJourney.preferences(state),today=isoDate(new Date()),term=query.trim().toLowerCase(),groups=HVCalendar.journeyGroups();
     page.querySelectorAll('[data-journey-period]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.journeyPeriod===prefs.period)));

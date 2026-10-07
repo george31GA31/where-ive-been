@@ -421,7 +421,7 @@
       mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.insertBefore(target,q('.herald-site-footer',host));target.classList.add('active');}
     };
     const previous=window.switchView;
-    window.switchView=function(view,{replaceRoute=false}={}){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view,replaceRoute);window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
+    window.switchView=function(view,{replaceRoute=false}={}){window.HVPages.mount(view);previous(view);applyViewChrome(view);setRoute(view,replaceRoute);window.renderAll();if(['stats','countries','calendar'].includes(view))renderAtlas();window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));};
     window.HVPages.mount(routeFromHash()||'dashboard');
   }
 
@@ -484,6 +484,10 @@
   }
   function renderAtlas() {
     if(!$('atlasOverview'))return;
+    const view=document.body.dataset.currentView;
+    if(view==='countries'){renderDirectory();return;}
+    if(view==='calendar'){window.HVJourneys?.render();return;}
+    if(view && !['dashboard','stats'].includes(view))return;
     const {universe,visited,percent}=atlasCoverage(),records=atlasRecords(),todayDate=isoDate(new Date()),all=staysForProfile().filter(countsForPlanning).filter(s=>HVJourney.isTravelStay(state,s));const current=all.find(s=>s.start<=todayDate&&s.end>=todayDate),next=all.filter(s=>s.status==='planned'&&s.start>todayDate).sort((a,b)=>a.start.localeCompare(b.start))[0],recent=[...records].sort((a,b)=>b.start.localeCompare(a.start))[0],featured=current||next||recent,featuredLabel=current?'CURRENT TRIP':next?'NEXT TRIP':'MOST RECENT TRIP';const members=featured?.tripId?staysForProfile().filter(s=>s.tripId===featured.tripId&&s.status!=='cancelled'):[featured].filter(Boolean),featuredDates=members.flatMap(s=>[s.start,s.end]).sort();
     const regions=HVAtlas.progress(universe,new Set(visited.map(c=>c.code))),continents=new Set(records.map(s=>HVAtlas.region(s.countryCode)).filter(r=>r!=='Other locations'));
     const today=isoDate(new Date()),year=today.slice(0,4),thisYear=new Set(records.filter(s=>s.start<=`${year}-12-31`&&s.end>=`${year}-01-01`).map(s=>s.countryCode).filter(c=>c!=='SEA'));
@@ -495,6 +499,7 @@
     const summary=HVJourney.summary(state,todayDate);
     if($('recordedTripCount'))$('recordedTripCount').textContent=summary.trips.size;
     $('schengenRemaining').closest('.stat-card').hidden=isSchengenExemptProfile()||!staysForProfile().some(s=>countsForPlanning(s)&&SCHENGEN.has(s.countryCode));
+    if(view==='dashboard')return;
     const counts=new Map();records.forEach(s=>{if(!counts.has(s.countryCode))counts.set(s.countryCode,{days:new Set(),trips:0});const c=counts.get(s.countryCode);datesForStay(s,null,today).filter(d=>HVJourney.isTravelStay(state,s,d)).forEach(d=>c.days.add(d));c.trips++;});
     const sorted=[...counts].sort((a,b)=>b[1].days.size-a[1].days.size);const max=sorted[0]?.[1].days.size||1;
     $('atlasStatistics').innerHTML=`<div class="atlas-stats-heading"><p class="eyebrow">YOUR TRAVEL AT A GLANCE</p><h2>${visited.length?`${visited.length} ${visited.length===1?'country':'countries'} explored`:'Your story starts with one trip'}</h2><p>${visited.length?`${percent}% of your selected country definition · ${HVJourneyUI.count(summary.trips.size,'recorded trip')} · `:''}${escapeHtml(activeProfile().name)} · your recorded travel</p></div>${window.HVTravelStats?.cards(state,todayDate)||''}<article class="panel"><div class="panel-head"><h2>Travel days by country</h2><span>Excludes home days · overlapping dates counted once per country</span></div>${sorted.length?sorted.map(([code,c])=>`<div class="atlas-rank"><strong>${escapeHtml(countryByCode(code)?.name||code)}</strong><div><span style="width:${c.days.size/max*100}%"></span></div><span>${HVJourneyUI.count(c.days.size,'day')} · ${HVJourneyUI.count(c.trips,'stay')}</span></div>`).join(''):'<p class="empty-state">Your travel statistics will appear after you add your first trip.</p>'}</article>`;
@@ -504,7 +509,6 @@
     const regionPanel=document.createElement('article');regionPanel.className='panel atlas-region-panel';regionPanel.innerHTML=`<div class="panel-head"><h2>Continents explored</h2><span>${continents.size} visited · your country definition</span></div><div class="atlas-regions">${regions.map(r=>`<div><strong>${r.name}</strong><span>${r.visited} / ${r.total} countries</span><div class="atlas-coverage-bar" style="--coverage:${r.total?r.visited/r.total*100:0}%"></div></div>`).join('')}</div><p class="helper">Russia is grouped with Europe; Turkey, Cyprus and the Caucasus with Asia. Antarctica can be recorded as a place even when excluded from your country count.</p>`;$('atlasStatistics').append(regionPanel);
     const shared=document.createElement('details');shared.className='panel journey-accordion';const everyone=HVJourney.summary(state,today,'all');shared.innerHTML=`<summary>All travellers summary</summary><p>${[...everyone.countries].filter(WIBCountryCount.isCounted).length} countries · ${HVJourneyUI.count(everyone.days.size,'travel date')} · ${HVJourneyUI.count(everyone.trips.size,'recorded trip')}</p><p class="helper">Combined completed history for all travellers. Each date counts once; a date is travel if any traveller was away from their own home. Individual passport tools use the traveller selected above.</p>`;$('atlasStatistics').append(shared);
     if(!$('atlasYear').hidden){const activeYear=typeof calendarCursor!=='undefined'?calendarCursor.getUTCFullYear():Number(year);$('atlasYear').innerHTML=Array.from({length:12},(_,m)=>{const prefix=`${activeYear}-${String(m+1).padStart(2,'0')}`,days=new Set(records.flatMap(s=>datesForStay(s)).filter(d=>d.startsWith(prefix)));return `<button type="button" class="atlas-month" data-atlas-month="${m}" data-atlas-year="${activeYear}"><strong>${new Date(activeYear,m,1).toLocaleDateString('en-GB',{month:'long'})}</strong><div class="atlas-month-dots">${Array.from({length:new Date(activeYear,m+1,0).getDate()},(_,d)=>`<i class="${days.has(`${prefix}-${String(d+1).padStart(2,'0')}`)?'travel':''}"></i>`).join('')}</div><small>${HVJourneyUI.count(days.size,'logged day')}</small></button>`}).join('');}
-    renderDirectory();
     window.HVJourneys?.render();
   }
   document.addEventListener('click',e=>{
