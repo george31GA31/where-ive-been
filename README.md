@@ -1,124 +1,78 @@
 # Herald Voyages
 
-A local-first personal travel atlas for trips, countries, travel days, home periods and Schengen 90/180 planning, published as a static GitHub Pages application.
+A static, local-first travel tracker for trips, countries, Calendar, Journey Map,
+Atlas, travel statistics and planning tools. Guests keep their history on the
+device; signed-in users synchronize private snapshots through Supabase.
 
-## Product architecture
+## Start developing
 
-- `index.html` holds the shared application shell and individual page structures.
-- `voyages.js` mounts only the active page, handles addressable hash routes and browser history, and composes the atlas interface. Inactive page nodes are retained in memory so existing form references and data rendering remain stable.
-- `voyages.css` owns all Herald Voyages tokens, responsive layouts, navigation, typography and motion. The earlier branding and override sheets have been removed.
-- `styles.css` contains the underlying functional component rules; `accounts.css` contains account layouts.
-- `atlas-model.js` supplies read-only geographic grouping for continental progress. It never writes travel data.
-- `dashboard-enhancements.js` opens statistics in a native dialog for mouse, keyboard and touch.
-- `app-core.js`, `app-fixes.js`, `country-count-model.js` and `map-enhancements.js` retain travel calculations, data entry, country definitions and map behavior.
-- `account-*.js` retain authentication and synchronization. `herald.js` retains encrypted guest transfer and merge logic, and adds guest export and transfer access on Profile.
-- `theme.js` retains the existing light/dark preference key and uses the supplied trumpet artwork.
-- `assets/herald-trumpet.png` is the supplied logo, unchanged. The masthead uses this fourth supplied image in place of the inspiration page's globe.
+```sh
+npm ci --ignore-scripts
+python -m http.server 8000
+```
 
-Routes: Dashboard (default), Map, Trips, Countries, Calendar, Schengen, Statistics, Lived In, Plan a Trip, Travel Tools (Stay planner, Entry Requirements and Schengen calculator), People and Settings. Account pages remain separately addressable HTML documents.
+Open `http://localhost:8000/`. GitHub Pages serves the committed browser files
+directly; no application server is needed.
 
-Desktop links become a floating island after scrolling. Mobile uses the same primary areas through a bottom navigation bar, including Tools. Motion respects reduced-motion preferences.
+Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for startup order, feature ownership,
+shared state, authentication, sync/offline recovery, stored routes, logos, deployed
+storage contracts and the intentionally retained compatibility layers.
 
-Storage keys, account identity, country-count choices, existing flags and synchronization payloads are preserved. No database migration is required for this redesign.
+`src/core/` and `src/calendar/` are the readable sources for `app-core.js` and
+`calendar-experience.js`. Edit the source files, then run the build. Other named
+root feature/model scripts remain directly authored. `src/browser-bundles.json`
+defines the original shared scopes and concatenation order.
 
-## Validation
+## Build and verify
 
-- Unit tests cover storage/imports, accounts, trips, maps, safe hotel reconciliation, Roman-script display and worldwide entry lookups.
-- DOM integration checks: individual page mounting, rerendering while pages are detached, country search, year/month navigation, widget dialogs, trip creation retaining existing homes and profiles, and account-page boot.
-- JavaScript syntax and local HTML asset references checked.
-- Chromium checks cover desktop (1440px), tablet (768px), mobile (390px), both themes, click/tap, manual map plotting, date overlaps, Calendar sizing, complete flight panels, entry contexts and acknowledgements. Baseline and current Calendar screenshots are compared with the same records.
-- No live-account mutation is used for testing; existing version-2 fixtures, imports, guest persistence and account merge flows are exercised.
-- Run `npm test`, `npm run test:dom`, `npm run test:browser` and `python tests/test_country_import.py`. The site is static; there is no compilation step.
+```sh
+npm run build
+npm run check:build
+npm test
+npm run test:dom
+npm run test:browser
+python tests/test_country_import.py
+```
 
-## October 2026 refinements
+The dependency-free build assembles the two browser bundles and refreshes the
+offline-shell allowlist/version. Commit the generated files with their sources.
+CI checks that they match, audits dependencies and runs functional/browser tests
+and CodeQL. The pinned browser test dependencies are in `package-lock.json`.
 
-Journey Map date ranges intersect each flight leg, transport, accommodation stay and dated destination/location. Hotel pins are 16px SVG drops. Physical-property reconciliation is read-only: conservative distance, address, identity and name checks group historical stays and expose aliases without combining or deleting stays. Removed saved places remain removed.
+Before an invisible refactor, keep a separate checkout of the previous release:
 
-Railway routing retains successful mapped routes, then reuses partial route geometry and searches nearby active physical tracks without requiring a matching scheduled service. Passenger passing loops remain usable. A wider second lookup includes infrastructure from both stops and uses a compatible OpenStreetMap Overpass instance if the first lookup fails or is incomplete. When that lookup stalls, small read-only OSM station extracts and at most two infrastructure relations provide a bounded backup through the same geometry solver. Connected tracks take priority over approximate small gaps; endpoint connectors and missing switches are bounded and penalised. Different physical node IDs at crossings, incompatible gauges, inactive tracks, freight-only lines and absurd detours remain excluded. Route appearance and all other transport routing are unchanged. Geometry is cached only in memory; this does not change stored journeys, accounts or sync data.
+```sh
+HV_BASELINE_ROOT=/absolute/path/to/baseline npm run test:visual
+```
 
-Calendar dimensions, colours and typography are retained. Single-property text uses the full row while the background retains its check-in/check-out cue. Country and route wrapping is measured against actual space and the fixed cell boundary.
+This compares before/after screenshots and travel/storage snapshots across both
+themes and mobile/tablet/desktop layouts. Results are in
+`test-results/visual-parity/`. `HV_CHROMIUM_PATH` can select a local Chromium binary.
 
-Entry Requirements needs only a supported passport and destination. Date, stay length, departure, recent travel, transit and age are optional under Add trip details. The global planning snapshot supplies worldwide answers for 199 passports and 39,402 routes; sourced official corrections take precedence, with separate health and documentation enrichment. See [data provenance and refresh policy](data/entry-requirements/README.md). Calendar Schengen entries use a blue edge strip and a small S; split-country entries use only the strip, following the reference. Travel Tools remains in the normal navigation.
+## Configuration and compatibility
 
-## Account system and guest migration
+The normal static app requires no environment variables. `account-config.js`
+contains the existing public Supabase URL and publishable/anon key. Keep secrets,
+service-role keys and private credentials out of browser code and Git.
 
-See [ACCOUNT-SETUP.md](ACCOUNT-SETUP.md) for account setup, safe migration and validation.
+- [ACCOUNT-SETUP.md](ACCOUNT-SETUP.md): Auth/redirect/SMTP configuration and imports.
+- [SECURITY.md](SECURITY.md): vulnerability reporting.
+- [data/entry-requirements/README.md](data/entry-requirements/README.md): guidance provenance and refresh policy.
+- [tests/PERFORMANCE-REVIEW.md](tests/PERFORMANCE-REVIEW.md): startup/retry diagnosis, checkpoints and stress measurements.
+- [tests/TRACKERS-REVIEW.md](tests/TRACKERS-REVIEW.md): country/TCC and personal-statistics rules.
+- [docs/MAINTAINABILITY-REVIEW.md](docs/MAINTAINABILITY-REVIEW.md): scope, preservation and verification of this cleanup.
 
-Travel history is local-first and is stored in the browser under `whereIveBeen.data.v2` for guest use. Signed-in data is synchronized to the user's private account. Guest histories can be moved into an account with the encrypted, short-lived, one-use transfer flow. Imports merge records safely rather than replacing the account copy.
+Existing account/guest records, storage keys, revision checks and saved geometry
+are compatibility contracts. Frontend deployment does not require a database
+migration. Preserve original backups and unknown payload fields when extending
+features; never reset storage to solve a loading problem.
 
-Replacing repository files does not intentionally delete browser or account travel data.
+## Publish
 
-## Data and Supabase
+Use the existing pull-request checks, then merge the verified commit to `main`.
+GitHub Pages publishes it through the existing build/deployment process. Wait for
+deployment success and verify the served public files and UI. No SQL is applied
+automatically. The offline shell replaces an installed version only after a
+complete successful installation.
 
-- `supabase-setup.sql` — production setup for account sync and encrypted transfer codes
-- `supabase-hardening.sql` — migration/hardening for an existing Supabase project
-
-## Security
-
-- Browser code may contain a Supabase **publishable/anon** key. It is designed to be public and must be protected by database permissions/RLS.
-- Never commit a Supabase **secret/service-role** key, password, private token, `.env` file or private certificate.
-- Device-transfer payloads are encrypted in the browser, short-lived and single-use.
-- Security checks run through `.github/workflows/security.yml`.
-- Dependency updates for GitHub Actions are monitored by Dependabot.
-- Vulnerabilities should be reported according to `SECURITY.md` rather than in a public issue.
-
-## Public-release checklist
-
-Before announcing a production release, make sure GitHub secret scanning/push protection, branch rules, HTTPS and private vulnerability reporting are enabled in repository settings, and apply `supabase-hardening.sql` to any existing Supabase project.
-
-### Personal planning and self-service tools
-
-Plan a Trip (`#/plan-a-trip`) introduces the personal travel-planning service in development: a free basic plan, a proposed £100 full itinerary and a possible booking service with details and fee unconfirmed. It has no intake, generation, payment or booking system.
-
-Travel Tools (`#/travel-tools`) is the home for the existing working utilities. Stay planner uses `#/travel-tools/stay-planner`, Entry Requirements (including health guidance) uses `#/travel-tools/entry-requirements`, and the Schengen calculator uses `#/travel-tools/schengen`. Old `#/planner`, `#/visa`, `#/rules` and `#/schengen` links are replaced with their corresponding tool URL, including query suffixes, without adding duplicate history entries. The planner keeps its original handlers and element IDs and adds planned records to the same stays collection. No storage keys, saved-data schemas or account/sync code change. Existing Road Trip Planner, Budget Planner and Currency Converter coming-soon items remain.
-
-### Currency Converter and Road Trip Planner
-
-`#/travel-tools/currency` supports the global currency catalogue, current and dated reference conversions, editable custom rates, saved travel rates, searchable currency selection and synced favourites/recent selections. The exchange assessment compares money received with the total amount paid, including an optional extra or included fee. Good / Okay / Poor thresholds are centralised in `currency-model.js` (98% and 95%) and the effective rate, percentage difference and value lost/gained remain visible. Historical lookups never silently use today's rate. Latest lookups are capped at the traveller's date to avoid next-day publisher observations. Reference rates are attributed to [Frankfurter](https://frankfurter.dev/); network failures leave manual and saved custom rates usable.
-
-`#/travel-tools/road-trip` uses Herald's existing place search, Leaflet map and shared FOSSGIS/OSRM route lookup. Routes have unlimited stops, accessible move/remove controls, optional stop dates, notes, a trip association and an optional fuel or EV estimate. Calculations run through two-point legs and the existing shared request throttle, so the provider's waypoint limit does not cap a saved journey. Each leg retains compact geometry and available distance/time metrics; changing a stop reuses unaffected legs. Failed replacement requests leave the previous saved route intact. Opening a saved route does not make fresh routing requests.
-
-Ideas remain in `roadTrips` until the traveller explicitly chooses a genuine planned or completed journey and saves it. A genuine route creates or updates one linked car transport, retains every intermediate stop and writes each leg to the existing `resolvedRoutes` format. Calendar and Journey Map use these transport records, including their normal date and transport filters. Date-only road records retain real dates without fabricated clock times or assumed daily driving; individual stop dates narrow leg windows when available. Notes are stored in the existing notes collection. Adding an energy estimate to a trip budget is explicit and updates one source-linked expense rather than copying the cost repeatedly.
-
-`roadTrips`, `currencyRates` and `currencyPreferences` are additive collections in the existing account payload. Account merge, guest import, exports and offline outbox recovery retain them; existing storage keys and database ownership/revision rules are preserved. No database migration is required. Unit tests cover arithmetic, historical dates, 103-stop routes, partial recalculation, persistence and import/merge preservation. Browser coverage includes desktop/tablet/phone in both themes, a provider-limit-exceeding route, Calendar/Map integration and two independent account sessions.
-
-### Connection resilience
-
-`network.js` owns browser connection events, debounced reconnection, bounded fetches (including response bodies) and service-specific error classification. Provider errors do not declare the whole app offline. Live searches have a deadline; manual currency rates, bundled visa/health guidance, saved places, Calendar and loaded travel records remain usable. No global fetch monkey patch or component-level retry loops are used.
-
-Account edits use the existing per-account, per-tab durable outbox, stable record IDs, three-way merge and revision-checked RPC. A failed read preserves the last successful state. Scheduled sync backs off up to two minutes; reconnect validates the session before one deduplicated flush. Explicit retry is immediate. Storage failures preserve existing checkpoints and pending memory edits, show an explicit keep-this-tab-open warning, and protect against accidental unload. Durable offline reload requires a successful outbox checkpoint; no successful account sync is claimed until the server confirms it. Cached identity can open only its own local account snapshot after a transport failure; it never authorises server writes. Deliberate sign-out and account changes continue to isolate account data.
-
-Previously saved transport geometry is used offline even if a refresh was requested. Unavailable route results are display-only and cannot replace stored geometry. Train/ferry algorithms are unchanged. Road draft text is also kept in account/profile-scoped session storage across tab reloads; it is never shown to another account. Road routes and stops can be saved through the existing account/guest persistence path without recalculation. Hotel logos are processed locally and included in the same outbox, so no separate network upload can remove an existing logo.
-
-`sw.js` caches an explicit list of public app assets only, in bounded installation batches. It excludes account APIs, third-party tiles, external services and token-bearing account links. Navigation and assets prefer the network with an eight-second deadline and fall back to the installed version. A complete successful installation replaces older Herald caches; a failed installation retains the previous shell. D3, TopoJSON and world boundaries are served locally with their existing licences. First-time visitors still require a connection, and devices denying Cache Storage cannot promise offline reload.
-
-After changing public assets, run `node scripts/build-offline-shell.cjs` to refresh the allowlist and release hash. CI verifies this manifest.
-
-### Country trackers, hotel uploads and personal statistics
-
-Travel Tools presents the seven existing utilities as accessible whole-card links,
-with three desktop, two tablet and one mobile column. Accommodation search, the trip
-planner and trip editors can prepare, preview, replace or remove optional artwork
-through the same shared hotel-logo catalogue used by Journey Map.
-
-Countries offers manual visited status with optional exact date, approximate year,
-visit count and note, plus a separate Travelers' Century Club tracker with the
-official regional list. Manual countries feed lifetime counts and Atlas; TCC has
-its own destination IDs and denominator and does not affect Atlas or normal counts.
-Both use the existing account sync and offline outbox without new storage keys or
-database migrations.
-
-Statistics adds the most travelled calendar month/year, longest continuous time
-away, time since the last dated first country visit, new countries this year and
-unique countries visited this year. One read-only history engine applies the home
-classification, date precision, unique-day counting and today cutoff to all six.
-See [calculation, preservation and regression details](tests/TRACKERS-REVIEW.md).
-
-### Account startup and recovery performance
-
-Account startup renders the active page, shares concurrent account loads, and
-keeps import previews off Home. Account recovery checkpoints use an atomic,
-verified IndexedDB outbox with exact logo pooling and legacy-storage fallback.
-Idle sync checks only the account revision. Retry revalidates Auth and reconciles
-saved edits through one controlled attempt; display defaults do not become edits.
-See [profiling, preservation, diagnostics and test details](tests/PERFORMANCE-REVIEW.md).
+Live site: <https://george31ga31.github.io/where-ive-been/>.
