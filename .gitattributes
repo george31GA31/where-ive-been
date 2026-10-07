@@ -1,0 +1,3 @@
+# Review the authored sources; these checked-in bundles keep Pages build-free.
+app-core.js linguist-generated=true
+calendar-experience.js linguist-generated=true

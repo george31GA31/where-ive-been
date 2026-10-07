@@ -1,320 +1,2697 @@
-const COUNTRIES = [{"code":"SEA","name":"At Sea"},{"code":"AF","name":"Afghanistan"},{"code":"AL","name":"Albania"},{"code":"DZ","name":"Algeria"},{"code":"AS","name":"American Samoa"},{"code":"AD","name":"Andorra"},{"code":"AO","name":"Angola"},{"code":"AI","name":"Anguilla"},{"code":"AQ","name":"Antarctica"},{"code":"AG","name":"Antigua and Barbuda"},{"code":"AR","name":"Argentina"},{"code":"AM","name":"Armenia"},{"code":"AW","name":"Aruba"},{"code":"AU","name":"Australia"},{"code":"AT","name":"Austria"},{"code":"AZ","name":"Azerbaijan"},{"code":"BS","name":"Bahamas"},{"code":"BH","name":"Bahrain"},{"code":"BD","name":"Bangladesh"},{"code":"BB","name":"Barbados"},{"code":"BY","name":"Belarus"},{"code":"BE","name":"Belgium"},{"code":"BZ","name":"Belize"},{"code":"BJ","name":"Benin"},{"code":"BM","name":"Bermuda"},{"code":"BT","name":"Bhutan"},{"code":"BO","name":"Bolivia"},{"code":"BQ","name":"Bonaire, Sint Eustatius and Saba"},{"code":"BA","name":"Bosnia and Herzegovina"},{"code":"BW","name":"Botswana"},{"code":"BOU","name":"Bougainville"},{"code":"BV","name":"Bouvet Island"},{"code":"BR","name":"Brazil"},{"code":"IO","name":"British Indian Ocean Territory"},{"code":"BN","name":"Brunei"},{"code":"BG","name":"Bulgaria"},{"code":"BF","name":"Burkina Faso"},{"code":"BI","name":"Burundi"},{"code":"CV","name":"Cabo Verde"},{"code":"KH","name":"Cambodia"},{"code":"CM","name":"Cameroon"},{"code":"CA","name":"Canada"},{"code":"KY","name":"Cayman Islands"},{"code":"CF","name":"Central African Republic"},{"code":"TD","name":"Chad"},{"code":"CL","name":"Chile"},{"code":"CN","name":"China"},{"code":"CX","name":"Christmas Island"},{"code":"CC","name":"Cocos (Keeling) Islands"},{"code":"CO","name":"Colombia"},{"code":"KM","name":"Comoros"},{"code":"CG","name":"Congo"},{"code":"CK","name":"Cook Islands"},{"code":"CR","name":"Costa Rica"},{"code":"HR","name":"Croatia"},{"code":"CU","name":"Cuba"},{"code":"CW","name":"Cura\u00e7ao"},{"code":"CY","name":"Cyprus"},{"code":"CZ","name":"Czechia"},{"code":"CI","name":"C\u00f4te d'Ivoire"},{"code":"CD","name":"DR Congo"},{"code":"DK","name":"Denmark"},{"code":"DJ","name":"Djibouti"},{"code":"DM","name":"Dominica"},{"code":"DO","name":"Dominican Republic"},{"code":"EC","name":"Ecuador"},{"code":"EG","name":"Egypt"},{"code":"SV","name":"El Salvador"},{"code":"GQ","name":"Equatorial Guinea"},{"code":"ER","name":"Eritrea"},{"code":"EE","name":"Estonia"},{"code":"SZ","name":"Eswatini"},{"code":"ET","name":"Ethiopia"},{"code":"FK","name":"Falkland Islands (Malvinas)"},{"code":"FO","name":"Faroe Islands"},{"code":"FJ","name":"Fiji"},{"code":"FI","name":"Finland"},{"code":"FR","name":"France"},{"code":"GF","name":"French Guiana"},{"code":"PF","name":"French Polynesia"},{"code":"TF","name":"French Southern Territories"},{"code":"GA","name":"Gabon"},{"code":"GM","name":"Gambia"},{"code":"GE","name":"Georgia"},{"code":"DE","name":"Germany"},{"code":"GH","name":"Ghana"},{"code":"GI","name":"Gibraltar"},{"code":"GR","name":"Greece"},{"code":"GL","name":"Greenland"},{"code":"GD","name":"Grenada"},{"code":"GP","name":"Guadeloupe"},{"code":"GU","name":"Guam"},{"code":"GT","name":"Guatemala"},{"code":"GG","name":"Guernsey"},{"code":"GN","name":"Guinea"},{"code":"GW","name":"Guinea-Bissau"},{"code":"GY","name":"Guyana"},{"code":"HT","name":"Haiti"},{"code":"HM","name":"Heard Island and McDonald Islands"},{"code":"VA","name":"Holy See (Vatican City State)"},{"code":"HN","name":"Honduras"},{"code":"HK","name":"Hong Kong"},{"code":"HU","name":"Hungary"},{"code":"IS","name":"Iceland"},{"code":"IN","name":"India"},{"code":"ID","name":"Indonesia"},{"code":"IR","name":"Iran"},{"code":"IQ","name":"Iraq"},{"code":"IE","name":"Ireland"},{"code":"IM","name":"Isle of Man"},{"code":"IL","name":"Israel"},{"code":"IT","name":"Italy"},{"code":"JM","name":"Jamaica"},{"code":"JP","name":"Japan"},{"code":"JE","name":"Jersey"},{"code":"JO","name":"Jordan"},{"code":"KZ","name":"Kazakhstan"},{"code":"KE","name":"Kenya"},{"code":"KI","name":"Kiribati"},{"code":"XK","name":"Kosovo"},{"code":"KW","name":"Kuwait"},{"code":"KG","name":"Kyrgyzstan"},{"code":"LA","name":"Laos"},{"code":"LV","name":"Latvia"},{"code":"LB","name":"Lebanon"},{"code":"LS","name":"Lesotho"},{"code":"LR","name":"Liberia"},{"code":"LY","name":"Libya"},{"code":"LI","name":"Liechtenstein"},{"code":"LT","name":"Lithuania"},{"code":"LU","name":"Luxembourg"},{"code":"MO","name":"Macao"},{"code":"MG","name":"Madagascar"},{"code":"MW","name":"Malawi"},{"code":"MY","name":"Malaysia"},{"code":"MV","name":"Maldives"},{"code":"ML","name":"Mali"},{"code":"MT","name":"Malta"},{"code":"MH","name":"Marshall Islands"},{"code":"MQ","name":"Martinique"},{"code":"MR","name":"Mauritania"},{"code":"MU","name":"Mauritius"},{"code":"YT","name":"Mayotte"},{"code":"MX","name":"Mexico"},{"code":"FM","name":"Micronesia, Federated States of"},{"code":"MD","name":"Moldova"},{"code":"MC","name":"Monaco"},{"code":"MN","name":"Mongolia"},{"code":"ME","name":"Montenegro"},{"code":"MS","name":"Montserrat"},{"code":"MA","name":"Morocco"},{"code":"MZ","name":"Mozambique"},{"code":"MM","name":"Myanmar"},{"code":"NA","name":"Namibia"},{"code":"NR","name":"Nauru"},{"code":"NP","name":"Nepal"},{"code":"NL","name":"Netherlands"},{"code":"NC","name":"New Caledonia"},{"code":"NZ","name":"New Zealand"},{"code":"NI","name":"Nicaragua"},{"code":"NE","name":"Niger"},{"code":"NG","name":"Nigeria"},{"code":"NU","name":"Niue"},{"code":"NF","name":"Norfolk Island"},{"code":"KP","name":"North Korea"},{"code":"MK","name":"North Macedonia"},{"code":"MP","name":"Northern Mariana Islands"},{"code":"NO","name":"Norway"},{"code":"OM","name":"Oman"},{"code":"PK","name":"Pakistan"},{"code":"PW","name":"Palau"},{"code":"PS","name":"Palestine"},{"code":"PA","name":"Panama"},{"code":"PG","name":"Papua New Guinea"},{"code":"PY","name":"Paraguay"},{"code":"PE","name":"Peru"},{"code":"PH","name":"Philippines"},{"code":"PN","name":"Pitcairn"},{"code":"PL","name":"Poland"},{"code":"PT","name":"Portugal"},{"code":"PR","name":"Puerto Rico"},{"code":"QA","name":"Qatar"},{"code":"RO","name":"Romania"},{"code":"RU","name":"Russia"},{"code":"RW","name":"Rwanda"},{"code":"RE","name":"R\u00e9union"},{"code":"BL","name":"Saint Barth\u00e9lemy"},{"code":"SH","name":"Saint Helena, Ascension and Tristan da Cunha"},{"code":"KN","name":"Saint Kitts and Nevis"},{"code":"LC","name":"Saint Lucia"},{"code":"MF","name":"Saint Martin (French part)"},{"code":"PM","name":"Saint Pierre and Miquelon"},{"code":"VC","name":"Saint Vincent and the Grenadines"},{"code":"WS","name":"Samoa"},{"code":"SM","name":"San Marino"},{"code":"ST","name":"Sao Tome and Principe"},{"code":"SA","name":"Saudi Arabia"},{"code":"SN","name":"Senegal"},{"code":"RS","name":"Serbia"},{"code":"SC","name":"Seychelles"},{"code":"SL","name":"Sierra Leone"},{"code":"SG","name":"Singapore"},{"code":"SX","name":"Sint Maarten (Dutch part)"},{"code":"SK","name":"Slovakia"},{"code":"SI","name":"Slovenia"},{"code":"SB","name":"Solomon Islands"},{"code":"SO","name":"Somalia"},{"code":"ZA","name":"South Africa"},{"code":"GS","name":"South Georgia and the South Sandwich Islands"},{"code":"KR","name":"South Korea"},{"code":"SS","name":"South Sudan"},{"code":"ES","name":"Spain"},{"code":"LK","name":"Sri Lanka"},{"code":"SD","name":"Sudan"},{"code":"SR","name":"Suriname"},{"code":"SJ","name":"Svalbard and Jan Mayen"},{"code":"SE","name":"Sweden"},{"code":"CH","name":"Switzerland"},{"code":"SY","name":"Syria"},{"code":"TW","name":"Taiwan"},{"code":"TJ","name":"Tajikistan"},{"code":"TZ","name":"Tanzania"},{"code":"TH","name":"Thailand"},{"code":"TL","name":"Timor-Leste"},{"code":"TG","name":"Togo"},{"code":"TK","name":"Tokelau"},{"code":"TO","name":"Tonga"},{"code":"TT","name":"Trinidad and Tobago"},{"code":"TN","name":"Tunisia"},{"code":"TM","name":"Turkmenistan"},{"code":"TC","name":"Turks and Caicos Islands"},{"code":"TV","name":"Tuvalu"},{"code":"TR","name":"T\u00fcrkiye"},{"code":"UG","name":"Uganda"},{"code":"UA","name":"Ukraine"},{"code":"AE","name":"United Arab Emirates"},{"code":"GB","name":"United Kingdom"},{"code":"US","name":"United States"},{"code":"UM","name":"United States Minor Outlying Islands"},{"code":"UY","name":"Uruguay"},{"code":"UZ","name":"Uzbekistan"},{"code":"VU","name":"Vanuatu"},{"code":"VE","name":"Venezuela"},{"code":"VN","name":"Vietnam"},{"code":"VG","name":"Virgin Islands, British"},{"code":"VI","name":"Virgin Islands, U.S."},{"code":"WF","name":"Wallis and Futuna"},{"code":"EH","name":"Western Sahara"},{"code":"YE","name":"Yemen"},{"code":"ZM","name":"Zambia"},{"code":"ZW","name":"Zimbabwe"},{"code":"AX","name":"\u00c5land Islands"}];
-const NUMERIC_TO_ALPHA2 = {"533":"AW","004":"AF","024":"AO","660":"AI","248":"AX","008":"AL","020":"AD","784":"AE","032":"AR","051":"AM","016":"AS","010":"AQ","260":"TF","028":"AG","036":"AU","040":"AT","031":"AZ","108":"BI","056":"BE","204":"BJ","535":"BQ","854":"BF","050":"BD","100":"BG","048":"BH","044":"BS","070":"BA","652":"BL","112":"BY","084":"BZ","060":"BM","068":"BO","076":"BR","052":"BB","096":"BN","064":"BT","074":"BV","072":"BW","140":"CF","124":"CA","166":"CC","756":"CH","152":"CL","156":"CN","384":"CI","120":"CM","180":"CD","178":"CG","184":"CK","170":"CO","174":"KM","132":"CV","188":"CR","192":"CU","531":"CW","162":"CX","136":"KY","196":"CY","203":"CZ","276":"DE","262":"DJ","212":"DM","208":"DK","214":"DO","012":"DZ","218":"EC","818":"EG","232":"ER","732":"EH","724":"ES","233":"EE","231":"ET","246":"FI","242":"FJ","238":"FK","250":"FR","234":"FO","583":"FM","266":"GA","826":"GB","268":"GE","831":"GG","288":"GH","292":"GI","324":"GN","312":"GP","270":"GM","624":"GW","226":"GQ","300":"GR","308":"GD","304":"GL","320":"GT","254":"GF","316":"GU","328":"GY","344":"HK","334":"HM","340":"HN","191":"HR","332":"HT","348":"HU","360":"ID","833":"IM","356":"IN","086":"IO","372":"IE","364":"IR","368":"IQ","352":"IS","376":"IL","380":"IT","388":"JM","832":"JE","400":"JO","392":"JP","398":"KZ","404":"KE","417":"KG","116":"KH","296":"KI","659":"KN","410":"KR","414":"KW","418":"LA","422":"LB","430":"LR","434":"LY","662":"LC","438":"LI","144":"LK","426":"LS","440":"LT","442":"LU","428":"LV","446":"MO","663":"MF","504":"MA","492":"MC","498":"MD","450":"MG","462":"MV","484":"MX","584":"MH","807":"MK","466":"ML","470":"MT","104":"MM","499":"ME","496":"MN","580":"MP","508":"MZ","478":"MR","500":"MS","474":"MQ","480":"MU","454":"MW","458":"MY","175":"YT","516":"NA","540":"NC","562":"NE","574":"NF","566":"NG","558":"NI","570":"NU","528":"NL","578":"NO","524":"NP","520":"NR","554":"NZ","512":"OM","586":"PK","591":"PA","612":"PN","604":"PE","608":"PH","585":"PW","598":"PG","616":"PL","630":"PR","408":"KP","620":"PT","600":"PY","275":"PS","258":"PF","634":"QA","638":"RE","642":"RO","643":"RU","646":"RW","682":"SA","729":"SD","686":"SN","702":"SG","239":"GS","654":"SH","744":"SJ","090":"SB","694":"SL","222":"SV","674":"SM","706":"SO","666":"PM","688":"RS","728":"SS","678":"ST","740":"SR","703":"SK","705":"SI","752":"SE","748":"SZ","534":"SX","690":"SC","760":"SY","796":"TC","148":"TD","768":"TG","764":"TH","762":"TJ","772":"TK","795":"TM","626":"TL","776":"TO","780":"TT","788":"TN","792":"TR","798":"TV","158":"TW","834":"TZ","800":"UG","804":"UA","581":"UM","858":"UY","840":"US","860":"UZ","336":"VA","670":"VC","862":"VE","092":"VG","850":"VI","704":"VN","548":"VU","876":"WF","882":"WS","887":"YE","710":"ZA","894":"ZM","716":"ZW","383":"XK"};
-const SCHENGEN=new Set(['AT','BE','BG','HR','CZ','DK','EE','FI','FR','DE','GR','HU','IS','IT','LV','LI','LT','LU','MT','NL','NO','PL','PT','RO','SK','SI','ES','SE','CH']);
-const EU_EEA_CH=new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','CH']);
-const APP_KEY='whereIveBeen.data.v2',LEGACY_KEY='whereIveBeen.stays.v1',CLOUD_KEY='whereIveBeen.cloud.v1',LOCAL_SAVED_KEY='whereIveBeen.lastSaved.v1';
+/* Generated by scripts/build-browser.cjs. Edit the src/ files listed below. */
+// Source: src/core/catalogs.js
+const COUNTRIES = [
+  { 'code': 'SEA', 'name': 'At Sea' },
+  { 'code': 'AF', 'name': 'Afghanistan' },
+  { 'code': 'AL', 'name': 'Albania' },
+  { 'code': 'DZ', 'name': 'Algeria' },
+  { 'code': 'AS', 'name': 'American Samoa' },
+  { 'code': 'AD', 'name': 'Andorra' },
+  { 'code': 'AO', 'name': 'Angola' },
+  { 'code': 'AI', 'name': 'Anguilla' },
+  { 'code': 'AQ', 'name': 'Antarctica' },
+  { 'code': 'AG', 'name': 'Antigua and Barbuda' },
+  { 'code': 'AR', 'name': 'Argentina' },
+  { 'code': 'AM', 'name': 'Armenia' },
+  { 'code': 'AW', 'name': 'Aruba' },
+  { 'code': 'AU', 'name': 'Australia' },
+  { 'code': 'AT', 'name': 'Austria' },
+  { 'code': 'AZ', 'name': 'Azerbaijan' },
+  { 'code': 'BS', 'name': 'Bahamas' },
+  { 'code': 'BH', 'name': 'Bahrain' },
+  { 'code': 'BD', 'name': 'Bangladesh' },
+  { 'code': 'BB', 'name': 'Barbados' },
+  { 'code': 'BY', 'name': 'Belarus' },
+  { 'code': 'BE', 'name': 'Belgium' },
+  { 'code': 'BZ', 'name': 'Belize' },
+  { 'code': 'BJ', 'name': 'Benin' },
+  { 'code': 'BM', 'name': 'Bermuda' },
+  { 'code': 'BT', 'name': 'Bhutan' },
+  { 'code': 'BO', 'name': 'Bolivia' },
+  { 'code': 'BQ', 'name': 'Bonaire, Sint Eustatius and Saba' },
+  { 'code': 'BA', 'name': 'Bosnia and Herzegovina' },
+  { 'code': 'BW', 'name': 'Botswana' },
+  { 'code': 'BOU', 'name': 'Bougainville' },
+  { 'code': 'BV', 'name': 'Bouvet Island' },
+  { 'code': 'BR', 'name': 'Brazil' },
+  { 'code': 'IO', 'name': 'British Indian Ocean Territory' },
+  { 'code': 'BN', 'name': 'Brunei' },
+  { 'code': 'BG', 'name': 'Bulgaria' },
+  { 'code': 'BF', 'name': 'Burkina Faso' },
+  { 'code': 'BI', 'name': 'Burundi' },
+  { 'code': 'CV', 'name': 'Cabo Verde' },
+  { 'code': 'KH', 'name': 'Cambodia' },
+  { 'code': 'CM', 'name': 'Cameroon' },
+  { 'code': 'CA', 'name': 'Canada' },
+  { 'code': 'KY', 'name': 'Cayman Islands' },
+  { 'code': 'CF', 'name': 'Central African Republic' },
+  { 'code': 'TD', 'name': 'Chad' },
+  { 'code': 'CL', 'name': 'Chile' },
+  { 'code': 'CN', 'name': 'China' },
+  { 'code': 'CX', 'name': 'Christmas Island' },
+  { 'code': 'CC', 'name': 'Cocos (Keeling) Islands' },
+  { 'code': 'CO', 'name': 'Colombia' },
+  { 'code': 'KM', 'name': 'Comoros' },
+  { 'code': 'CG', 'name': 'Congo' },
+  { 'code': 'CK', 'name': 'Cook Islands' },
+  { 'code': 'CR', 'name': 'Costa Rica' },
+  { 'code': 'HR', 'name': 'Croatia' },
+  { 'code': 'CU', 'name': 'Cuba' },
+  { 'code': 'CW', 'name': 'Cura\u00e7ao' },
+  { 'code': 'CY', 'name': 'Cyprus' },
+  { 'code': 'CZ', 'name': 'Czechia' },
+  { 'code': 'CI', 'name': "C\u00f4te d'Ivoire" },
+  { 'code': 'CD', 'name': 'DR Congo' },
+  { 'code': 'DK', 'name': 'Denmark' },
+  { 'code': 'DJ', 'name': 'Djibouti' },
+  { 'code': 'DM', 'name': 'Dominica' },
+  { 'code': 'DO', 'name': 'Dominican Republic' },
+  { 'code': 'EC', 'name': 'Ecuador' },
+  { 'code': 'EG', 'name': 'Egypt' },
+  { 'code': 'SV', 'name': 'El Salvador' },
+  { 'code': 'GQ', 'name': 'Equatorial Guinea' },
+  { 'code': 'ER', 'name': 'Eritrea' },
+  { 'code': 'EE', 'name': 'Estonia' },
+  { 'code': 'SZ', 'name': 'Eswatini' },
+  { 'code': 'ET', 'name': 'Ethiopia' },
+  { 'code': 'FK', 'name': 'Falkland Islands (Malvinas)' },
+  { 'code': 'FO', 'name': 'Faroe Islands' },
+  { 'code': 'FJ', 'name': 'Fiji' },
+  { 'code': 'FI', 'name': 'Finland' },
+  { 'code': 'FR', 'name': 'France' },
+  { 'code': 'GF', 'name': 'French Guiana' },
+  { 'code': 'PF', 'name': 'French Polynesia' },
+  { 'code': 'TF', 'name': 'French Southern Territories' },
+  { 'code': 'GA', 'name': 'Gabon' },
+  { 'code': 'GM', 'name': 'Gambia' },
+  { 'code': 'GE', 'name': 'Georgia' },
+  { 'code': 'DE', 'name': 'Germany' },
+  { 'code': 'GH', 'name': 'Ghana' },
+  { 'code': 'GI', 'name': 'Gibraltar' },
+  { 'code': 'GR', 'name': 'Greece' },
+  { 'code': 'GL', 'name': 'Greenland' },
+  { 'code': 'GD', 'name': 'Grenada' },
+  { 'code': 'GP', 'name': 'Guadeloupe' },
+  { 'code': 'GU', 'name': 'Guam' },
+  { 'code': 'GT', 'name': 'Guatemala' },
+  { 'code': 'GG', 'name': 'Guernsey' },
+  { 'code': 'GN', 'name': 'Guinea' },
+  { 'code': 'GW', 'name': 'Guinea-Bissau' },
+  { 'code': 'GY', 'name': 'Guyana' },
+  { 'code': 'HT', 'name': 'Haiti' },
+  { 'code': 'HM', 'name': 'Heard Island and McDonald Islands' },
+  { 'code': 'VA', 'name': 'Holy See (Vatican City State)' },
+  { 'code': 'HN', 'name': 'Honduras' },
+  { 'code': 'HK', 'name': 'Hong Kong' },
+  { 'code': 'HU', 'name': 'Hungary' },
+  { 'code': 'IS', 'name': 'Iceland' },
+  { 'code': 'IN', 'name': 'India' },
+  { 'code': 'ID', 'name': 'Indonesia' },
+  { 'code': 'IR', 'name': 'Iran' },
+  { 'code': 'IQ', 'name': 'Iraq' },
+  { 'code': 'IE', 'name': 'Ireland' },
+  { 'code': 'IM', 'name': 'Isle of Man' },
+  { 'code': 'IL', 'name': 'Israel' },
+  { 'code': 'IT', 'name': 'Italy' },
+  { 'code': 'JM', 'name': 'Jamaica' },
+  { 'code': 'JP', 'name': 'Japan' },
+  { 'code': 'JE', 'name': 'Jersey' },
+  { 'code': 'JO', 'name': 'Jordan' },
+  { 'code': 'KZ', 'name': 'Kazakhstan' },
+  { 'code': 'KE', 'name': 'Kenya' },
+  { 'code': 'KI', 'name': 'Kiribati' },
+  { 'code': 'XK', 'name': 'Kosovo' },
+  { 'code': 'KW', 'name': 'Kuwait' },
+  { 'code': 'KG', 'name': 'Kyrgyzstan' },
+  { 'code': 'LA', 'name': 'Laos' },
+  { 'code': 'LV', 'name': 'Latvia' },
+  { 'code': 'LB', 'name': 'Lebanon' },
+  { 'code': 'LS', 'name': 'Lesotho' },
+  { 'code': 'LR', 'name': 'Liberia' },
+  { 'code': 'LY', 'name': 'Libya' },
+  { 'code': 'LI', 'name': 'Liechtenstein' },
+  { 'code': 'LT', 'name': 'Lithuania' },
+  { 'code': 'LU', 'name': 'Luxembourg' },
+  { 'code': 'MO', 'name': 'Macao' },
+  { 'code': 'MG', 'name': 'Madagascar' },
+  { 'code': 'MW', 'name': 'Malawi' },
+  { 'code': 'MY', 'name': 'Malaysia' },
+  { 'code': 'MV', 'name': 'Maldives' },
+  { 'code': 'ML', 'name': 'Mali' },
+  { 'code': 'MT', 'name': 'Malta' },
+  { 'code': 'MH', 'name': 'Marshall Islands' },
+  { 'code': 'MQ', 'name': 'Martinique' },
+  { 'code': 'MR', 'name': 'Mauritania' },
+  { 'code': 'MU', 'name': 'Mauritius' },
+  { 'code': 'YT', 'name': 'Mayotte' },
+  { 'code': 'MX', 'name': 'Mexico' },
+  { 'code': 'FM', 'name': 'Micronesia, Federated States of' },
+  { 'code': 'MD', 'name': 'Moldova' },
+  { 'code': 'MC', 'name': 'Monaco' },
+  { 'code': 'MN', 'name': 'Mongolia' },
+  { 'code': 'ME', 'name': 'Montenegro' },
+  { 'code': 'MS', 'name': 'Montserrat' },
+  { 'code': 'MA', 'name': 'Morocco' },
+  { 'code': 'MZ', 'name': 'Mozambique' },
+  { 'code': 'MM', 'name': 'Myanmar' },
+  { 'code': 'NA', 'name': 'Namibia' },
+  { 'code': 'NR', 'name': 'Nauru' },
+  { 'code': 'NP', 'name': 'Nepal' },
+  { 'code': 'NL', 'name': 'Netherlands' },
+  { 'code': 'NC', 'name': 'New Caledonia' },
+  { 'code': 'NZ', 'name': 'New Zealand' },
+  { 'code': 'NI', 'name': 'Nicaragua' },
+  { 'code': 'NE', 'name': 'Niger' },
+  { 'code': 'NG', 'name': 'Nigeria' },
+  { 'code': 'NU', 'name': 'Niue' },
+  { 'code': 'NF', 'name': 'Norfolk Island' },
+  { 'code': 'KP', 'name': 'North Korea' },
+  { 'code': 'MK', 'name': 'North Macedonia' },
+  { 'code': 'MP', 'name': 'Northern Mariana Islands' },
+  { 'code': 'NO', 'name': 'Norway' },
+  { 'code': 'OM', 'name': 'Oman' },
+  { 'code': 'PK', 'name': 'Pakistan' },
+  { 'code': 'PW', 'name': 'Palau' },
+  { 'code': 'PS', 'name': 'Palestine' },
+  { 'code': 'PA', 'name': 'Panama' },
+  { 'code': 'PG', 'name': 'Papua New Guinea' },
+  { 'code': 'PY', 'name': 'Paraguay' },
+  { 'code': 'PE', 'name': 'Peru' },
+  { 'code': 'PH', 'name': 'Philippines' },
+  { 'code': 'PN', 'name': 'Pitcairn' },
+  { 'code': 'PL', 'name': 'Poland' },
+  { 'code': 'PT', 'name': 'Portugal' },
+  { 'code': 'PR', 'name': 'Puerto Rico' },
+  { 'code': 'QA', 'name': 'Qatar' },
+  { 'code': 'RO', 'name': 'Romania' },
+  { 'code': 'RU', 'name': 'Russia' },
+  { 'code': 'RW', 'name': 'Rwanda' },
+  { 'code': 'RE', 'name': 'R\u00e9union' },
+  { 'code': 'BL', 'name': 'Saint Barth\u00e9lemy' },
+  { 'code': 'SH', 'name': 'Saint Helena, Ascension and Tristan da Cunha' },
+  { 'code': 'KN', 'name': 'Saint Kitts and Nevis' },
+  { 'code': 'LC', 'name': 'Saint Lucia' },
+  { 'code': 'MF', 'name': 'Saint Martin (French part)' },
+  { 'code': 'PM', 'name': 'Saint Pierre and Miquelon' },
+  { 'code': 'VC', 'name': 'Saint Vincent and the Grenadines' },
+  { 'code': 'WS', 'name': 'Samoa' },
+  { 'code': 'SM', 'name': 'San Marino' },
+  { 'code': 'ST', 'name': 'Sao Tome and Principe' },
+  { 'code': 'SA', 'name': 'Saudi Arabia' },
+  { 'code': 'SN', 'name': 'Senegal' },
+  { 'code': 'RS', 'name': 'Serbia' },
+  { 'code': 'SC', 'name': 'Seychelles' },
+  { 'code': 'SL', 'name': 'Sierra Leone' },
+  { 'code': 'SG', 'name': 'Singapore' },
+  { 'code': 'SX', 'name': 'Sint Maarten (Dutch part)' },
+  { 'code': 'SK', 'name': 'Slovakia' },
+  { 'code': 'SI', 'name': 'Slovenia' },
+  { 'code': 'SB', 'name': 'Solomon Islands' },
+  { 'code': 'SO', 'name': 'Somalia' },
+  { 'code': 'ZA', 'name': 'South Africa' },
+  { 'code': 'GS', 'name': 'South Georgia and the South Sandwich Islands' },
+  { 'code': 'KR', 'name': 'South Korea' },
+  { 'code': 'SS', 'name': 'South Sudan' },
+  { 'code': 'ES', 'name': 'Spain' },
+  { 'code': 'LK', 'name': 'Sri Lanka' },
+  { 'code': 'SD', 'name': 'Sudan' },
+  { 'code': 'SR', 'name': 'Suriname' },
+  { 'code': 'SJ', 'name': 'Svalbard and Jan Mayen' },
+  { 'code': 'SE', 'name': 'Sweden' },
+  { 'code': 'CH', 'name': 'Switzerland' },
+  { 'code': 'SY', 'name': 'Syria' },
+  { 'code': 'TW', 'name': 'Taiwan' },
+  { 'code': 'TJ', 'name': 'Tajikistan' },
+  { 'code': 'TZ', 'name': 'Tanzania' },
+  { 'code': 'TH', 'name': 'Thailand' },
+  { 'code': 'TL', 'name': 'Timor-Leste' },
+  { 'code': 'TG', 'name': 'Togo' },
+  { 'code': 'TK', 'name': 'Tokelau' },
+  { 'code': 'TO', 'name': 'Tonga' },
+  { 'code': 'TT', 'name': 'Trinidad and Tobago' },
+  { 'code': 'TN', 'name': 'Tunisia' },
+  { 'code': 'TM', 'name': 'Turkmenistan' },
+  { 'code': 'TC', 'name': 'Turks and Caicos Islands' },
+  { 'code': 'TV', 'name': 'Tuvalu' },
+  { 'code': 'TR', 'name': 'T\u00fcrkiye' },
+  { 'code': 'UG', 'name': 'Uganda' },
+  { 'code': 'UA', 'name': 'Ukraine' },
+  { 'code': 'AE', 'name': 'United Arab Emirates' },
+  { 'code': 'GB', 'name': 'United Kingdom' },
+  { 'code': 'US', 'name': 'United States' },
+  { 'code': 'UM', 'name': 'United States Minor Outlying Islands' },
+  { 'code': 'UY', 'name': 'Uruguay' },
+  { 'code': 'UZ', 'name': 'Uzbekistan' },
+  { 'code': 'VU', 'name': 'Vanuatu' },
+  { 'code': 'VE', 'name': 'Venezuela' },
+  { 'code': 'VN', 'name': 'Vietnam' },
+  { 'code': 'VG', 'name': 'Virgin Islands, British' },
+  { 'code': 'VI', 'name': 'Virgin Islands, U.S.' },
+  { 'code': 'WF', 'name': 'Wallis and Futuna' },
+  { 'code': 'EH', 'name': 'Western Sahara' },
+  { 'code': 'YE', 'name': 'Yemen' },
+  { 'code': 'ZM', 'name': 'Zambia' },
+  { 'code': 'ZW', 'name': 'Zimbabwe' },
+  { 'code': 'AX', 'name': '\u00c5land Islands' },
+];
+const NUMERIC_TO_ALPHA2 = {
+  '533': 'AW',
+  '004': 'AF',
+  '024': 'AO',
+  '660': 'AI',
+  '248': 'AX',
+  '008': 'AL',
+  '020': 'AD',
+  '784': 'AE',
+  '032': 'AR',
+  '051': 'AM',
+  '016': 'AS',
+  '010': 'AQ',
+  '260': 'TF',
+  '028': 'AG',
+  '036': 'AU',
+  '040': 'AT',
+  '031': 'AZ',
+  '108': 'BI',
+  '056': 'BE',
+  '204': 'BJ',
+  '535': 'BQ',
+  '854': 'BF',
+  '050': 'BD',
+  '100': 'BG',
+  '048': 'BH',
+  '044': 'BS',
+  '070': 'BA',
+  '652': 'BL',
+  '112': 'BY',
+  '084': 'BZ',
+  '060': 'BM',
+  '068': 'BO',
+  '076': 'BR',
+  '052': 'BB',
+  '096': 'BN',
+  '064': 'BT',
+  '074': 'BV',
+  '072': 'BW',
+  '140': 'CF',
+  '124': 'CA',
+  '166': 'CC',
+  '756': 'CH',
+  '152': 'CL',
+  '156': 'CN',
+  '384': 'CI',
+  '120': 'CM',
+  '180': 'CD',
+  '178': 'CG',
+  '184': 'CK',
+  '170': 'CO',
+  '174': 'KM',
+  '132': 'CV',
+  '188': 'CR',
+  '192': 'CU',
+  '531': 'CW',
+  '162': 'CX',
+  '136': 'KY',
+  '196': 'CY',
+  '203': 'CZ',
+  '276': 'DE',
+  '262': 'DJ',
+  '212': 'DM',
+  '208': 'DK',
+  '214': 'DO',
+  '012': 'DZ',
+  '218': 'EC',
+  '818': 'EG',
+  '232': 'ER',
+  '732': 'EH',
+  '724': 'ES',
+  '233': 'EE',
+  '231': 'ET',
+  '246': 'FI',
+  '242': 'FJ',
+  '238': 'FK',
+  '250': 'FR',
+  '234': 'FO',
+  '583': 'FM',
+  '266': 'GA',
+  '826': 'GB',
+  '268': 'GE',
+  '831': 'GG',
+  '288': 'GH',
+  '292': 'GI',
+  '324': 'GN',
+  '312': 'GP',
+  '270': 'GM',
+  '624': 'GW',
+  '226': 'GQ',
+  '300': 'GR',
+  '308': 'GD',
+  '304': 'GL',
+  '320': 'GT',
+  '254': 'GF',
+  '316': 'GU',
+  '328': 'GY',
+  '344': 'HK',
+  '334': 'HM',
+  '340': 'HN',
+  '191': 'HR',
+  '332': 'HT',
+  '348': 'HU',
+  '360': 'ID',
+  '833': 'IM',
+  '356': 'IN',
+  '086': 'IO',
+  '372': 'IE',
+  '364': 'IR',
+  '368': 'IQ',
+  '352': 'IS',
+  '376': 'IL',
+  '380': 'IT',
+  '388': 'JM',
+  '832': 'JE',
+  '400': 'JO',
+  '392': 'JP',
+  '398': 'KZ',
+  '404': 'KE',
+  '417': 'KG',
+  '116': 'KH',
+  '296': 'KI',
+  '659': 'KN',
+  '410': 'KR',
+  '414': 'KW',
+  '418': 'LA',
+  '422': 'LB',
+  '430': 'LR',
+  '434': 'LY',
+  '662': 'LC',
+  '438': 'LI',
+  '144': 'LK',
+  '426': 'LS',
+  '440': 'LT',
+  '442': 'LU',
+  '428': 'LV',
+  '446': 'MO',
+  '663': 'MF',
+  '504': 'MA',
+  '492': 'MC',
+  '498': 'MD',
+  '450': 'MG',
+  '462': 'MV',
+  '484': 'MX',
+  '584': 'MH',
+  '807': 'MK',
+  '466': 'ML',
+  '470': 'MT',
+  '104': 'MM',
+  '499': 'ME',
+  '496': 'MN',
+  '580': 'MP',
+  '508': 'MZ',
+  '478': 'MR',
+  '500': 'MS',
+  '474': 'MQ',
+  '480': 'MU',
+  '454': 'MW',
+  '458': 'MY',
+  '175': 'YT',
+  '516': 'NA',
+  '540': 'NC',
+  '562': 'NE',
+  '574': 'NF',
+  '566': 'NG',
+  '558': 'NI',
+  '570': 'NU',
+  '528': 'NL',
+  '578': 'NO',
+  '524': 'NP',
+  '520': 'NR',
+  '554': 'NZ',
+  '512': 'OM',
+  '586': 'PK',
+  '591': 'PA',
+  '612': 'PN',
+  '604': 'PE',
+  '608': 'PH',
+  '585': 'PW',
+  '598': 'PG',
+  '616': 'PL',
+  '630': 'PR',
+  '408': 'KP',
+  '620': 'PT',
+  '600': 'PY',
+  '275': 'PS',
+  '258': 'PF',
+  '634': 'QA',
+  '638': 'RE',
+  '642': 'RO',
+  '643': 'RU',
+  '646': 'RW',
+  '682': 'SA',
+  '729': 'SD',
+  '686': 'SN',
+  '702': 'SG',
+  '239': 'GS',
+  '654': 'SH',
+  '744': 'SJ',
+  '090': 'SB',
+  '694': 'SL',
+  '222': 'SV',
+  '674': 'SM',
+  '706': 'SO',
+  '666': 'PM',
+  '688': 'RS',
+  '728': 'SS',
+  '678': 'ST',
+  '740': 'SR',
+  '703': 'SK',
+  '705': 'SI',
+  '752': 'SE',
+  '748': 'SZ',
+  '534': 'SX',
+  '690': 'SC',
+  '760': 'SY',
+  '796': 'TC',
+  '148': 'TD',
+  '768': 'TG',
+  '764': 'TH',
+  '762': 'TJ',
+  '772': 'TK',
+  '795': 'TM',
+  '626': 'TL',
+  '776': 'TO',
+  '780': 'TT',
+  '788': 'TN',
+  '792': 'TR',
+  '798': 'TV',
+  '158': 'TW',
+  '834': 'TZ',
+  '800': 'UG',
+  '804': 'UA',
+  '581': 'UM',
+  '858': 'UY',
+  '840': 'US',
+  '860': 'UZ',
+  '336': 'VA',
+  '670': 'VC',
+  '862': 'VE',
+  '092': 'VG',
+  '850': 'VI',
+  '704': 'VN',
+  '548': 'VU',
+  '876': 'WF',
+  '882': 'WS',
+  '887': 'YE',
+  '710': 'ZA',
+  '894': 'ZM',
+  '716': 'ZW',
+  '383': 'XK',
+};
+const SCHENGEN = new Set([
+  'AT',
+  'BE',
+  'BG',
+  'HR',
+  'CZ',
+  'DK',
+  'EE',
+  'FI',
+  'FR',
+  'DE',
+  'GR',
+  'HU',
+  'IS',
+  'IT',
+  'LV',
+  'LI',
+  'LT',
+  'LU',
+  'MT',
+  'NL',
+  'NO',
+  'PL',
+  'PT',
+  'RO',
+  'SK',
+  'SI',
+  'ES',
+  'SE',
+  'CH',
+]);
+const EU_EEA_CH = new Set([
+  'AT',
+  'BE',
+  'BG',
+  'HR',
+  'CY',
+  'CZ',
+  'DK',
+  'EE',
+  'FI',
+  'FR',
+  'DE',
+  'GR',
+  'HU',
+  'IE',
+  'IT',
+  'LV',
+  'LT',
+  'LU',
+  'MT',
+  'NL',
+  'PL',
+  'PT',
+  'RO',
+  'SK',
+  'SI',
+  'ES',
+  'SE',
+  'IS',
+  'LI',
+  'NO',
+  'CH',
+]);
+const APP_KEY = 'whereIveBeen.data.v2',
+  LEGACY_KEY = 'whereIveBeen.stays.v1',
+  CLOUD_KEY = 'whereIveBeen.cloud.v1',
+  LOCAL_SAVED_KEY = 'whereIveBeen.lastSaved.v1';
 
 // DEVICE TRANSFER SERVICE
 // Paste the SAME Supabase project URL and PUBLISHABLE key here after running
 // device-transfer-setup.sql in that project. These values are safe to expose
 // in a browser app when you use a publishable/anon key (NEVER a service-role key).
-const TRANSFER_SERVICE={
-  supabaseUrl:'https://dvbgjdghjjydajmulbjn.supabase.co',
-  supabaseKey:'sb_publishable_TFLW7eFitT9Mw8jML_rzXQ_B43Tgg0H',
-  expiresMinutes:60
+const TRANSFER_SERVICE = {
+  supabaseUrl: 'https://dvbgjdghjjydajmulbjn.supabase.co',
+  supabaseKey: 'sb_publishable_TFLW7eFitT9Mw8jML_rzXQ_B43Tgg0H',
+  expiresMinutes: 60,
 };
-const RULES=[
- {id:'schengen',name:'Schengen Area',countries:[...SCHENGEN],type:'rolling',limit:90,window:180,source:'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en',desc:'90 days in any rolling 180-day period for normal short stays by third-country nationals.'},
- {id:'uk',name:'United Kingdom — Standard Visitor',countries:['GB'],type:'months',months:6,source:'https://www.gov.uk/standard-visitor',desc:'A Standard Visitor can usually stay for up to 6 months. Your actual permission and eligibility control.'},
- {id:'canada',name:'Canada — visitor',countries:['CA'],type:'months',months:6,source:'https://www.ircc.canada.ca/english/helpcentre/answer.asp?qnum=1016&top=',desc:'Most visitors can stay for up to 6 months, but a border officer may allow a different period.'},
- {id:'us-vwp',name:'United States — Visa Waiver Program',countries:['US'],type:'perVisit',limit:90,source:'https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visa-waiver-program.html',desc:'For eligible travellers admitted under the VWP: up to 90 days. Side trips may not reset the original admission period.'}
+const RULES = [
+  {
+    id: 'schengen',
+    name: 'Schengen Area',
+    countries: [...SCHENGEN],
+    type: 'rolling',
+    limit: 90,
+    window: 180,
+    source:
+      'https://home-affairs.ec.europa.eu/policies/schengen/border-crossing/short-stay-calculator_en',
+    desc: '90 days in any rolling 180-day period for normal short stays by third-country nationals.',
+  },
+  {
+    id: 'uk',
+    name: 'United Kingdom — Standard Visitor',
+    countries: ['GB'],
+    type: 'months',
+    months: 6,
+    source: 'https://www.gov.uk/standard-visitor',
+    desc: 'A Standard Visitor can usually stay for up to 6 months. Your actual permission and eligibility control.',
+  },
+  {
+    id: 'canada',
+    name: 'Canada — visitor',
+    countries: ['CA'],
+    type: 'months',
+    months: 6,
+    source: 'https://www.ircc.canada.ca/english/helpcentre/answer.asp?qnum=1016&top=',
+    desc: 'Most visitors can stay for up to 6 months, but a border officer may allow a different period.',
+  },
+  {
+    id: 'us-vwp',
+    name: 'United States — Visa Waiver Program',
+    countries: ['US'],
+    type: 'perVisit',
+    limit: 90,
+    source:
+      'https://travel.state.gov/content/travel/en/us-visas/tourism-visit/visa-waiver-program.html',
+    desc: 'For eligible travellers admitted under the VWP: up to 90 days. Side trips may not reset the original admission period.',
+  },
 ];
-let state=loadState(),calendarCursor=startOfMonth(new Date()),timelineDate=null,worldFeatures=null,worldLoading=false,profileCitizenships=[],calendarSelectionStart=null,calendarSelectionEnd=null,stayDialogContext='manual';
 
-let cloudClient=null,cloudSession=null,cloudTimer=null,lastPlannerTrip=null;
-let transferClient=null,lastTransferCode='';
-const $=id=>document.getElementById(id)||window.HVPages?.get(id),els={};
-function defaultState(){return{version:2,trips:[],stays:[],transports:[],accommodations:[],notes:[],checklists:[],budgets:[],expenses:[],roadTrips:[],currencyRates:[],currencyPreferences:[],manualCountryVisits:[],tccVisits:[],placeVisits:[],savedPlaces:[],visaAcknowledgements:[],residences:[],profiles:[{id:uid(),name:'Me',citizenships:[],enabledRules:['schengen']}],activeProfileId:null,excludedCountryCodes:[]};}
-function loadState(includeClaimed=false){const claimed=!includeClaimed&&localStorage.getItem('whereIveBeen.localOwner.v1');try{let v=JSON.parse(localStorage.getItem(claimed?'whereIveBeen.guest.v1':APP_KEY));if(v){normalizeState(v);return v}}catch{};let d=defaultState();if(!claimed)try{let legacy=JSON.parse(localStorage.getItem(LEGACY_KEY))||[];d.stays=legacy.map(s=>({...s,status:s.status||'actual',profileId:s.profileId||null}))}catch{};d.activeProfileId=d.profiles[0].id;return d}
-function normalizeState(v){v.version=2;for(const k of ['roadTrips','currencyRates','currencyPreferences','manualCountryVisits','tccVisits'])v[k]=Array.isArray(v[k])?v[k]:[];v.savedPlaces=Array.isArray(v.savedPlaces)?v.savedPlaces:[];v.visaAcknowledgements=Array.isArray(v.visaAcknowledgements)?v.visaAcknowledgements:[];v.trips=Array.isArray(v.trips)?v.trips:[];v.transports=Array.isArray(v.transports)?v.transports:[];v.accommodations=Array.isArray(v.accommodations)?v.accommodations:[];if(!Array.isArray(v.notes)){if(v.notes!=null)v.legacyTravelNotes??=v.notes;v.notes=typeof v.notes==='string'&&v.notes.trim()?[{id:'legacy-travel-note',title:'Imported travel notes',body:v.notes,profileId:v.activeProfileId||null,category:'General'}]:[];}v.checklists=Array.isArray(v.checklists)?v.checklists:[];v.budgets=Array.isArray(v.budgets)?v.budgets:[];v.expenses=Array.isArray(v.expenses)?v.expenses:[];v.placeVisits=Array.isArray(v.placeVisits)?v.placeVisits:[];v.stays=Array.isArray(v.stays)?v.stays:[];v.residences=Array.isArray(v.residences)?v.residences:[];v.profiles=Array.isArray(v.profiles)&&v.profiles.length?v.profiles:defaultState().profiles;v.activeProfileId=v.activeProfileId||v.profiles[0].id;v.excludedCountryCodes=Array.isArray(v.excludedCountryCodes)?v.excludedCountryCodes:[];v.profiles.forEach(p=>{p.citizenships=p.citizenships||[];p.enabledRules=p.enabledRules||['schengen']});v.stays.forEach(s=>{s.status=['actual','planned','unconfirmed','cancelled'].includes(s.status)?s.status:'actual';if(s.profileId===undefined)s.profileId=null});v.transports.forEach(t=>{t.status=['actual','planned','cancelled'].includes(t.status)?t.status:'actual';if(t.profileId===undefined)t.profileId=null});v.accommodations.forEach(a=>{if(a.profileId===undefined)a.profileId=null;if(a.tripId===undefined)a.tripId=null;a.propertyName=String(a.propertyName||a.name||'').trim();a.location=String(a.location||'').trim();a.notes=String(a.notes||'').trim()});v.residences.forEach(r=>{if(r.profileId===undefined)r.profileId=null;if(r.end===undefined)r.end=null})}
-function persist(noCloud=false){localStorage.setItem(APP_KEY,JSON.stringify(state));localStorage.setItem(LOCAL_SAVED_KEY,new Date().toISOString());updateLocalSaveIndicator();if(!noCloud&&cloudSession&&getCloudConfig().autoSync){clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>cloudPush(true),700)}}
-function uid(){return(Date.now().toString(36)+Math.random().toString(36).slice(2,9))}
-function isoDate(d){return new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())).toISOString().slice(0,10)}
-function parseDate(s){let[y,m,d]=s.split('-').map(Number);return new Date(Date.UTC(y,m-1,d))}
-function addDays(d,n){let x=new Date(d);x.setUTCDate(x.getUTCDate()+n);return x}
-function addMonths(d,n){let x=new Date(d);x.setUTCMonth(x.getUTCMonth()+n);return x}
-function startOfMonth(d){return new Date(Date.UTC(d.getFullYear(),d.getMonth(),1))}
-function dayKey(d){return d.toISOString().slice(0,10)}
-function diffDays(a,b){return Math.round((parseDate(b)-parseDate(a))/86400000)}
-function daysInclusive(a,b){return diffDays(a,b)+1}
-function fmt(s,o={day:'numeric',month:'short',year:'numeric'}){return parseDate(s).toLocaleDateString('en-GB',{...o,timeZone:'UTC'})}
-function fmtObj(d,o={day:'numeric',month:'short',year:'numeric'}){return d.toLocaleDateString('en-GB',{...o,timeZone:'UTC'})}
-function flag(c){return c?[...c.toUpperCase()].map(x=>String.fromCodePoint(127397+x.charCodeAt())).join(''):''}
-function legacyFlagUrl(c,w=80){if(!c||c==='SEA')return'';if(c==='BOU')return`https://commons.wikimedia.org/wiki/Special:Redirect/file/Flag_of_Bougainville.svg?width=${w*2}`;return`https://flagcdn.com/w${w}/${String(c).toLowerCase()}.png`}
-const SLAPS_FLAG_NAME_ALIASES={CV:'Cape Verde',CC:'Cocos Islands',CD:'Democratic Republic of the Congo',CI:'Ivory Coast',FK:'Falkland Islands',VA:'Vatican City',FM:'Micronesia',MO:'Macau',PN:'Pitcairn Islands',ST:'São Tomé and Príncipe',MF:'Saint Martin',SX:'Sint Maarten',US:'United States of America',VG:'British Virgin Islands',VI:'U.S. Virgin Islands'};
-function normalizedFlagName(v=''){return String(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
-function slapsFlagEntry(c){let code=String(c||'').toUpperCase(),country=countryByCode(code);if(!country)return null;let wanted=SLAPS_FLAG_NAME_ALIASES[code]||country.name,key=normalizedFlagName(wanted),list=Array.isArray(window.ISFCountries)?window.ISFCountries:[];return list.find(x=>normalizedFlagName(x?.name)===key)||null}
-function slapsFlagUrl(c){const path=window.HVFlagThumbnails?.[String(c||'').toUpperCase()]||window.HVFlagAssets?.[String(c||'').toUpperCase()];return path?path.split('/').map(encodeURIComponent).join('/'):''}
-function flagUrl(c,w=80){return slapsFlagUrl(c)||legacyFlagUrl(c,w)}
-function flagHtml(c,cls='flag-img'){if(!c)return'';let code=String(c).toUpperCase();if(code==='SEA')return`<span class="${esc(cls)}" style="display:inline-flex;align-items:center;justify-content:center;background:#eaf4f8;border-radius:6px;font-size:18px" title="At Sea">🌊</span>`;if(code.startsWith('GB-'))return `<img class="${esc(cls)}" src="assets/domestic/${code.toLowerCase()}.svg" alt="${esc(HVJourney.domesticDestinations.find(d=>d.domesticDestination===code)?.name||code)} flag">`;let src=slapsFlagUrl(code),fallback=legacyFlagUrl(code);if(!src)src=fallback;return`<img class="${esc(cls)}" src="${src}" data-fallback="${fallback}" alt="${esc(countryByCode(code)?.name||code)} flag" loading="lazy" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f}else{this.style.display='none'}">`}
-function countryByName(n=''){return [...COUNTRIES,...HVJourney.domesticDestinations].find(c=>c.name.toLowerCase()===n.trim().toLowerCase())}
-function countryByCode(c){return COUNTRIES.find(x=>x.code===c)}
-function esc(v=''){return String(v).replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]))}
-function plural(n,w){return`${n} ${w}${n===1?'':'s'}`}
-function activeProfile(){return state.profiles.find(p=>p.id===state.activeProfileId)||state.profiles[0]}
-function isSchengenExemptProfile(p=activeProfile()){return !!p&&p.citizenships.some(c=>EU_EEA_CH.has(c))}
-function staysForProfile(profileId=state.activeProfileId){return HVJourney.scoped(state.stays,profileId)}
-function countsAsTravel(s){return HVJourney.isActual(s)}
-function countsForPlanning(s){return HVJourney.countsForPlanning(s)}
-function datesForStay(s,min=null,max=null){let a=parseDate(s.start),b=parseDate(s.end),lo=min?parseDate(min):a,hi=max?parseDate(max):b,start=a>lo?a:lo,end=b<hi?b:hi,out=[];for(let d=start;d<=end;d=addDays(d,1))out.push(dayKey(d));return out}
-function residenceAppliesOnDate(countryCode,date,profileId=state.activeProfileId){if(countryCode==='SEA')return false;return(state.residences||[]).some(r=>(!r.profileId||r.profileId===profileId)&&r.countryCode===countryCode&&r.start<=date&&(!r.end||r.end>=date))}
-function travelDaySet(list=staysForProfile(state.activeProfileId)){return HVJourney.summary({...state,stays:list},isoDate(new Date())).days}
-function schengenDaySet(min=null,max=null,profileId=state.activeProfileId,extra=[]){let set=new Set();[...staysForProfile(profileId),...extra].filter(countsForPlanning).forEach(s=>{if(SCHENGEN.has(s.countryCode)&&!s.schengenExempt)datesForStay(s,min,max).forEach(d=>set.add(d))});return set}
-function rollingStatus(check,profileId=state.activeProfileId,extra=[]){let end=parseDate(check),start=addDays(end,-179),set=schengenDaySet(dayKey(start),dayKey(end),profileId,extra),used=set.size;return{start,end,used,remaining:90-used}}
-function statusForUsed(n){if(n>90)return{kind:'bad',label:'OVER',text:`Your records show ${plural(n,'Schengen day')} in this rolling 180-day window.`};if(n>=86)return{kind:'bad',label:'VERY CLOSE',text:`Only ${plural(90-n,'Schengen day')} remain in this rolling window.`};if(n>=75)return{kind:'warn',label:'WATCH',text:`You have ${plural(90-n,'Schengen day')} remaining in this rolling window.`};return{kind:'good',label:'OK',text:`You have ${plural(90-n,'Schengen day')} remaining in this rolling window.`}}
-function firstOverstay(from,horizon=500,profileId=state.activeProfileId,extra=[]){
- const start=parseDate(from),min=dayKey(addDays(start,-179)),max=dayKey(addDays(start,horizon)),days=schengenDaySet(min,max,profileId,extra);
- let used=0;for(let i=-179;i<=0;i++)if(days.has(dayKey(addDays(start,i))))used++;
- for(let i=0;i<=horizon;i++){const date=dayKey(addDays(start,i));if(i){if(days.has(dayKey(addDays(start,i-180))))used--;if(days.has(date))used++;}if(used>90)return{date,used};}return null;
+// Source: src/core/state.js
+let state = loadState(),
+  calendarCursor = startOfMonth(new Date()),
+  timelineDate = null,
+  worldFeatures = null,
+  worldLoading = false,
+  profileCitizenships = [],
+  calendarSelectionStart = null,
+  calendarSelectionEnd = null,
+  stayDialogContext = 'manual';
+
+let cloudClient = null,
+  cloudSession = null,
+  cloudTimer = null,
+  lastPlannerTrip = null;
+let transferClient = null,
+  lastTransferCode = '';
+const $ = (id) => document.getElementById(id) || window.HVPages?.get(id),
+  els = {};
+function defaultState() {
+  return {
+    version: 2,
+    trips: [],
+    stays: [],
+    transports: [],
+    accommodations: [],
+    notes: [],
+    checklists: [],
+    budgets: [],
+    expenses: [],
+    roadTrips: [],
+    currencyRates: [],
+    currencyPreferences: [],
+    manualCountryVisits: [],
+    tccVisits: [],
+    placeVisits: [],
+    savedPlaces: [],
+    visaAcknowledgements: [],
+    residences: [],
+    profiles: [{ id: uid(), name: 'Me', citizenships: [], enabledRules: ['schengen'] }],
+    activeProfileId: null,
+    excludedCountryCodes: [],
+  };
 }
-function maxContinuousSchengen(entry,profileId=state.activeProfileId){let extra=[],last=null;for(let i=0;i<180;i++){let d=dayKey(addDays(parseDate(entry),i)),trial={id:'planner',countryCode:'FR',countryName:'Schengen',start:entry,end:d,schengenExempt:false,status:'planned',profileId};let r=rollingStatus(d,profileId,[trial]);if(r.used>90)break;last=d}return last?daysInclusive(entry,last):0}
-function earliestOneDayEntry(from,profileId=state.activeProfileId,extra=[]){let d=parseDate(from);for(let i=0;i<730;i++,d=addDays(d,1)){let k=dayKey(d),trial={id:'reentry',countryCode:'FR',countryName:'Schengen',start:k,end:k,schengenExempt:false,status:'planned',profileId};if(rollingStatus(k,profileId,[...extra,trial]).used<=90)return k}return null}
-function findGaps(){let source=staysForProfile(state.activeProfileId).filter(countsAsTravel);if(source.length<2)return[];let arr=[...source].sort((a,b)=>a.start.localeCompare(b.start)||a.end.localeCompare(b.end)),gaps=[],curEnd=arr[0].end,prev=arr[0];for(let i=1;i<arr.length;i++){let s=arr[i];if(parseDate(s.start)>addDays(parseDate(curEnd),1)){let missingStart=dayKey(addDays(parseDate(curEnd),1)),missingEnd=dayKey(addDays(parseDate(s.start),-1)),gs=curEnd,ge=s.start;gaps.push({start:gs,end:ge,days:daysInclusive(gs,ge),missingStart,missingEnd,missingDays:daysInclusive(missingStart,missingEnd),prev,next:s})}if(s.end>curEnd){curEnd=s.end;prev=s}}return gaps}
-function updatePassedPlannedTrips(){const today=isoDate(new Date()),staysChanged=HVJourney.reviewPlanned(state.stays,today),transportChanged=HVJourney.reviewTransport(state.transports,today);if(staysChanged||transportChanged)persist(true)}
-function installCalendarJumpUI(){if($('calendarMonthJump'))return;let prev=$('prevMonth'),next=$('nextMonth');if(!prev||!next)return;let host=prev.parentElement,wrapper=document.createElement('div'),months=['January','February','March','April','May','June','July','August','September','October','November','December'];wrapper.className='calendar-jump-controls';wrapper.innerHTML=`<select id="calendarMonthJump" class="calendar-jump-select" aria-label="Choose month">${months.map((m,i)=>`<option value="${i}">${m}</option>`).join('')}</select><select id="calendarYearJump" class="calendar-jump-select year" aria-label="Choose year">${Array.from({length:301},(_,i)=>1900+i).map(y=>`<option value="${y}">${y}</option>`).join('')}</select>`;host.insertBefore(wrapper,next);let month=$('calendarMonthJump'),year=$('calendarYearJump'),jump=()=>{calendarCursor=new Date(Date.UTC(Number(year.value),Number(month.value),1));renderCalendar()};month.addEventListener('change',jump);year.addEventListener('change',jump);let style=document.createElement('style');style.textContent=`.calendar-jump-controls{display:flex;align-items:center;gap:8px}.calendar-jump-select{background:#fff;border:1px solid #dfe4ea;border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;font-weight:600;color:#172033;cursor:pointer}.calendar-jump-select.year{min-width:90px}.calendar-jump-select:focus{outline:none;border-color:#172033}@media(max-width:700px){.calendar-jump-controls{width:100%}.calendar-jump-select{flex:1}}`;document.head.appendChild(style)}
-function installResidenceUI(){if($('residencePanel'))return;let profiles=$('profilesView');if(!profiles)return;let panel=document.createElement('article');panel.className='panel';panel.id='residencePanel';panel.style.marginTop='20px';panel.innerHTML=`<div class="panel-head"><div><p class="eyebrow">HOME HISTORY</p><h2>Places you've lived</h2></div></div><p class="panel-copy">Add the places you've called home. Days when your only recorded location was somewhere you lived won't count towards Travel days logged.</p><form id="residenceForm" class="residence-form"><label class="field"><span>Country</span><input id="residenceCountry" list="countryList" placeholder="Start typing a country…" required></label><label class="field"><span>From</span><input id="residenceStart" type="date" required></label><label class="field"><span>To</span><input id="residenceEnd" type="date"></label><button type="submit" class="primary">Add</button><label class="residence-present"><input id="residencePresent" type="checkbox"> I still live here / Present</label></form><div id="residenceError" class="form-message"></div><div id="residenceList" class="stay-list residence-list"></div>`;let dataPanel=$('dataTransferPanel');if(dataPanel)profiles.insertBefore(panel,dataPanel);else profiles.appendChild(panel);if(!$('residenceStyles')){let style=document.createElement('style');style.id='residenceStyles';style.textContent=`.residence-form{display:grid;grid-template-columns:minmax(180px,1.5fr) minmax(140px,1fr) minmax(140px,1fr) auto;gap:12px;align-items:end;margin-top:18px}.residence-present{grid-column:2 / 4;display:flex;gap:8px;align-items:center;font-size:14px}.residence-list{margin-top:18px}@media(max-width:760px){.residence-form{grid-template-columns:1fr}.residence-present{grid-column:auto}}`;document.head.appendChild(style)}}
-function cacheEls(){['countriesLogged','daysLogged','schengenBadge','schengenUsed','schengenProgress','schengenSummary','schengenRemaining','remainingSummary','miniCalendarTitle','miniCalendar','recentStays','schengenAlertPanel','alertTitle','alertBody','dashboardGaps','calendarTitle','calendar','calendarSelectionInfo','clearCalendarSelectionBtn','countryTotals','checkDate','schengenProfileNote','ringUsed','calcUsed','calcRemaining','windowDates','schengenRing','forecastBox','forecastTitle','forecastText','schengenBreakdown','allStays','gapList','pageTitle','stayDialog','stayForm','stayId','tripNameInput','countryInput','countryFlag','dateRanges','notesInput','stayStatus','stayProfile','schengenExempt','schengenExemptRow','formError','dialogTitle','deleteStayBtn','worldMap','mapFallback','mapSelectionSummary','timelineEmpty','timelineContent','timelineSlider','timelineDateLabel','timelineLocationLabel','timelineStartLabel','timelineEndLabel','timelineBars','timelineSchengenLabel','plannerProfile','plannerCountry','plannerEntry','plannerExit','plannerResultTitle','plannerResultBody','addPlannedTripBtn','visaPassport','visaDestination','visaProfileHint','runVisaCheckBtn','visaResultTitle','visaResultBody','visaDataStatus','profileDialog','profileForm','profileId','profileName','citizenshipInput','citizenshipChips','profileError','profileDialogTitle','deleteProfileBtn','profileList','gapDialog','gapForm','gapStart','gapEnd','gapDateSummary','gapCountry','gapError','supabaseUrl','supabaseKey','cloudEmail','cloudPassword','cloudStatusBadge','cloudMessage','cloudPullBtn','cloudPushBtn','cloudSignInBtn','cloudSignOutBtn','autoSyncToggle','localSaveBadge','localSaveDetail','createTransferBtn','transferCodeArea','transferCodeValue','copyTransferCodeBtn','transferExpiry','transferCodeInput','claimTransferBtn','transferMessage','dataBackupBtn','dataRestoreBtn','residenceForm','residenceCountry','residenceStart','residenceEnd','residencePresent','residenceError','residenceList'].forEach(id=>els[id]=$(id))}
-function init(){installDataTransferUI();installResidenceUI();installCalendarJumpUI();cacheEls();updatePassedPlannedTrips();$('countryList').innerHTML=[...COUNTRIES,...HVJourney.domesticDestinations].map(c=>`<option value="${esc(c.name)}"></option>`).join('');els.checkDate.value=isoDate(new Date());els.plannerEntry.value=isoDate(new Date());bindEvents();populateProfileSelects();renderAll();updateLocalSaveIndicator();initCloudFromConfig()}
-function bindEvents(){document.querySelectorAll('.nav-item').forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll('[data-go-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.goView));$('addStayBtn').onclick=()=>openStayDialog();$('addStayFromListBtn').onclick=()=>openStayDialog();$('closeDialog').onclick=$('cancelDialog').onclick=()=>els.stayDialog.close();$('addDateRangeBtn').onclick=()=>addDateRange();els.stayForm.onsubmit=saveStay;$('deleteStayBtn').onclick=deleteStay;els.countryInput.oninput=updateStayCountry;document.addEventListener('click',handleDelegatedClick);$('prevMonth').onclick=()=>{calendarCursor=new Date(Date.UTC(calendarCursor.getUTCFullYear(),calendarCursor.getUTCMonth()-1,1));renderCalendar()};$('nextMonth').onclick=()=>{calendarCursor=new Date(Date.UTC(calendarCursor.getUTCFullYear(),calendarCursor.getUTCMonth()+1,1));renderCalendar()};$('todayBtn').onclick=()=>{calendarCursor=startOfMonth(new Date());renderCalendar()};els.clearCalendarSelectionBtn.onclick=clearCalendarSelection;els.checkDate.onchange=renderSchengen;$('timelineTodayBtn').onclick=()=>setTimelineDate(isoDate(new Date()));els.timelineSlider.oninput=()=>setTimelineFromSlider();$('runPlannerBtn').onclick=runPlanner;if(els.runVisaCheckBtn)els.runVisaCheckBtn.onclick=runVisaCheck;if(els.visaPassport)els.visaPassport.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runVisaCheck()}});if(els.visaDestination)els.visaDestination.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runVisaCheck()}});els.addPlannedTripBtn.onclick=addPlannerTrip;$('addProfileBtn').onclick=()=>openProfileDialog();$('closeProfileDialog').onclick=$('cancelProfileDialog').onclick=()=>els.profileDialog.close();$('addCitizenshipBtn').onclick=addCitizenship;els.profileForm.onsubmit=saveProfile;els.deleteProfileBtn.onclick=deleteProfile;els.gapForm.onsubmit=saveGap;$('closeGapDialog').onclick=$('cancelGapDialog').onclick=()=>els.gapDialog.close();if(els.residenceForm)els.residenceForm.onsubmit=saveResidence;if(els.residencePresent)els.residencePresent.onchange=()=>{els.residenceEnd.disabled=els.residencePresent.checked;if(els.residencePresent.checked)els.residenceEnd.value=''};}
-
-function handleDelegatedClick(e){let go=e.target.closest('[data-go-view]');if(go){switchView(go.dataset.goView);return}let b=e.target.closest('[data-action]');if(b){let a=b.dataset.action;if(a==='edit-stay')openStayDialog(b.dataset.id);if(a==='remove-range')b.closest('.date-range-row').remove();if(a==='fill-gap')openGapDialog(b.dataset.start,b.dataset.end,b.dataset.country||'');if(a==='delete-residence')deleteResidence(b.dataset.id);if(a==='exclude-country'){let code=b.dataset.country;state.excludedCountryCodes=Array.from(new Set([...(state.excludedCountryCodes||[]),code]));persist();renderDashboard();renderCountries();updateMapColors()}if(a==='include-country'){let code=b.dataset.country;state.excludedCountryCodes=(state.excludedCountryCodes||[]).filter(c=>c!==code);persist();renderDashboard();renderCountries();updateMapColors()}if(a==='set-profile'){state.activeProfileId=b.dataset.id;persist();populateProfileSelects();renderAll()}if(a==='edit-profile')openProfileDialog(b.dataset.id);if(a==='use-profile-passport'){let c=countryByCode(b.dataset.country);if(c){els.visaPassport.value=c.name;runVisaCheck()}}return}let day=e.target.closest('[data-calendar-date]');if(day)handleCalendarDateClick(day.dataset.calendarDate)}
-function switchView(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));$(`${v}View`).classList.add('active');document.querySelector(`.nav-item[data-view="${v}"]`)?.classList.add('active');let t={dashboard:'Dashboard',calendar:'Calendar',map:'Map & timeline',countries:'Countries',schengen:'Schengen 90/180',planner:'Plan a Trip',stayPlanner:'Stay planner',rules:'Entry Requirements',stays:'All stays',profiles:'Profiles & data'};els.pageTitle.textContent=t[v]||'Travel tracker';if(v==='map')renderMapTimeline();if(v==='schengen')renderSchengen();if(v==='stayPlanner')populateProfileSelects();if(v==='rules')renderVisaChecker();if(v==='stays')renderStayLists();if(v==='profiles')renderProfiles();window.scrollTo({top:0,behavior:'smooth'})}
-function renderAll(){const view=document.body.dataset.currentView||'dashboard';renderProfiles();if(view==='dashboard'){renderDashboard();renderMiniCalendar()}if(view==='calendar')renderCalendar();if(view==='countries')renderCountries();if(view==='schengen')renderSchengen();if(view==='stays')renderStayLists();if(view==='rules')renderVisaChecker();if(view==='map')renderMapTimeline();window.HVJourneys?.render()}
-function renderDashboard(){
-  const p=activeProfile(),today=isoDate(new Date()),r=rollingStatus(today),st=statusForUsed(r.used),exempt=isSchengenExemptProfile(p),profileStays=staysForProfile();
-  els.countriesLogged.textContent=[...HVJourney.summary(state,today).countries].filter(WIBCountryCount.isCounted).length;
-  els.daysLogged.textContent=travelDaySet().size;
-  if(exempt){
-    els.schengenUsed.textContent='—';els.schengenRemaining.textContent='—';els.schengenBadge.className='status-badge good';els.schengenBadge.textContent='EXEMPT';els.schengenProgress.style.width='0';els.schengenSummary.textContent=`${p.name} has an EU/EEA/Swiss citizenship recorded`;els.remainingSummary.textContent='90/180 short-stay rule not applied';els.schengenAlertPanel.hidden=true;
-  }else{
-    els.schengenUsed.textContent=r.used;els.schengenRemaining.textContent=Math.max(0,r.remaining);els.schengenProgress.style.width=`${Math.min(100,r.used/90*100)}%`;els.schengenProgress.style.background=st.kind==='bad'?'var(--red)':st.kind==='warn'?'var(--amber)':'var(--green)';els.schengenBadge.className=`status-badge ${st.kind}`;els.schengenBadge.textContent=st.label;els.schengenSummary.textContent=`${plural(r.used,'day')} used from ${fmtObj(r.start,{day:'numeric',month:'short'})} to ${fmtObj(r.end,{day:'numeric',month:'short'})}`;els.remainingSummary.textContent=`As of ${fmtObj(r.end)}`;els.schengenAlertPanel.hidden=st.kind==='good';els.schengenAlertPanel.className=`panel warning-panel ${st.kind}`;els.alertTitle.textContent=st.kind==='warn'?'Your Schengen allowance is getting tight':r.used>90?'Your records show a possible overstay':'You are very close to the limit';els.alertBody.textContent=st.text;
+function loadState(includeClaimed = false) {
+  const claimed = !includeClaimed && localStorage.getItem('whereIveBeen.localOwner.v1');
+  try {
+    let v = JSON.parse(localStorage.getItem(claimed ? 'whereIveBeen.guest.v1' : APP_KEY));
+    if (v) {
+      normalizeState(v);
+      return v;
+    }
+  } catch {}
+  let d = defaultState();
+  if (!claimed)
+    try {
+      let legacy = JSON.parse(localStorage.getItem(LEGACY_KEY)) || [];
+      d.stays = legacy.map((s) => ({
+        ...s,
+        status: s.status || 'actual',
+        profileId: s.profileId || null,
+      }));
+    } catch {}
+  d.activeProfileId = d.profiles[0].id;
+  return d;
+}
+function normalizeState(v) {
+  v.version = 2;
+  for (const k of [
+    'roadTrips',
+    'currencyRates',
+    'currencyPreferences',
+    'manualCountryVisits',
+    'tccVisits',
+  ])
+    v[k] = Array.isArray(v[k]) ? v[k] : [];
+  v.savedPlaces = Array.isArray(v.savedPlaces) ? v.savedPlaces : [];
+  v.visaAcknowledgements = Array.isArray(v.visaAcknowledgements) ? v.visaAcknowledgements : [];
+  v.trips = Array.isArray(v.trips) ? v.trips : [];
+  v.transports = Array.isArray(v.transports) ? v.transports : [];
+  v.accommodations = Array.isArray(v.accommodations) ? v.accommodations : [];
+  if (!Array.isArray(v.notes)) {
+    if (v.notes != null) v.legacyTravelNotes ??= v.notes;
+    v.notes =
+      typeof v.notes === 'string' && v.notes.trim()
+        ? [
+            {
+              id: 'legacy-travel-note',
+              title: 'Imported travel notes',
+              body: v.notes,
+              profileId: v.activeProfileId || null,
+              category: 'General',
+            },
+          ]
+        : [];
   }
-  const gaps=findGaps().slice(0,3);
-  els.dashboardGaps.className='gap-list';
-  els.dashboardGaps.innerHTML=`<details class="home-history-check"><summary>Trips update automatically <span class="status-badge good">ON</span></summary><p>Planned trips and transport become completed the day after their final date. Edit or cancel anything before then.</p>${gaps.length?`<div class="home-gap-list">${gaps.map(g=>gapCard(g,true)).join('')}</div>`:'<p>No gaps in your completed travel history.</p>'}</details>`;
-  renderStayList(els.recentStays,[...profileStays.filter(s=>s.status==='planned'&&s.start>today).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,3),...profileStays.filter(s=>s.status==='actual'&&s.start<=today).sort((a,b)=>b.start.localeCompare(a.start)).slice(0,3)]);
+  v.checklists = Array.isArray(v.checklists) ? v.checklists : [];
+  v.budgets = Array.isArray(v.budgets) ? v.budgets : [];
+  v.expenses = Array.isArray(v.expenses) ? v.expenses : [];
+  v.placeVisits = Array.isArray(v.placeVisits) ? v.placeVisits : [];
+  v.stays = Array.isArray(v.stays) ? v.stays : [];
+  v.residences = Array.isArray(v.residences) ? v.residences : [];
+  v.profiles =
+    Array.isArray(v.profiles) && v.profiles.length ? v.profiles : defaultState().profiles;
+  v.activeProfileId = v.activeProfileId || v.profiles[0].id;
+  v.excludedCountryCodes = Array.isArray(v.excludedCountryCodes) ? v.excludedCountryCodes : [];
+  v.profiles.forEach((p) => {
+    p.citizenships = p.citizenships || [];
+    p.enabledRules = p.enabledRules || ['schengen'];
+  });
+  v.stays.forEach((s) => {
+    s.status = ['actual', 'planned', 'unconfirmed', 'cancelled'].includes(s.status)
+      ? s.status
+      : 'actual';
+    if (s.profileId === undefined) s.profileId = null;
+  });
+  v.transports.forEach((t) => {
+    t.status = ['actual', 'planned', 'cancelled'].includes(t.status) ? t.status : 'actual';
+    if (t.profileId === undefined) t.profileId = null;
+  });
+  v.accommodations.forEach((a) => {
+    if (a.profileId === undefined) a.profileId = null;
+    if (a.tripId === undefined) a.tripId = null;
+    a.propertyName = String(a.propertyName || a.name || '').trim();
+    a.location = String(a.location || '').trim();
+    a.notes = String(a.notes || '').trim();
+  });
+  v.residences.forEach((r) => {
+    if (r.profileId === undefined) r.profileId = null;
+    if (r.end === undefined) r.end = null;
+  });
 }
-function renderMiniCalendar(){let c=startOfMonth(new Date()),first=(c.getUTCDay()+6)%7,start=addDays(c,-first),today=isoDate(new Date()),list=staysForProfile().filter(countsForPlanning);els.miniCalendarTitle.textContent=c.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'});let h=['M','T','W','T','F','S','S'].map(d=>`<div class="mini-weekday">${d}</div>`).join('');for(let i=0;i<42;i++){let d=addDays(start,i),k=dayKey(d),has=list.some(s=>s.start<=k&&s.end>=k);h+=`<div class="mini-day ${d.getUTCMonth()===c.getUTCMonth()?'':'muted'} ${k===today?'today':''} ${has?'has-stay':''}">${d.getUTCDate()}</div>`}els.miniCalendar.innerHTML=h}
-function renderCalendar() {
-    if(window.HVCalendar?.renderMonth)return window.HVCalendar.renderMonth();
-    const previousDate=document.activeElement?.dataset.selectDate;
-    const c = calendarCursor;
-    const first = (c.getUTCDay() + 6) % 7;
-    const start = addDays(c, -first);
-    const today = isoDate(new Date());
+function persist(noCloud = false) {
+  localStorage.setItem(APP_KEY, JSON.stringify(state));
+  localStorage.setItem(LOCAL_SAVED_KEY, new Date().toISOString());
+  updateLocalSaveIndicator();
+  if (!noCloud && cloudSession && getCloudConfig().autoSync) {
+    clearTimeout(cloudTimer);
+    cloudTimer = setTimeout(() => cloudPush(true), 700);
+  }
+}
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+}
 
-    els.calendarTitle.textContent = c.toLocaleDateString('en-GB', {
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC'
+// Source: src/core/display.js
+function isoDate(d) {
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0, 10);
+}
+function parseDate(s) {
+  let [y, m, d] = s.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+function addDays(d, n) {
+  let x = new Date(d);
+  x.setUTCDate(x.getUTCDate() + n);
+  return x;
+}
+function addMonths(d, n) {
+  let x = new Date(d);
+  x.setUTCMonth(x.getUTCMonth() + n);
+  return x;
+}
+function startOfMonth(d) {
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), 1));
+}
+function dayKey(d) {
+  return d.toISOString().slice(0, 10);
+}
+function diffDays(a, b) {
+  return Math.round((parseDate(b) - parseDate(a)) / 86400000);
+}
+function daysInclusive(a, b) {
+  return diffDays(a, b) + 1;
+}
+function fmt(s, o = { day: 'numeric', month: 'short', year: 'numeric' }) {
+  return parseDate(s).toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
+}
+function fmtObj(d, o = { day: 'numeric', month: 'short', year: 'numeric' }) {
+  return d.toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
+}
+function flag(c) {
+  return c
+    ? [...c.toUpperCase()].map((x) => String.fromCodePoint(127397 + x.charCodeAt())).join('')
+    : '';
+}
+function legacyFlagUrl(c, w = 80) {
+  if (!c || c === 'SEA') return '';
+  if (c === 'BOU')
+    return `https://commons.wikimedia.org/wiki/Special:Redirect/file/Flag_of_Bougainville.svg?width=${w * 2}`;
+  return `https://flagcdn.com/w${w}/${String(c).toLowerCase()}.png`;
+}
+const SLAPS_FLAG_NAME_ALIASES = {
+  CV: 'Cape Verde',
+  CC: 'Cocos Islands',
+  CD: 'Democratic Republic of the Congo',
+  CI: 'Ivory Coast',
+  FK: 'Falkland Islands',
+  VA: 'Vatican City',
+  FM: 'Micronesia',
+  MO: 'Macau',
+  PN: 'Pitcairn Islands',
+  ST: 'São Tomé and Príncipe',
+  MF: 'Saint Martin',
+  SX: 'Sint Maarten',
+  US: 'United States of America',
+  VG: 'British Virgin Islands',
+  VI: 'U.S. Virgin Islands',
+};
+function normalizedFlagName(v = '') {
+  return String(v)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+function slapsFlagEntry(c) {
+  let code = String(c || '').toUpperCase(),
+    country = countryByCode(code);
+  if (!country) return null;
+  let wanted = SLAPS_FLAG_NAME_ALIASES[code] || country.name,
+    key = normalizedFlagName(wanted),
+    list = Array.isArray(window.ISFCountries) ? window.ISFCountries : [];
+  return list.find((x) => normalizedFlagName(x?.name) === key) || null;
+}
+function slapsFlagUrl(c) {
+  const path =
+    window.HVFlagThumbnails?.[String(c || '').toUpperCase()] ||
+    window.HVFlagAssets?.[String(c || '').toUpperCase()];
+  return path ? path.split('/').map(encodeURIComponent).join('/') : '';
+}
+function flagUrl(c, w = 80) {
+  return slapsFlagUrl(c) || legacyFlagUrl(c, w);
+}
+function flagHtml(c, cls = 'flag-img') {
+  if (!c) return '';
+  let code = String(c).toUpperCase();
+  if (code === 'SEA')
+    return `<span class="${esc(cls)}" style="display:inline-flex;align-items:center;justify-content:center;background:#eaf4f8;border-radius:6px;font-size:18px" title="At Sea">🌊</span>`;
+  if (code.startsWith('GB-'))
+    return `<img class="${esc(cls)}" src="assets/domestic/${code.toLowerCase()}.svg" alt="${esc(HVJourney.domesticDestinations.find((d) => d.domesticDestination === code)?.name || code)} flag">`;
+  let src = slapsFlagUrl(code),
+    fallback = legacyFlagUrl(code);
+  if (!src) src = fallback;
+  return `<img class="${esc(cls)}" src="${src}" data-fallback="${fallback}" alt="${esc(countryByCode(code)?.name || code)} flag" loading="lazy" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f}else{this.style.display='none'}">`;
+}
+function countryByName(n = '') {
+  return [...COUNTRIES, ...HVJourney.domesticDestinations].find(
+    (c) => c.name.toLowerCase() === n.trim().toLowerCase(),
+  );
+}
+function countryByCode(c) {
+  return COUNTRIES.find((x) => x.code === c);
+}
+function esc(v = '') {
+  return String(v).replace(
+    /[&<>'"]/g,
+    (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[ch],
+  );
+}
+function plural(n, w) {
+  return `${n} ${w}${n === 1 ? '' : 's'}`;
+}
+
+// Source: src/core/travel-days.js
+function activeProfile() {
+  return state.profiles.find((p) => p.id === state.activeProfileId) || state.profiles[0];
+}
+function isSchengenExemptProfile(p = activeProfile()) {
+  return !!p && p.citizenships.some((c) => EU_EEA_CH.has(c));
+}
+function staysForProfile(profileId = state.activeProfileId) {
+  return HVJourney.scoped(state.stays, profileId);
+}
+function countsAsTravel(s) {
+  return HVJourney.isActual(s);
+}
+function countsForPlanning(s) {
+  return HVJourney.countsForPlanning(s);
+}
+function datesForStay(s, min = null, max = null) {
+  let a = parseDate(s.start),
+    b = parseDate(s.end),
+    lo = min ? parseDate(min) : a,
+    hi = max ? parseDate(max) : b,
+    start = a > lo ? a : lo,
+    end = b < hi ? b : hi,
+    out = [];
+  for (let d = start; d <= end; d = addDays(d, 1)) out.push(dayKey(d));
+  return out;
+}
+function residenceAppliesOnDate(countryCode, date, profileId = state.activeProfileId) {
+  if (countryCode === 'SEA') return false;
+  return (state.residences || []).some(
+    (r) =>
+      (!r.profileId || r.profileId === profileId) &&
+      r.countryCode === countryCode &&
+      r.start <= date &&
+      (!r.end || r.end >= date),
+  );
+}
+function travelDaySet(list = staysForProfile(state.activeProfileId)) {
+  return HVJourney.summary({ ...state, stays: list }, isoDate(new Date())).days;
+}
+function schengenDaySet(min = null, max = null, profileId = state.activeProfileId, extra = []) {
+  let set = new Set();
+  [...staysForProfile(profileId), ...extra].filter(countsForPlanning).forEach((s) => {
+    if (SCHENGEN.has(s.countryCode) && !s.schengenExempt)
+      datesForStay(s, min, max).forEach((d) => set.add(d));
+  });
+  return set;
+}
+function rollingStatus(check, profileId = state.activeProfileId, extra = []) {
+  let end = parseDate(check),
+    start = addDays(end, -179),
+    set = schengenDaySet(dayKey(start), dayKey(end), profileId, extra),
+    used = set.size;
+  return { start, end, used, remaining: 90 - used };
+}
+function statusForUsed(n) {
+  if (n > 90)
+    return {
+      kind: 'bad',
+      label: 'OVER',
+      text: `Your records show ${plural(n, 'Schengen day')} in this rolling 180-day window.`,
+    };
+  if (n >= 86)
+    return {
+      kind: 'bad',
+      label: 'VERY CLOSE',
+      text: `Only ${plural(90 - n, 'Schengen day')} remain in this rolling window.`,
+    };
+  if (n >= 75)
+    return {
+      kind: 'warn',
+      label: 'WATCH',
+      text: `You have ${plural(90 - n, 'Schengen day')} remaining in this rolling window.`,
+    };
+  return {
+    kind: 'good',
+    label: 'OK',
+    text: `You have ${plural(90 - n, 'Schengen day')} remaining in this rolling window.`,
+  };
+}
+function firstOverstay(from, horizon = 500, profileId = state.activeProfileId, extra = []) {
+  const start = parseDate(from),
+    min = dayKey(addDays(start, -179)),
+    max = dayKey(addDays(start, horizon)),
+    days = schengenDaySet(min, max, profileId, extra);
+  let used = 0;
+  for (let i = -179; i <= 0; i++) if (days.has(dayKey(addDays(start, i)))) used++;
+  for (let i = 0; i <= horizon; i++) {
+    const date = dayKey(addDays(start, i));
+    if (i) {
+      if (days.has(dayKey(addDays(start, i - 180)))) used--;
+      if (days.has(date)) used++;
+    }
+    if (used > 90) return { date, used };
+  }
+  return null;
+}
+function maxContinuousSchengen(entry, profileId = state.activeProfileId) {
+  let extra = [],
+    last = null;
+  for (let i = 0; i < 180; i++) {
+    let d = dayKey(addDays(parseDate(entry), i)),
+      trial = {
+        id: 'planner',
+        countryCode: 'FR',
+        countryName: 'Schengen',
+        start: entry,
+        end: d,
+        schengenExempt: false,
+        status: 'planned',
+        profileId,
+      };
+    let r = rollingStatus(d, profileId, [trial]);
+    if (r.used > 90) break;
+    last = d;
+  }
+  return last ? daysInclusive(entry, last) : 0;
+}
+function earliestOneDayEntry(from, profileId = state.activeProfileId, extra = []) {
+  let d = parseDate(from);
+  for (let i = 0; i < 730; i++, d = addDays(d, 1)) {
+    let k = dayKey(d),
+      trial = {
+        id: 'reentry',
+        countryCode: 'FR',
+        countryName: 'Schengen',
+        start: k,
+        end: k,
+        schengenExempt: false,
+        status: 'planned',
+        profileId,
+      };
+    if (rollingStatus(k, profileId, [...extra, trial]).used <= 90) return k;
+  }
+  return null;
+}
+function findGaps() {
+  let source = staysForProfile(state.activeProfileId).filter(countsAsTravel);
+  if (source.length < 2) return [];
+  let arr = [...source].sort(
+      (a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end),
+    ),
+    gaps = [],
+    curEnd = arr[0].end,
+    prev = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    let s = arr[i];
+    if (parseDate(s.start) > addDays(parseDate(curEnd), 1)) {
+      let missingStart = dayKey(addDays(parseDate(curEnd), 1)),
+        missingEnd = dayKey(addDays(parseDate(s.start), -1)),
+        gs = curEnd,
+        ge = s.start;
+      gaps.push({
+        start: gs,
+        end: ge,
+        days: daysInclusive(gs, ge),
+        missingStart,
+        missingEnd,
+        missingDays: daysInclusive(missingStart, missingEnd),
+        prev,
+        next: s,
+      });
+    }
+    if (s.end > curEnd) {
+      curEnd = s.end;
+      prev = s;
+    }
+  }
+  return gaps;
+}
+function updatePassedPlannedTrips() {
+  const today = isoDate(new Date()),
+    staysChanged = HVJourney.reviewPlanned(state.stays, today),
+    transportChanged = HVJourney.reviewTransport(state.transports, today);
+  if (staysChanged || transportChanged) persist(true);
+}
+
+// Source: src/core/shell.js
+function installCalendarJumpUI() {
+  if ($('calendarMonthJump')) return;
+  let prev = $('prevMonth'),
+    next = $('nextMonth');
+  if (!prev || !next) return;
+  let host = prev.parentElement,
+    wrapper = document.createElement('div'),
+    months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+  wrapper.className = 'calendar-jump-controls';
+  wrapper.innerHTML = `<select id="calendarMonthJump" class="calendar-jump-select" aria-label="Choose month">${months.map((m, i) => `<option value="${i}">${m}</option>`).join('')}</select><select id="calendarYearJump" class="calendar-jump-select year" aria-label="Choose year">${Array.from(
+    { length: 301 },
+    (_, i) => 1900 + i,
+  )
+    .map((y) => `<option value="${y}">${y}</option>`)
+    .join('')}</select>`;
+  host.insertBefore(wrapper, next);
+  let month = $('calendarMonthJump'),
+    year = $('calendarYearJump'),
+    jump = () => {
+      calendarCursor = new Date(Date.UTC(Number(year.value), Number(month.value), 1));
+      renderCalendar();
+    };
+  month.addEventListener('change', jump);
+  year.addEventListener('change', jump);
+  let style = document.createElement('style');
+  style.textContent = `.calendar-jump-controls{display:flex;align-items:center;gap:8px}.calendar-jump-select{background:#fff;border:1px solid #dfe4ea;border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;font-weight:600;color:#172033;cursor:pointer}.calendar-jump-select.year{min-width:90px}.calendar-jump-select:focus{outline:none;border-color:#172033}@media(max-width:700px){.calendar-jump-controls{width:100%}.calendar-jump-select{flex:1}}`;
+  document.head.appendChild(style);
+}
+function installResidenceUI() {
+  if ($('residencePanel')) return;
+  let profiles = $('profilesView');
+  if (!profiles) return;
+  let panel = document.createElement('article');
+  panel.className = 'panel';
+  panel.id = 'residencePanel';
+  panel.style.marginTop = '20px';
+  panel.innerHTML = `<div class="panel-head"><div><p class="eyebrow">HOME HISTORY</p><h2>Places you've lived</h2></div></div><p class="panel-copy">Add the places you've called home. Days when your only recorded location was somewhere you lived won't count towards Travel days logged.</p><form id="residenceForm" class="residence-form"><label class="field"><span>Country</span><input id="residenceCountry" list="countryList" placeholder="Start typing a country…" required></label><label class="field"><span>From</span><input id="residenceStart" type="date" required></label><label class="field"><span>To</span><input id="residenceEnd" type="date"></label><button type="submit" class="primary">Add</button><label class="residence-present"><input id="residencePresent" type="checkbox"> I still live here / Present</label></form><div id="residenceError" class="form-message"></div><div id="residenceList" class="stay-list residence-list"></div>`;
+  let dataPanel = $('dataTransferPanel');
+  if (dataPanel) profiles.insertBefore(panel, dataPanel);
+  else profiles.appendChild(panel);
+  if (!$('residenceStyles')) {
+    let style = document.createElement('style');
+    style.id = 'residenceStyles';
+    style.textContent = `.residence-form{display:grid;grid-template-columns:minmax(180px,1.5fr) minmax(140px,1fr) minmax(140px,1fr) auto;gap:12px;align-items:end;margin-top:18px}.residence-present{grid-column:2 / 4;display:flex;gap:8px;align-items:center;font-size:14px}.residence-list{margin-top:18px}@media(max-width:760px){.residence-form{grid-template-columns:1fr}.residence-present{grid-column:auto}}`;
+    document.head.appendChild(style);
+  }
+}
+function cacheEls() {
+  [
+    'countriesLogged',
+    'daysLogged',
+    'schengenBadge',
+    'schengenUsed',
+    'schengenProgress',
+    'schengenSummary',
+    'schengenRemaining',
+    'remainingSummary',
+    'miniCalendarTitle',
+    'miniCalendar',
+    'recentStays',
+    'schengenAlertPanel',
+    'alertTitle',
+    'alertBody',
+    'dashboardGaps',
+    'calendarTitle',
+    'calendar',
+    'calendarSelectionInfo',
+    'clearCalendarSelectionBtn',
+    'countryTotals',
+    'checkDate',
+    'schengenProfileNote',
+    'ringUsed',
+    'calcUsed',
+    'calcRemaining',
+    'windowDates',
+    'schengenRing',
+    'forecastBox',
+    'forecastTitle',
+    'forecastText',
+    'schengenBreakdown',
+    'allStays',
+    'gapList',
+    'pageTitle',
+    'stayDialog',
+    'stayForm',
+    'stayId',
+    'tripNameInput',
+    'countryInput',
+    'countryFlag',
+    'dateRanges',
+    'notesInput',
+    'stayStatus',
+    'stayProfile',
+    'schengenExempt',
+    'schengenExemptRow',
+    'formError',
+    'dialogTitle',
+    'deleteStayBtn',
+    'worldMap',
+    'mapFallback',
+    'mapSelectionSummary',
+    'timelineEmpty',
+    'timelineContent',
+    'timelineSlider',
+    'timelineDateLabel',
+    'timelineLocationLabel',
+    'timelineStartLabel',
+    'timelineEndLabel',
+    'timelineBars',
+    'timelineSchengenLabel',
+    'plannerProfile',
+    'plannerCountry',
+    'plannerEntry',
+    'plannerExit',
+    'plannerResultTitle',
+    'plannerResultBody',
+    'addPlannedTripBtn',
+    'visaPassport',
+    'visaDestination',
+    'visaProfileHint',
+    'runVisaCheckBtn',
+    'visaResultTitle',
+    'visaResultBody',
+    'visaDataStatus',
+    'profileDialog',
+    'profileForm',
+    'profileId',
+    'profileName',
+    'citizenshipInput',
+    'citizenshipChips',
+    'profileError',
+    'profileDialogTitle',
+    'deleteProfileBtn',
+    'profileList',
+    'gapDialog',
+    'gapForm',
+    'gapStart',
+    'gapEnd',
+    'gapDateSummary',
+    'gapCountry',
+    'gapError',
+    'supabaseUrl',
+    'supabaseKey',
+    'cloudEmail',
+    'cloudPassword',
+    'cloudStatusBadge',
+    'cloudMessage',
+    'cloudPullBtn',
+    'cloudPushBtn',
+    'cloudSignInBtn',
+    'cloudSignOutBtn',
+    'autoSyncToggle',
+    'localSaveBadge',
+    'localSaveDetail',
+    'createTransferBtn',
+    'transferCodeArea',
+    'transferCodeValue',
+    'copyTransferCodeBtn',
+    'transferExpiry',
+    'transferCodeInput',
+    'claimTransferBtn',
+    'transferMessage',
+    'dataBackupBtn',
+    'dataRestoreBtn',
+    'residenceForm',
+    'residenceCountry',
+    'residenceStart',
+    'residenceEnd',
+    'residencePresent',
+    'residenceError',
+    'residenceList',
+  ].forEach((id) => (els[id] = $(id)));
+}
+function init() {
+  installDataTransferUI();
+  installResidenceUI();
+  installCalendarJumpUI();
+  cacheEls();
+  updatePassedPlannedTrips();
+  $('countryList').innerHTML = [...COUNTRIES, ...HVJourney.domesticDestinations]
+    .map((c) => `<option value="${esc(c.name)}"></option>`)
+    .join('');
+  els.checkDate.value = isoDate(new Date());
+  els.plannerEntry.value = isoDate(new Date());
+  bindEvents();
+  populateProfileSelects();
+  renderAll();
+  updateLocalSaveIndicator();
+  initCloudFromConfig();
+}
+function bindEvents() {
+  document
+    .querySelectorAll('.nav-item')
+    .forEach((b) => (b.onclick = () => switchView(b.dataset.view)));
+  document
+    .querySelectorAll('[data-go-view]')
+    .forEach((b) => (b.onclick = () => switchView(b.dataset.goView)));
+  $('addStayBtn').onclick = () => openStayDialog();
+  $('addStayFromListBtn').onclick = () => openStayDialog();
+  $('closeDialog').onclick = $('cancelDialog').onclick = () => els.stayDialog.close();
+  $('addDateRangeBtn').onclick = () => addDateRange();
+  els.stayForm.onsubmit = saveStay;
+  $('deleteStayBtn').onclick = deleteStay;
+  els.countryInput.oninput = updateStayCountry;
+  document.addEventListener('click', handleDelegatedClick);
+  $('prevMonth').onclick = () => {
+    calendarCursor = new Date(
+      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() - 1, 1),
+    );
+    renderCalendar();
+  };
+  $('nextMonth').onclick = () => {
+    calendarCursor = new Date(
+      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() + 1, 1),
+    );
+    renderCalendar();
+  };
+  $('todayBtn').onclick = () => {
+    calendarCursor = startOfMonth(new Date());
+    renderCalendar();
+  };
+  els.clearCalendarSelectionBtn.onclick = clearCalendarSelection;
+  els.checkDate.onchange = renderSchengen;
+  $('timelineTodayBtn').onclick = () => setTimelineDate(isoDate(new Date()));
+  els.timelineSlider.oninput = () => setTimelineFromSlider();
+  $('runPlannerBtn').onclick = runPlanner;
+  if (els.runVisaCheckBtn) els.runVisaCheckBtn.onclick = runVisaCheck;
+  if (els.visaPassport)
+    els.visaPassport.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runVisaCheck();
+      }
     });
+  if (els.visaDestination)
+    els.visaDestination.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runVisaCheck();
+      }
+    });
+  els.addPlannedTripBtn.onclick = addPlannerTrip;
+  $('addProfileBtn').onclick = () => openProfileDialog();
+  $('closeProfileDialog').onclick = $('cancelProfileDialog').onclick = () =>
+    els.profileDialog.close();
+  $('addCitizenshipBtn').onclick = addCitizenship;
+  els.profileForm.onsubmit = saveProfile;
+  els.deleteProfileBtn.onclick = deleteProfile;
+  els.gapForm.onsubmit = saveGap;
+  $('closeGapDialog').onclick = $('cancelGapDialog').onclick = () => els.gapDialog.close();
+  if (els.residenceForm) els.residenceForm.onsubmit = saveResidence;
+  if (els.residencePresent)
+    els.residencePresent.onchange = () => {
+      els.residenceEnd.disabled = els.residencePresent.checked;
+      if (els.residencePresent.checked) els.residenceEnd.value = '';
+    };
+}
 
-    const monthJump = $('calendarMonthJump');
-    const yearJump = $('calendarYearJump');
-    if (monthJump) monthJump.value = String(c.getUTCMonth());
-    if (yearJump) yearJump.value = String(c.getUTCFullYear());
+function handleDelegatedClick(e) {
+  let go = e.target.closest('[data-go-view]');
+  if (go) {
+    switchView(go.dataset.goView);
+    return;
+  }
+  let b = e.target.closest('[data-action]');
+  if (b) {
+    let a = b.dataset.action;
+    if (a === 'edit-stay') openStayDialog(b.dataset.id);
+    if (a === 'remove-range') b.closest('.date-range-row').remove();
+    if (a === 'fill-gap') openGapDialog(b.dataset.start, b.dataset.end, b.dataset.country || '');
+    if (a === 'delete-residence') deleteResidence(b.dataset.id);
+    if (a === 'exclude-country') {
+      let code = b.dataset.country;
+      state.excludedCountryCodes = Array.from(
+        new Set([...(state.excludedCountryCodes || []), code]),
+      );
+      persist();
+      renderDashboard();
+      renderCountries();
+      updateMapColors();
+    }
+    if (a === 'include-country') {
+      let code = b.dataset.country;
+      state.excludedCountryCodes = (state.excludedCountryCodes || []).filter((c) => c !== code);
+      persist();
+      renderDashboard();
+      renderCountries();
+      updateMapColors();
+    }
+    if (a === 'set-profile') {
+      state.activeProfileId = b.dataset.id;
+      persist();
+      populateProfileSelects();
+      renderAll();
+    }
+    if (a === 'edit-profile') openProfileDialog(b.dataset.id);
+    if (a === 'use-profile-passport') {
+      let c = countryByCode(b.dataset.country);
+      if (c) {
+        els.visaPassport.value = c.name;
+        runVisaCheck();
+      }
+    }
+    return;
+  }
+  let day = e.target.closest('[data-calendar-date]');
+  if (day) handleCalendarDateClick(day.dataset.calendarDate);
+}
+function switchView(v) {
+  document.querySelectorAll('.view').forEach((x) => x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach((x) => x.classList.remove('active'));
+  $(`${v}View`).classList.add('active');
+  document.querySelector(`.nav-item[data-view="${v}"]`)?.classList.add('active');
+  let t = {
+    dashboard: 'Dashboard',
+    calendar: 'Calendar',
+    map: 'Map & timeline',
+    countries: 'Countries',
+    schengen: 'Schengen 90/180',
+    planner: 'Plan a Trip',
+    stayPlanner: 'Stay planner',
+    rules: 'Entry Requirements',
+    stays: 'All stays',
+    profiles: 'Profiles & data',
+  };
+  els.pageTitle.textContent = t[v] || 'Travel tracker';
+  if (v === 'map') renderMapTimeline();
+  if (v === 'schengen') renderSchengen();
+  if (v === 'stayPlanner') populateProfileSelects();
+  if (v === 'rules') renderVisaChecker();
+  if (v === 'stays') renderStayLists();
+  if (v === 'profiles') renderProfiles();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function renderAll() {
+  const view = document.body.dataset.currentView || 'dashboard';
+  renderProfiles();
+  if (view === 'dashboard') {
+    renderDashboard();
+    renderMiniCalendar();
+  }
+  if (view === 'calendar') renderCalendar();
+  if (view === 'countries') renderCountries();
+  if (view === 'schengen') renderSchengen();
+  if (view === 'stays') renderStayLists();
+  if (view === 'rules') renderVisaChecker();
+  if (view === 'map') renderMapTimeline();
+  window.HVJourneys?.render();
+}
+function renderDashboard() {
+  const p = activeProfile(),
+    today = isoDate(new Date()),
+    r = rollingStatus(today),
+    st = statusForUsed(r.used),
+    exempt = isSchengenExemptProfile(p),
+    profileStays = staysForProfile();
+  els.countriesLogged.textContent = [...HVJourney.summary(state, today).countries].filter(
+    WIBCountryCount.isCounted,
+  ).length;
+  els.daysLogged.textContent = travelDaySet().size;
+  if (exempt) {
+    els.schengenUsed.textContent = '—';
+    els.schengenRemaining.textContent = '—';
+    els.schengenBadge.className = 'status-badge good';
+    els.schengenBadge.textContent = 'EXEMPT';
+    els.schengenProgress.style.width = '0';
+    els.schengenSummary.textContent = `${p.name} has an EU/EEA/Swiss citizenship recorded`;
+    els.remainingSummary.textContent = '90/180 short-stay rule not applied';
+    els.schengenAlertPanel.hidden = true;
+  } else {
+    els.schengenUsed.textContent = r.used;
+    els.schengenRemaining.textContent = Math.max(0, r.remaining);
+    els.schengenProgress.style.width = `${Math.min(100, (r.used / 90) * 100)}%`;
+    els.schengenProgress.style.background =
+      st.kind === 'bad' ? 'var(--red)' : st.kind === 'warn' ? 'var(--amber)' : 'var(--green)';
+    els.schengenBadge.className = `status-badge ${st.kind}`;
+    els.schengenBadge.textContent = st.label;
+    els.schengenSummary.textContent = `${plural(r.used, 'day')} used from ${fmtObj(r.start, { day: 'numeric', month: 'short' })} to ${fmtObj(r.end, { day: 'numeric', month: 'short' })}`;
+    els.remainingSummary.textContent = `As of ${fmtObj(r.end)}`;
+    els.schengenAlertPanel.hidden = st.kind === 'good';
+    els.schengenAlertPanel.className = `panel warning-panel ${st.kind}`;
+    els.alertTitle.textContent =
+      st.kind === 'warn'
+        ? 'Your Schengen allowance is getting tight'
+        : r.used > 90
+          ? 'Your records show a possible overstay'
+          : 'You are very close to the limit';
+    els.alertBody.textContent = st.text;
+  }
+  const gaps = findGaps().slice(0, 3);
+  els.dashboardGaps.className = 'gap-list';
+  els.dashboardGaps.innerHTML = `<details class="home-history-check"><summary>Trips update automatically <span class="status-badge good">ON</span></summary><p>Planned trips and transport become completed the day after their final date. Edit or cancel anything before then.</p>${gaps.length ? `<div class="home-gap-list">${gaps.map((g) => gapCard(g, true)).join('')}</div>` : '<p>No gaps in your completed travel history.</p>'}</details>`;
+  renderStayList(els.recentStays, [
+    ...profileStays
+      .filter((s) => s.status === 'planned' && s.start > today)
+      .sort((a, b) => a.start.localeCompare(b.start))
+      .slice(0, 3),
+    ...profileStays
+      .filter((s) => s.status === 'actual' && s.start <= today)
+      .sort((a, b) => b.start.localeCompare(a.start))
+      .slice(0, 3),
+  ]);
+}
+function renderMiniCalendar() {
+  let c = startOfMonth(new Date()),
+    first = (c.getUTCDay() + 6) % 7,
+    start = addDays(c, -first),
+    today = isoDate(new Date()),
+    list = staysForProfile().filter(countsForPlanning);
+  els.miniCalendarTitle.textContent = c.toLocaleDateString('en-GB', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  let h = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+    .map((d) => `<div class="mini-weekday">${d}</div>`)
+    .join('');
+  for (let i = 0; i < 42; i++) {
+    let d = addDays(start, i),
+      k = dayKey(d),
+      has = list.some((s) => s.start <= k && s.end >= k);
+    h += `<div class="mini-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'muted'} ${k === today ? 'today' : ''} ${has ? 'has-stay' : ''}">${d.getUTCDate()}</div>`;
+  }
+  els.miniCalendar.innerHTML = h;
+}
 
-    let html = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-      .map(day => `<div class="calendar-weekday">${day}</div>`)
-      .join('');
+// Source: src/core/calendar.js
+function renderCalendar() {
+  if (window.HVCalendar?.renderMonth) return window.HVCalendar.renderMonth();
+  const previousDate = document.activeElement?.dataset.selectDate;
+  const c = calendarCursor;
+  const first = (c.getUTCDay() + 6) % 7;
+  const start = addDays(c, -first);
+  const today = isoDate(new Date());
 
-    for (let i = 0; i < 42; i++) {
-      const d = addDays(start, i);
-      const key = dayKey(d);
-      const on = staysForProfile().filter(stay => countsForPlanning(stay) && stay.start <= key && stay.end >= key);
-      const selectionRange = calendarSelectionStart && calendarSelectionEnd && key >= calendarSelectionStart && key <= calendarSelectionEnd;
-      const selectionStart = key === calendarSelectionStart;
-      const selectionEnd = key === calendarSelectionEnd;
+  els.calendarTitle.textContent = c.toLocaleDateString('en-GB', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
 
-      html += `<div class="calendar-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'outside'} ${key === today ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${key}" role="group" aria-label="${fmt(key)}">
-        <button type="button" class="day-number" data-select-date="${key}" aria-label="Select ${fmt(key)}" aria-pressed="${!!(selectionRange||selectionStart||selectionEnd)}">${d.getUTCDate()}</button>
-        ${on.slice(0, 4).map(stay => `
+  const monthJump = $('calendarMonthJump');
+  const yearJump = $('calendarYearJump');
+  if (monthJump) monthJump.value = String(c.getUTCMonth());
+  if (yearJump) yearJump.value = String(c.getUTCFullYear());
+
+  let html = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    .map((day) => `<div class="calendar-weekday">${day}</div>`)
+    .join('');
+
+  for (let i = 0; i < 42; i++) {
+    const d = addDays(start, i);
+    const key = dayKey(d);
+    const on = staysForProfile().filter(
+      (stay) => countsForPlanning(stay) && stay.start <= key && stay.end >= key,
+    );
+    const selectionRange =
+      calendarSelectionStart &&
+      calendarSelectionEnd &&
+      key >= calendarSelectionStart &&
+      key <= calendarSelectionEnd;
+    const selectionStart = key === calendarSelectionStart;
+    const selectionEnd = key === calendarSelectionEnd;
+
+    html += `<div class="calendar-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'outside'} ${key === today ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${key}" role="group" aria-label="${fmt(key)}">
+        <button type="button" class="day-number" data-select-date="${key}" aria-label="Select ${fmt(key)}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${d.getUTCDate()}</button>
+        ${on
+          .slice(0, 4)
+          .map(
+            (stay) => `
           <button
             type="button"
             class="day-stay calendar-stay-button ${SCHENGEN.has(stay.countryCode) && !stay.schengenExempt ? 'schengen' : ''} ${stay.status === 'planned' ? 'planned' : ''}"
             data-calendar-stay-id="${esc(stay.id)}"
-            aria-label="Edit ${esc(stay.countryName)} stay, ${stay.status==='actual'?'completed':esc(stay.status)}"
+            aria-label="Edit ${esc(stay.countryName)} stay, ${stay.status === 'actual' ? 'completed' : esc(stay.status)}"
             title="Edit ${esc(stay.countryName)}"
           >
             ${flagHtml(stay.countryCode, 'flag-img flag-sm')}
-            <span class="calendar-stay-name">${esc(stay.countryName)}${stay.status==='planned'?' · Planned':''}</span>
+            <span class="calendar-stay-name">${esc(stay.countryName)}${stay.status === 'planned' ? ' · Planned' : ''}</span>
           </button>
-        `).join('')}
+        `,
+          )
+          .join('')}
         ${on.length > 4 ? `<div class="day-stay calendar-more">+${on.length - 4} more</div>` : ''}
       </div>`;
-    }
-
-    els.calendar.innerHTML = html;
-
-    els.calendar.querySelectorAll('[data-calendar-stay-id]').forEach(button => {
-      button.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        openStayDialog(button.dataset.calendarStayId);
-      });
-    });
-
-    els.calendar.querySelectorAll('[data-calendar-date]').forEach(day => {
-      day.onkeydown = event => {
-        if ((event.key === 'Enter' || event.key === ' ') && event.target === day) {
-          event.preventDefault();
-          handleCalendarDateClick(day.dataset.calendarDate);
-        }
-      };
-    });
-
-    updateCalendarSelectionUI();
-    if(previousDate)els.calendar.querySelector(`[data-select-date="${previousDate}"]`)?.focus();
-    window.dispatchEvent(new CustomEvent('hv-calendar-rendered'));
   }
-function updateCalendarSelectionUI(){if(!els.calendarSelectionInfo||!els.clearCalendarSelectionBtn)return;let info=els.calendarSelectionInfo,btn=els.clearCalendarSelectionBtn;if(!calendarSelectionStart){info.className='calendar-selection-info';info.innerHTML='<strong>Select dates to add travel</strong><span>Choose the first date, then the last.</span>';btn.disabled=true;btn.hidden=false;return}btn.disabled=false;btn.hidden=false;if(!calendarSelectionEnd){info.className='calendar-selection-info active';info.innerHTML=`<strong>${fmt(calendarSelectionStart)} selected</strong><span>Now choose the last day, or select the same date again for one day.</span>`;return}let days=daysInclusive(calendarSelectionStart,calendarSelectionEnd);info.className='calendar-selection-info complete';info.innerHTML=`<strong>${fmt(calendarSelectionStart)} to ${fmt(calendarSelectionEnd)}</strong><span>${plural(days,'day')} selected.</span>`}
-function clearCalendarSelection(){calendarSelectionStart=null;calendarSelectionEnd=null;renderCalendar()}
-function handleCalendarDateClick(k){if(!calendarSelectionStart){calendarSelectionStart=k;calendarSelectionEnd=null;renderCalendar();return}if(calendarSelectionEnd){if(k>=calendarSelectionStart&&k<=calendarSelectionEnd){clearCalendarSelection();return}calendarSelectionStart=k;calendarSelectionEnd=null;renderCalendar();return}let a=calendarSelectionStart,b=k;calendarSelectionStart=a<=b?a:b;calendarSelectionEnd=a<=b?b:a;renderCalendar();setTimeout(()=>openStayDialog(null,{start:calendarSelectionStart,end:calendarSelectionEnd,source:'calendar'}),0)}
 
-function renderCountries() {
-    const today = isoDate(new Date());
-    const totals = new Map();
+  els.calendar.innerHTML = html;
 
-    staysForProfile().forEach(stay => {
-      if (stay.start > today || stay.status !== 'actual') return;
-      const days = datesForStay(stay).filter(day => day <= today);
-      if (!days.length) return;
-
-      if (!totals.has(stay.countryCode)) totals.set(stay.countryCode, { days: new Set() });
-      days.forEach(day => totals.get(stay.countryCode).days.add(day));
+  els.calendar.querySelectorAll('[data-calendar-stay-id]').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openStayDialog(button.dataset.calendarStayId);
     });
+  });
 
-    for (const record of HVCountryVisits.manualRows(state,today)) {
-      if (!totals.has(record.countryCode)) totals.set(record.countryCode,{days:new Set(),manual:record});
-    }
+  els.calendar.querySelectorAll('[data-calendar-date]').forEach((day) => {
+    day.onkeydown = (event) => {
+      if ((event.key === 'Enter' || event.key === ' ') && event.target === day) {
+        event.preventDefault();
+        handleCalendarDateClick(day.dataset.calendarDate);
+      }
+    };
+  });
 
-    if (!totals.size) {
-      els.countryTotals.className = 'country-totals empty-state';
-      els.countryTotals.textContent = 'No country data yet.';
+  updateCalendarSelectionUI();
+  if (previousDate) els.calendar.querySelector(`[data-select-date="${previousDate}"]`)?.focus();
+  window.dispatchEvent(new CustomEvent('hv-calendar-rendered'));
+}
+function updateCalendarSelectionUI() {
+  if (!els.calendarSelectionInfo || !els.clearCalendarSelectionBtn) return;
+  let info = els.calendarSelectionInfo,
+    btn = els.clearCalendarSelectionBtn;
+  if (!calendarSelectionStart) {
+    info.className = 'calendar-selection-info';
+    info.innerHTML =
+      '<strong>Select dates to add travel</strong><span>Choose the first date, then the last.</span>';
+    btn.disabled = true;
+    btn.hidden = false;
+    return;
+  }
+  btn.disabled = false;
+  btn.hidden = false;
+  if (!calendarSelectionEnd) {
+    info.className = 'calendar-selection-info active';
+    info.innerHTML = `<strong>${fmt(calendarSelectionStart)} selected</strong><span>Now choose the last day, or select the same date again for one day.</span>`;
+    return;
+  }
+  let days = daysInclusive(calendarSelectionStart, calendarSelectionEnd);
+  info.className = 'calendar-selection-info complete';
+  info.innerHTML = `<strong>${fmt(calendarSelectionStart)} to ${fmt(calendarSelectionEnd)}</strong><span>${plural(days, 'day')} selected.</span>`;
+}
+function clearCalendarSelection() {
+  calendarSelectionStart = null;
+  calendarSelectionEnd = null;
+  renderCalendar();
+}
+function handleCalendarDateClick(k) {
+  if (!calendarSelectionStart) {
+    calendarSelectionStart = k;
+    calendarSelectionEnd = null;
+    renderCalendar();
+    return;
+  }
+  if (calendarSelectionEnd) {
+    if (k >= calendarSelectionStart && k <= calendarSelectionEnd) {
+      clearCalendarSelection();
       return;
     }
+    calendarSelectionStart = k;
+    calendarSelectionEnd = null;
+    renderCalendar();
+    return;
+  }
+  let a = calendarSelectionStart,
+    b = k;
+  calendarSelectionStart = a <= b ? a : b;
+  calendarSelectionEnd = a <= b ? b : a;
+  renderCalendar();
+  setTimeout(
+    () =>
+      openStayDialog(null, {
+        start: calendarSelectionStart,
+        end: calendarSelectionEnd,
+        source: 'calendar',
+      }),
+    0,
+  );
+}
 
-    const allRows = [...totals].map(([code, record]) => ({
+// Source: src/core/countries.js
+function renderCountries() {
+  const today = isoDate(new Date());
+  const totals = new Map();
+
+  staysForProfile().forEach((stay) => {
+    if (stay.start > today || stay.status !== 'actual') return;
+    const days = datesForStay(stay).filter((day) => day <= today);
+    if (!days.length) return;
+
+    if (!totals.has(stay.countryCode)) totals.set(stay.countryCode, { days: new Set() });
+    days.forEach((day) => totals.get(stay.countryCode).days.add(day));
+  });
+
+  for (const record of HVCountryVisits.manualRows(state, today)) {
+    if (!totals.has(record.countryCode))
+      totals.set(record.countryCode, { days: new Set(), manual: record });
+  }
+
+  if (!totals.size) {
+    els.countryTotals.className = 'country-totals empty-state';
+    els.countryTotals.textContent = 'No country data yet.';
+    return;
+  }
+
+  const allRows = [...totals]
+    .map(([code, record]) => ({
       code,
-      name: countryByCode(code)?.name || staysForProfile().find(stay => stay.countryCode === code)?.countryName || code,
+      name:
+        countryByCode(code)?.name ||
+        staysForProfile().find((stay) => stay.countryCode === code)?.countryName ||
+        code,
       total: record.days.size,
-      manual:record.manual,
-      home: [...record.days].filter(d => !staysForProfile().some(s=>s.countryCode===code&&s.status==='actual'&&s.start<=d&&s.end>=d&&HVJourney.isTravelStay(state,s,d))).length
-    })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+      manual: record.manual,
+      home: [...record.days].filter(
+        (d) =>
+          !staysForProfile().some(
+            (s) =>
+              s.countryCode === code &&
+              s.status === 'actual' &&
+              s.start <= d &&
+              s.end >= d &&
+              HVJourney.isTravelStay(state, s, d),
+          ),
+      ).length,
+    }))
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
 
-    const hiddenCodes = new Set(state.excludedCountryCodes || []);
-    const rows = allRows.filter(row => !hiddenCodes.has(row.code));
-    const hidden = allRows.filter(row => hiddenCodes.has(row.code));
-    const max = rows.length ? Math.max(...rows.map(row => row.total)) : 1;
+  const hiddenCodes = new Set(state.excludedCountryCodes || []);
+  const rows = allRows.filter((row) => !hiddenCodes.has(row.code));
+  const hidden = allRows.filter((row) => hiddenCodes.has(row.code));
+  const max = rows.length ? Math.max(...rows.map((row) => row.total)) : 1;
 
-    els.countryTotals.className = 'country-totals';
-    const visibleHtml = rows.length ? rows.map(row => `
+  els.countryTotals.className = 'country-totals';
+  const visibleHtml = rows.length
+    ? rows
+        .map(
+          (row) => `
       <div class="country-row">
         <div class="flag">${flagHtml(row.code)}</div>
         <div class="country-name">
           <a href="#/country/${row.code}"><strong>${esc(row.name)}</strong></a>
-          <span>${row.manual ? 'Visited · '+(row.manual.date?esc(fmt(row.manual.date)):row.manual.year?'approximately '+row.manual.year:'date not recorded') : `${row.total-row.home} travel · ${plural(row.home,'home day')}`}</span>
+          <span>${row.manual ? 'Visited · ' + (row.manual.date ? esc(fmt(row.manual.date)) : row.manual.year ? 'approximately ' + row.manual.year : 'date not recorded') : `${row.total - row.home} travel · ${plural(row.home, 'home day')}`}</span>
           <button type="button" class="country-remove-btn" data-action="exclude-country" data-country="${row.code}" aria-label="Hide ${esc(row.name)} from country totals">Hide from totals</button>
         </div>
-        <div class="country-bar"><span style="width:${Math.max(0, Math.min(100, row.total / max * 100))}%"></span></div>
-        <div class="country-count"><strong>${row.manual?'✓':row.total}</strong><span>${row.manual?'visited':row.total===1?'day':'days'}</span></div>
+        <div class="country-bar"><span style="width:${Math.max(0, Math.min(100, (row.total / max) * 100))}%"></span></div>
+        <div class="country-count"><strong>${row.manual ? '✓' : row.total}</strong><span>${row.manual ? 'visited' : row.total === 1 ? 'day' : 'days'}</span></div>
       </div>
-    `).join('') : '<div class="empty-state">All visited countries are currently removed from this list.</div>';
+    `,
+        )
+        .join('')
+    : '<div class="empty-state">All visited countries are currently removed from this list.</div>';
 
-    const hiddenHtml = hidden.length ? `
+  const hiddenHtml = hidden.length
+    ? `
       <div class="gap-card removed-country-card" style="margin-top:14px">
         <div class="gap-card-head"><strong>Removed from country totals</strong><span class="status-badge neutral">${hidden.length}</span></div>
         <p>These stays are still saved in your calendar and travel history. Re-add a country at any time.</p>
-        <div class="gap-actions">${hidden.map(row => `<button type="button" class="tiny-btn" data-action="include-country" data-country="${row.code}">${flagHtml(row.code, 'flag-img flag-sm')} Re-add ${esc(row.name)}</button>`).join('')}</div>
+        <div class="gap-actions">${hidden.map((row) => `<button type="button" class="tiny-btn" data-action="include-country" data-country="${row.code}">${flagHtml(row.code, 'flag-img flag-sm')} Re-add ${esc(row.name)}</button>`).join('')}</div>
       </div>
-    ` : '';
+    `
+    : '';
 
-    els.countryTotals.innerHTML = visibleHtml + hiddenHtml;
+  els.countryTotals.innerHTML = visibleHtml + hiddenHtml;
+}
+
+// Source: src/core/stays.js
+function schengenBreakdownGroups(min, max, profileId = state.activeProfileId) {
+  let dayMap = new Map();
+  staysForProfile(profileId)
+    .filter(countsForPlanning)
+    .forEach((s) => {
+      if (!SCHENGEN.has(s.countryCode) || s.schengenExempt) return;
+      datesForStay(s, min, max).forEach((d) => {
+        if (!dayMap.has(d)) dayMap.set(d, new Map());
+        let countries = dayMap.get(d),
+          rec = countries.get(s.countryCode) || {
+            code: s.countryCode,
+            name: s.countryName,
+            statuses: new Set(),
+          };
+        rec.statuses.add(s.status);
+        countries.set(s.countryCode, rec);
+      });
+    });
+  let groups = new Map();
+  [...dayMap.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .forEach(([date, countries]) => {
+      let list = [...countries.values()].sort((a, b) => a.code.localeCompare(b.code)),
+        key = list.map((c) => c.code).join('+'),
+        g = groups.get(key) || { countries: list, dates: [], hasPlanned: false };
+      g.dates.push(date);
+      if (list.some((c) => c.statuses.has('planned'))) g.hasPlanned = true;
+      groups.set(key, g);
+    });
+  return [...groups.values()].sort(
+    (a, b) => b.dates.length - a.dates.length || a.countries.length - b.countries.length,
+  );
+}
+function compactBreakdownDates(dates) {
+  if (!dates.length) return '';
+  if (dates.length === 1) return fmt(dates[0], { day: 'numeric', month: 'short' });
+  if (dates.length <= 3)
+    return dates.map((d) => fmt(d, { day: 'numeric', month: 'short' })).join(', ');
+  return `${fmt(dates[0], { day: 'numeric', month: 'short' })} … ${fmt(dates[dates.length - 1], { day: 'numeric', month: 'short' })}`;
+}
+function renderSchengen() {
+  let p = activeProfile(),
+    check = els.checkDate.value || isoDate(new Date()),
+    exempt = isSchengenExemptProfile(p);
+  els.schengenProfileNote.textContent = exempt
+    ? `${p.name} has an EU/EEA/Swiss citizenship recorded, so this short-stay tracker is not applied to this profile.`
+    : `For ${p.name}: choose any date to count Schengen days in that date and the previous 179 days. A calendar date counts once even if you visit more than one Schengen country that day. This estimate uses your recorded history; missing stays can change the result. Stay-specific exclusions are omitted.`;
+  if (exempt) {
+    els.ringUsed.textContent = '—';
+    els.calcUsed.textContent = 'Not applied';
+    els.calcRemaining.textContent = '—';
+    els.windowDates.textContent = 'Free-movement profile';
+    els.forecastBox.className = 'forecast-box good-box';
+    els.forecastTitle.textContent = '90/180 tracker disabled for this profile';
+    els.forecastText.textContent = 'Local registration or residence requirements can still apply.';
+    els.schengenBreakdown.className = 'breakdown empty-state';
+    els.schengenBreakdown.textContent =
+      'Switch to a non-EU/EEA/Swiss traveller to use the short-stay calculator.';
+    return;
   }
-
-function schengenBreakdownGroups(min,max,profileId=state.activeProfileId){let dayMap=new Map();staysForProfile(profileId).filter(countsForPlanning).forEach(s=>{if(!SCHENGEN.has(s.countryCode)||s.schengenExempt)return;datesForStay(s,min,max).forEach(d=>{if(!dayMap.has(d))dayMap.set(d,new Map());let countries=dayMap.get(d),rec=countries.get(s.countryCode)||{code:s.countryCode,name:s.countryName,statuses:new Set()};rec.statuses.add(s.status);countries.set(s.countryCode,rec)})});let groups=new Map();[...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([date,countries])=>{let list=[...countries.values()].sort((a,b)=>a.code.localeCompare(b.code)),key=list.map(c=>c.code).join('+'),g=groups.get(key)||{countries:list,dates:[],hasPlanned:false};g.dates.push(date);if(list.some(c=>c.statuses.has('planned')))g.hasPlanned=true;groups.set(key,g)});return[...groups.values()].sort((a,b)=>b.dates.length-a.dates.length||a.countries.length-b.countries.length)}
-function compactBreakdownDates(dates){if(!dates.length)return'';if(dates.length===1)return fmt(dates[0],{day:'numeric',month:'short'});if(dates.length<=3)return dates.map(d=>fmt(d,{day:'numeric',month:'short'})).join(', ');return`${fmt(dates[0],{day:'numeric',month:'short'})} … ${fmt(dates[dates.length-1],{day:'numeric',month:'short'})}`}
-function renderSchengen(){let p=activeProfile(),check=els.checkDate.value||isoDate(new Date()),exempt=isSchengenExemptProfile(p);els.schengenProfileNote.textContent=exempt?`${p.name} has an EU/EEA/Swiss citizenship recorded, so this short-stay tracker is not applied to this profile.`:`For ${p.name}: choose any date to count Schengen days in that date and the previous 179 days. A calendar date counts once even if you visit more than one Schengen country that day. This estimate uses your recorded history; missing stays can change the result. Stay-specific exclusions are omitted.`;if(exempt){els.ringUsed.textContent='—';els.calcUsed.textContent='Not applied';els.calcRemaining.textContent='—';els.windowDates.textContent='Free-movement profile';els.forecastBox.className='forecast-box good-box';els.forecastTitle.textContent='90/180 tracker disabled for this profile';els.forecastText.textContent='Local registration or residence requirements can still apply.';els.schengenBreakdown.className='breakdown empty-state';els.schengenBreakdown.textContent='Switch to a non-EU/EEA/Swiss traveller to use the short-stay calculator.';return}let r=rollingStatus(check),st=statusForUsed(r.used),hasSchengenRecords=staysForProfile(p.id).some(s=>countsForPlanning(s)&&SCHENGEN.has(s.countryCode)&&!s.schengenExempt);els.ringUsed.textContent=r.used;els.calcUsed.textContent=plural(r.used,'day');els.calcRemaining.textContent=plural(Math.max(0,r.remaining),'day');els.windowDates.textContent=`${fmtObj(r.start,{day:'numeric',month:'short',year:'2-digit'})} – ${fmtObj(r.end,{day:'numeric',month:'short',year:'2-digit'})}`;els.schengenRing.style.setProperty('--p',`${Math.min(360,r.used/90*360)}deg`);let col=st.kind==='bad'?'var(--red)':st.kind==='warn'?'var(--amber)':'var(--green)';els.schengenRing.style.background=`radial-gradient(circle at center,#fff 58%,transparent 59%),conic-gradient(${col} var(--p),#edf0f3 0)`;let future=hasSchengenRecords?firstOverstay(check):null;els.forecastBox.className='forecast-box '+(!hasSchengenRecords?'neutral-box':r.used>90?'bad-box':future?'warn-box':'good-box');els.forecastTitle.textContent=!hasSchengenRecords?'Add Schengen stays to calculate':r.used>90?'Possible overstay in your records':future?'A future recorded stay may cross the limit':'No recorded overstay';els.forecastText.textContent=!hasSchengenRecords?'No Schengen travel has been recorded for this traveller yet.':r.used>90?`This date has ${plural(r.used,'countable Schengen day')} in its rolling window.`:future?`Your current records first exceed 90 days on ${fmt(future.date)}.`:'Your currently recorded stays remain within the rule over the next 500 days.';let groups=schengenBreakdownGroups(dayKey(r.start),dayKey(r.end),p.id);els.schengenBreakdown.className=groups.length?'breakdown':'breakdown empty-state';els.schengenBreakdown.innerHTML=groups.length?groups.map(g=>{let overlap=g.countries.length>1,names=g.countries.map(c=>esc(c.name)).join(' + '),flags=g.countries.map(c=>flagHtml(c.code,'flag-img flag-sm')).join(' '),dateText=compactBreakdownDates(g.dates),detail=overlap?`${dateText} · multi-country ${g.dates.length===1?'travel day':'travel days'} · counted once ${g.dates.length===1?'':'each'}`:`${dateText}${g.hasPlanned?' · includes planned':''}`;return`<div class="breakdown-row"><div class="flag">${flags}</div><div><strong>${overlap?'Multi-country: ':''}${names}</strong><span>${detail}</span></div><div class="breakdown-days">${g.dates.length}d</div></div>`}).join(''):'No Schengen days in this period.'}
-function stayRowHtml(s){let label=s.status==='actual'?'COMPLETED':s.status==='planned'?'PLANNED':'CANCELLED';return`<div class="stay-row ${s.status}"><div class="flag-box">${flagHtml(s.domesticDestination||s.countryCode)}</div><div class="stay-main"><strong>${esc(s.countryName)} <span class="pill ${s.status}">${label}</span></strong><span>${fmt(s.start)} – ${fmt(s.end)}${s.notes?` · ${esc(s.notes)}`:''}</span></div><div class="stay-days"><strong>${daysInclusive(s.start,s.end)}</strong><span>days</span></div><button class="edit-btn" data-action="edit-stay" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.countryName)} stay">⋯</button></div>`}
-function renderStayLists(){
- const term=($('tripSearch')?.value||'').toLowerCase(),status=$('tripStatusFilter')?.value||'all',year=$('tripYearFilter')?.value||'',groups=new Map();
- for(const stay of staysForProfile()){const key=stay.tripId||'stay:'+stay.id;if(!groups.has(key))groups.set(key,{trip:state.trips.find(t=>t.id===stay.tripId),stays:[],transports:[]});groups.get(key).stays.push(stay);}
- for(const trip of HVJourney.scoped(state.trips,state.activeProfileId))if(!groups.has(trip.id))groups.set(trip.id,{trip,stays:[],transports:[]});
- for(const t of HVJourney.scoped(state.transports,state.activeProfileId)){const key=t.tripId||'transport:'+t.id;if(!groups.has(key))groups.set(key,{stays:[],transports:[]});groups.get(key).transports.push(t);}
- const today=isoDate(new Date()),list=[...groups.values()].map(g=>{const dates=[g.trip?.start,g.trip?.end,...g.stays.flatMap(s=>[s.start,s.end]),...g.transports.flatMap(t=>HVJourney.transportDates(t))].filter(Boolean).sort();return {...g,start:dates[0],end:dates.at(-1)};}).filter(g=>{
-   const records=[...g.stays,...g.transports],matches=records.some(r=>r.status===status)||(g.trip?.status===status);
-   const phase=g.end<today?'completed':g.start>today?'upcoming':'current';
-   return (status==='all'||matches||status===phase&&records.some(countsAsTravel))&&(!year||g.start<=year+'-12-31'&&g.end>=year+'-01-01')&&[g.trip?.name,g.trip?.notes,...g.stays.flatMap(s=>[s.countryName,s.notes]),...g.transports.flatMap(t=>[t.start.name,t.end.name])].join(' ').toLowerCase().includes(term);
- }).sort((a,b)=>(b.start||'').localeCompare(a.start||''));
- els.allStays.className='trip-list';els.allStays.innerHTML=list.map(g=>{
-  const countries=[...new Set(g.stays.map(s=>s.countryCode))],name=g.trip?.name||g.stays[0]?.countryName||(g.transports[0]?(window.HVJourneys?.transportLabel(g.transports[0])||HVJourney.transportLabel(g.transports[0])):'Journey');
-return `<article class="trip-group"><div class="trip-group-head"><div><h3>${esc(name)}</h3><p>${g.start?`${fmt(g.start)} to ${fmt(g.end)}`:'Add stays or transport to set dates'} · ${esc(activeProfile().name)}</p><p>${countries.map(c=>flagHtml(c,'flag-img flag-sm')+' '+esc(countryByCode(c)?.name||c)).join(' · ')}</p></div>${g.trip?`<div class="trip-group-actions"><button type="button" class="secondary compact" data-trip-open="${esc(g.trip.id)}">Trip details</button><button type="button" class="secondary compact" data-journey-map="trip:${esc(g.trip.id)}">Journey Map</button><button type="button" class="secondary compact" data-add-transport-trip="${esc(g.trip.id)}">+ Add transport</button><button type="button" class="secondary compact" data-edit-trip="${esc(g.trip.id)}">Edit trip</button></div>`:''}</div>${g.trip?.notes?`<p>${esc(g.trip.notes)}</p>`:''}<div class="trip-group-stays">${g.stays.sort((a,b)=>a.start.localeCompare(b.start)).map(stayRowHtml).join('')}${g.transports.sort((a,b)=>a.startLocal.localeCompare(b.startLocal)).map(t=>`<div class="trip-transport"><span>${esc(HVJourney.types[t.type]||t.type)} · ${esc(window.HVJourneys?.transportLabel(t)||HVJourney.transportLabel(t))} · ${esc(t.status||'actual')}</span><button type="button" class="secondary compact" data-transport-edit="${esc(t.id)}">Edit transport</button></div>`).join('')}</div></article>`;
- }).join('')||'<p class="empty-state">No trips match these filters. Add a trip to begin.</p>';
- const gaps=findGaps();els.gapList.className=gaps.length?'gap-list':'gap-list empty-state';els.gapList.innerHTML=gaps.length?gaps.map(g=>gapCard(g,false)).join(''):'No gaps detected.';
+  let r = rollingStatus(check),
+    st = statusForUsed(r.used),
+    hasSchengenRecords = staysForProfile(p.id).some(
+      (s) => countsForPlanning(s) && SCHENGEN.has(s.countryCode) && !s.schengenExempt,
+    );
+  els.ringUsed.textContent = r.used;
+  els.calcUsed.textContent = plural(r.used, 'day');
+  els.calcRemaining.textContent = plural(Math.max(0, r.remaining), 'day');
+  els.windowDates.textContent = `${fmtObj(r.start, { day: 'numeric', month: 'short', year: '2-digit' })} – ${fmtObj(r.end, { day: 'numeric', month: 'short', year: '2-digit' })}`;
+  els.schengenRing.style.setProperty('--p', `${Math.min(360, (r.used / 90) * 360)}deg`);
+  let col = st.kind === 'bad' ? 'var(--red)' : st.kind === 'warn' ? 'var(--amber)' : 'var(--green)';
+  els.schengenRing.style.background = `radial-gradient(circle at center,#fff 58%,transparent 59%),conic-gradient(${col} var(--p),#edf0f3 0)`;
+  let future = hasSchengenRecords ? firstOverstay(check) : null;
+  els.forecastBox.className =
+    'forecast-box ' +
+    (!hasSchengenRecords
+      ? 'neutral-box'
+      : r.used > 90
+        ? 'bad-box'
+        : future
+          ? 'warn-box'
+          : 'good-box');
+  els.forecastTitle.textContent = !hasSchengenRecords
+    ? 'Add Schengen stays to calculate'
+    : r.used > 90
+      ? 'Possible overstay in your records'
+      : future
+        ? 'A future recorded stay may cross the limit'
+        : 'No recorded overstay';
+  els.forecastText.textContent = !hasSchengenRecords
+    ? 'No Schengen travel has been recorded for this traveller yet.'
+    : r.used > 90
+      ? `This date has ${plural(r.used, 'countable Schengen day')} in its rolling window.`
+      : future
+        ? `Your current records first exceed 90 days on ${fmt(future.date)}.`
+        : 'Your currently recorded stays remain within the rule over the next 500 days.';
+  let groups = schengenBreakdownGroups(dayKey(r.start), dayKey(r.end), p.id);
+  els.schengenBreakdown.className = groups.length ? 'breakdown' : 'breakdown empty-state';
+  els.schengenBreakdown.innerHTML = groups.length
+    ? groups
+        .map((g) => {
+          let overlap = g.countries.length > 1,
+            names = g.countries.map((c) => esc(c.name)).join(' + '),
+            flags = g.countries.map((c) => flagHtml(c.code, 'flag-img flag-sm')).join(' '),
+            dateText = compactBreakdownDates(g.dates),
+            detail = overlap
+              ? `${dateText} · multi-country ${g.dates.length === 1 ? 'travel day' : 'travel days'} · counted once ${g.dates.length === 1 ? '' : 'each'}`
+              : `${dateText}${g.hasPlanned ? ' · includes planned' : ''}`;
+          return `<div class="breakdown-row"><div class="flag">${flags}</div><div><strong>${overlap ? 'Multi-country: ' : ''}${names}</strong><span>${detail}</span></div><div class="breakdown-days">${g.dates.length}d</div></div>`;
+        })
+        .join('')
+    : 'No Schengen days in this period.';
+}
+function stayRowHtml(s) {
+  let label =
+    s.status === 'actual' ? 'COMPLETED' : s.status === 'planned' ? 'PLANNED' : 'CANCELLED';
+  return `<div class="stay-row ${s.status}"><div class="flag-box">${flagHtml(s.domesticDestination || s.countryCode)}</div><div class="stay-main"><strong>${esc(s.countryName)} <span class="pill ${s.status}">${label}</span></strong><span>${fmt(s.start)} – ${fmt(s.end)}${s.notes ? ` · ${esc(s.notes)}` : ''}</span></div><div class="stay-days"><strong>${daysInclusive(s.start, s.end)}</strong><span>days</span></div><button class="edit-btn" data-action="edit-stay" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.countryName)} stay">⋯</button></div>`;
+}
+function renderStayLists() {
+  const term = ($('tripSearch')?.value || '').toLowerCase(),
+    status = $('tripStatusFilter')?.value || 'all',
+    year = $('tripYearFilter')?.value || '',
+    groups = new Map();
+  for (const stay of staysForProfile()) {
+    const key = stay.tripId || 'stay:' + stay.id;
+    if (!groups.has(key))
+      groups.set(key, {
+        trip: state.trips.find((t) => t.id === stay.tripId),
+        stays: [],
+        transports: [],
+      });
+    groups.get(key).stays.push(stay);
+  }
+  for (const trip of HVJourney.scoped(state.trips, state.activeProfileId))
+    if (!groups.has(trip.id)) groups.set(trip.id, { trip, stays: [], transports: [] });
+  for (const t of HVJourney.scoped(state.transports, state.activeProfileId)) {
+    const key = t.tripId || 'transport:' + t.id;
+    if (!groups.has(key)) groups.set(key, { stays: [], transports: [] });
+    groups.get(key).transports.push(t);
+  }
+  const today = isoDate(new Date()),
+    list = [...groups.values()]
+      .map((g) => {
+        const dates = [
+          g.trip?.start,
+          g.trip?.end,
+          ...g.stays.flatMap((s) => [s.start, s.end]),
+          ...g.transports.flatMap((t) => HVJourney.transportDates(t)),
+        ]
+          .filter(Boolean)
+          .sort();
+        return { ...g, start: dates[0], end: dates.at(-1) };
+      })
+      .filter((g) => {
+        const records = [...g.stays, ...g.transports],
+          matches = records.some((r) => r.status === status) || g.trip?.status === status;
+        const phase = g.end < today ? 'completed' : g.start > today ? 'upcoming' : 'current';
+        return (
+          (status === 'all' || matches || (status === phase && records.some(countsAsTravel))) &&
+          (!year || (g.start <= year + '-12-31' && g.end >= year + '-01-01')) &&
+          [
+            g.trip?.name,
+            g.trip?.notes,
+            ...g.stays.flatMap((s) => [s.countryName, s.notes]),
+            ...g.transports.flatMap((t) => [t.start.name, t.end.name]),
+          ]
+            .join(' ')
+            .toLowerCase()
+            .includes(term)
+        );
+      })
+      .sort((a, b) => (b.start || '').localeCompare(a.start || ''));
+  els.allStays.className = 'trip-list';
+  els.allStays.innerHTML =
+    list
+      .map((g) => {
+        const countries = [...new Set(g.stays.map((s) => s.countryCode))],
+          name =
+            g.trip?.name ||
+            g.stays[0]?.countryName ||
+            (g.transports[0]
+              ? window.HVJourneys?.transportLabel(g.transports[0]) ||
+                HVJourney.transportLabel(g.transports[0])
+              : 'Journey');
+        return `<article class="trip-group"><div class="trip-group-head"><div><h3>${esc(name)}</h3><p>${g.start ? `${fmt(g.start)} to ${fmt(g.end)}` : 'Add stays or transport to set dates'} · ${esc(activeProfile().name)}</p><p>${countries.map((c) => flagHtml(c, 'flag-img flag-sm') + ' ' + esc(countryByCode(c)?.name || c)).join(' · ')}</p></div>${g.trip ? `<div class="trip-group-actions"><button type="button" class="secondary compact" data-trip-open="${esc(g.trip.id)}">Trip details</button><button type="button" class="secondary compact" data-journey-map="trip:${esc(g.trip.id)}">Journey Map</button><button type="button" class="secondary compact" data-add-transport-trip="${esc(g.trip.id)}">+ Add transport</button><button type="button" class="secondary compact" data-edit-trip="${esc(g.trip.id)}">Edit trip</button></div>` : ''}</div>${g.trip?.notes ? `<p>${esc(g.trip.notes)}</p>` : ''}<div class="trip-group-stays">${g.stays
+          .sort((a, b) => a.start.localeCompare(b.start))
+          .map(stayRowHtml)
+          .join('')}${g.transports
+          .sort((a, b) => a.startLocal.localeCompare(b.startLocal))
+          .map(
+            (t) =>
+              `<div class="trip-transport"><span>${esc(HVJourney.types[t.type] || t.type)} · ${esc(window.HVJourneys?.transportLabel(t) || HVJourney.transportLabel(t))} · ${esc(t.status || 'actual')}</span><button type="button" class="secondary compact" data-transport-edit="${esc(t.id)}">Edit transport</button></div>`,
+          )
+          .join('')}</div></article>`;
+      })
+      .join('') || '<p class="empty-state">No trips match these filters. Add a trip to begin.</p>';
+  const gaps = findGaps();
+  els.gapList.className = gaps.length ? 'gap-list' : 'gap-list empty-state';
+  els.gapList.innerHTML = gaps.length
+    ? gaps.map((g) => gapCard(g, false)).join('')
+    : 'No gaps detected.';
 }
 
-function renderStayList(container,list){if(!list.length){container.className='stay-list empty-state';container.textContent='No trips or stays added yet.';return}container.className='stay-list';container.innerHTML=list.map(stayRowHtml).join('')}
-function gapCard(g,compact){let prev=g.prev?.countryCode,next=g.next?.countryCode;return`<div class="gap-card"><div class="gap-card-head"><strong>${fmt(g.start)} – ${fmt(g.end)}</strong><span class="status-badge neutral">${plural(g.missingDays??Math.max(0,g.days-2),'unlogged day')}</span></div><p>Between ${g.prev?flagHtml(prev,'flag-img flag-sm')+' '+esc(g.prev.countryName):'record'} and ${g.next?flagHtml(next,'flag-img flag-sm')+' '+esc(g.next.countryName):'record'}. The fill range includes both boundary travel days, so those dates can contain two countries.</p><div class="gap-actions">${prev?`<button class="tiny-btn" data-action="fill-gap" data-start="${g.start}" data-end="${g.end}" data-country="${prev}">Use ${flagHtml(prev,'flag-img flag-sm')} ${esc(g.prev.countryName)}</button>`:''}${next&&next!==prev?`<button class="tiny-btn" data-action="fill-gap" data-start="${g.start}" data-end="${g.end}" data-country="${next}">Use ${flagHtml(next,'flag-img flag-sm')} ${esc(g.next.countryName)}</button>`:''}<button class="tiny-btn" data-action="fill-gap" data-start="${g.start}" data-end="${g.end}">Choose country</button></div></div>`}
-function addDateRange(start=isoDate(new Date()),end=start){let row=document.createElement('div');row.className='date-range-row';row.innerHTML=`<label><span>From</span><input type="date" class="range-start" value="${start}" required></label><label><span>To</span><input type="date" class="range-end" value="${end}" required></label><button type="button" class="remove-range" data-action="remove-range" aria-label="Remove date range">×</button>`;let validate=()=>{let st=row.querySelector('.range-start').value,en=row.querySelector('.range-end').value;row.classList.toggle('invalid-range',!!st&&!!en&&en<st)};row.querySelector('.range-start').onchange=validate;row.querySelector('.range-end').onchange=validate;els.dateRanges.appendChild(row)}
-function openStayDialog(id=null,prefill={}){if(!id&&window.HVCalendar?.openTripPlanner)return window.HVCalendar.openTripPlanner(prefill);stayDialogContext=prefill.source||'manual';els.stayForm.reset();els.dateRanges.innerHTML='';els.formError.textContent='';els.stayId.value=id||'';els.deleteStayBtn.classList.toggle('hidden',!id);let s=id?state.stays.find(x=>x.id===id):null,trip=s?.tripId?state.trips.find(t=>t.id===s.tripId):null,isPlan=!id&&stayDialogContext==='plan';els.dialogTitle.textContent=id?'Edit trip stop':isPlan?'Plan a trip':'Add a trip';if($('stayDialogIntro'))$('stayDialogIntro').textContent=id?'Change the dates, status or details for this stop.':isPlan?'Add the first stop and dates. You can keep the rest of the journey together below.':'Start with where you went and when. You can add the extra details if you need them.';if($('saveStayBtn'))$('saveStayBtn').textContent=id?'Save changes':isPlan?'Save planned trip':'Save trip';const more=els.stayDialog.querySelector('.trip-form-more');if(more)more.open=!!(id||trip||prefill.tripName);const picker=$('stayTripSelect');picker.closest('label').hidden=false;picker.innerHTML='<option value="">Keep as its own trip</option><option value="new">Create a new trip</option>'+HVJourney.scoped(state.trips,s?.profileId||state.activeProfileId).map(t=>`<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('');picker.value=trip?.id||(prefill.tripName?'new':'');picker.onchange=()=>{$('newTripNameField').hidden=picker.value!=='new';els.tripNameInput.required=picker.value==='new';};picker.onchange();els.tripNameInput.value=prefill.tripName||'';els.countryInput.value=s?.countryName||prefill.countryName||'';$('stayLocationInput').value=s?.location||'';els.notesInput.value=s?.notes||'';els.stayStatus.value=s?.status||prefill.status||'actual';els.stayProfile.value=s?.profileId||state.activeProfileId||'';els.schengenExempt.checked=!!s?.schengenExempt;addDateRange(s?.start||prefill.start||isoDate(new Date()),s?.end||prefill.end||prefill.start||isoDate(new Date()));updateStayCountry();els.stayDialog.showModal()}
-function updateStayCountry(){let c=countryByName(els.countryInput.value);els.countryFlag.innerHTML=c?flagHtml(c.domesticDestination||c.code):'';els.schengenExemptRow.classList.toggle('hidden',!c||!SCHENGEN.has(c.code))}
-async function saveStay(e){e.preventDefault();let c=countryByName(els.countryInput.value);if(!c){els.formError.textContent='Choose a country from the list.';return}let rows=[...els.dateRanges.querySelectorAll('.date-range-row')].map(r=>({start:r.querySelector('.range-start').value,end:r.querySelector('.range-end').value}));if(!rows.length){els.formError.textContent='Add at least one date range.';return}for(let r of rows)if(!HVJourney.validDate(r.start)||!HVJourney.validDate(r.end)||r.end<r.start){els.formError.textContent='Check each From/To date range. The To date must be on or after the From date.';return}const travelKind=await HVHome.choose(c,rows[0].start,els.stayProfile.value||state.activeProfileId,state.stays.find(s=>s.id===els.stayId.value));if(travelKind==='cancel')return;let tripName=els.tripNameInput.value.trim(),profileId=els.stayProfile.value||null,selection=$('stayTripSelect').value,trip=state.trips.find(t=>t.id===selection);if(trip&&trip.profileId&&trip.profileId!==profileId&&!trip.profileIds?.includes(profileId)){els.formError.textContent='Choose a trip belonging to this traveller, or create a new trip.';return;}if(selection==='new'&&!tripName){els.formError.textContent='Enter a name for the new trip.';return;}if(selection==='new'){trip={id:uid(),name:tripName,profileId,notes:''};state.trips.push(trip)}let base={tripId:trip?.id||null,countryCode:c.code,countryName:c.name,...HVJourney.domesticFields(c),travelKind,domesticHoliday:travelKind==='trip'||(!travelKind&&!!c.domesticDestination),location:$('stayLocationInput').value.trim(),notes:els.notesInput.value.trim(),schengenExempt:SCHENGEN.has(c.code)?els.schengenExempt.checked:false,status:els.stayStatus.value,profileId};let id=els.stayId.value;if(id){let ix=state.stays.findIndex(s=>s.id===id);state.stays[ix]={...state.stays[ix],...base,...rows[0]};rows.slice(1).forEach(r=>state.stays.push({id:uid(),...base,...r}))}else rows.forEach(r=>state.stays.push({id:uid(),...base,...r}));updatePassedPlannedTrips();if(stayDialogContext==='calendar'){calendarSelectionStart=null;calendarSelectionEnd=null}stayDialogContext='manual';persist();els.stayDialog.close();renderAll()}
-function deleteStay(){let id=els.stayId.value;if(!id)return;state.stays=state.stays.filter(s=>s.id!==id);persist();els.stayDialog.close();renderAll()}
-function openGapDialog(start,end,code=''){els.gapStart.value=start;els.gapEnd.value=end;els.gapDateSummary.textContent=`Fill ${fmt(start)} to ${fmt(end)} (${plural(daysInclusive(start,end),'day')}). The first and last dates are intentionally included so travel days can overlap with the country either side.`;els.gapCountry.value=countryByCode(code)?.name||'';els.gapError.textContent='';els.gapDialog.showModal()}
-async function saveGap(e){e.preventDefault();let c=countryByName(els.gapCountry.value);if(!c){els.gapError.textContent='Choose a country from the list.';return}const travelKind=await HVHome.choose(c,els.gapStart.value,state.activeProfileId);if(travelKind==='cancel')return;state.stays.push({id:uid(),countryCode:c.code,countryName:c.name,...HVJourney.domesticFields(c),travelKind,domesticHoliday:travelKind==='trip',start:els.gapStart.value,end:els.gapEnd.value,notes:'Filled from gap detector',schengenExempt:false,status:'actual',profileId:state.activeProfileId});persist();els.gapDialog.close();renderAll()}
-function populateProfileSelects(){let opts=state.profiles.map(p=>`<option value="${esc(p.id)}" ${p.id===state.activeProfileId?'selected':''}>${esc(p.name)}</option>`).join('');els.plannerProfile.innerHTML=opts;els.stayProfile.innerHTML='<option value="">All / shared</option>'+opts}
-function renderProfiles(){let p=activeProfile();els.profileList.innerHTML=state.profiles.map(x=>`<div class="profile-card ${x.id===p.id?'active':''}"><div><h3>${esc(x.name)} ${x.id===p.id?'<span class="pill">ACTIVE</span>':''}</h3><p>${x.citizenships.length?x.citizenships.map(c=>flagHtml(c,'flag-img flag-sm')+' '+esc(countryByCode(c)?.name||c)).join(' · '):'No citizenship added yet'}</p></div><div class="profile-actions">${x.id!==p.id?`<button class="tiny-btn" data-action="set-profile" data-id="${x.id}">Use</button>`:''}<button class="tiny-btn" data-action="edit-profile" data-id="${x.id}">Edit</button></div></div>`).join('');populateProfileSelects();renderResidences()}
-function openProfileDialog(id=null){let p=id?state.profiles.find(x=>x.id===id):null;els.profileForm.reset();els.profileId.value=id||'';els.profileName.value=p?.name||'';profileCitizenships=[...(p?.citizenships||[])];els.profileDialogTitle.textContent=id?'Edit profile':'Add profile';els.deleteProfileBtn.classList.toggle('hidden',!id||state.profiles.length===1);els.profileError.textContent='';renderCitizenshipChips();els.profileDialog.showModal()}
-function addCitizenship(){let c=countryByName(els.citizenshipInput.value);if(!c||c.code==='SEA'||c.code==='BOU'){els.profileError.textContent='Choose a valid passport/citizenship country.';return}if(!profileCitizenships.includes(c.code))profileCitizenships.push(c.code);els.citizenshipInput.value='';els.profileError.textContent='';renderCitizenshipChips()}
-function renderCitizenshipChips(){els.citizenshipChips.innerHTML=profileCitizenships.map(c=>`<span class="chip">${flagHtml(c,'flag-img flag-sm')} ${esc(countryByCode(c)?.name||c)} <button type="button" data-remove-cit="${c}">×</button></span>`).join('');els.citizenshipChips.querySelectorAll('[data-remove-cit]').forEach(b=>b.onclick=()=>{profileCitizenships=profileCitizenships.filter(c=>c!==b.dataset.removeCit);renderCitizenshipChips()})}
-function saveProfile(e){e.preventDefault();let name=els.profileName.value.trim();if(!name){els.profileError.textContent='Add a name.';return}let id=els.profileId.value;if(id){let p=state.profiles.find(x=>x.id===id);p.name=name;p.citizenships=[...profileCitizenships]}else{let p={id:uid(),name,citizenships:[...profileCitizenships],enabledRules:['schengen']};state.profiles.push(p);state.activeProfileId=p.id}persist();els.profileDialog.close();renderAll()}
-function deleteProfile(){let id=els.profileId.value;if(state.profiles.length<=1)return;state.profiles=state.profiles.filter(p=>p.id!==id);state.stays.forEach(s=>{if(s.profileId===id)s.profileId=null});state.residences.forEach(r=>{if(r.profileId===id)r.profileId=null});for(const key of ['transports','accommodations','placeVisits','savedPlaces','visaAcknowledgements','roadTrips','currencyRates','currencyPreferences','manualCountryVisits','tccVisits'])(state[key]||[]).forEach(r=>{if(r.profileId===id)r.profileId=null});if(state.activeProfileId===id)state.activeProfileId=state.profiles[0].id;persist();els.profileDialog.close();renderAll()}
-function saveResidence(e){e.preventDefault();let c=countryByName(els.residenceCountry.value);if(!c){els.residenceError.textContent='Choose a valid country.';return}if(c.code==='SEA'){els.residenceError.textContent='At Sea can be recorded as travel, but not as a place you lived.';return}let start=els.residenceStart.value,end=els.residencePresent.checked?null:els.residenceEnd.value;if(!start){els.residenceError.textContent='Add the date you started living there.';return}if(!els.residencePresent.checked&&!end){els.residenceError.textContent='Add an end date or choose Present.';return}if(end&&end<start){els.residenceError.textContent='The end date cannot be before the start date.';return}state.residences.push({id:uid(),countryCode:c.code,countryName:c.name,start,end,profileId:state.activeProfileId});persist();els.residenceForm.reset();els.residenceEnd.disabled=false;els.residenceError.textContent='';renderResidences();renderDashboard()}
-function renderResidences(){if(!els.residenceList)return;let rows=(state.residences||[]).filter(r=>!r.profileId||r.profileId===state.activeProfileId).sort((a,b)=>b.start.localeCompare(a.start));if(!rows.length){els.residenceList.className='stay-list empty-state';els.residenceList.textContent="You haven't added anywhere you've lived yet.";return}els.residenceList.className='stay-list';els.residenceList.innerHTML=rows.map(r=>`<div class="stay-row"><div class="flag-box">${flagHtml(r.countryCode)}</div><div class="stay-main"><strong>${esc(r.countryName)}</strong><span>${fmt(r.start)} – ${r.end?fmt(r.end):'Present'}</span></div><button type="button" class="tiny-btn" data-action="delete-residence" data-id="${r.id}">Remove</button></div>`).join('')}
-function deleteResidence(id){state.residences=(state.residences||[]).filter(r=>r.id!==id);persist();renderResidences();renderDashboard()}
-function renderVisaChecker(){
-  if(!els.visaPassport)return;
-  let p=activeProfile(),cit=p?.citizenships||[];
-  if(!els.visaPassport.value&&cit.length){let c=countryByCode(cit[0]);if(c)els.visaPassport.value=c.name}
-  if(cit.length){els.visaProfileHint.innerHTML=`${esc(p.name)} has ${cit.length===1?'this passport':'these passports'} saved: `+cit.map(code=>{let c=countryByCode(code);return c?`<button type="button" data-action="use-profile-passport" data-country="${code}">${flagHtml(code,'flag-img flag-sm')} ${esc(c.name)}</button>`:''}).filter(Boolean).join(' · ')}else els.visaProfileHint.innerHTML=`No passport saved for ${esc(p?.name||'this traveller')}. You can still type one above, or <button type="button" data-go-view="profiles">add it to the profile</button>.`;
-  HVEntryChecker.init();const coverage=HVEntryRules.coverage();if(els.visaDataStatus)els.visaDataStatus.textContent=coverage.passports+' passports · '+coverage.routes.toLocaleString()+' routes. Worldwide visa data with reviewed official corrections.';
+function renderStayList(container, list) {
+  if (!list.length) {
+    container.className = 'stay-list empty-state';
+    container.textContent = 'No trips or stays added yet.';
+    return;
+  }
+  container.className = 'stay-list';
+  container.innerHTML = list.map(stayRowHtml).join('');
 }
-async function runVisaCheck(){
+function gapCard(g, compact) {
+  let prev = g.prev?.countryCode,
+    next = g.next?.countryCode;
+  return `<div class="gap-card"><div class="gap-card-head"><strong>${fmt(g.start)} – ${fmt(g.end)}</strong><span class="status-badge neutral">${plural(g.missingDays ?? Math.max(0, g.days - 2), 'unlogged day')}</span></div><p>Between ${g.prev ? flagHtml(prev, 'flag-img flag-sm') + ' ' + esc(g.prev.countryName) : 'record'} and ${g.next ? flagHtml(next, 'flag-img flag-sm') + ' ' + esc(g.next.countryName) : 'record'}. The fill range includes both boundary travel days, so those dates can contain two countries.</p><div class="gap-actions">${prev ? `<button class="tiny-btn" data-action="fill-gap" data-start="${g.start}" data-end="${g.end}" data-country="${prev}">Use ${flagHtml(prev, 'flag-img flag-sm')} ${esc(g.prev.countryName)}</button>` : ''}${next && next !== prev ? `<button class="tiny-btn" data-action="fill-gap" data-start="${g.start}" data-end="${g.end}" data-country="${next}">Use ${flagHtml(next, 'flag-img flag-sm')} ${esc(g.next.countryName)}</button>` : ''}<button class="tiny-btn" data-action="fill-gap" data-start="${g.start}" data-end="${g.end}">Choose country</button></div></div>`;
+}
+function addDateRange(start = isoDate(new Date()), end = start) {
+  let row = document.createElement('div');
+  row.className = 'date-range-row';
+  row.innerHTML = `<label><span>From</span><input type="date" class="range-start" value="${start}" required></label><label><span>To</span><input type="date" class="range-end" value="${end}" required></label><button type="button" class="remove-range" data-action="remove-range" aria-label="Remove date range">×</button>`;
+  let validate = () => {
+    let st = row.querySelector('.range-start').value,
+      en = row.querySelector('.range-end').value;
+    row.classList.toggle('invalid-range', !!st && !!en && en < st);
+  };
+  row.querySelector('.range-start').onchange = validate;
+  row.querySelector('.range-end').onchange = validate;
+  els.dateRanges.appendChild(row);
+}
+function openStayDialog(id = null, prefill = {}) {
+  if (!id && window.HVCalendar?.openTripPlanner) return window.HVCalendar.openTripPlanner(prefill);
+  stayDialogContext = prefill.source || 'manual';
+  els.stayForm.reset();
+  els.dateRanges.innerHTML = '';
+  els.formError.textContent = '';
+  els.stayId.value = id || '';
+  els.deleteStayBtn.classList.toggle('hidden', !id);
+  let s = id ? state.stays.find((x) => x.id === id) : null,
+    trip = s?.tripId ? state.trips.find((t) => t.id === s.tripId) : null,
+    isPlan = !id && stayDialogContext === 'plan';
+  els.dialogTitle.textContent = id ? 'Edit trip stop' : isPlan ? 'Plan a trip' : 'Add a trip';
+  if ($('stayDialogIntro'))
+    $('stayDialogIntro').textContent = id
+      ? 'Change the dates, status or details for this stop.'
+      : isPlan
+        ? 'Add the first stop and dates. You can keep the rest of the journey together below.'
+        : 'Start with where you went and when. You can add the extra details if you need them.';
+  if ($('saveStayBtn'))
+    $('saveStayBtn').textContent = id ? 'Save changes' : isPlan ? 'Save planned trip' : 'Save trip';
+  const more = els.stayDialog.querySelector('.trip-form-more');
+  if (more) more.open = !!(id || trip || prefill.tripName);
+  const picker = $('stayTripSelect');
+  picker.closest('label').hidden = false;
+  picker.innerHTML =
+    '<option value="">Keep as its own trip</option><option value="new">Create a new trip</option>' +
+    HVJourney.scoped(state.trips, s?.profileId || state.activeProfileId)
+      .map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`)
+      .join('');
+  picker.value = trip?.id || (prefill.tripName ? 'new' : '');
+  picker.onchange = () => {
+    $('newTripNameField').hidden = picker.value !== 'new';
+    els.tripNameInput.required = picker.value === 'new';
+  };
+  picker.onchange();
+  els.tripNameInput.value = prefill.tripName || '';
+  els.countryInput.value = s?.countryName || prefill.countryName || '';
+  $('stayLocationInput').value = s?.location || '';
+  els.notesInput.value = s?.notes || '';
+  els.stayStatus.value = s?.status || prefill.status || 'actual';
+  els.stayProfile.value = s?.profileId || state.activeProfileId || '';
+  els.schengenExempt.checked = !!s?.schengenExempt;
+  addDateRange(
+    s?.start || prefill.start || isoDate(new Date()),
+    s?.end || prefill.end || prefill.start || isoDate(new Date()),
+  );
+  updateStayCountry();
+  els.stayDialog.showModal();
+}
+function updateStayCountry() {
+  let c = countryByName(els.countryInput.value);
+  els.countryFlag.innerHTML = c ? flagHtml(c.domesticDestination || c.code) : '';
+  els.schengenExemptRow.classList.toggle('hidden', !c || !SCHENGEN.has(c.code));
+}
+async function saveStay(e) {
+  e.preventDefault();
+  let c = countryByName(els.countryInput.value);
+  if (!c) {
+    els.formError.textContent = 'Choose a country from the list.';
+    return;
+  }
+  let rows = [...els.dateRanges.querySelectorAll('.date-range-row')].map((r) => ({
+    start: r.querySelector('.range-start').value,
+    end: r.querySelector('.range-end').value,
+  }));
+  if (!rows.length) {
+    els.formError.textContent = 'Add at least one date range.';
+    return;
+  }
+  for (let r of rows)
+    if (!HVJourney.validDate(r.start) || !HVJourney.validDate(r.end) || r.end < r.start) {
+      els.formError.textContent =
+        'Check each From/To date range. The To date must be on or after the From date.';
+      return;
+    }
+  const travelKind = await HVHome.choose(
+    c,
+    rows[0].start,
+    els.stayProfile.value || state.activeProfileId,
+    state.stays.find((s) => s.id === els.stayId.value),
+  );
+  if (travelKind === 'cancel') return;
+  let tripName = els.tripNameInput.value.trim(),
+    profileId = els.stayProfile.value || null,
+    selection = $('stayTripSelect').value,
+    trip = state.trips.find((t) => t.id === selection);
+  if (
+    trip &&
+    trip.profileId &&
+    trip.profileId !== profileId &&
+    !trip.profileIds?.includes(profileId)
+  ) {
+    els.formError.textContent = 'Choose a trip belonging to this traveller, or create a new trip.';
+    return;
+  }
+  if (selection === 'new' && !tripName) {
+    els.formError.textContent = 'Enter a name for the new trip.';
+    return;
+  }
+  if (selection === 'new') {
+    trip = { id: uid(), name: tripName, profileId, notes: '' };
+    state.trips.push(trip);
+  }
+  let base = {
+    tripId: trip?.id || null,
+    countryCode: c.code,
+    countryName: c.name,
+    ...HVJourney.domesticFields(c),
+    travelKind,
+    domesticHoliday: travelKind === 'trip' || (!travelKind && !!c.domesticDestination),
+    location: $('stayLocationInput').value.trim(),
+    notes: els.notesInput.value.trim(),
+    schengenExempt: SCHENGEN.has(c.code) ? els.schengenExempt.checked : false,
+    status: els.stayStatus.value,
+    profileId,
+  };
+  let id = els.stayId.value;
+  if (id) {
+    let ix = state.stays.findIndex((s) => s.id === id);
+    state.stays[ix] = { ...state.stays[ix], ...base, ...rows[0] };
+    rows.slice(1).forEach((r) => state.stays.push({ id: uid(), ...base, ...r }));
+  } else rows.forEach((r) => state.stays.push({ id: uid(), ...base, ...r }));
+  updatePassedPlannedTrips();
+  if (stayDialogContext === 'calendar') {
+    calendarSelectionStart = null;
+    calendarSelectionEnd = null;
+  }
+  stayDialogContext = 'manual';
+  persist();
+  els.stayDialog.close();
+  renderAll();
+}
+function deleteStay() {
+  let id = els.stayId.value;
+  if (!id) return;
+  state.stays = state.stays.filter((s) => s.id !== id);
+  persist();
+  els.stayDialog.close();
+  renderAll();
+}
+function openGapDialog(start, end, code = '') {
+  els.gapStart.value = start;
+  els.gapEnd.value = end;
+  els.gapDateSummary.textContent = `Fill ${fmt(start)} to ${fmt(end)} (${plural(daysInclusive(start, end), 'day')}). The first and last dates are intentionally included so travel days can overlap with the country either side.`;
+  els.gapCountry.value = countryByCode(code)?.name || '';
+  els.gapError.textContent = '';
+  els.gapDialog.showModal();
+}
+async function saveGap(e) {
+  e.preventDefault();
+  let c = countryByName(els.gapCountry.value);
+  if (!c) {
+    els.gapError.textContent = 'Choose a country from the list.';
+    return;
+  }
+  const travelKind = await HVHome.choose(c, els.gapStart.value, state.activeProfileId);
+  if (travelKind === 'cancel') return;
+  state.stays.push({
+    id: uid(),
+    countryCode: c.code,
+    countryName: c.name,
+    ...HVJourney.domesticFields(c),
+    travelKind,
+    domesticHoliday: travelKind === 'trip',
+    start: els.gapStart.value,
+    end: els.gapEnd.value,
+    notes: 'Filled from gap detector',
+    schengenExempt: false,
+    status: 'actual',
+    profileId: state.activeProfileId,
+  });
+  persist();
+  els.gapDialog.close();
+  renderAll();
+}
+
+// Source: src/core/people.js
+function populateProfileSelects() {
+  let opts = state.profiles
+    .map(
+      (p) =>
+        `<option value="${esc(p.id)}" ${p.id === state.activeProfileId ? 'selected' : ''}>${esc(p.name)}</option>`,
+    )
+    .join('');
+  els.plannerProfile.innerHTML = opts;
+  els.stayProfile.innerHTML = '<option value="">All / shared</option>' + opts;
+}
+function renderProfiles() {
+  let p = activeProfile();
+  els.profileList.innerHTML = state.profiles
+    .map(
+      (x) =>
+        `<div class="profile-card ${x.id === p.id ? 'active' : ''}"><div><h3>${esc(x.name)} ${x.id === p.id ? '<span class="pill">ACTIVE</span>' : ''}</h3><p>${x.citizenships.length ? x.citizenships.map((c) => flagHtml(c, 'flag-img flag-sm') + ' ' + esc(countryByCode(c)?.name || c)).join(' · ') : 'No citizenship added yet'}</p></div><div class="profile-actions">${x.id !== p.id ? `<button class="tiny-btn" data-action="set-profile" data-id="${x.id}">Use</button>` : ''}<button class="tiny-btn" data-action="edit-profile" data-id="${x.id}">Edit</button></div></div>`,
+    )
+    .join('');
+  populateProfileSelects();
+  renderResidences();
+}
+function openProfileDialog(id = null) {
+  let p = id ? state.profiles.find((x) => x.id === id) : null;
+  els.profileForm.reset();
+  els.profileId.value = id || '';
+  els.profileName.value = p?.name || '';
+  profileCitizenships = [...(p?.citizenships || [])];
+  els.profileDialogTitle.textContent = id ? 'Edit profile' : 'Add profile';
+  els.deleteProfileBtn.classList.toggle('hidden', !id || state.profiles.length === 1);
+  els.profileError.textContent = '';
+  renderCitizenshipChips();
+  els.profileDialog.showModal();
+}
+function addCitizenship() {
+  let c = countryByName(els.citizenshipInput.value);
+  if (!c || c.code === 'SEA' || c.code === 'BOU') {
+    els.profileError.textContent = 'Choose a valid passport/citizenship country.';
+    return;
+  }
+  if (!profileCitizenships.includes(c.code)) profileCitizenships.push(c.code);
+  els.citizenshipInput.value = '';
+  els.profileError.textContent = '';
+  renderCitizenshipChips();
+}
+function renderCitizenshipChips() {
+  els.citizenshipChips.innerHTML = profileCitizenships
+    .map(
+      (c) =>
+        `<span class="chip">${flagHtml(c, 'flag-img flag-sm')} ${esc(countryByCode(c)?.name || c)} <button type="button" data-remove-cit="${c}">×</button></span>`,
+    )
+    .join('');
+  els.citizenshipChips.querySelectorAll('[data-remove-cit]').forEach(
+    (b) =>
+      (b.onclick = () => {
+        profileCitizenships = profileCitizenships.filter((c) => c !== b.dataset.removeCit);
+        renderCitizenshipChips();
+      }),
+  );
+}
+function saveProfile(e) {
+  e.preventDefault();
+  let name = els.profileName.value.trim();
+  if (!name) {
+    els.profileError.textContent = 'Add a name.';
+    return;
+  }
+  let id = els.profileId.value;
+  if (id) {
+    let p = state.profiles.find((x) => x.id === id);
+    p.name = name;
+    p.citizenships = [...profileCitizenships];
+  } else {
+    let p = { id: uid(), name, citizenships: [...profileCitizenships], enabledRules: ['schengen'] };
+    state.profiles.push(p);
+    state.activeProfileId = p.id;
+  }
+  persist();
+  els.profileDialog.close();
+  renderAll();
+}
+function deleteProfile() {
+  let id = els.profileId.value;
+  if (state.profiles.length <= 1) return;
+  state.profiles = state.profiles.filter((p) => p.id !== id);
+  state.stays.forEach((s) => {
+    if (s.profileId === id) s.profileId = null;
+  });
+  state.residences.forEach((r) => {
+    if (r.profileId === id) r.profileId = null;
+  });
+  for (const key of [
+    'transports',
+    'accommodations',
+    'placeVisits',
+    'savedPlaces',
+    'visaAcknowledgements',
+    'roadTrips',
+    'currencyRates',
+    'currencyPreferences',
+    'manualCountryVisits',
+    'tccVisits',
+  ])
+    (state[key] || []).forEach((r) => {
+      if (r.profileId === id) r.profileId = null;
+    });
+  if (state.activeProfileId === id) state.activeProfileId = state.profiles[0].id;
+  persist();
+  els.profileDialog.close();
+  renderAll();
+}
+function saveResidence(e) {
+  e.preventDefault();
+  let c = countryByName(els.residenceCountry.value);
+  if (!c) {
+    els.residenceError.textContent = 'Choose a valid country.';
+    return;
+  }
+  if (c.code === 'SEA') {
+    els.residenceError.textContent =
+      'At Sea can be recorded as travel, but not as a place you lived.';
+    return;
+  }
+  let start = els.residenceStart.value,
+    end = els.residencePresent.checked ? null : els.residenceEnd.value;
+  if (!start) {
+    els.residenceError.textContent = 'Add the date you started living there.';
+    return;
+  }
+  if (!els.residencePresent.checked && !end) {
+    els.residenceError.textContent = 'Add an end date or choose Present.';
+    return;
+  }
+  if (end && end < start) {
+    els.residenceError.textContent = 'The end date cannot be before the start date.';
+    return;
+  }
+  state.residences.push({
+    id: uid(),
+    countryCode: c.code,
+    countryName: c.name,
+    start,
+    end,
+    profileId: state.activeProfileId,
+  });
+  persist();
+  els.residenceForm.reset();
+  els.residenceEnd.disabled = false;
+  els.residenceError.textContent = '';
+  renderResidences();
+  renderDashboard();
+}
+function renderResidences() {
+  if (!els.residenceList) return;
+  let rows = (state.residences || [])
+    .filter((r) => !r.profileId || r.profileId === state.activeProfileId)
+    .sort((a, b) => b.start.localeCompare(a.start));
+  if (!rows.length) {
+    els.residenceList.className = 'stay-list empty-state';
+    els.residenceList.textContent = "You haven't added anywhere you've lived yet.";
+    return;
+  }
+  els.residenceList.className = 'stay-list';
+  els.residenceList.innerHTML = rows
+    .map(
+      (r) =>
+        `<div class="stay-row"><div class="flag-box">${flagHtml(r.countryCode)}</div><div class="stay-main"><strong>${esc(r.countryName)}</strong><span>${fmt(r.start)} – ${r.end ? fmt(r.end) : 'Present'}</span></div><button type="button" class="tiny-btn" data-action="delete-residence" data-id="${r.id}">Remove</button></div>`,
+    )
+    .join('');
+}
+function deleteResidence(id) {
+  state.residences = (state.residences || []).filter((r) => r.id !== id);
+  persist();
+  renderResidences();
+  renderDashboard();
+}
+
+// Source: src/core/planning.js
+function renderVisaChecker() {
+  if (!els.visaPassport) return;
+  let p = activeProfile(),
+    cit = p?.citizenships || [];
+  if (!els.visaPassport.value && cit.length) {
+    let c = countryByCode(cit[0]);
+    if (c) els.visaPassport.value = c.name;
+  }
+  if (cit.length) {
+    els.visaProfileHint.innerHTML =
+      `${esc(p.name)} has ${cit.length === 1 ? 'this passport' : 'these passports'} saved: ` +
+      cit
+        .map((code) => {
+          let c = countryByCode(code);
+          return c
+            ? `<button type="button" data-action="use-profile-passport" data-country="${code}">${flagHtml(code, 'flag-img flag-sm')} ${esc(c.name)}</button>`
+            : '';
+        })
+        .filter(Boolean)
+        .join(' · ');
+  } else
+    els.visaProfileHint.innerHTML = `No passport saved for ${esc(p?.name || 'this traveller')}. You can still type one above, or <button type="button" data-go-view="profiles">add it to the profile</button>.`;
   HVEntryChecker.init();
-  const from=countryByName(els.visaPassport.value),to=countryByName(els.visaDestination.value),host=els.visaPassport.closest('.panel'),input=HVEntryChecker.read(host);
-  if(!from||!to||from.code==='SEA'||to.code==='SEA'||input.error){els.visaResultTitle.textContent='Check your details';els.visaResultBody.innerHTML='<p class="visa-error">'+esc(input.error||'Choose a valid passport country and destination.')+'</p>';return;}
-  const display=()=>{const rule=HVEntryRules.lookup(from.code,to.code,input.options);els.visaResultTitle.innerHTML=flagHtml(to.code)+' '+esc(to.name);els.visaResultBody.innerHTML=HVEntryChecker.resultHtml(rule);};
+  const coverage = HVEntryRules.coverage();
+  if (els.visaDataStatus)
+    els.visaDataStatus.textContent =
+      coverage.passports +
+      ' passports · ' +
+      coverage.routes.toLocaleString() +
+      ' routes. Worldwide visa data with reviewed official corrections.';
+}
+async function runVisaCheck() {
+  HVEntryChecker.init();
+  const from = countryByName(els.visaPassport.value),
+    to = countryByName(els.visaDestination.value),
+    host = els.visaPassport.closest('.panel'),
+    input = HVEntryChecker.read(host);
+  if (!from || !to || from.code === 'SEA' || to.code === 'SEA' || input.error) {
+    els.visaResultTitle.textContent = 'Check your details';
+    els.visaResultBody.innerHTML =
+      '<p class="visa-error">' +
+      esc(input.error || 'Choose a valid passport country and destination.') +
+      '</p>';
+    return;
+  }
+  const display = () => {
+    const rule = HVEntryRules.lookup(from.code, to.code, input.options);
+    els.visaResultTitle.innerHTML = flagHtml(to.code) + ' ' + esc(to.name);
+    els.visaResultBody.innerHTML = HVEntryChecker.resultHtml(rule);
+  };
   display();
-  const button=els.runVisaCheckBtn;button.disabled=true;
-  try{await HVEntryRules.refresh();if(els.visaPassport.value===from.name&&els.visaDestination.value===to.name)display();}finally{button.disabled=false;}
+  const button = els.runVisaCheckBtn;
+  button.disabled = true;
+  try {
+    await HVEntryRules.refresh();
+    if (els.visaPassport.value === from.name && els.visaDestination.value === to.name) display();
+  } finally {
+    button.disabled = false;
+  }
 }
 
-function visitBlocksForRule(rule,profileId){let dates=new Set();staysForProfile(profileId).filter(countsForPlanning).filter(s=>rule.countries.includes(s.countryCode)).forEach(s=>datesForStay(s).forEach(d=>dates.add(d)));let a=[...dates].sort(),out=[];for(let d of a){let last=out.at(-1);if(!last||diffDays(last.end,d)>1)out.push({start:d,end:d,days:1});else{last.end=d;last.days++}}return out}
-function runPlanner(){let p=state.profiles.find(x=>x.id===els.plannerProfile.value)||activeProfile(),c=countryByName(els.plannerCountry.value),entry=els.plannerEntry.value,exit=els.plannerExit.value;lastPlannerTrip=null;els.addPlannedTripBtn.classList.add('hidden');if(!c||!entry){els.plannerResultTitle.textContent='Add a destination and entry date';els.plannerResultBody.innerHTML='<div class="planner-placeholder">Choose a valid country and date.</div>';return}if(c.code==='SEA'){els.plannerResultTitle.innerHTML=`${flagHtml('SEA')} At Sea`;els.plannerResultBody.innerHTML='<div class="result-message">At Sea can be recorded as a planned travel location, but it does not have a visa-day rule.</div>';if(exit){lastPlannerTrip={country:c,start:entry,end:exit,profileId:p.id};els.addPlannedTripBtn.classList.remove('hidden')}return}if(exit&&exit<entry){els.plannerResultTitle.textContent='Check your dates';els.plannerResultBody.innerHTML='<div class="result-message bad">Departure cannot be before entry.</div>';return}if(SCHENGEN.has(c.code)){if(isSchengenExemptProfile(p)){els.plannerResultTitle.textContent='Schengen 90/180 does not apply to this profile';els.plannerResultBody.innerHTML='<div class="result-message">An EU/EEA/Swiss citizenship is recorded for this traveller. Free-movement and local registration/residence rules are different from the visitor 90/180 rule.</div>';return}let max=maxContinuousSchengen(entry,p.id),safeEnd=max?dayKey(addDays(parseDate(entry),max-1)):null,tripExit=exit||safeEnd,trial=tripExit?{id:'planner',countryCode:c.code,countryName:c.name,start:entry,end:tripExit,schengenExempt:false,status:'planned',profileId:p.id}:null,over=trial?firstOverstay(entry,Math.max(1,daysInclusive(entry,tripExit)),p.id,[trial]):null,reentry=safeEnd?earliestOneDayEntry(dayKey(addDays(parseDate(safeEnd),1)),p.id,[{id:'usedmax',countryCode:c.code,countryName:c.name,start:entry,end:safeEnd,schengenExempt:false,status:'planned',profileId:p.id}]):earliestOneDayEntry(entry,p.id);els.plannerResultTitle.innerHTML=`${flagHtml(c.code)} ${esc(c.name)} · Schengen`;let ok=!exit||!over;els.plannerResultBody.innerHTML=`<div class="result-hero"><div class="result-stat"><span>MAX CONTINUOUS STAY</span><strong>${plural(max,'day')}</strong></div><div class="result-stat"><span>SAFE DEPARTURE</span><strong>${safeEnd?fmt(safeEnd,{day:'numeric',month:'short'}):'Not available'}</strong></div><div class="result-stat"><span>RE-ENTRY AFTER USING MAX</span><strong>${reentry?fmt(reentry,{day:'numeric',month:'short'}):'—'}</strong></div></div><div class="result-message ${ok?'':'bad'}">${exit?(over?`Your proposed trip would first exceed the 90/180 limit on <strong>${fmt(over.date)}</strong>. Shorten the trip or change the dates.`:`Your proposed ${daysInclusive(entry,exit)}-day trip stays within the recorded 90/180 history.`):max?`If you enter on <strong>${fmt(entry)}</strong>, your current records allow up to <strong>${plural(max,'consecutive day')}</strong>, leaving by <strong>${fmt(safeEnd)}</strong>.`:`Your recorded history does not leave a Schengen day available on ${fmt(entry)}. Earliest one-day entry found: <strong>${reentry?fmt(reentry):'not within the next 2 years'}</strong>.`}</div>`;if(tripExit&&ok){lastPlannerTrip={country:c,start:entry,end:tripExit,profileId:p.id};els.addPlannedTripBtn.classList.remove('hidden')}return}let rule=RULES.find(r=>r.countries.includes(c.code));els.plannerResultTitle.innerHTML=`${flagHtml(c.code)} ${esc(c.name)}`;if(rule){let leave=rule.months?dayKey(addDays(addMonths(parseDate(entry),rule.months),-1)):rule.limit?dayKey(addDays(parseDate(entry),rule.limit-1)):null;els.plannerResultBody.innerHTML=`<div class="result-hero"><div class="result-stat"><span>TRACKER TEMPLATE</span><strong>${rule.months?`Up to ${rule.months} months`:`${plural(rule.limit,'day')}`}</strong></div><div class="result-stat"><span>PLANNING DATE</span><strong>${leave?fmt(leave,{day:'numeric',month:'short'}):'—'}</strong></div></div><div class="result-message warn">${esc(rule.desc)} This is only a planning template; verify that you are eligible and check the actual permission granted to you.</div>`}else els.plannerResultBody.innerHTML='<div class="result-message">No built-in visa-day template is attached to this country yet. You can still add the trip to your travel history.</div>';if(exit){lastPlannerTrip={country:c,start:entry,end:exit,profileId:p.id};els.addPlannedTripBtn.classList.remove('hidden')}}
-async function addPlannerTrip(){if(!lastPlannerTrip)return;let t=lastPlannerTrip;const travelKind=await HVHome.choose(t.country,t.start,t.profileId);if(travelKind==='cancel')return;state.stays.push({id:uid(),countryCode:t.country.code,countryName:t.country.name,...HVJourney.domesticFields(t.country),travelKind,domesticHoliday:travelKind==='trip',start:t.start,end:t.end,notes:'Added from trip planner',schengenExempt:false,status:'planned',profileId:t.profileId});updatePassedPlannedTrips();persist();renderAll();els.addPlannedTripBtn.classList.add('hidden');els.plannerResultBody.insertAdjacentHTML('beforeend','<div class="form-message" style="color:var(--green)">Planned trip added to your calendar.</div>')}
-function renderMapTimeline(){let list=state.stays;if(!list.length){els.timelineEmpty.classList.remove('hidden');els.timelineContent.classList.add('hidden');renderWorldMap();return}els.timelineEmpty.classList.add('hidden');els.timelineContent.classList.remove('hidden');let min=list.reduce((a,s)=>s.start<a?s.start:a,list[0].start),max=list.reduce((a,s)=>s.end>a?s.end:a,list[0].end),today=isoDate(new Date());if(today<min)min=today;if(today>max)max=today;let total=Math.max(1,diffDays(min,max));els.timelineSlider.max=total;timelineDate=timelineDate&&timelineDate>=min&&timelineDate<=max?timelineDate:(today>=min&&today<=max?today:max);els.timelineSlider.value=diffDays(min,timelineDate);els.timelineSlider.dataset.start=min;els.timelineStartLabel.textContent=fmt(min,{month:'short',year:'numeric'});els.timelineEndLabel.textContent=fmt(max,{month:'short',year:'numeric'});els.timelineBars.innerHTML=list.map((s,i)=>{let l=diffDays(min,s.start)/total*100,w=Math.max(.35,daysInclusive(s.start,s.end)/(total+1)*100),top=(i%3)*21+7;return`<div class="timeline-bar ${s.status==='planned'?'planned':''}" style="left:${l}%;width:${w}%;top:${top}px" title="${esc(s.countryName)}: ${fmt(s.start)} – ${fmt(s.end)}"></div>`}).join('');updateTimelineLabels();renderWorldMap()}
-function setTimelineFromSlider(){let start=els.timelineSlider.dataset.start;timelineDate=dayKey(addDays(parseDate(start),Number(els.timelineSlider.value)));updateTimelineLabels();updateMapColors()}
-function setTimelineDate(k){if(!state.stays.length)return;let start=els.timelineSlider.dataset.start,max=Number(els.timelineSlider.max),v=Math.max(0,Math.min(max,diffDays(start,k)));els.timelineSlider.value=v;setTimelineFromSlider()}
-function updateTimelineLabels(){if(!timelineDate)return;let on=staysForProfile().filter(s=>countsForPlanning(s)&&s.start<=timelineDate&&s.end>=timelineDate);els.timelineDateLabel.textContent=fmt(timelineDate,{weekday:'long',day:'numeric',month:'long',year:'numeric'});els.timelineLocationLabel.textContent=on.length?on.map(s=>`${s.countryName}${s.status==='planned'?' (planned)':''}`).join(' · '):'No country recorded on this date';let r=rollingStatus(timelineDate);els.timelineSchengenLabel.textContent=isSchengenExemptProfile()? 'Not applied' : `${r.used} / 90`;els.mapSelectionSummary.textContent=on.length?`On ${fmt(timelineDate)}, you have ${on.map(s=>s.countryName).join(' / ')} recorded.`:`No stay is recorded on ${fmt(timelineDate)}.`}
-async function renderWorldMap(){if(!window.d3||!window.topojson){els.mapFallback.classList.remove('hidden');return}if(!worldFeatures&&!worldLoading){worldLoading=true;try{let res=await (window.HVNetwork ? HVNetwork.request : fetch)('data/countries-110m.json');if(!res.ok)throw Error('map');let world=await res.json();worldFeatures=topojson.feature(world,world.objects.countries).features}catch{els.mapFallback.classList.remove('hidden')}finally{worldLoading=false}}if(!worldFeatures)return;els.mapFallback.classList.add('hidden');let svg=d3.select(els.worldMap);svg.selectAll('*').remove();let fc={type:'FeatureCollection',features:worldFeatures},proj=d3.geoNaturalEarth1().fitExtent([[8,8],[992,492]],fc),path=d3.geoPath(proj);svg.selectAll('path').data(worldFeatures).enter().append('path').attr('d',path).attr('data-code',d=>NUMERIC_TO_ALPHA2[String(d.id).padStart(3,'0')]||'').attr('class','map-country').append('title').text(d=>countryByCode(NUMERIC_TO_ALPHA2[String(d.id).padStart(3,'0')])?.name||'');updateMapColors()}
-function updateMapColors(){if(!worldFeatures)return;let asOf=timelineDate||isoDate(new Date()),actual=new Set(),planned=new Set(),current=new Set(),excluded=new Set(state.excludedCountryCodes||[]);state.stays.forEach(s=>{if(s.countryCode==='SEA'||s.countryCode==='BOU')return;if(excluded.has(s.countryCode))return;if(s.start<=asOf){(s.status==='planned'?planned:actual).add(s.countryCode)}if(s.start<=asOf&&s.end>=asOf)current.add(s.countryCode)});d3.select(els.worldMap).selectAll('.map-country').attr('class',function(){let c=this.dataset.code;return`map-country${actual.has(c)?' visited':planned.has(c)?' planned':''}${current.has(c)?' current':''}`})}
+function visitBlocksForRule(rule, profileId) {
+  let dates = new Set();
+  staysForProfile(profileId)
+    .filter(countsForPlanning)
+    .filter((s) => rule.countries.includes(s.countryCode))
+    .forEach((s) => datesForStay(s).forEach((d) => dates.add(d)));
+  let a = [...dates].sort(),
+    out = [];
+  for (let d of a) {
+    let last = out.at(-1);
+    if (!last || diffDays(last.end, d) > 1) out.push({ start: d, end: d, days: 1 });
+    else {
+      last.end = d;
+      last.days++;
+    }
+  }
+  return out;
+}
+function runPlanner() {
+  let p = state.profiles.find((x) => x.id === els.plannerProfile.value) || activeProfile(),
+    c = countryByName(els.plannerCountry.value),
+    entry = els.plannerEntry.value,
+    exit = els.plannerExit.value;
+  lastPlannerTrip = null;
+  els.addPlannedTripBtn.classList.add('hidden');
+  if (!c || !entry) {
+    els.plannerResultTitle.textContent = 'Add a destination and entry date';
+    els.plannerResultBody.innerHTML =
+      '<div class="planner-placeholder">Choose a valid country and date.</div>';
+    return;
+  }
+  if (c.code === 'SEA') {
+    els.plannerResultTitle.innerHTML = `${flagHtml('SEA')} At Sea`;
+    els.plannerResultBody.innerHTML =
+      '<div class="result-message">At Sea can be recorded as a planned travel location, but it does not have a visa-day rule.</div>';
+    if (exit) {
+      lastPlannerTrip = { country: c, start: entry, end: exit, profileId: p.id };
+      els.addPlannedTripBtn.classList.remove('hidden');
+    }
+    return;
+  }
+  if (exit && exit < entry) {
+    els.plannerResultTitle.textContent = 'Check your dates';
+    els.plannerResultBody.innerHTML =
+      '<div class="result-message bad">Departure cannot be before entry.</div>';
+    return;
+  }
+  if (SCHENGEN.has(c.code)) {
+    if (isSchengenExemptProfile(p)) {
+      els.plannerResultTitle.textContent = 'Schengen 90/180 does not apply to this profile';
+      els.plannerResultBody.innerHTML =
+        '<div class="result-message">An EU/EEA/Swiss citizenship is recorded for this traveller. Free-movement and local registration/residence rules are different from the visitor 90/180 rule.</div>';
+      return;
+    }
+    let max = maxContinuousSchengen(entry, p.id),
+      safeEnd = max ? dayKey(addDays(parseDate(entry), max - 1)) : null,
+      tripExit = exit || safeEnd,
+      trial = tripExit
+        ? {
+            id: 'planner',
+            countryCode: c.code,
+            countryName: c.name,
+            start: entry,
+            end: tripExit,
+            schengenExempt: false,
+            status: 'planned',
+            profileId: p.id,
+          }
+        : null,
+      over = trial
+        ? firstOverstay(entry, Math.max(1, daysInclusive(entry, tripExit)), p.id, [trial])
+        : null,
+      reentry = safeEnd
+        ? earliestOneDayEntry(dayKey(addDays(parseDate(safeEnd), 1)), p.id, [
+            {
+              id: 'usedmax',
+              countryCode: c.code,
+              countryName: c.name,
+              start: entry,
+              end: safeEnd,
+              schengenExempt: false,
+              status: 'planned',
+              profileId: p.id,
+            },
+          ])
+        : earliestOneDayEntry(entry, p.id);
+    els.plannerResultTitle.innerHTML = `${flagHtml(c.code)} ${esc(c.name)} · Schengen`;
+    let ok = !exit || !over;
+    els.plannerResultBody.innerHTML = `<div class="result-hero"><div class="result-stat"><span>MAX CONTINUOUS STAY</span><strong>${plural(max, 'day')}</strong></div><div class="result-stat"><span>SAFE DEPARTURE</span><strong>${safeEnd ? fmt(safeEnd, { day: 'numeric', month: 'short' }) : 'Not available'}</strong></div><div class="result-stat"><span>RE-ENTRY AFTER USING MAX</span><strong>${reentry ? fmt(reentry, { day: 'numeric', month: 'short' }) : '—'}</strong></div></div><div class="result-message ${ok ? '' : 'bad'}">${exit ? (over ? `Your proposed trip would first exceed the 90/180 limit on <strong>${fmt(over.date)}</strong>. Shorten the trip or change the dates.` : `Your proposed ${daysInclusive(entry, exit)}-day trip stays within the recorded 90/180 history.`) : max ? `If you enter on <strong>${fmt(entry)}</strong>, your current records allow up to <strong>${plural(max, 'consecutive day')}</strong>, leaving by <strong>${fmt(safeEnd)}</strong>.` : `Your recorded history does not leave a Schengen day available on ${fmt(entry)}. Earliest one-day entry found: <strong>${reentry ? fmt(reentry) : 'not within the next 2 years'}</strong>.`}</div>`;
+    if (tripExit && ok) {
+      lastPlannerTrip = { country: c, start: entry, end: tripExit, profileId: p.id };
+      els.addPlannedTripBtn.classList.remove('hidden');
+    }
+    return;
+  }
+  let rule = RULES.find((r) => r.countries.includes(c.code));
+  els.plannerResultTitle.innerHTML = `${flagHtml(c.code)} ${esc(c.name)}`;
+  if (rule) {
+    let leave = rule.months
+      ? dayKey(addDays(addMonths(parseDate(entry), rule.months), -1))
+      : rule.limit
+        ? dayKey(addDays(parseDate(entry), rule.limit - 1))
+        : null;
+    els.plannerResultBody.innerHTML = `<div class="result-hero"><div class="result-stat"><span>TRACKER TEMPLATE</span><strong>${rule.months ? `Up to ${rule.months} months` : `${plural(rule.limit, 'day')}`}</strong></div><div class="result-stat"><span>PLANNING DATE</span><strong>${leave ? fmt(leave, { day: 'numeric', month: 'short' }) : '—'}</strong></div></div><div class="result-message warn">${esc(rule.desc)} This is only a planning template; verify that you are eligible and check the actual permission granted to you.</div>`;
+  } else
+    els.plannerResultBody.innerHTML =
+      '<div class="result-message">No built-in visa-day template is attached to this country yet. You can still add the trip to your travel history.</div>';
+  if (exit) {
+    lastPlannerTrip = { country: c, start: entry, end: exit, profileId: p.id };
+    els.addPlannedTripBtn.classList.remove('hidden');
+  }
+}
+async function addPlannerTrip() {
+  if (!lastPlannerTrip) return;
+  let t = lastPlannerTrip;
+  const travelKind = await HVHome.choose(t.country, t.start, t.profileId);
+  if (travelKind === 'cancel') return;
+  state.stays.push({
+    id: uid(),
+    countryCode: t.country.code,
+    countryName: t.country.name,
+    ...HVJourney.domesticFields(t.country),
+    travelKind,
+    domesticHoliday: travelKind === 'trip',
+    start: t.start,
+    end: t.end,
+    notes: 'Added from trip planner',
+    schengenExempt: false,
+    status: 'planned',
+    profileId: t.profileId,
+  });
+  updatePassedPlannedTrips();
+  persist();
+  renderAll();
+  els.addPlannedTripBtn.classList.add('hidden');
+  els.plannerResultBody.insertAdjacentHTML(
+    'beforeend',
+    '<div class="form-message" style="color:var(--green)">Planned trip added to your calendar.</div>',
+  );
+}
 
-function installDataTransferUI(){
-  let nav=document.querySelector('.nav-item[data-view="profiles"]');
-  if(nav)nav.innerHTML='<span>♙</span>Profiles & data';
-  let exportBtn=$('exportBtn');
-  if(exportBtn)exportBtn.textContent='Save backup';
-  let importLabel=document.querySelector('label.file-label');
-  if(importLabel){let input=$('importInput');importLabel.innerHTML='Restore backup';if(input){input.setAttribute('accept','.travel,.json,application/json');importLabel.appendChild(input)}}
-  let footer=document.querySelector('.sidebar-footer p');
-  if(footer)footer.textContent='Your travel data is automatically saved on this device.';
-  let profiles=$('profilesView');
-  if(!profiles||$('dataTransferPanel'))return;
-  let cloud=profiles.querySelector('.cloud-panel');
-  if(cloud)cloud.style.display='none';
-  let layout=profiles.querySelector('.profiles-layout');
-  if(layout)layout.style.gridTemplateColumns='1fr';
-  profiles.insertAdjacentHTML('beforeend',`
+// Source: src/core/atlas.js
+function renderMapTimeline() {
+  let list = state.stays;
+  if (!list.length) {
+    els.timelineEmpty.classList.remove('hidden');
+    els.timelineContent.classList.add('hidden');
+    renderWorldMap();
+    return;
+  }
+  els.timelineEmpty.classList.add('hidden');
+  els.timelineContent.classList.remove('hidden');
+  let min = list.reduce((a, s) => (s.start < a ? s.start : a), list[0].start),
+    max = list.reduce((a, s) => (s.end > a ? s.end : a), list[0].end),
+    today = isoDate(new Date());
+  if (today < min) min = today;
+  if (today > max) max = today;
+  let total = Math.max(1, diffDays(min, max));
+  els.timelineSlider.max = total;
+  timelineDate =
+    timelineDate && timelineDate >= min && timelineDate <= max
+      ? timelineDate
+      : today >= min && today <= max
+        ? today
+        : max;
+  els.timelineSlider.value = diffDays(min, timelineDate);
+  els.timelineSlider.dataset.start = min;
+  els.timelineStartLabel.textContent = fmt(min, { month: 'short', year: 'numeric' });
+  els.timelineEndLabel.textContent = fmt(max, { month: 'short', year: 'numeric' });
+  els.timelineBars.innerHTML = list
+    .map((s, i) => {
+      let l = (diffDays(min, s.start) / total) * 100,
+        w = Math.max(0.35, (daysInclusive(s.start, s.end) / (total + 1)) * 100),
+        top = (i % 3) * 21 + 7;
+      return `<div class="timeline-bar ${s.status === 'planned' ? 'planned' : ''}" style="left:${l}%;width:${w}%;top:${top}px" title="${esc(s.countryName)}: ${fmt(s.start)} – ${fmt(s.end)}"></div>`;
+    })
+    .join('');
+  updateTimelineLabels();
+  renderWorldMap();
+}
+function setTimelineFromSlider() {
+  let start = els.timelineSlider.dataset.start;
+  timelineDate = dayKey(addDays(parseDate(start), Number(els.timelineSlider.value)));
+  updateTimelineLabels();
+  updateMapColors();
+}
+function setTimelineDate(k) {
+  if (!state.stays.length) return;
+  let start = els.timelineSlider.dataset.start,
+    max = Number(els.timelineSlider.max),
+    v = Math.max(0, Math.min(max, diffDays(start, k)));
+  els.timelineSlider.value = v;
+  setTimelineFromSlider();
+}
+function updateTimelineLabels() {
+  if (!timelineDate) return;
+  let on = staysForProfile().filter(
+    (s) => countsForPlanning(s) && s.start <= timelineDate && s.end >= timelineDate,
+  );
+  els.timelineDateLabel.textContent = fmt(timelineDate, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  els.timelineLocationLabel.textContent = on.length
+    ? on.map((s) => `${s.countryName}${s.status === 'planned' ? ' (planned)' : ''}`).join(' · ')
+    : 'No country recorded on this date';
+  let r = rollingStatus(timelineDate);
+  els.timelineSchengenLabel.textContent = isSchengenExemptProfile()
+    ? 'Not applied'
+    : `${r.used} / 90`;
+  els.mapSelectionSummary.textContent = on.length
+    ? `On ${fmt(timelineDate)}, you have ${on.map((s) => s.countryName).join(' / ')} recorded.`
+    : `No stay is recorded on ${fmt(timelineDate)}.`;
+}
+async function renderWorldMap() {
+  if (!window.d3 || !window.topojson) {
+    els.mapFallback.classList.remove('hidden');
+    return;
+  }
+  if (!worldFeatures && !worldLoading) {
+    worldLoading = true;
+    try {
+      let res = await (window.HVNetwork ? HVNetwork.request : fetch)('data/countries-110m.json');
+      if (!res.ok) throw Error('map');
+      let world = await res.json();
+      worldFeatures = topojson.feature(world, world.objects.countries).features;
+    } catch {
+      els.mapFallback.classList.remove('hidden');
+    } finally {
+      worldLoading = false;
+    }
+  }
+  if (!worldFeatures) return;
+  els.mapFallback.classList.add('hidden');
+  let svg = d3.select(els.worldMap);
+  svg.selectAll('*').remove();
+  let fc = { type: 'FeatureCollection', features: worldFeatures },
+    proj = d3.geoNaturalEarth1().fitExtent(
+      [
+        [8, 8],
+        [992, 492],
+      ],
+      fc,
+    ),
+    path = d3.geoPath(proj);
+  svg
+    .selectAll('path')
+    .data(worldFeatures)
+    .enter()
+    .append('path')
+    .attr('d', path)
+    .attr('data-code', (d) => NUMERIC_TO_ALPHA2[String(d.id).padStart(3, '0')] || '')
+    .attr('class', 'map-country')
+    .append('title')
+    .text((d) => countryByCode(NUMERIC_TO_ALPHA2[String(d.id).padStart(3, '0')])?.name || '');
+  updateMapColors();
+}
+function updateMapColors() {
+  if (!worldFeatures) return;
+  let asOf = timelineDate || isoDate(new Date()),
+    actual = new Set(),
+    planned = new Set(),
+    current = new Set(),
+    excluded = new Set(state.excludedCountryCodes || []);
+  state.stays.forEach((s) => {
+    if (s.countryCode === 'SEA' || s.countryCode === 'BOU') return;
+    if (excluded.has(s.countryCode)) return;
+    if (s.start <= asOf) {
+      (s.status === 'planned' ? planned : actual).add(s.countryCode);
+    }
+    if (s.start <= asOf && s.end >= asOf) current.add(s.countryCode);
+  });
+  d3.select(els.worldMap)
+    .selectAll('.map-country')
+    .attr('class', function () {
+      let c = this.dataset.code;
+      return `map-country${actual.has(c) ? ' visited' : planned.has(c) ? ' planned' : ''}${current.has(c) ? ' current' : ''}`;
+    });
+}
+
+// Source: src/core/legacy-data.js
+function installDataTransferUI() {
+  let nav = document.querySelector('.nav-item[data-view="profiles"]');
+  if (nav) nav.innerHTML = '<span>♙</span>Profiles & data';
+  let exportBtn = $('exportBtn');
+  if (exportBtn) exportBtn.textContent = 'Save backup';
+  let importLabel = document.querySelector('label.file-label');
+  if (importLabel) {
+    let input = $('importInput');
+    importLabel.innerHTML = 'Restore backup';
+    if (input) {
+      input.setAttribute('accept', '.travel,.json,application/json');
+      importLabel.appendChild(input);
+    }
+  }
+  let footer = document.querySelector('.sidebar-footer p');
+  if (footer) footer.textContent = 'Your travel data is automatically saved on this device.';
+  let profiles = $('profilesView');
+  if (!profiles || $('dataTransferPanel')) return;
+  let cloud = profiles.querySelector('.cloud-panel');
+  if (cloud) cloud.style.display = 'none';
+  let layout = profiles.querySelector('.profiles-layout');
+  if (layout) layout.style.gridTemplateColumns = '1fr';
+  profiles.insertAdjacentHTML(
+    'beforeend',
+    `
     <article class="panel data-transfer-panel" id="dataTransferPanel">
       <div class="panel-head">
         <div><p class="eyebrow">YOUR DATA</p><h2>Save & move your travel history</h2></div>
@@ -349,41 +2726,416 @@ function installDataTransferUI(){
         <div class="button-row"><button class="secondary" id="dataBackupBtn" type="button">Save backup</button><button class="secondary" id="dataRestoreBtn" type="button">Restore backup</button></div>
       </div>
       <div class="privacy-note"><strong>Private by design</strong><span>Transfer data is encrypted in your browser before upload. The temporary code expires after one hour and is single-use. No account, email or password is needed.</span></div>
-    </article>`);
-  if(!$('dataTransferStyles')){
-    let style=document.createElement('style');style.id='dataTransferStyles';style.textContent=`
+    </article>`,
+  );
+  if (!$('dataTransferStyles')) {
+    let style = document.createElement('style');
+    style.id = 'dataTransferStyles';
+    style.textContent = `
       .data-transfer-panel{margin-top:20px}.local-save-detail{font-size:13px;color:#7b8797;margin-top:-4px}.transfer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}.transfer-card{border:1px solid #e4e8ee;border-radius:18px;padding:20px;background:#fafbfc}.transfer-card h3{margin:5px 0 8px;font-size:19px}.transfer-card p:not(.eyebrow){margin:0 0 16px;color:#687386;line-height:1.5}.transfer-code-area{margin-top:14px;padding:16px;border:1px dashed #cbd3de;border-radius:14px;background:white}.transfer-code-area>span{display:block;font-size:12px;color:#7b8797;margin-bottom:5px}.transfer-code-value{display:block;font-size:27px;letter-spacing:2.5px;font-variant-numeric:tabular-nums;margin-bottom:12px;word-break:break-word}.transfer-code-area small{display:block;margin-top:9px;color:#7b8797;line-height:1.4}.transfer-code-input{text-transform:uppercase;letter-spacing:1.5px;font-weight:700}.transfer-message{margin-top:14px;min-height:18px}.backup-strip{display:flex;align-items:center;justify-content:space-between;gap:18px;border-top:1px solid #e8ebef;margin-top:20px;padding-top:18px}.backup-strip>div:first-child{display:flex;flex-direction:column;gap:4px}.backup-strip span,.privacy-note span{color:#687386;font-size:13px;line-height:1.45}.privacy-note{display:flex;gap:8px;align-items:flex-start;margin-top:16px;padding:13px 15px;border-radius:13px;background:#f5f7f9}.privacy-note strong{white-space:nowrap}.transfer-card button[disabled]{opacity:.6;cursor:wait}@media(max-width:760px){.transfer-grid{grid-template-columns:1fr}.backup-strip{align-items:flex-start;flex-direction:column}.privacy-note{flex-direction:column}}
-    `;document.head.appendChild(style)
+    `;
+    document.head.appendChild(style);
   }
 }
-function updateLocalSaveIndicator(){let badge=$('localSaveBadge'),detail=$('localSaveDetail');if(!badge||!detail)return;let raw=localStorage.getItem(LOCAL_SAVED_KEY);badge.textContent='Auto-saved ✓';badge.className='status-badge good';if(!raw){detail.textContent='Your changes save automatically on this device.';return}let d=new Date(raw),now=new Date(),mins=Math.floor((now-d)/60000);detail.textContent=mins<1?'Last saved just now':mins<60?`Last saved ${mins} minute${mins===1?'':'s'} ago`:`Last saved ${d.toLocaleString()}`}
-function transferServiceConfig(){let url=(TRANSFER_SERVICE.supabaseUrl||'').trim(),key=(TRANSFER_SERVICE.supabaseKey||'').trim(),valid=url.startsWith('https://')&&!url.includes('PASTE_YOUR_')&&key&&!key.includes('PASTE_YOUR_');if(!valid){let local=getCloudConfig();if(local.url&&local.key){url=local.url;key=local.key;valid=true}}return{url,key,valid}}
-function getTransferClient(){let cfg=transferServiceConfig();if(!cfg.valid)throw new Error('Device transfer has not been configured by the site owner yet.');if(!window.supabase)throw new Error('The transfer service is still loading. Try again in a moment.');if(!transferClient)transferClient=window.supabase.createClient(cfg.url,cfg.key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});return transferClient}
-function normalizeTransferCode(v=''){let raw=String(v).toUpperCase().replace(/[^A-Z0-9]/g,'');return raw}
-function displayTransferCode(raw=''){let s=normalizeTransferCode(raw);return s.match(/.{1,4}/g)?.join('-')||s}
-function generateTransferCode(){const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=new Uint8Array(16);crypto.getRandomValues(bytes);return Array.from(bytes,b=>alphabet[b%alphabet.length]).join('')}
-function bytesToBase64(bytes){let bin='',step=0x8000;for(let i=0;i<bytes.length;i+=step)bin+=String.fromCharCode(...bytes.subarray(i,i+step));return btoa(bin)}
-function base64ToBytes(str){let bin=atob(str),out=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
-async function sha256Hex(text){let hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('')}
-async function transferCryptoKey(code){let digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(`where-ive-been-transfer:v1:${normalizeTransferCode(code)}`));return crypto.subtle.importKey('raw',digest,{name:'AES-GCM'},false,['encrypt','decrypt'])}
-async function encryptTransferPayload(code){let iv=crypto.getRandomValues(new Uint8Array(12)),key=await transferCryptoKey(code),payload={format:'where-ive-been-transfer',version:1,createdAt:new Date().toISOString(),state},plain=new TextEncoder().encode(JSON.stringify(payload)),cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plain);return{encryptedPayload:bytesToBase64(new Uint8Array(cipher)),iv:bytesToBase64(iv)}}
-async function decryptTransferPayload(code,encryptedPayload,ivB64){let key=await transferCryptoKey(code),plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:base64ToBytes(ivB64)},key,base64ToBytes(encryptedPayload)),payload=JSON.parse(new TextDecoder().decode(plain));if(payload?.format!=='where-ive-been-transfer'||!payload.state)throw new Error('This transfer could not be read.');return payload.state}
-function setTransferMessage(message,good=false){if(!els.transferMessage)return;els.transferMessage.textContent=message||'';els.transferMessage.style.color=good?'var(--green)':'var(--red)'}
-function setTransferBusy(busy){if(els.createTransferBtn)els.createTransferBtn.disabled=busy;if(els.claimTransferBtn)els.claimTransferBtn.disabled=busy}
-async function createTransferCode(){try{setTransferBusy(true);setTransferMessage('Creating a secure transfer…',true);if(!window.crypto?.subtle)throw new Error('Secure device transfer requires HTTPS. Open the GitHub Pages version of the site.');let client=getTransferClient(),code=generateTransferCode(),lookup=await sha256Hex(`lookup:${code}`),enc=await encryptTransferPayload(code),{data,error}=await client.rpc('create_travel_device_transfer',{p_code_hash:lookup,p_encrypted_payload:enc.encryptedPayload,p_iv:enc.iv,p_expires_minutes:TRANSFER_SERVICE.expiresMinutes||60});if(error)throw error;lastTransferCode=displayTransferCode(code);els.transferCodeValue.textContent=lastTransferCode;els.transferCodeArea.classList.remove('hidden');let expiry=Array.isArray(data)?data[0]:data;els.transferExpiry.textContent=expiry?`Valid until ${new Date(expiry).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}. It can only be used once.`:`Valid for ${TRANSFER_SERVICE.expiresMinutes||60} minutes and can only be used once.`;setTransferMessage('Transfer code ready. Open this website on your other device and enter the code there.',true)}catch(e){console.error(e);setTransferMessage(e?.message||'Could not create a transfer code.')}finally{setTransferBusy(false)}}
-async function copyTransferCode(){if(!lastTransferCode)return;try{await navigator.clipboard.writeText(lastTransferCode);setTransferMessage('Transfer code copied.',true)}catch{window.prompt('Copy this transfer code:',lastTransferCode)}}
-async function claimTransferCode(){let raw=normalizeTransferCode(els.transferCodeInput?.value||'');if(raw.length!==16){setTransferMessage('Enter the complete 16-character transfer code.');return}if(!confirm('Load the transferred travel history onto this device? This will replace any travel data currently saved here.'))return;try{setTransferBusy(true);setTransferMessage('Loading your encrypted travel data…',true);if(!window.crypto?.subtle)throw new Error('Secure device transfer requires HTTPS. Open the GitHub Pages version of the site.');let client=getTransferClient(),lookup=await sha256Hex(`lookup:${raw}`),{data,error}=await client.rpc('claim_travel_device_transfer',{p_code_hash:lookup});if(error)throw error;let row=Array.isArray(data)?data[0]:data;if(!row?.encrypted_payload)throw new Error('That code is invalid, expired, or has already been used.');let incoming=await decryptTransferPayload(raw,row.encrypted_payload,row.iv);normalizeState(incoming);state=incoming;updatePassedPlannedTrips();persist(true);populateProfileSelects();renderAll();els.transferCodeInput.value='';setTransferMessage(`Transfer complete — ${state.stays.length} stay${state.stays.length===1?'':'s'} loaded on this device.`,true)}catch(e){console.error(e);setTransferMessage(e?.name==='OperationError'?'That transfer code could not decrypt the data. Check the code and try again.':(e?.message||'Could not load this transfer.'))}finally{setTransferBusy(false)}}
-function exportData(){let backup={format:'where-ive-been-backup',version:1,createdAt:new Date().toISOString(),data:state},blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Herald-Voyages-${isoDate(new Date())}.travel`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-function importData(e){let f=e.target.files?.[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let parsed=JSON.parse(r.result),v=parsed?.format==='where-ive-been-backup'&&parsed.data?parsed.data:parsed;if(Array.isArray(v))v={...defaultState(),stays:v};WIBModel.validateImport(v);normalizeState(v);if(!confirm('Restore this backup? It will replace the travel data currently saved on this device.')){e.target.value='';return}state=v;updatePassedPlannedTrips();persist();populateProfileSelects();renderAll();alert(`Backup restored — ${state.stays.length} stay${state.stays.length===1?'':'s'} loaded.`)}catch{alert("That file is not a valid Where I've Been backup.")}e.target.value=''};r.readAsText(f)}
-function getCloudConfig(){try{return JSON.parse(localStorage.getItem(CLOUD_KEY))||{}}catch{return{}}}
-function saveCloudConfig(){let c=getCloudConfig();c.url=els.supabaseUrl.value.trim();c.key=els.supabaseKey.value.trim();c.autoSync=els.autoSyncToggle.checked;localStorage.setItem(CLOUD_KEY,JSON.stringify(c));initCloudFromConfig()}
-async function initCloudFromConfig(){let c=getCloudConfig();els.supabaseUrl.value=c.url||'';els.supabaseKey.value=c.key||'';els.autoSyncToggle.checked=!!c.autoSync;if(!c.url||!c.key||!window.supabase){setCloudUI('Local only',false);return}try{cloudClient=window.supabase.createClient(c.url,c.key);let{data}=await cloudClient.auth.getSession();cloudSession=data.session||null;setCloudUI(cloudSession?'Signed in':'Configured',!!cloudSession)}catch(e){setCloudMessage('Could not connect to Supabase. Check the URL/key.');setCloudUI('Local only',false)}}
-function setCloudUI(label,signed){els.cloudStatusBadge.textContent=label;els.cloudStatusBadge.className=`status-badge ${signed?'good':'neutral'}`;els.cloudPullBtn.disabled=!signed;els.cloudPushBtn.disabled=!signed;els.cloudSignInBtn.classList.toggle('hidden',signed);els.cloudSignOutBtn.classList.toggle('hidden',!signed)}
-function setCloudMessage(m,good=false){els.cloudMessage.textContent=m;els.cloudMessage.style.color=good?'var(--green)':'var(--red)'}
-async function cloudSignUp(){if(!cloudClient){setCloudMessage('Save valid cloud settings first.');return}let email=els.cloudEmail.value.trim(),password=els.cloudPassword.value;if(!email||!password){setCloudMessage('Enter email and password.');return}let{error}=await cloudClient.auth.signUp({email,password});if(error)setCloudMessage(error.message);else setCloudMessage('Account created. If email confirmation is enabled, confirm it before signing in.',true)}
-async function cloudSignIn(){if(!cloudClient){setCloudMessage('Save valid cloud settings first.');return}let{data,error}=await cloudClient.auth.signInWithPassword({email:els.cloudEmail.value.trim(),password:els.cloudPassword.value});if(error){setCloudMessage(error.message);return}cloudSession=data.session;setCloudUI('Signed in',true);setCloudMessage('Signed in. Use Pull or Push to choose which copy wins first.',true)}
-async function cloudSignOut(){if(cloudClient)await cloudClient.auth.signOut();cloudSession=null;setCloudUI('Configured',false);setCloudMessage('Signed out.',true)}
-async function cloudPush(silent=false){if(!cloudClient||!cloudSession)return;let{error}=await cloudClient.from('travel_tracker_data').upsert({user_id:cloudSession.user.id,payload:state,updated_at:new Date().toISOString()});if(error){if(!silent)setCloudMessage(error.message);return}if(!silent)setCloudMessage('Cloud copy updated.',true)}
-async function cloudPull(){if(!cloudClient||!cloudSession)return;let{data,error}=await cloudClient.from('travel_tracker_data').select('payload').eq('user_id',cloudSession.user.id).maybeSingle();if(error){setCloudMessage(error.message);return}if(!data?.payload){setCloudMessage('No cloud copy exists yet. Push this device first.');return}state=data.payload;normalizeState(state);updatePassedPlannedTrips();persist(true);populateProfileSelects();renderAll();setCloudMessage('Cloud copy loaded onto this device.',true)}
-window.addEventListener?.('travel-libs-ready',()=>{if(els.mapFallback){renderWorldMap();initCloudFromConfig()}});
-document.addEventListener('DOMContentLoaded',init);
+function updateLocalSaveIndicator() {
+  let badge = $('localSaveBadge'),
+    detail = $('localSaveDetail');
+  if (!badge || !detail) return;
+  let raw = localStorage.getItem(LOCAL_SAVED_KEY);
+  badge.textContent = 'Auto-saved ✓';
+  badge.className = 'status-badge good';
+  if (!raw) {
+    detail.textContent = 'Your changes save automatically on this device.';
+    return;
+  }
+  let d = new Date(raw),
+    now = new Date(),
+    mins = Math.floor((now - d) / 60000);
+  detail.textContent =
+    mins < 1
+      ? 'Last saved just now'
+      : mins < 60
+        ? `Last saved ${mins} minute${mins === 1 ? '' : 's'} ago`
+        : `Last saved ${d.toLocaleString()}`;
+}
+function transferServiceConfig() {
+  let url = (TRANSFER_SERVICE.supabaseUrl || '').trim(),
+    key = (TRANSFER_SERVICE.supabaseKey || '').trim(),
+    valid =
+      url.startsWith('https://') &&
+      !url.includes('PASTE_YOUR_') &&
+      key &&
+      !key.includes('PASTE_YOUR_');
+  if (!valid) {
+    let local = getCloudConfig();
+    if (local.url && local.key) {
+      url = local.url;
+      key = local.key;
+      valid = true;
+    }
+  }
+  return { url, key, valid };
+}
+function getTransferClient() {
+  let cfg = transferServiceConfig();
+  if (!cfg.valid) throw new Error('Device transfer has not been configured by the site owner yet.');
+  if (!window.supabase)
+    throw new Error('The transfer service is still loading. Try again in a moment.');
+  if (!transferClient)
+    transferClient = window.supabase.createClient(cfg.url, cfg.key, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+  return transferClient;
+}
+function normalizeTransferCode(v = '') {
+  let raw = String(v)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  return raw;
+}
+function displayTransferCode(raw = '') {
+  let s = normalizeTransferCode(raw);
+  return s.match(/.{1,4}/g)?.join('-') || s;
+}
+function generateTransferCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',
+    bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+}
+function bytesToBase64(bytes) {
+  let bin = '',
+    step = 0x8000;
+  for (let i = 0; i < bytes.length; i += step)
+    bin += String.fromCharCode(...bytes.subarray(i, i + step));
+  return btoa(bin);
+}
+function base64ToBytes(str) {
+  let bin = atob(str),
+    out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function sha256Hex(text) {
+  let hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+async function transferCryptoKey(code) {
+  let digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(`where-ive-been-transfer:v1:${normalizeTransferCode(code)}`),
+  );
+  return crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+}
+async function encryptTransferPayload(code) {
+  let iv = crypto.getRandomValues(new Uint8Array(12)),
+    key = await transferCryptoKey(code),
+    payload = {
+      format: 'where-ive-been-transfer',
+      version: 1,
+      createdAt: new Date().toISOString(),
+      state,
+    },
+    plain = new TextEncoder().encode(JSON.stringify(payload)),
+    cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
+  return { encryptedPayload: bytesToBase64(new Uint8Array(cipher)), iv: bytesToBase64(iv) };
+}
+async function decryptTransferPayload(code, encryptedPayload, ivB64) {
+  let key = await transferCryptoKey(code),
+    plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: base64ToBytes(ivB64) },
+      key,
+      base64ToBytes(encryptedPayload),
+    ),
+    payload = JSON.parse(new TextDecoder().decode(plain));
+  if (payload?.format !== 'where-ive-been-transfer' || !payload.state)
+    throw new Error('This transfer could not be read.');
+  return payload.state;
+}
+function setTransferMessage(message, good = false) {
+  if (!els.transferMessage) return;
+  els.transferMessage.textContent = message || '';
+  els.transferMessage.style.color = good ? 'var(--green)' : 'var(--red)';
+}
+function setTransferBusy(busy) {
+  if (els.createTransferBtn) els.createTransferBtn.disabled = busy;
+  if (els.claimTransferBtn) els.claimTransferBtn.disabled = busy;
+}
+async function createTransferCode() {
+  try {
+    setTransferBusy(true);
+    setTransferMessage('Creating a secure transfer…', true);
+    if (!window.crypto?.subtle)
+      throw new Error(
+        'Secure device transfer requires HTTPS. Open the GitHub Pages version of the site.',
+      );
+    let client = getTransferClient(),
+      code = generateTransferCode(),
+      lookup = await sha256Hex(`lookup:${code}`),
+      enc = await encryptTransferPayload(code),
+      { data, error } = await client.rpc('create_travel_device_transfer', {
+        p_code_hash: lookup,
+        p_encrypted_payload: enc.encryptedPayload,
+        p_iv: enc.iv,
+        p_expires_minutes: TRANSFER_SERVICE.expiresMinutes || 60,
+      });
+    if (error) throw error;
+    lastTransferCode = displayTransferCode(code);
+    els.transferCodeValue.textContent = lastTransferCode;
+    els.transferCodeArea.classList.remove('hidden');
+    let expiry = Array.isArray(data) ? data[0] : data;
+    els.transferExpiry.textContent = expiry
+      ? `Valid until ${new Date(expiry).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. It can only be used once.`
+      : `Valid for ${TRANSFER_SERVICE.expiresMinutes || 60} minutes and can only be used once.`;
+    setTransferMessage(
+      'Transfer code ready. Open this website on your other device and enter the code there.',
+      true,
+    );
+  } catch (e) {
+    console.error(e);
+    setTransferMessage(e?.message || 'Could not create a transfer code.');
+  } finally {
+    setTransferBusy(false);
+  }
+}
+async function copyTransferCode() {
+  if (!lastTransferCode) return;
+  try {
+    await navigator.clipboard.writeText(lastTransferCode);
+    setTransferMessage('Transfer code copied.', true);
+  } catch {
+    window.prompt('Copy this transfer code:', lastTransferCode);
+  }
+}
+async function claimTransferCode() {
+  let raw = normalizeTransferCode(els.transferCodeInput?.value || '');
+  if (raw.length !== 16) {
+    setTransferMessage('Enter the complete 16-character transfer code.');
+    return;
+  }
+  if (
+    !confirm(
+      'Load the transferred travel history onto this device? This will replace any travel data currently saved here.',
+    )
+  )
+    return;
+  try {
+    setTransferBusy(true);
+    setTransferMessage('Loading your encrypted travel data…', true);
+    if (!window.crypto?.subtle)
+      throw new Error(
+        'Secure device transfer requires HTTPS. Open the GitHub Pages version of the site.',
+      );
+    let client = getTransferClient(),
+      lookup = await sha256Hex(`lookup:${raw}`),
+      { data, error } = await client.rpc('claim_travel_device_transfer', { p_code_hash: lookup });
+    if (error) throw error;
+    let row = Array.isArray(data) ? data[0] : data;
+    if (!row?.encrypted_payload)
+      throw new Error('That code is invalid, expired, or has already been used.');
+    let incoming = await decryptTransferPayload(raw, row.encrypted_payload, row.iv);
+    normalizeState(incoming);
+    state = incoming;
+    updatePassedPlannedTrips();
+    persist(true);
+    populateProfileSelects();
+    renderAll();
+    els.transferCodeInput.value = '';
+    setTransferMessage(
+      `Transfer complete — ${state.stays.length} stay${state.stays.length === 1 ? '' : 's'} loaded on this device.`,
+      true,
+    );
+  } catch (e) {
+    console.error(e);
+    setTransferMessage(
+      e?.name === 'OperationError'
+        ? 'That transfer code could not decrypt the data. Check the code and try again.'
+        : e?.message || 'Could not load this transfer.',
+    );
+  } finally {
+    setTransferBusy(false);
+  }
+}
+function exportData() {
+  let backup = {
+      format: 'where-ive-been-backup',
+      version: 1,
+      createdAt: new Date().toISOString(),
+      data: state,
+    },
+    blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }),
+    a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Herald-Voyages-${isoDate(new Date())}.travel`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importData(e) {
+  let f = e.target.files?.[0];
+  if (!f) return;
+  let r = new FileReader();
+  r.onload = () => {
+    try {
+      let parsed = JSON.parse(r.result),
+        v = parsed?.format === 'where-ive-been-backup' && parsed.data ? parsed.data : parsed;
+      if (Array.isArray(v)) v = { ...defaultState(), stays: v };
+      WIBModel.validateImport(v);
+      normalizeState(v);
+      if (
+        !confirm(
+          'Restore this backup? It will replace the travel data currently saved on this device.',
+        )
+      ) {
+        e.target.value = '';
+        return;
+      }
+      state = v;
+      updatePassedPlannedTrips();
+      persist();
+      populateProfileSelects();
+      renderAll();
+      alert(
+        `Backup restored — ${state.stays.length} stay${state.stays.length === 1 ? '' : 's'} loaded.`,
+      );
+    } catch {
+      alert("That file is not a valid Where I've Been backup.");
+    }
+    e.target.value = '';
+  };
+  r.readAsText(f);
+}
+function getCloudConfig() {
+  try {
+    return JSON.parse(localStorage.getItem(CLOUD_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+function saveCloudConfig() {
+  let c = getCloudConfig();
+  c.url = els.supabaseUrl.value.trim();
+  c.key = els.supabaseKey.value.trim();
+  c.autoSync = els.autoSyncToggle.checked;
+  localStorage.setItem(CLOUD_KEY, JSON.stringify(c));
+  initCloudFromConfig();
+}
+async function initCloudFromConfig() {
+  let c = getCloudConfig();
+  els.supabaseUrl.value = c.url || '';
+  els.supabaseKey.value = c.key || '';
+  els.autoSyncToggle.checked = !!c.autoSync;
+  if (!c.url || !c.key || !window.supabase) {
+    setCloudUI('Local only', false);
+    return;
+  }
+  try {
+    cloudClient = window.supabase.createClient(c.url, c.key);
+    let { data } = await cloudClient.auth.getSession();
+    cloudSession = data.session || null;
+    setCloudUI(cloudSession ? 'Signed in' : 'Configured', !!cloudSession);
+  } catch (e) {
+    setCloudMessage('Could not connect to Supabase. Check the URL/key.');
+    setCloudUI('Local only', false);
+  }
+}
+function setCloudUI(label, signed) {
+  els.cloudStatusBadge.textContent = label;
+  els.cloudStatusBadge.className = `status-badge ${signed ? 'good' : 'neutral'}`;
+  els.cloudPullBtn.disabled = !signed;
+  els.cloudPushBtn.disabled = !signed;
+  els.cloudSignInBtn.classList.toggle('hidden', signed);
+  els.cloudSignOutBtn.classList.toggle('hidden', !signed);
+}
+function setCloudMessage(m, good = false) {
+  els.cloudMessage.textContent = m;
+  els.cloudMessage.style.color = good ? 'var(--green)' : 'var(--red)';
+}
+async function cloudSignUp() {
+  if (!cloudClient) {
+    setCloudMessage('Save valid cloud settings first.');
+    return;
+  }
+  let email = els.cloudEmail.value.trim(),
+    password = els.cloudPassword.value;
+  if (!email || !password) {
+    setCloudMessage('Enter email and password.');
+    return;
+  }
+  let { error } = await cloudClient.auth.signUp({ email, password });
+  if (error) setCloudMessage(error.message);
+  else
+    setCloudMessage(
+      'Account created. If email confirmation is enabled, confirm it before signing in.',
+      true,
+    );
+}
+async function cloudSignIn() {
+  if (!cloudClient) {
+    setCloudMessage('Save valid cloud settings first.');
+    return;
+  }
+  let { data, error } = await cloudClient.auth.signInWithPassword({
+    email: els.cloudEmail.value.trim(),
+    password: els.cloudPassword.value,
+  });
+  if (error) {
+    setCloudMessage(error.message);
+    return;
+  }
+  cloudSession = data.session;
+  setCloudUI('Signed in', true);
+  setCloudMessage('Signed in. Use Pull or Push to choose which copy wins first.', true);
+}
+async function cloudSignOut() {
+  if (cloudClient) await cloudClient.auth.signOut();
+  cloudSession = null;
+  setCloudUI('Configured', false);
+  setCloudMessage('Signed out.', true);
+}
+async function cloudPush(silent = false) {
+  if (!cloudClient || !cloudSession) return;
+  let { error } = await cloudClient
+    .from('travel_tracker_data')
+    .upsert({
+      user_id: cloudSession.user.id,
+      payload: state,
+      updated_at: new Date().toISOString(),
+    });
+  if (error) {
+    if (!silent) setCloudMessage(error.message);
+    return;
+  }
+  if (!silent) setCloudMessage('Cloud copy updated.', true);
+}
+async function cloudPull() {
+  if (!cloudClient || !cloudSession) return;
+  let { data, error } = await cloudClient
+    .from('travel_tracker_data')
+    .select('payload')
+    .eq('user_id', cloudSession.user.id)
+    .maybeSingle();
+  if (error) {
+    setCloudMessage(error.message);
+    return;
+  }
+  if (!data?.payload) {
+    setCloudMessage('No cloud copy exists yet. Push this device first.');
+    return;
+  }
+  state = data.payload;
+  normalizeState(state);
+  updatePassedPlannedTrips();
+  persist(true);
+  populateProfileSelects();
+  renderAll();
+  setCloudMessage('Cloud copy loaded onto this device.', true);
+}
+
+// Source: src/core/startup.js
+window.addEventListener?.('travel-libs-ready', () => {
+  if (els.mapFallback) {
+    renderWorldMap();
+    initCloudFromConfig();
+  }
+});
+document.addEventListener('DOMContentLoaded', init);

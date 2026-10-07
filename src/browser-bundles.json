@@ -1,0 +1,32 @@
+[
+  {
+    "output": "app-core.js",
+    "scope": "global",
+    "files": [
+      "src/core/catalogs.js",
+      "src/core/state.js",
+      "src/core/display.js",
+      "src/core/travel-days.js",
+      "src/core/shell.js",
+      "src/core/calendar.js",
+      "src/core/countries.js",
+      "src/core/stays.js",
+      "src/core/people.js",
+      "src/core/planning.js",
+      "src/core/atlas.js",
+      "src/core/legacy-data.js",
+      "src/core/startup.js"
+    ]
+  },
+  {
+    "output": "calendar-experience.js",
+    "scope": "closure",
+    "files": [
+      "src/calendar/groups.js",
+      "src/calendar/month.js",
+      "src/calendar/details.js",
+      "src/calendar/planner.js",
+      "src/calendar/events.js"
+    ]
+  }
+]
