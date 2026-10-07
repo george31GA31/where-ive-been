@@ -2,11 +2,6 @@ name: Import SlapsGame flags
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .github/workflows/import-slaps-flags.yml
-      - scripts/import-slaps-flags.py
 
 permissions:
   contents: write
@@ -35,6 +30,8 @@ jobs:
       - name: Validate JavaScript and copied assets
         run: |
           set -euo pipefail
+          node scripts/build-browser.cjs
+          node scripts/build-offline-shell.cjs
           test -f "assets/flags/United Kingdom.png"
           test -f "assets/flags/Switzerland.png"
           test -f "assets/flags/Nepal.png"
@@ -48,7 +45,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/flags assets/slaps-countries.js assets/flag-manifest.js app-core.js app.js styles.css index.html
+          git add assets/flags assets/slaps-countries.js assets/flag-manifest.js app-core.js app.js styles.css index.html sw.js
           if git diff --cached --quiet; then
             echo "No flag changes to commit"
             exit 0

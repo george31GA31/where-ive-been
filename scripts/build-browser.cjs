@@ -9,7 +9,12 @@ const bundles = require('../src/browser-bundles.json');
 const check = process.argv.includes('--check');
 
 for (const bundle of bundles) {
-  let body = bundle.files.map(file => {
+  let body = bundle.files.map(input => {
+    if (typeof input === 'object') {
+      const data = JSON.parse(fs.readFileSync(path.join(root, input.file), 'utf8'));
+      return `// Source: ${input.file}\nconst ${input.constant} = ${JSON.stringify(data)};\n`;
+    }
+    const file = input;
     const source = fs.readFileSync(path.join(root, file), 'utf8').trimEnd();
     // Each fragment is valid JavaScript; concatenation preserves the original
     // shared scope, declaration hoisting and script order without a module rewrite.

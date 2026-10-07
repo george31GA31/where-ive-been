@@ -3,6 +3,8 @@
     "output": "app-core.js",
     "scope": "global",
     "files": [
+      {"file":"data/country-catalog.json","constant":"COUNTRIES"},
+      {"file":"data/flag-name-aliases.json","constant":"SLAPS_FLAG_NAME_ALIASES"},
       "src/core/catalogs.js",
       "src/core/state.js",
       "src/core/display.js",

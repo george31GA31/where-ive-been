@@ -2,11 +2,11 @@
 """Validate and upsert a complete dataset from XLSX, CSV or UNESCO XML.
 No user/account state is read or modified. Errors abort before writing.
 """
-import argparse, csv, json, math, re, unicodedata, xml.etree.ElementTree as ET
+import argparse, csv, json, math, unicodedata, xml.etree.ElementTree as ET
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 def norm(s): return ''.join(c for c in unicodedata.normalize('NFKD',str(s).lower()) if c.isalnum())
-COUNTRIES=json.loads(re.search(r'const COUNTRIES = (.*?);',(ROOT/'app-core.js').read_text()).group(1))
+COUNTRIES=json.loads((ROOT/'data/country-catalog.json').read_text(encoding='utf-8'))
 NAMES={norm(c['name']):c['code'] for c in COUNTRIES}
 ALIASES={'British Virgin Islands':'VG','Cape Verde':'CV','Czech Republic':'CZ','Democratic Republic of the Congo':'CD','The Democratic Republic of Congo':'CD','Falkland Islands':'FK','Federated States of Micronesia':'FM','French Southern and Antarctic Lands':'TF','Ivory Coast':'CI','Macau':'MO','Pitcairn Islands':'PN','Saint Martin':'MF','Sint Maarten':'SX','Turkey':'TR','United States Virgin Islands':'VI','Vatican City':'VA','Vetican City':'VA','East Timor':'TL','Fiji Islands':'FJ','Saint Helena':'SH'}
 NAMES.update({norm(k):v for k,v in ALIASES.items()})

@@ -1,3 +1,4 @@
+// SLAPS_FLAG_NAME_ALIASES is supplied by the shared JSON catalogue in src/browser-bundles.json.
 function isoDate(d) {
   return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString().slice(0, 10);
 }
@@ -44,23 +45,6 @@ function legacyFlagUrl(c, w = 80) {
     return `https://commons.wikimedia.org/wiki/Special:Redirect/file/Flag_of_Bougainville.svg?width=${w * 2}`;
   return `https://flagcdn.com/w${w}/${String(c).toLowerCase()}.png`;
 }
-const SLAPS_FLAG_NAME_ALIASES = {
-  CV: 'Cape Verde',
-  CC: 'Cocos Islands',
-  CD: 'Democratic Republic of the Congo',
-  CI: 'Ivory Coast',
-  FK: 'Falkland Islands',
-  VA: 'Vatican City',
-  FM: 'Micronesia',
-  MO: 'Macau',
-  PN: 'Pitcairn Islands',
-  ST: 'São Tomé and Príncipe',
-  MF: 'Saint Martin',
-  SX: 'Sint Maarten',
-  US: 'United States of America',
-  VG: 'British Virgin Islands',
-  VI: 'U.S. Virgin Islands',
-};
 function normalizedFlagName(v = '') {
   return String(v)
     .normalize('NFD')
@@ -88,15 +72,13 @@ function flagUrl(c, w = 80) {
 }
 function flagHtml(c, cls = 'flag-img') {
   if (!c) return '';
-  let code = String(c).toUpperCase();
+  const code = String(c).toUpperCase();
   if (code === 'SEA')
-    return `<span class="${esc(cls)}" style="display:inline-flex;align-items:center;justify-content:center;background:#eaf4f8;border-radius:6px;font-size:18px" title="At Sea">🌊</span>`;
-  if (code.startsWith('GB-'))
-    return `<img class="${esc(cls)}" src="assets/domestic/${code.toLowerCase()}.svg" alt="${esc(HVJourney.domesticDestinations.find((d) => d.domesticDestination === code)?.name || code)} flag">`;
-  let src = slapsFlagUrl(code),
-    fallback = legacyFlagUrl(code);
-  if (!src) src = fallback;
-  return `<img class="${esc(cls)}" src="${src}" data-fallback="${fallback}" alt="${esc(countryByCode(code)?.name || code)} flag" loading="lazy" onerror="if(this.dataset.fallback){const f=this.dataset.fallback;this.dataset.fallback='';this.src=f}else{this.style.display='none'}">`;
+    return `<span class="${esc(cls)} special-location-icon" title="At Sea" aria-label="At Sea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 9q3-4 6 0t6 0t8 0M2 16q3-4 6 0t6 0t8 0"/></svg></span>`;
+  // Preserve the final markup formerly composed by app-fixes and
+  // security-runtime. Domestic destination flags still belong to map-enhancements.
+  const name = countryByCode(code)?.name || code;
+  return `<img class="${esc(cls)}" src="${flagUrl(code)}" alt="${esc(name)} flag" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
 }
 function countryByName(n = '') {
   return [...COUNTRIES, ...HVJourney.domesticDestinations].find(
