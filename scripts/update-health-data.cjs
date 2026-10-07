@@ -40,7 +40,7 @@ async function update(){
   }
   const available=destinations.filter(d=>d.sourceStatus==='available').length;
   if(available<directory.length*.95)throw Error('Incomplete refresh; bundled data retained ('+available+'/'+directory.length+')');
-  const aliases=require('../data/entry-requirements/health-destination-aliases.json'),countries=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../app-core.js'),'utf8').match(/^const COUNTRIES = (\[.*?\]);/)[1]),countryMap={},byName=new Map();
+  const aliases=require('../data/entry-requirements/health-destination-aliases.json'),countries=require('../data/country-catalog.json'),countryMap={},byName=new Map();
   for(const d of destinations)for(const name of [d.name,...d.aliases]){const k=Parser.key(name);if(byName.has(k)&&byName.get(k)!==d.id)throw Error('Ambiguous destination alias: '+name);byName.set(k,d.id);}
   for(const c of countries){const names=[c.name,...(aliases.countries[c.code]||[])],ids=[...new Set(names.map(n=>byName.get(Parser.key(n))).filter(Boolean))];if(ids.length>1)throw Error('Ambiguous country mapping: '+c.code);if(ids[0])countryMap[c.code]=ids[0];}
   const regions=aliases.regions.flatMap(r=>{const id=byName.get(Parser.key(r.source));return id?[{parents:r.parents,names:r.names,id}]:[];});

@@ -1,265 +1,559 @@
 /* Durable per-tab outbox and revision-checked account saves. No tracker UI dependencies. */
 (function (root) {
   'use strict';
-  const M = typeof module !== 'undefined' && module.exports ? require('./account-model.js') : root.WIBModel;
-  const C = typeof module !== 'undefined' && module.exports ? require('./account-cache.js') : root.WIBAccountCache;
+  const accountModel =
+    typeof module !== 'undefined' && module.exports ? require('./account-model.js') : root.WIBModel;
+  const accountCache =
+    typeof module !== 'undefined' && module.exports
+      ? require('./account-cache.js')
+      : root.WIBAccountCache;
   class AccountSync {
-    constructor({client, storage, cacheStore, tabId, onData, onStatus, resolve, timeout = 25000}) {
-      Object.assign(this, {client, storage, cacheStore, tabId, onData, onStatus, resolve, timeout});
-      this.epoch = 0; this.requests = new Set(); this.user = null; this.ready = false; this.saving = false;
+    // base = last acknowledged account payload; local = current edits against it.
+    // revision protects the RPC write; epoch rejects results from an old identity.
+    // Only onData hydrates the UI. A read or a checkpoint must not create an edit.
+    constructor({
+      client,
+      storage,
+      cacheStore,
+      tabId,
+      onData,
+      onStatus,
+      resolve,
+      timeout = 25000,
+    }) {
+      Object.assign(this, {
+        client,
+        storage,
+        cacheStore,
+        tabId,
+        onData,
+        onStatus,
+        resolve,
+        timeout,
+      });
+      this.epoch = 0;
+      this.requests = new Set();
+      this.user = null;
+      this.ready = false;
+      this.saving = false;
     }
-    prefix(id = this.user) { return 'whereIveBeen.outbox.v1.' + id + '.'; }
-    key() { return this.prefix() + this.tabId; }
-    status(message, kind = 'neutral') { this.onStatus(message, kind); }
+    prefix(id = this.user) {
+      return 'whereIveBeen.outbox.v1.' + id + '.';
+    }
+    key() {
+      return this.prefix() + this.tabId;
+    }
+    status(message, kind = 'neutral') {
+      this.onStatus(message, kind);
+    }
     diagnostic(operation, error, elapsed = 0) {
-      const code = String(error?.code || ''), status = Number(error?.status) || 0;
+      const code = String(error?.code || ''),
+        status = Number(error?.status) || 0;
       let category = root.HVNetwork?.classify(error) || 'client';
       if (root.navigator?.onLine === false) category = 'offline';
       else if (status === 401) category = 'auth';
       else if (status === 403 || code === '42501') category = 'permission';
-      else if (['42P01','42703','PGRST204','PGRST205'].includes(code)) category = 'schema';
+      else if (['42P01', '42703', 'PGRST204', 'PGRST205'].includes(code)) category = 'schema';
       else if (error?.name === 'TimeoutError') category = 'timeout';
       else if (error?.name === 'QuotaExceededError') category = 'quota';
       else if (error?.kind) category = error.kind;
       else if (/fetch|network|offline/i.test(error?.message || '')) category = 'network';
-      this.lastFailure = {operation, category, status, code, elapsed, retryCount:this.failures || 0, online:root.navigator?.onLine !== false};
+      this.lastFailure = {
+        operation,
+        category,
+        status,
+        code,
+        elapsed,
+        retryCount: this.failures || 0,
+        online: root.navigator?.onLine !== false,
+      };
       root.HVAccountDiagnostics?.record('failure', this.lastFailure);
       return category;
     }
     stop() {
-      this.epoch++; this.user = null; this.ready = false; this.saving = false; this.loading = false;
-      for (const controller of this.requests) controller.abort(); this.requests.clear();
+      this.epoch++;
+      this.user = null;
+      this.ready = false;
+      this.saving = false;
+      this.loading = false;
+      for (const controller of this.requests) controller.abort();
+      this.requests.clear();
       clearTimeout(this.timer);
-      this.base=undefined;this.local=undefined;this.revision=0;this.adopted=[];this.retryAt=0;this.failures=0;
-      this.cached=undefined;this.cacheFailed=undefined;this.lastFailure=null;
+      this.base = undefined;
+      this.local = undefined;
+      this.revision = 0;
+      this.adopted = [];
+      this.retryAt = 0;
+      this.failures = 0;
+      this.cached = undefined;
+      this.cacheFailed = undefined;
+      this.lastFailure = null;
     }
-    async query(id, columns) {
-      if (root.navigator?.onLine === false) {const error = new TypeError('Account service is offline');error.kind='offline';throw error;}
-      const controller = new AbortController(); this.requests.add(controller);
+    async fetchAccountRow(id, columns) {
+      // Revision polling and full hydration share one deadline/abort boundary;
+      // the SDK still owns token attachment and server-side account permissions.
+      if (root.navigator?.onLine === false) {
+        const error = new TypeError('Account service is offline');
+        error.kind = 'offline';
+        throw error;
+      }
+      const controller = new AbortController();
+      this.requests.add(controller);
       let query = this.client.from('travel_tracker_data').select(columns).eq('user_id', id);
       if (query.abortSignal) query = query.abortSignal(controller.signal);
       let timer;
       try {
-        const result = await Promise.race([query.maybeSingle(), new Promise((_,reject) => {
-          timer = setTimeout(() => {controller.abort();const error=new Error('Account request timed out.');error.name='TimeoutError';reject(error);}, this.timeout);
-        })]);
-        if (result.error) {if (result.status) result.error.status=result.status;throw result.error;}
+        const result = await Promise.race([
+          query.maybeSingle(),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => {
+              controller.abort();
+              const error = new Error('Account request timed out.');
+              error.name = 'TimeoutError';
+              reject(error);
+            }, this.timeout);
+          }),
+        ]);
+        if (result.error) {
+          if (result.status) result.error.status = result.status;
+          throw result.error;
+        }
         return result.data;
-      } finally {clearTimeout(timer);this.requests.delete(controller);}
+      } finally {
+        clearTimeout(timer);
+        this.requests.delete(controller);
+      }
     }
     async read(id) {
-      const started = Date.now(), data = await this.query(id, 'payload,revision');
+      const started = Date.now(),
+        data = await this.fetchAccountRow(id, 'payload,revision');
       const payload = data?.payload ?? {};
-      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {const error=new Error('Invalid account payload.');error.kind='data';throw error;}
-      root.HVAccountDiagnostics?.record('account received', {elapsed:Date.now()-started, revision:Number(data?.revision || 0)});
-      return {payload, revision:Number(data?.revision || 0)};
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        const error = new Error('Invalid account payload.');
+        error.kind = 'data';
+        throw error;
+      }
+      root.HVAccountDiagnostics?.record('account received', {
+        elapsed: Date.now() - started,
+        revision: Number(data?.revision || 0),
+      });
+      return { payload, revision: Number(data?.revision || 0) };
     }
     async combine(base, local, remote) {
-      let merged = M.merge(base, local, remote);
+      let merged = accountModel.merge(base, local, remote);
       if (merged.conflicts.length) {
         const choices = await this.resolve(merged.conflicts);
-        merged = M.merge(base, local, remote, c => choices[c.path] === 'local' ? c.local : c.remote);
+        merged = accountModel.merge(base, local, remote, (c) =>
+          choices[c.path] === 'local' ? c.local : c.remote,
+        );
       }
       return merged.data;
     }
     snapshot() {
-      const changes = {}, removed = [], base = this.base, local = this.local;
-      const records = rows => Array.isArray(rows) && rows.every(r => r && typeof r.id === 'string') && new Set(rows.map(r => r.id)).size === rows.length;
+      const changes = {},
+        removed = [],
+        base = this.base,
+        local = this.local;
+      const records = (rows) =>
+        Array.isArray(rows) &&
+        rows.every((r) => r && typeof r.id === 'string') &&
+        new Set(rows.map((r) => r.id)).size === rows.length;
       for (const key of new Set([...Object.keys(base), ...Object.keys(local)])) {
-        if (!Object.hasOwn(local, key)) {removed.push(key);continue;}
-        if (M.equal(base[key], local[key])) continue;
+        if (!Object.hasOwn(local, key)) {
+          removed.push(key);
+          continue;
+        }
+        if (accountModel.equal(base[key], local[key])) continue;
         if (records(base[key]) && records(local[key])) {
-          const before = new Map(base[key].map(r => [r.id, r]));
-          Object.defineProperty(changes, key, {enumerable:true, value:{kind:'records', ids:local[key].map(r=>r.id), values:local[key].filter(r=>!M.equal(before.get(r.id),r))}});
-        } else Object.defineProperty(changes, key, {enumerable:true, value:{kind:'value', value:local[key]}});
+          const before = new Map(base[key].map((r) => [r.id, r]));
+          Object.defineProperty(changes, key, {
+            enumerable: true,
+            value: {
+              kind: 'records',
+              ids: local[key].map((r) => r.id),
+              values: local[key].filter((r) => !accountModel.equal(before.get(r.id), r)),
+            },
+          });
+        } else
+          Object.defineProperty(changes, key, {
+            enumerable: true,
+            value: { kind: 'value', value: local[key] },
+          });
       }
-      return {format:'account-outbox-2', base, changes, removed, revision:this.revision};
+      return { format: 'account-outbox-2', base, changes, removed, revision: this.revision };
     }
     draft(raw) {
       const saved = typeof raw === 'string' ? JSON.parse(raw) : raw;
       if (saved.format !== 'account-outbox-2') return saved;
-      const local = Object.fromEntries(Object.entries(M.copy(saved.base)).filter(([key])=>!saved.removed.includes(key)));
+      const local = Object.fromEntries(
+        Object.entries(accountModel.copy(saved.base)).filter(([key]) => !saved.removed.includes(key)),
+      );
       for (const [key, change] of Object.entries(saved.changes)) {
         let value = change.value;
         if (change.kind === 'records') {
-          const rows = new Map((local[key] || []).map(r=>[r.id,r]));
-          for (const row of change.values) rows.set(row.id,row);
-          value = change.ids.map(id=>rows.get(id));
+          const rows = new Map((local[key] || []).map((r) => [r.id, r]));
+          for (const row of change.values) rows.set(row.id, row);
+          value = change.ids.map((id) => rows.get(id));
         }
-        Object.defineProperty(local,key,{enumerable:true,configurable:true,writable:true,value});
+        Object.defineProperty(local, key, {
+          enumerable: true,
+          configurable: true,
+          writable: true,
+          value,
+        });
       }
-      return {base:saved.base,local,revision:saved.revision};
+      return { base: saved.base, local, revision: saved.revision };
     }
     async drafts(id) {
+      // Old localStorage and new IndexedDB checkpoints coexist. An unreadable
+      // entry is preserved and diagnosed, never treated as an empty account.
       const entries = [];
-      for (let i=0;i<this.storage.length;i++) {
-        const key=this.storage.key(i);
-        if (key?.startsWith(this.prefix(id))) entries.push({key,raw:this.storage.getItem(key),source:'legacy'});
+      for (let i = 0; i < this.storage.length; i++) {
+        const key = this.storage.key(i);
+        if (key?.startsWith(this.prefix(id)))
+          entries.push({ key, raw: this.storage.getItem(key), source: 'legacy' });
       }
       if (this.cacheStore) {
-        try {entries.push(...await this.cacheStore.entries(this.prefix(id)));}
-        catch (error) {this.diagnostic('cache read',error);}
+        try {
+          entries.push(...(await this.cacheStore.entries(this.prefix(id))));
+        } catch (error) {
+          this.diagnostic('cache read', error);
+        }
       }
-      const result=[];
+      const result = [];
       for (const entry of entries) {
         try {
-          const raw=entry.source==='cache' ? C.unpack(entry.value) : entry.raw;
-          const draft=this.draft(raw);
+          const raw = entry.source === 'cache' ? accountCache.unpack(entry.value) : entry.raw;
+          const draft = this.draft(raw);
           if (!draft?.base || !draft?.local) throw new Error('Invalid recovery snapshot.');
-          result.push({...entry,...draft});
+          result.push({ ...entry, ...draft });
         } catch (error) {
           // A broken device checkpoint must not hide a successful account read.
           // Keep its original bytes so a developer can recover it.
-          error.kind='data';this.diagnostic('recovery snapshot',error);
+          error.kind = 'data';
+          this.diagnostic('recovery snapshot', error);
         }
       }
       return result;
     }
     cache() {
-      const marker={base:this.base,local:this.local,revision:this.revision};
-      const matches=value=>value&&value.base===marker.base&&value.local===marker.local&&value.revision===marker.revision;
+      const marker = { base: this.base, local: this.local, revision: this.revision };
+      const matches = (value) =>
+        value &&
+        value.base === marker.base &&
+        value.local === marker.local &&
+        value.revision === marker.revision;
       if (matches(this.cached)) return true;
       if (matches(this.cacheFailed)) return false;
       if (matches(this.caching)) return this.cacheFlight;
-      const legacy=()=>{try{this.storage.setItem(this.key(),JSON.stringify(this.snapshot()));this.cached=marker;return true;}catch(error){this.cacheFailed=marker;this.diagnostic('cache write',error);return false;}};
+      const legacy = () => {
+        try {
+          this.storage.setItem(this.key(), JSON.stringify(this.snapshot()));
+          this.cached = marker;
+          return true;
+        } catch (error) {
+          this.cacheFailed = marker;
+          this.diagnostic('cache write', error);
+          return false;
+        }
+      };
       if (!this.cacheStore) return legacy();
-      const key=this.key(),snapshot=this.snapshot(),epoch=this.epoch;
-      this.caching=marker;
-      return this.cacheFlight=this.cacheStore.save(key,snapshot).then(()=>{if(epoch===this.epoch)this.cached=marker;return true;},error=>{
-        if(epoch!==this.epoch)return false;
-        this.diagnostic('cache write',error);return legacy();
-      }).finally(()=>{if(this.caching===marker)this.caching=undefined;});
+      const key = this.key(),
+        snapshot = this.snapshot(),
+        epoch = this.epoch;
+      this.caching = marker;
+      return (this.cacheFlight = this.cacheStore
+        .save(key, snapshot)
+        .then(
+          () => {
+            if (epoch === this.epoch) this.cached = marker;
+            return true;
+          },
+          (error) => {
+            if (epoch !== this.epoch) return false;
+            this.diagnostic('cache write', error);
+            return legacy();
+          },
+        )
+        .finally(() => {
+          if (this.caching === marker) this.caching = undefined;
+        }));
     }
     savedStatus(cached) {
-      this.failures=0;this.retryAt=0;this.lastFailure=null;
-      this.status(cached?'Saved to account':'Saved to account. Offline copy unavailable on this device.',cached?'good':'neutral');
+      this.failures = 0;
+      this.retryAt = 0;
+      this.lastFailure = null;
+      this.status(
+        cached ? 'Saved to account' : 'Saved to account. Offline copy unavailable on this device.',
+        cached ? 'good' : 'neutral',
+      );
     }
     start(id, empty) {
+      // All concurrent startup callers share this flight. Identity changes advance
+      // epoch in stop(), so earlier network responses cannot hydrate this account.
       if (this.loading && this.user === id) return this.loadFlight;
-      this.stop();this.user=id;this.loading=true;
-      const epoch=this.epoch;
-      this.loadFlight=this.performStart(id,empty,epoch).finally(()=>{if(epoch===this.epoch)this.loading=false;});
+      this.stop();
+      this.user = id;
+      this.loading = true;
+      const epoch = this.epoch;
+      this.loadFlight = this.performStart(id, empty, epoch).finally(() => {
+        if (epoch === this.epoch) this.loading = false;
+      });
       return this.loadFlight;
     }
-    async performStart(id,empty,epoch) {
-      const started=Date.now();let operation='account fetch';
+    async performStart(id, empty, epoch) {
+      const started = Date.now();
+      let operation = 'account fetch';
       this.status('Loading account…');
       try {
-        const remote=await this.read(id);
-        if(epoch!==this.epoch)return;
-        operation='account hydration';
-        this.base=remote.payload;this.local=M.copy(remote.payload);this.revision=remote.revision;
+        const remote = await this.read(id);
+        if (epoch !== this.epoch) return;
+        operation = 'account hydration';
+        this.base = remote.payload;
+        this.local = accountModel.copy(remote.payload);
+        this.revision = remote.revision;
         for (const draft of await this.drafts(id)) {
-          if(epoch!==this.epoch)return;
-          this.local=await this.combine(draft.base,draft.local,this.local);
+          if (epoch !== this.epoch) return;
+          this.local = await this.combine(draft.base, draft.local, this.local);
           this.adopted.push(draft);
         }
-        if(epoch!==this.epoch)return;
-        if(!Object.keys(this.local).length)this.local=M.copy(empty);
-        this.ready=true;this.onData(M.copy(this.local));
-        const cached=await this.cache();
-        if(epoch!==this.epoch)return;
-        if(this.pending())await this.flush();else this.savedStatus(await this.clean(cached));
-        root.HVAccountDiagnostics?.record('UI ready',{elapsed:Date.now()-started});
-      } catch(error) {
-        if(epoch!==this.epoch)return;
-        this.ready=false;
-        const kind=this.diagnostic(operation,error,Date.now()-started);
-        if(['auth','permission','schema','data','client','programming'].includes(kind))this.retryAt=Infinity;
-        const drafts=(await this.drafts(id)).sort((a,b)=>Number(b.revision)-Number(a.revision));
-        if(epoch!==this.epoch)return;
-        if(drafts.length){
+        if (epoch !== this.epoch) return;
+        if (!Object.keys(this.local).length) this.local = accountModel.copy(empty);
+        this.ready = true;
+        this.onData(accountModel.copy(this.local));
+        const cached = await this.cache();
+        if (epoch !== this.epoch) return;
+        if (this.pending()) await this.flush();
+        else this.savedStatus(await this.clean(cached));
+        root.HVAccountDiagnostics?.record('UI ready', { elapsed: Date.now() - started });
+      } catch (error) {
+        if (epoch !== this.epoch) return;
+        this.ready = false;
+        const kind = this.diagnostic(operation, error, Date.now() - started);
+        if (['auth', 'permission', 'schema', 'data', 'client', 'programming'].includes(kind))
+          this.retryAt = Infinity;
+        const drafts = (await this.drafts(id)).sort(
+          (a, b) => Number(b.revision) - Number(a.revision),
+        );
+        if (epoch !== this.epoch) return;
+        if (drafts.length) {
           try {
-            this.base=M.copy(drafts[0].base);this.local=M.copy(drafts[0].local);this.revision=Number(drafts[0].revision)||0;
-            for(const draft of drafts.slice(1))this.local=await this.combine(draft.base,draft.local,this.local);
-            if(epoch!==this.epoch)return;
-            this.adopted=drafts;this.ready=true;this.onData(M.copy(this.local));await this.cache();
-            this.status('Showing saved account data. Changes will sync when the account service reconnects.','neutral');
+            this.base = accountModel.copy(drafts[0].base);
+            this.local = accountModel.copy(drafts[0].local);
+            this.revision = Number(drafts[0].revision) || 0;
+            for (const draft of drafts.slice(1))
+              this.local = await this.combine(draft.base, draft.local, this.local);
+            if (epoch !== this.epoch) return;
+            this.adopted = drafts;
+            this.ready = true;
+            this.onData(accountModel.copy(this.local));
+            await this.cache();
+            this.status(
+              'Showing saved account data. Changes will sync when the account service reconnects.',
+              'neutral',
+            );
             return;
-          } catch(recoveryError){this.ready=false;this.diagnostic('cached account hydration',recoveryError);}
+          } catch (recoveryError) {
+            this.ready = false;
+            this.diagnostic('cached account hydration', recoveryError);
+          }
         }
-        const messages={offline:'You are offline. Your device data is safe. Reconnect and retry.',auth:'Your sign-in could not be verified. Your device data is safe. Open Account settings or retry.',permission:'The account service could not provide access. Your device data is safe.',schema:'The account service could not read this account. Your device data is safe.',data:'Account data could not be processed. Your original data is safe.',timeout:'Account loading timed out. Your device data is safe. Retry connection.'};
-        this.status(messages[kind]||'Could not load account. Your device data is safe. Retry connection.','bad');
+        const messages = {
+          offline: 'You are offline. Your device data is safe. Reconnect and retry.',
+          auth: 'Your sign-in could not be verified. Your device data is safe. Open Account settings or retry.',
+          permission: 'The account service could not provide access. Your device data is safe.',
+          schema: 'The account service could not read this account. Your device data is safe.',
+          data: 'Account data could not be processed. Your original data is safe.',
+          timeout: 'Account loading timed out. Your device data is safe. Retry connection.',
+        };
+        this.status(
+          messages[kind] || 'Could not load account. Your device data is safe. Retry connection.',
+          'bad',
+        );
       }
     }
     edit(data) {
-      if(!this.ready)throw new Error('Wait for your account to finish loading.');
+      if (!this.ready) throw new Error('Wait for your account to finish loading.');
       // Hydration/rendering is not a user mutation.
-      if(M.equal(this.local,data))return;
-      this.local=M.copy(data);
-      const epoch=this.epoch,local=this.local;
-      const message=cached=>{if(epoch!==this.epoch||local!==this.local)return;this.status(cached?(root.navigator?.onLine===false?'Saved on this device - changes waiting to sync':'Saving…'):'Device storage is full. Keep this page open until your changes are saved to account.',cached?'neutral':'bad');};
-      const cached=this.cache();
-      if(cached?.then){this.status('Saving on this device…');this.checkpointFlight=cached.then(message);}else message(cached);
-      clearTimeout(this.timer);this.timer=setTimeout(()=>this.flush({scheduled:true}),650);
+      if (accountModel.equal(this.local, data)) return;
+      this.local = accountModel.copy(data);
+      const epoch = this.epoch,
+        local = this.local;
+      const message = (cached) => {
+        if (epoch !== this.epoch || local !== this.local) return;
+        this.status(
+          cached
+            ? root.navigator?.onLine === false
+              ? 'Saved on this device - changes waiting to sync'
+              : 'Saving…'
+            : 'Device storage is full. Keep this page open until your changes are saved to account.',
+          cached ? 'neutral' : 'bad',
+        );
+      };
+      const cached = this.cache();
+      if (cached?.then) {
+        this.status('Saving on this device…');
+        this.checkpointFlight = cached.then(message);
+      } else message(cached);
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.flush({ scheduled: true }), 650);
     }
-    flush({scheduled=false}={}) {
-      if(this.saving)return this.flight;
-      if(!this.ready)return Promise.resolve();
-      if(root.navigator?.onLine===false||scheduled&&Date.now()<(this.retryAt||0)){
-        if(this.pending())Promise.resolve(this.cache()).then(cached=>this.status(cached?'Saved on this device - changes waiting to sync':'Offline changes are held in this tab - waiting for account sync. Keep this page open.',cached?'neutral':'bad'));
+    flush({ scheduled = false } = {}) {
+      if (this.saving) return this.flight;
+      if (!this.ready) return Promise.resolve();
+      if (root.navigator?.onLine === false || (scheduled && Date.now() < (this.retryAt || 0))) {
+        if (this.pending())
+          Promise.resolve(this.cache()).then((cached) =>
+            this.status(
+              cached
+                ? 'Saved on this device - changes waiting to sync'
+                : 'Offline changes are held in this tab - waiting for account sync. Keep this page open.',
+              cached ? 'neutral' : 'bad',
+            ),
+          );
         return Promise.resolve();
       }
-      this.saving=true;
-      return this.flight=this.performFlush({scheduled});
+      this.saving = true;
+      return (this.flight = this.performFlush({ scheduled }));
     }
-    async performFlush({scheduled}) {
-      const epoch=this.epoch,id=this.user;
+    async performFlush({ scheduled }) {
+      // Every actual save reads the current remote revision, reconciles all three
+      // copies, then calls the revision-checked RPC. Cached identity cannot skip it.
+      const epoch = this.epoch,
+        id = this.user;
       try {
         // Idle cross-device checks download only a revision, not every image and
         // route. A changed revision still uses the existing complete merge/RPC.
-        if(scheduled&&!this.pending()){
-          const row=await this.query(id,'revision');
-          if(epoch!==this.epoch||Number(row?.revision||0)===this.revision)return;
+        if (scheduled && !this.pending()) {
+          const row = await this.fetchAccountRow(id, 'revision');
+          if (epoch !== this.epoch || Number(row?.revision || 0) === this.revision) return;
         }
-        for(let attempt=0;attempt<5;attempt++){
-          const remote=await this.read(id);if(epoch!==this.epoch)return;
-          const localBefore=this.local;
-          const combined=await this.combine(this.base,localBefore,remote.payload);if(epoch!==this.epoch)return;
-          this.local=await this.combine(localBefore,this.local,combined);if(epoch!==this.epoch)return;
-          this.base=remote.payload;this.revision=remote.revision;
-          await this.cache();if(epoch!==this.epoch)return;
-          if(!M.equal(localBefore,this.local))this.onData(M.copy(this.local));
-          if(M.equal(this.local,remote.payload)){this.savedStatus(await this.clean());return;}
-          const sent=M.copy(this.local);this.status('Saving…');
-          const {data,error,status}=await this.client.rpc('save_travel_account',{p_payload:sent,p_revision:remote.revision});
-          if(epoch!==this.epoch)return;
-          if(error?.code==='40001')continue;
-          if(error){if(status)error.status=status;throw error;}
-          this.base=sent;this.revision=Number(data[0].revision);
-          await this.cache();if(epoch!==this.epoch)return;
-          if(M.equal(this.local,sent)){this.savedStatus(await this.clean());return;}
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const remote = await this.read(id);
+          if (epoch !== this.epoch) return;
+          const localBefore = this.local;
+          const combined = await this.combine(this.base, localBefore, remote.payload);
+          if (epoch !== this.epoch) return;
+          this.local = await this.combine(localBefore, this.local, combined);
+          if (epoch !== this.epoch) return;
+          this.base = remote.payload;
+          this.revision = remote.revision;
+          await this.cache();
+          if (epoch !== this.epoch) return;
+          if (!accountModel.equal(localBefore, this.local)) this.onData(accountModel.copy(this.local));
+          if (accountModel.equal(this.local, remote.payload)) {
+            this.savedStatus(await this.clean());
+            return;
+          }
+          const sent = accountModel.copy(this.local);
+          this.status('Saving…');
+          const { data, error, status } = await this.client.rpc('save_travel_account', {
+            p_payload: sent,
+            p_revision: remote.revision,
+          });
+          if (epoch !== this.epoch) return;
+          if (error?.code === '40001') continue;
+          if (error) {
+            if (status) error.status = status;
+            throw error;
+          }
+          this.base = sent;
+          this.revision = Number(data[0].revision);
+          await this.cache();
+          if (epoch !== this.epoch) return;
+          if (accountModel.equal(this.local, sent)) {
+            this.savedStatus(await this.clean());
+            return;
+          }
         }
-        const error=new Error('Account is changing on another device.');error.kind='conflict';throw error;
-      }catch(error){
-        if(epoch===this.epoch){
-          const kind=this.diagnostic('account sync',error);
-          this.failures=(this.failures||0)+1;this.retryAt=Date.now()+Math.min(120000,5000*2**Math.min(this.failures,5));
-          const cached=await this.cache();if(epoch!==this.epoch)return;
-          this.status(cached?'Changes saved on this device - waiting for account sync.':'Account save unavailable - waiting for account sync. Keep this page open to retain your changes.',cached?'neutral':'bad');
-          if(['auth','permission','validation','schema','data','client','programming'].includes(kind))this.retryAt=Infinity;
+        const error = new Error('Account is changing on another device.');
+        error.kind = 'conflict';
+        throw error;
+      } catch (error) {
+        if (epoch === this.epoch) {
+          const kind = this.diagnostic('account sync', error);
+          this.failures = (this.failures || 0) + 1;
+          this.retryAt = Date.now() + Math.min(120000, 5000 * 2 ** Math.min(this.failures, 5));
+          const cached = await this.cache();
+          if (epoch !== this.epoch) return;
+          this.status(
+            cached
+              ? 'Changes saved on this device - waiting for account sync.'
+              : 'Account save unavailable - waiting for account sync. Keep this page open to retain your changes.',
+            cached ? 'neutral' : 'bad',
+          );
+          if (
+            [
+              'auth',
+              'permission',
+              'validation',
+              'schema',
+              'data',
+              'client',
+              'programming',
+            ].includes(kind)
+          )
+            this.retryAt = Infinity;
         }
-      }finally{if(epoch===this.epoch)this.saving=false;}
+      } finally {
+        if (epoch === this.epoch) this.saving = false;
+      }
     }
     async clean(cached) {
-      if(cached===undefined)cached=await this.cache();
-      if(!cached&&!this.pending()){
-        const removable=(this.adopted||[]).filter(row=>row.source==='legacy'&&this.storage.getItem(row.key)===row.raw);
-        for(const {key}of removable)this.storage.removeItem(key);
-        this.cacheFailed=undefined;cached=await this.cache();
-        if(!cached)for(const {key,raw}of removable.reverse()){try{this.storage.setItem(key,raw);break;}catch{}}
+      if (cached === undefined) cached = await this.cache();
+      if (!cached && !this.pending()) {
+        const removable = (this.adopted || []).filter(
+          (row) => row.source === 'legacy' && this.storage.getItem(row.key) === row.raw,
+        );
+        for (const { key } of removable) this.storage.removeItem(key);
+        this.cacheFailed = undefined;
+        cached = await this.cache();
+        if (!cached)
+          for (const { key, raw } of removable.reverse()) {
+            try {
+              this.storage.setItem(key, raw);
+              break;
+            } catch {}
+          }
       }
-      if(!cached)return false;
-      for(const row of this.adopted||[]){
-        if(row.source==='legacy'&&row.key!==this.key()&&this.storage.getItem(row.key)===row.raw)this.storage.removeItem(row.key);
-        if(row.source==='cache'&&row.key!==this.key())try{await this.cacheStore.remove(row.key,row.token);}catch(error){this.diagnostic('cache cleanup',error);}
+      if (!cached) return false;
+      for (const row of this.adopted || []) {
+        if (
+          row.source === 'legacy' &&
+          row.key !== this.key() &&
+          this.storage.getItem(row.key) === row.raw
+        )
+          this.storage.removeItem(row.key);
+        if (row.source === 'cache' && row.key !== this.key())
+          try {
+            await this.cacheStore.remove(row.key, row.token);
+          } catch (error) {
+            this.diagnostic('cache cleanup', error);
+          }
       }
       // A verified async checkpoint safely replaces this tab's legacy value too.
-      if(this.cacheStore&&this.cached){for(const row of this.adopted||[])if(row.source==='legacy'&&row.key===this.key()&&this.storage.getItem(row.key)===row.raw)this.storage.removeItem(row.key);}
-      this.adopted=[];return true;
+      if (this.cacheStore && this.cached) {
+        for (const row of this.adopted || [])
+          if (
+            row.source === 'legacy' &&
+            row.key === this.key() &&
+            this.storage.getItem(row.key) === row.raw
+          )
+            this.storage.removeItem(row.key);
+      }
+      this.adopted = [];
+      return true;
     }
-    reconnect(){this.retryAt=0;this.failures=0;this.cacheFailed=undefined;return this.flush();}
-    pending(){return this.ready&&this.user&&this.local&&!M.equal(this.local,this.base);}
+    reconnect() {
+      this.retryAt = 0;
+      this.failures = 0;
+      this.cacheFailed = undefined;
+      return this.flush();
+    }
+    pending() {
+      return this.ready && this.user && this.local && !accountModel.equal(this.local, this.base);
+    }
   }
-  if(typeof module!=='undefined'&&module.exports)module.exports=AccountSync;else root.WIBAccountSync=AccountSync;
-})(typeof window!=='undefined'?window:globalThis);
+  if (typeof module !== 'undefined' && module.exports) module.exports = AccountSync;
+  else root.WIBAccountSync = AccountSync;
+})(typeof window !== 'undefined' ? window : globalThis);

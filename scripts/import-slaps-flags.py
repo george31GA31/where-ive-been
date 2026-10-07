@@ -14,9 +14,8 @@ def normalized(value):
     return re.sub('[^a-z0-9]', '', text.encode('ascii', 'ignore').decode().lower())
 
 
-core = Path('app-core.js').read_text(encoding='utf-8')
-countries = json.loads(re.search(r'const COUNTRIES = (.*?);', core).group(1))
-aliases = dict(re.findall(r"(\w+):'([^']+)'", re.search(r'const SLAPS_FLAG_NAME_ALIASES=(.*?);', core).group(1)))
+countries = json.loads(Path('data/country-catalog.json').read_text(encoding='utf-8'))
+aliases = json.loads(Path('data/flag-name-aliases.json').read_text(encoding='utf-8'))
 aliases['SL'] = 'Sierre Leone'  # Spelling in the source artwork filename.
 files = {normalized(p.stem): p.as_posix() for p in Path('assets/flags').glob('*.png')}
 manifest = {}

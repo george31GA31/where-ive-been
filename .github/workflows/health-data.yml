@@ -26,6 +26,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Refresh public country facts
         run: node scripts/update-health-data.cjs
+      - name: Refresh committed browser outputs and offline shell
+        run: npm run build
       - name: Validate source parsing, mappings and entry behaviour
         run: npm test
       - name: Check DOM integration
@@ -37,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git add data/entry-requirements/travelhealthpro.js data/entry-requirements/health-refresh.json
+          git add data/entry-requirements/travelhealthpro.js data/entry-requirements/health-refresh.json sw.js
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0

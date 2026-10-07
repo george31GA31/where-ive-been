@@ -25,7 +25,7 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high
       - name: Check offline shell manifest
-        run: node scripts/build-offline-shell.cjs --check
+        run: npm run check:build
       - name: Check DOM integration
         run: npm run test:dom
       - name: Check browser layouts and keyboard interactions
