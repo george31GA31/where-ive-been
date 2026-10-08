@@ -9,6 +9,7 @@
     'trips',
     'residences',
     'transports',
+    'transportOperators',
     'accommodations',
     'savedPlaces',
     'placeVisits',

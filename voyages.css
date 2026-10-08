@@ -2711,6 +2711,7 @@ a.atlas-country .flag-img { width:28px; height:20px; }
 .timeline-bars{display:none!important}.timeline-chart-wrap{min-height:42px;padding:6px 0 26px}.timeline-slider{position:absolute;left:0;right:0;bottom:8px}
 /* Herald footer */
 .herald-account-access{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}.herald-account-access .text-btn{font-size:12px;white-space:nowrap}
+.herald-account-access .text-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;margin:0;min-height:30px;line-height:18px;vertical-align:middle}
 .sidebar-footer>a[data-account-guest]{display:block;text-align:center;margin-top:8px;font-size:12px}
 @media(max-width:720px){.herald-account-access{gap:10px;order:4;flex-basis:100%;justify-content:flex-start}.herald-account-access .text-btn{padding:2px 0}}
 .herald-site-footer{margin-top:42px;border-top:2px solid var(--hv-gold);padding:24px 0 8px;color:var(--hv-muted)}

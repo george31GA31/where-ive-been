@@ -5,7 +5,8 @@
     const assets = [],
       indices = new Map();
     const row = (value) => {
-      const src = value?.accommodationLogo?.src;
+      const field = value?.operatorLogo ? 'operatorLogo' : 'accommodationLogo';
+      const src = value?.[field]?.src;
       if (typeof src !== 'string' || !src.startsWith('data:image/')) return value;
       if (!indices.has(src)) {
         indices.set(src, assets.length);
@@ -13,12 +14,14 @@
       }
       return {
         ...value,
-        accommodationLogo: { ...value.accommodationLogo, src: { asset: indices.get(src) } },
+        [field]: { ...value[field], src: { asset: indices.get(src) } },
       };
     };
-    const base = { ...snapshot.base };
+    const base = { ...snapshot.base }, changes = { ...snapshot.changes };
+    if (Array.isArray(base.transportOperators)) base.transportOperators = base.transportOperators.map(row);
+    if (changes.transportOperators?.kind === 'records') changes.transportOperators = {...changes.transportOperators,values:changes.transportOperators.values.map(row)};
+    else if (changes.transportOperators?.kind === 'value' && Array.isArray(changes.transportOperators.value)) changes.transportOperators = {...changes.transportOperators,value:changes.transportOperators.value.map(row)};
     if (Array.isArray(base.savedPlaces)) base.savedPlaces = base.savedPlaces.map(row);
-    const changes = { ...snapshot.changes };
     if (changes.savedPlaces?.kind === 'records')
       changes.savedPlaces = { ...changes.savedPlaces, values: changes.savedPlaces.values.map(row) };
     else if (changes.savedPlaces?.kind === 'value' && Array.isArray(changes.savedPlaces.value))
@@ -28,18 +31,22 @@
   function unpack(value) {
     if (value?.format !== 'herald-account-cache-1') throw new Error('Unsupported account cache.');
     const row = (record) => {
-      const ref = record?.accommodationLogo?.src;
+      const field = record?.operatorLogo ? 'operatorLogo' : 'accommodationLogo';
+      const ref = record?.[field]?.src;
       if (!ref || typeof ref !== 'object') return record;
       if (!Number.isInteger(ref.asset) || typeof value.assets[ref.asset] !== 'string')
         throw new Error('Account cache artwork is incomplete.');
       return {
         ...record,
-        accommodationLogo: { ...record.accommodationLogo, src: value.assets[ref.asset] },
+        [field]: { ...record[field], src: value.assets[ref.asset] },
       };
     };
     const snapshot = value.snapshot,
       base = { ...snapshot.base },
       changes = { ...snapshot.changes };
+    if (Array.isArray(base.transportOperators)) base.transportOperators = base.transportOperators.map(row);
+    if (changes.transportOperators?.kind === 'records') changes.transportOperators = {...changes.transportOperators,values:changes.transportOperators.values.map(row)};
+    else if (changes.transportOperators?.kind === 'value' && Array.isArray(changes.transportOperators.value)) changes.transportOperators = {...changes.transportOperators,value:changes.transportOperators.value.map(row)};
     if (Array.isArray(base.savedPlaces)) base.savedPlaces = base.savedPlaces.map(row);
     if (changes.savedPlaces?.kind === 'records')
       changes.savedPlaces = { ...changes.savedPlaces, values: changes.savedPlaces.values.map(row) };

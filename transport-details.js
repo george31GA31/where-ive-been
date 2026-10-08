@@ -16,10 +16,10 @@
      let label=form.querySelector(`[data-endpoint-address="${side}"]`);if(!label){label=document.createElement('p');label.className='helper';label.dataset.endpointAddress=side;results.after(label);}label.textContent=HVAddress.address(record[side]||form._airportPrefill?.[side]);
    }
    host.querySelector('[data-ground-add]').onclick=()=>{form._via.push({name:'',lat:null,lon:null});renderVias(form);};
-   renderVias(form);update(form);const refresh=host.querySelector('[data-recalculate-route]');refresh.hidden=!record.id;refresh.onclick=()=>{form._recalculateRoute=true;refresh.disabled=true;host.querySelector('[data-route-refresh-note]').textContent='Route refresh requested. Save this journey and Herald will calculate it again the next time it is mapped.';};
+   HVOperators.setup(form,record);renderVias(form);update(form);const refresh=host.querySelector('[data-recalculate-route]');refresh.hidden=!record.id;refresh.onclick=()=>{form._recalculateRoute=true;refresh.disabled=true;host.querySelector('[data-route-refresh-note]').textContent='Route refresh requested. Save this journey and Herald will calculate it again the next time it is mapped.';};
  }
  function setPoint(form,side,p){if(form.elements[side+'address'])form.elements[side+'address'].value=p.address||'';form.elements[side+'name'].value=p.name;form.elements[side+'lat'].value=p.lat??'';form.elements[side+'lon'].value=p.lon??'';form._airportPrefill[side]={...p};form.querySelector(`[data-endpoint-address="${side}"]`).textContent=p.address||[p.city,p.countryName].filter(Boolean).join(', ');}
- function update(form){const type=form.elements.type.value,flight=type==='flight',essential=['train','bus','boat'].includes(type);const primary=form.querySelector('[data-operator-essential]'),secondary=form.querySelector('[data-operator-secondary]');for(const key of ['operator','serviceNumber']){const label=form.elements[key].closest('label');(essential?primary:secondary).append(label);}primary.hidden=!essential;secondary.hidden=essential;form.querySelector('[data-essential-label=serviceNumber]').textContent=type==='train'?'Train / service number (optional)':type==='bus'?'Bus / service number (optional)':'Service number (optional)';form.querySelector('[data-ground-vias]').hidden=flight;form.querySelectorAll('[data-ground-vias] input').forEach(n=>n.disabled=flight);form.querySelector('[name=addReturn]').closest('label').hidden=!!form._pendingOutbound;form.querySelector('[data-return-help]').hidden=!!form._pendingOutbound;
+ function update(form){const type=form.elements.type.value,flight=type==='flight',essential=['train','bus','boat'].includes(type);const primary=form.querySelector('[data-operator-essential]'),secondary=form.querySelector('[data-operator-secondary]');for(const key of ['operator','serviceNumber']){const label=form.elements[key].closest('label');(essential?primary:secondary).append(label);}const artwork=form.querySelector('[data-ground-operator-logo]');if(artwork){(essential?primary:secondary).append(artwork);artwork.hidden=flight;}primary.hidden=!essential;secondary.hidden=essential;form.querySelector('[data-essential-label=serviceNumber]').textContent=type==='train'?'Train / service number (optional)':type==='bus'?'Bus / service number (optional)':'Service number (optional)';form.querySelector('[data-ground-vias]').hidden=flight;form.querySelectorAll('[data-ground-vias] input').forEach(n=>n.disabled=flight);form.querySelector('[name=addReturn]').closest('label').hidden=!!form._pendingOutbound;form.querySelector('[data-return-help]').hidden=!!form._pendingOutbound;
    for(const side of ['start','end']){const label=form.querySelector(`[data-endpoint-address="${side}"]`);if(label)label.hidden=flight;const field=form.querySelector(`[data-address-field="${side}"]`);if(field)field.hidden=flight;}
  }
  function renderVias(form){
@@ -38,14 +38,28 @@
  }
  function finish(form,record){
    const error=read(form,record);if(error){document.getElementById('transportError').textContent=error;return;}if(form._recalculateRoute)HVRouteStore.requestRefresh(record);
+   let logoChanges;try{logoChanges=HVOperators.drafts(form);}catch(error){document.getElementById('transportError').textContent=error.message;return;}
    const callback=form._saveCallback;
-   if(form.elements.addReturn.checked&&!form._pendingOutbound){const pending=record;document.getElementById('transportDialog').close();HVJourneys.openTransport(null,reversed(record));const next=document.getElementById('transportForm');next._pendingOutbound=pending;next._saveCallback=callback;next.elements.startLocal.value='';next.elements.endLocal.value='';document.getElementById('transportDialogTitle').textContent='Add return journey';next.querySelector('[type=submit]').textContent='Save both journeys';const note=document.createElement('p');note.className='helper return-outbound-summary';note.textContent='Outbound ready: '+HVJourneys.transportLabel(pending)+'. Save this return to save both journeys.';next.querySelector('.transport-basics').after(note);const only=document.createElement('button');only.type='button';only.className='text-btn';only.textContent='Save outbound only';only.dataset.saveOutboundOnly='';note.after(only);only.onclick=()=>storeRecords([pending],callback);update(next);return;}
+   if(form.elements.addReturn.checked&&!form._pendingOutbound){const pending=record;document.getElementById('transportDialog').close();HVJourneys.openTransport(null,reversed(record));const next=document.getElementById('transportForm');next._pendingOutbound=pending;next._pendingOperatorLogos=logoChanges;next._saveCallback=callback;next.elements.startLocal.value='';next.elements.endLocal.value='';document.getElementById('transportDialogTitle').textContent='Add return journey';next.querySelector('[type=submit]').textContent='Save both journeys';const note=document.createElement('p');note.className='helper return-outbound-summary';note.textContent='Outbound ready: '+HVJourneys.transportLabel(pending)+'. Save this return to save both journeys.';next.querySelector('.transport-basics').after(note);const only=document.createElement('button');only.type='button';only.className='text-btn';only.textContent='Save outbound only';only.dataset.saveOutboundOnly='';note.after(only);only.onclick=()=>storeRecords([pending],callback,logoChanges);update(next);return;}
    const pending=form._pendingOutbound;if(pending){const link=pending.roundTripId||uid();pending.roundTripId=link;record.roundTripId=link;pending.relatedTransportId=record.id;record.relatedTransportId=pending.id;}
-   storeRecords(pending?[pending,record]:[record],callback);
+   storeRecords(pending?[pending,record]:[record],callback,logoChanges);
  }
- function storeRecords(records,callback){if(callback){records.forEach(callback);document.getElementById('transportDialog').close();return;}
-   state.transports||=[];for(const record of records){const index=state.transports.findIndex(r=>r.id===record.id);if(index<0)state.transports.push(record);else state.transports[index]=record;}
-   updatePassedPlannedTrips();persist();document.getElementById('transportDialog').close();renderAll();HVJourneys.render();HVCalendar.renderMonth();
+ function storeRecords(records,callback,logoChanges=[]){
+   const before={transports:state.transports,transportOperators:state.transportOperators};
+   state.transportOperators=[...(state.transportOperators||[])];
+   try{
+     HVOperators.commit(state,records,logoChanges);
+     if(!callback){
+       const updated=new Map(records.map(record=>[record.id,record]));
+       state.transports=(state.transports||[]).map(record=>updated.get(record.id)||record);
+       const ids=new Set(state.transports.map(record=>record.id));
+       state.transports.push(...records.filter(record=>!ids.has(record.id)));
+     }
+     if(persist()===false)throw new Error('This journey could not be saved. Keep this page open and try again.');
+     if(callback)records.forEach(callback);
+     else updatePassedPlannedTrips();
+     document.getElementById('transportDialog').close();renderAll();
+   }catch(error){Object.assign(state,before);document.getElementById('transportError').textContent=error.message;}
  }
  window.HVTransportDetails={setup,update,setPoint,read,finish,reversed};
 })();
