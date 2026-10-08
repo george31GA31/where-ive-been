@@ -55,6 +55,8 @@ offline manifests. Their feature ownership is listed here.
 | Manual visits and TCC | `country-visit-model.js`, `country-trackers.js`, `data/tcc-destinations.js` | Manual country dates/precision; independent TCC destination IDs |
 | Journey Map | `journey-map.js`, `journey-library.js`, `journey-global-model.js` | Global history, filters, markers, popups and record lists |
 | Transport | `journeys.js`, `flight-editor.js`, `transport-details.js`, `transport-icons.js`, `journey-presentation.js` | Flight legs, transport editors and existing display conventions |
+| My Flights / transport dashboard | `transport-dashboard-model.js`, `transport-dashboard.js`, `transport-dashboard.css` | Scoped projections, endpoint-local dates, five-mode selector, search and 40-row pages |
+| Operator logos | `transport-operators.js`, `accommodation-logos.js` | Shared private operator identities, conservative matching and aspect-preserving artwork uploads |
 | Route geometry | `journey-routes.js`, `route-persistence.js` | Provider lookup, rail/water/road fallbacks and saved geometry |
 | Accommodation and logos | `accommodation-place-model.js`, `saved-places-model.js`, `accommodation-logos.js`, `place-search.js` | Physical-property matching, shared catalogue, uploads and manual plotting |
 | Places | `saved-places.js`, `journeys.js`, bundled `data/*.json` | Private saved places and catalogues of capitals, mountains, UNESCO sites and buildings |
@@ -91,6 +93,14 @@ helpers use `document.getElementById(id) || HVPages.get(id)`. Retain that fallba
 Removing a detached node or cloning a form would invalidate saved element
 references and event handlers.
 
+Completed page renders are reused until persistence, account hydration, the active
+traveller, the day, Calendar month or country route changes. `HVPages.revision`
+invalidates feature projections when records are saved. Inactive People panels
+are not rebuilt on every link click; the traveller selector has its own inexpensive
+refresh. Journey Map retains the same Leaflet surface across unchanged visits.
+Full-screen layout captures the camera before changing dimensions and resizes that
+surface without rebuilding routes, filters or the selected popup.
+
 Existing layers wrap global hooks such as `renderAll`, `switchView`, `persist`
 and editor functions. `app.js` keeps their deliberate order. The Calendar
 experience owns the enhanced month renderer; `src/core/calendar.js` preserves the
@@ -99,6 +109,36 @@ destination flag specialization. Shared country/At Sea flag markup is now define
 once in `src/core/display.js`; `security-runtime.js` owns failed-image handling.
 `app-fixes.js` remains an inert URL for installed older shells.
 
+### Transport dashboard and operator artwork
+
+`#/my-flights` reads existing scoped `transports` through `HVJourney`; it does not
+store a second collection of journeys. Flights project individual legs, while
+ground journeys retain their existing records and via stops. The five modes use
+the current `flight`, `train`, `boat`, `bus` and `car` values. Local endpoint times
+stay local; countdowns and ordering convert known endpoint timezones through Intl.
+Unknown times remain visibly missing and reliable live status is not invented.
+
+The list and map are limited to 40 visible entries. `HVJourneyMap.mountGlobal`
+accepts `{viewer:true}` for this screen: it reads saved routes through
+`HVRouteStore`, makes no route-provider requests and never writes route geometry.
+Unsaved flights use the existing connection arc helper; unsaved surface records
+retain endpoint connections or stops rather than generating a fresh mapped route.
+Selection and edits reuse the current map surface, popup presentation and editors.
+
+The optional `transportOperators` collection belongs to the same version-2 account
+payload and participates in its existing merge, guest import, export and offline
+checkpoint paths. Each mode/name identity stores at most one `operatorLogo` PNG.
+Matching normalises case, whitespace and accents, or uses an existing directory ID;
+it does not fuzzy-match different names. Historical records resolve logos without
+a bulk migration. Logo changes/removals apply to that shared identity. Editor drafts
+commit with the transport save, discard unfinished identity changes and reject an
+account/traveller switch. Unrelated legacy flight legs are preserved exactly.
+
+Uploads reuse `HVAccommodationLogos.prepare`: images fit within a transparent
+128px canvas with aspect ratio preserved and a bounded PNG data URL. Account-cache
+asset pooling handles operator and hotel artwork without changing its existing
+checkpoint format. No database or storage-key migration is required.
+
 Use existing feature entry points for refresh and editing. Do not call every
 renderer from a new data event: Home intentionally avoids hidden import previews,
 hotel image elements, saved-route decoding and detailed statistics.
@@ -106,7 +146,7 @@ hotel image elements, saved-route decoding and detailed statistics.
 ## Data contract
 
 Guest and account histories use the existing version-2 object. Major arrays are
-`profiles`, `trips`, `stays`, `residences`, `transports`, `accommodations`,
+`profiles`, `trips`, `stays`, `residences`, `transports`, `transportOperators`, `accommodations`,
 `placeVisits`, `savedPlaces`, `notes`, `checklists`, `budgets`, `expenses`,
 `roadTrips`, `currencyRates`, `currencyPreferences`, `manualCountryVisits`,
 `tccVisits` and `visaAcknowledgements`. Stable record IDs and cross-record

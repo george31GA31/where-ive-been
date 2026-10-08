@@ -64,7 +64,7 @@
   }
   function renderCalendarExtras(){
     if(document.body.dataset.currentView && document.body.dataset.currentView !== 'calendar')return;
-    if(get('calendar')?.dataset.journeyCalendar==='true'){window.HVCalendar?.renderMonth?.();renderYear();renderTransportList();return;}
+    if(get('calendar')?.dataset.journeyCalendar==='true'){return;}
     const show=layer('calendar');get('calendarView')?.classList.toggle('hide-calendar-countries',!show.countries);
     get('calendar')?.querySelectorAll('[data-calendar-date]').forEach(day=>{
       day.querySelectorAll('.calendar-transport').forEach(el=>el.remove());const date=day.dataset.calendarDate;
@@ -89,7 +89,7 @@
     const input=get('timelineManualDate');input.min=min;input.max=max;input.value=timelineDate;updateTimelineLabels();renderMap();
   }
   function renderTransportList(){
-    const host=get('transportRecords');if(!host)return;const term=get('transportSearch')?.value.toLowerCase()||'';
+    const host=get('transportRecords');if(!host||!host.closest('details')?.open)return;const term=get('transportSearch')?.value.toLowerCase()||'';
     const list=J.scoped(state.transports,state.activeProfileId).filter(t=>[t.start.name,t.end.name,t.flightNumber,J.types[t.type]].join(' ').toLowerCase().includes(term)).sort((a,b)=>b.startLocal.localeCompare(a.startLocal));
     host.innerHTML=list.length?list.map(t=>`<div class="transport-record">${icon(t.type)}<div><strong>${E(J.transportLabel(t,airportFor))}</strong><p>${E(J.types[t.type]||t.type)}${t.flightNumber?' '+E(t.flightNumber):''} · ${E(t.status||'actual')}</p><small>${E(t.startLocal.replace('T',' '))} → ${E(t.endLocal.replace('T',' '))} · local times at each endpoint</small></div><button class="secondary" type="button" data-transport-edit="${E(t.id)}">Edit</button></div>`).join(''):'<p class="empty-state">No matching transport records. Add a flight, train or other journey.</p>';
   }
@@ -118,7 +118,7 @@
     const t=state.transports?.find(t=>t.id===id),dialog=get('transportDialog');opener=document.activeElement;
     const group=prefill.tripId?window.HVCalendar?.journeyGroups().find(g=>g.trip?.id===prefill.tripId):null;if(group&&!t)prefill={startLocal:group.start+'T12:00',endLocal:group.end+'T12:00',...prefill};
     const form=get('transportForm');form.reset();form.dataset.id=id||'';
-    form._pendingOutbound=null;form._saveCallback=prefill.onSave;form.querySelectorAll('.return-outbound-summary,[data-save-outbound-only]').forEach(n=>n.remove());form._flightRecord=t||prefill;form._flightInitialised=false;form._airportPrefill={...prefill};form._via=(t?.via||prefill.via||[]).map(a=>({...a}));renderVia();form.querySelectorAll('.airport-search-results').forEach(el=>el.replaceChildren());
+    form._pendingOutbound=null;form._pendingOperatorLogos=null;form._saveCallback=prefill.onSave;form.querySelectorAll('.return-outbound-summary,[data-save-outbound-only]').forEach(n=>n.remove());form._flightRecord=t||prefill;form._flightInitialised=false;form._airportPrefill={...prefill};form._via=(t?.via||prefill.via||[]).map(a=>({...a}));renderVia();form.querySelectorAll('.airport-search-results').forEach(el=>el.replaceChildren());
     form.elements.type.value=t?.type||prefill.type||'flight';form.elements.status.value=t?.status||prefill.status||((prefill.startLocal||'').slice(0,10)>today()?'planned':'actual');form.elements.tripId.innerHTML='<option value="">No linked trip</option>'+J.scoped(state.trips,state.activeProfileId).map(x=>`<option value="${E(x.id)}">${E(x.name)}</option>`).join('');if(t?.tripId&&!Array.from(form.elements.tripId.options).some(o=>o.value===t.tripId))form.elements.tripId.add(new Option('Linked trip',t.tripId));form.elements.tripId.value=t?(t.tripId||''):prefill.tripId||'';
     for(const key of ['startLocal','endLocal','flightNumber'])form.elements[key].value=t?(t[key]??''):prefill[key]||(['startLocal','endLocal'].includes(key)?today()+'T12:00':'');
     for(const key of ['start','end'])for(const field of ['name','terminal','lat','lon'])form.elements[key+field].value=field==='name'?HVAddress.field(t?.[key]||prefill[key],'name'):t?.[key]?.[field]??prefill[key]?.[field]??'';
@@ -138,7 +138,16 @@ HVTransportDetails.setup(form,t||prefill);get('transportDelete').hidden=!t;get('
     host.innerHTML=(form._via||[]).map((a,i)=>`<span class="flight-via-chip">${E(a.iata||a.icao||a.name)}<button type="button" data-remove-via="${i}" aria-label="Remove connection ${E(a.name)}">×</button></span>`).join('');
     host.onclick=e=>{const button=e.target.closest('[data-remove-via]');if(button){form._via.splice(Number(button.dataset.removeVia),1);renderVia();}};
   }
-  function airportFor(value){const key=String(value||'').trim().toLowerCase();if(!key)return null;return items('airports').find(a=>[a.name,a.iata,a.icao,`${a.name} (${a.iata||a.icao||a.id})`].some(x=>x?.toLowerCase()===key));}
+  let airportIndex,airportSource;
+  function airportFor(value){
+    const key=String(value||'').trim().toLowerCase();if(!key)return null;
+    const source=items('airports');
+    if(source!==airportSource){
+      airportSource=source;airportIndex=new Map();
+      for(const airport of source)for(const label of [airport.name,airport.iata,airport.icao,`${airport.name} (${airport.iata||airport.icao||airport.id})`])if(label&&!airportIndex.has(label.toLowerCase()))airportIndex.set(label.toLowerCase(),airport);
+    }
+    return airportIndex.get(key)||null;
+  }
   function saveTransport(event){
     event.preventDefault();const form=event.currentTarget,f=form.elements;if(f.type.value==='flight'&&window.HVFlights)return HVFlights.save(form);const old=state.transports?.find(t=>t.id===form.dataset.id)||(form._saveCallback?form._flightRecord:null);
     const t={...old,id:old?.id||uid(),profileId:old?.profileId??state.activeProfileId,tripId:f.tripId.value||(old?null:J.tripForDates(state,f.startLocal.value.slice(0,10),f.endLocal.value.slice(0,10),old?.profileId||state.activeProfileId,{id:old?.id,collection:'transports'})),type:f.type.value,status:f.status.value};
@@ -185,7 +194,7 @@ HVTransportDetails.setup(form,t||prefill);get('transportDelete').hidden=!t;get('
     const dateLabel=document.createElement('label');dateLabel.className='field timeline-manual';dateLabel.innerHTML='<span>Go to date</span><input type="date" id="timelineManualDate">';els.timelineSlider.before(dateLabel);
     get('timelineManualDate').onchange=e=>{if(J.validDate(e.target.value))setTimelineDate(e.target.value);};
     const transport=document.createElement('details');transport.className='journey-accordion';transport.innerHTML='<summary>Transport journeys</summary><label class="field"><span>Search journeys</span><input type="search" id="transportSearch"></label><div id="transportRecords"></div>';
-    get('calendarView').append(transport);get('transportSearch').oninput=renderTransportList;
+    get('calendarView').append(transport);get('transportSearch').oninput=renderTransportList;transport.addEventListener('toggle',()=>{if(transport.open)renderTransportList();});
     const add=document.createElement('button');add.type='button';add.className='secondary compact';add.id='addTransportBtn';add.textContent='+ Add transport';add.onclick=()=>openTransport();get('calendarView').querySelector('.calendar-toolbar-actions')?.append(add);
     const dialog=document.createElement('dialog');dialog.id='transportDialog';dialog.className='transport-dialog';dialog.setAttribute('aria-labelledby','transportDialogTitle');
     dialog.innerHTML=`<form id="transportForm"><div class="journey-editor-heading"><div><p class="eyebrow">TRANSPORT</p><h2 id="transportDialogTitle">Add a journey</h2></div><button type="button" class="text-btn" data-close-transport aria-label="Close journey editor">Close ×</button></div>
@@ -213,7 +222,7 @@ HVTransportDetails.setup(form,t||prefill);get('transportDelete').hidden=!t;get('
     const labels=window.updateTimelineLabels;window.updateTimelineLabels=function(){labels();if(get('timelineManualDate'))get('timelineManualDate').value=timelineDate||'';};
     window.setTimelineDate=function(value){if(!J.validDate(value)||!els.timelineSlider.dataset.start)return;els.timelineSlider.value=Math.max(0,Math.min(Number(els.timelineSlider.max),diffDays(els.timelineSlider.dataset.start,value)));setTimelineFromSlider();};
     const colors=window.updateMapColors;window.updateMapColors=function(){colors();renderMap();};
-    window.addEventListener('hv-route',()=>{render();renderCalendarExtras();for(const view of ['map','calendar'])get(view+'View')?.querySelectorAll('[data-layer]').forEach(input=>input.checked=layer(view)[input.dataset.layer]);});
+    window.addEventListener('hv-route',()=>{for(const view of ['map','calendar'])get(view+'View')?.querySelectorAll('[data-layer]').forEach(input=>input.checked=layer(view)[input.dataset.layer]);});
     refresh();
     for(const key of ['capitals',...Object.keys(J.categories)])(window.HVNetwork ? HVNetwork.request : fetch)(new URL('data/'+key+'.json?v=flight-home-3',root)).then(r=>{if(!r.ok)throw Error(r.status);return r.json();}).then(data=>{catalog[key]=data;render();renderMap();if(key==='airports'){window.HVCalendar?.renderMonth();window.dispatchEvent(new Event('hv-airports-ready'));}}).catch(()=>{failures.add(key);render();});
   }

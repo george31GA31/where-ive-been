@@ -9,12 +9,13 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css?v=offline-20261006" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
-  <link rel="stylesheet" href="voyages.css?v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005" />
+  <link rel="stylesheet" href="voyages.css?v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005&transport=20261008" />
   <link rel="stylesheet" href="travel-tools.css?v=trackers-20261006&platform=herald-complete-20261005&tools=currency-road-20261005" />
   <link rel="stylesheet" href="currency-road-tools.css?v=currency-road-20261005&refinements=map-planner-20261006" />
   <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=map-city-20261004&refinements=map-planner-20261006" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
+<link rel="stylesheet" href="transport-dashboard.css?v=transport-20261008">
 </head>
 <body data-current-view="dashboard">
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -286,13 +287,15 @@
           </article>
         </div>
       </section>
+      <section id="transportView" class="view" aria-label="My transport"><div id="transportDashboard"></div></section>
+
       <section id="journeysView" class="view">
         <header class="journey-library-heading"><div><p class="eyebrow">YOUR JOURNEYS</p><h2>Journeys Map</h2><p>Your complete travel history and future plans, together. Focus an individual journey from the records below.</p></div><div class="journey-library-actions"><button type="button" class="primary" data-library-transport>Add transport</button><button type="button" class="secondary" data-library-stay>Add accommodation</button><button type="button" class="secondary" data-manage-places>Saved places</button></div></header>
         <div class="global-journey-filters">
           <div role="group" aria-label="Journey dates" class="calendar-layer-switch"><button type="button" data-journey-period="all">All</button><button type="button" data-journey-period="past">Past</button><button type="button" data-journey-period="upcoming">Upcoming</button></div>
           <div role="group" aria-label="Map layers" class="calendar-layer-switch"><button type="button" data-journey-layer="flights">Flights</button><button type="button" data-journey-layer="transport">Other transport</button><button type="button" data-journey-layer="accommodation">Accommodation</button><button type="button" data-journey-layer="locations">Locations</button></div>
           <label class="field"><span>Search records</span><input type="search" name="journeySearch" placeholder="Journey, airport or place"></label>
-          <button type="button" class="secondary" data-global-fit>Fit all visible</button>
+          <button type="button" class="secondary" data-global-fit>Fit all visible</button><button type="button" class="map-expand-button" data-journey-fullscreen aria-label="Enter full screen" title="Full screen" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M21 16v5h-5"/></svg><span class="sr-only">Full screen</span></button>
         </div>
         <div class="journey-date-filter" role="group" aria-label="Journey Map date range"><span data-journey-date-summary>All dates</span><label>From <input type="date" name="journey-from" aria-label="Journey Map from date"></label><label>To <input type="date" name="journey-to" aria-label="Journey Map to date"></label><button class="text-btn" type="button" data-journey-date-clear disabled>Clear</button><small data-journey-date-error role="alert"></small></div>
         <div id="globalJourneyMap" class="global-journey-map" role="region" aria-label="All journey routes, accommodation and locations"></div>
@@ -345,12 +348,12 @@
   <script defer src="vendor/supabase/supabase.min.js?v=2.57.4&performance=20261007&offline=20261006" onload="window.dispatchEvent(new Event('travel-libs-ready'))"></script>
   <script src="network.js?v=offline-20261006&performance=20261007&offline=20261006&cleanup=20261007"></script>
   <script src="account-config.js?v=rollback-20261001-1&performance=20261007&offline=20261006"></script>
-  <script src="account-model.js?trackers=20261006&v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005&refinements=map-planner-20261006&performance=20261007&offline=20261006"></script>
-  <script src="account-records.js?v=performance-20261007&cleanup=20261007"></script>
-  <script src="account-cache.js?v=performance-20261007&cleanup=20261007"></script>
+  <script src="account-model.js?trackers=20261006&v=rollback-20261001-1&platform=herald-complete-20261005&tools=currency-road-20261005&refinements=map-planner-20261006&performance=20261007&offline=20261006&transport=20261008"></script>
+  <script src="account-records.js?v=performance-20261007&cleanup=20261007&transport=20261008"></script>
+  <script src="account-cache.js?v=performance-20261007&cleanup=20261007&transport=20261008"></script>
   <script src="account-diagnostics.js?v=performance-20261007"></script>
   <script src="account-client.js?v=rollback-20261001-1&performance=20261007&offline=20261006&cleanup=20261007"></script>
   <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006&cleanup=20261007"></script>
-  <script src="app.js?trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007"></script>
+  <script src="app.js?trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008"></script>
 </body>
 </html>

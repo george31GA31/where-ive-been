@@ -173,6 +173,6 @@
   document.addEventListener('DOMContentLoaded',()=>{ensure();renderCurrent();});
   window.addEventListener('hv-data-changed',renderCurrent);
   window.addEventListener('hashchange',()=>queueMicrotask(renderCurrent));
-  window.addEventListener('hv-route',renderCurrent);
+  window.addEventListener('hv-route',()=>{if(!window.HVPages?.reusing)renderCurrent();});
   window.HVTravelTools={renderNotesTool,renderBudgetTool,openTrip(id,view='notes'){if(view==='budget')budgetTripId=id;else noteTripFilter=id;switchView(view);renderCurrent();}};
 })();

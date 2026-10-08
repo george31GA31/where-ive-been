@@ -404,6 +404,7 @@ function defaultState() {
     trips: [],
     stays: [],
     transports: [],
+    transportOperators: [],
     accommodations: [],
     notes: [],
     checklists: [],
@@ -453,6 +454,7 @@ function normalizeState(v) {
     'currencyPreferences',
     'manualCountryVisits',
     'tccVisits',
+    'transportOperators',
   ])
     v[k] = Array.isArray(v[k]) ? v[k] : [];
   v.savedPlaces = Array.isArray(v.savedPlaces) ? v.savedPlaces : [];
@@ -1124,7 +1126,7 @@ function handleDelegatedClick(e) {
   let day = e.target.closest('[data-calendar-date]');
   if (day) handleCalendarDateClick(day.dataset.calendarDate);
 }
-function switchView(v) {
+function switchView(v, { render = true } = {}) {
   document.querySelectorAll('.view').forEach((x) => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((x) => x.classList.remove('active'));
   $(`${v}View`).classList.add('active');
@@ -1142,17 +1144,17 @@ function switchView(v) {
     profiles: 'Profiles & data',
   };
   els.pageTitle.textContent = t[v] || 'Travel tracker';
-  if (v === 'map') renderMapTimeline();
-  if (v === 'schengen') renderSchengen();
+  if (render && v === 'map') renderMapTimeline();
+  if (render && v === 'schengen') renderSchengen();
   if (v === 'stayPlanner') populateProfileSelects();
-  if (v === 'rules') renderVisaChecker();
-  if (v === 'stays') renderStayLists();
-  if (v === 'profiles') renderProfiles();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (render && v === 'rules') renderVisaChecker();
+  if (render && v === 'stays') renderStayLists();
+  if (render && v === 'profiles') renderProfiles();
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 function renderAll() {
   const view = document.body.dataset.currentView || 'dashboard';
-  renderProfiles();
+  if (view === 'profiles' || view === 'homes') renderProfiles();
   if (view === 'dashboard') {
     renderDashboard();
     renderMiniCalendar();

@@ -22,7 +22,7 @@
     const left = keys(a), right = keys(b);
     return left.length === right.length && left.every(k => Object.hasOwn(b, k) && equal(a[k], b[k]));
   }
-  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
+  const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'transportOperators', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
   function compatibleNotes(data) {
     if (data.notes == null || Array.isArray(data.notes)) return data;
     const result=copy(data);result.legacyTravelNotes??=copy(result.notes);
@@ -90,7 +90,7 @@
       if (r.profileIds) r.profileIds.sort();
       return canonical(r);
     };
-    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'visaAcknowledgements']) {
+    for (const key of ['profiles', 'trips', 'stays', 'residences', 'transports', 'transportOperators', 'accommodations', 'placeVisits', 'savedPlaces', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'visaAcknowledgements']) {
       result[key] ||= [];
       // Index each existing record once. The old startup preview repeatedly
       // signed entire records, making logo/route comparisons quadratic.
@@ -145,7 +145,7 @@
   }
   function describeConflict(conflict,data={}) {
     const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
-    const labels={stays:'Stay',trips:'Trip',transports:'Transport',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',manualCountryVisits:'Manual country visit',tccVisits:'TCC destination',destinationId:'TCC destination',date:'Visit date',year:'Visit year',visitTiming:'Visit date or year',visited:'Visited',note:'Visit note',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
+    const labels={stays:'Stay',trips:'Trip',transports:'Transport',transportOperators:'Transport operator',operatorLogo:'Operator logo',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',manualCountryVisits:'Manual country visit',tccVisits:'TCC destination',destinationId:'TCC destination',date:'Visit date',year:'Visit year',visitTiming:'Visit date or year',visited:'Visited',note:'Visit note',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
     const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
     const display=value=>{
       if(value===undefined)return 'Deleted';if(value===null||value==='')return 'Not recorded';
@@ -176,6 +176,7 @@
           if(key==='tccVisits'&&!/^tcc-[a-z0-9-]+$/.test(row.destinationId||''))throw new Error('Check TCC destinations.');
           if(row.visited!=null&&typeof row.visited!=='boolean')throw new Error('Check visited status.');
         }
+        if(key==='transportOperators'&&(!['flight','train','boat','bus','car'].includes(row.mode)||typeof row.name!=='string'||!row.name.trim()||row.operatorLogo?.src!=null&&(typeof row.operatorLogo.src!=='string'||row.operatorLogo.src.length>100000||!/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(row.operatorLogo.src))))throw new Error('Check transport operator details.');
         if(key==='savedPlaces'&&(!row.place||typeof row.place.name!=='string'||!row.place.name.trim()))throw new Error('Check saved place details.');
         if(key==='transports'){
           const local=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v+'Z'))&&new Date(v+'Z').toISOString().slice(0,16)===v;

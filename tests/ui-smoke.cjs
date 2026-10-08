@@ -33,7 +33,7 @@ const tick=()=>new Promise(r=>setTimeout(r,30));const run=s=>vm.runInContext(s,c
  w.setTimelineDate('2026-01-02');assert.equal(w.document.querySelector('.transport-routes'),null);
  const pathEl=w.document.querySelector('.map-country');assert.ok(pathEl);pathEl.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));await tick();assert.equal(w.location.hash,'#/map');assert.equal(w.document.querySelector('#mapCountrySummary').hidden,false);assert.match(w.document.querySelector('#mapCountrySummary').textContent,/United Kingdom/);assert.equal(w.document.querySelector('#voyagesCountryDrawer'),null);
  w.location.hash='/stats';await tick();assert.ok(w.document.querySelector('#placeAchievements'));assert.match(w.document.querySelector('#placeAchievements').textContent,/251/);
- w.location.hash='/calendar';await tick();w.document.querySelector('[data-transport-edit]').click();w.document.querySelector('#transportDelete').click();assert.equal(run('state.transports.length'),0);assert.equal(run('state.stays.length'),1);assert.equal(JSON.parse(w.localStorage.getItem('whereIveBeen.data.v2')).placeVisits.length,1);
+ w.location.hash='/calendar';await tick();w.document.querySelector('[data-calendar-edit-transport]').click();w.document.querySelector('#transportDelete').click();assert.equal(run('state.transports.length'),0);assert.equal(run('state.stays.length'),1);assert.equal(JSON.parse(w.localStorage.getItem('whereIveBeen.data.v2')).placeVisits.length,1);
  w.location.hash='/map';await tick();
  const mapPath=w.document.querySelector('.map-country');mapPath.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
  assert.equal(w.location.hash,'#/map');assert.equal(w.document.querySelector('#mapCountrySummary').hidden,false);
@@ -43,7 +43,7 @@ const tick=()=>new Promise(r=>setTimeout(r,30));const run=s=>vm.runInContext(s,c
  run("state.profiles.push({id:'other',name:'Other traveller',citizenships:[],enabledRules:['schengen']});state.stays.push({id:'other-stay',profileId:'other',countryCode:'US',countryName:'United States',start:'2026-01-01',end:'2026-01-02',status:'actual'});renderAll()");
  const traveller=w.document.querySelector('#globalTraveller');traveller.value='other';traveller.dispatchEvent(new w.Event('change',{bubbles:true}));
  assert.equal(run('staysForProfile().length'),1);assert.equal(run('travelDaySet().size'),2);
- assert.equal(run('els.countriesLogged.textContent'),'1');
+ w.location.hash='/dashboard';await tick();assert.equal(run('els.countriesLogged.textContent'),'1');
  w.location.hash='/trips';await tick();assert.match(w.document.querySelector('#allStays').textContent,/United States/);assert.doesNotMatch(w.document.querySelector('#allStays').textContent,/United Kingdom/);
  const search=w.document.querySelector('#tripSearch');search.value='not a destination';search.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(w.document.querySelectorAll('.trip-group').length,0);search.value='';search.dispatchEvent(new w.Event('input',{bubbles:true}));
  run("state.trips=[{id:'group',profileId:'other',name:'<img src=x onerror=alert(1)>'}];state.stays.find(s=>s.id==='other-stay').tripId='group';renderStayLists()");
