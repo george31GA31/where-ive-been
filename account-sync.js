@@ -21,6 +21,7 @@
       onStatus,
       onReady,
       resolve,
+      yieldTask = () => new Promise(resolve => setTimeout(resolve, 0)),
       timeout = 25000,
     }) {
       Object.assign(this, {
@@ -32,6 +33,7 @@
         onStatus,
         onReady,
         resolve,
+        yieldTask,
         timeout,
       });
       this.epoch = 0;
@@ -312,18 +314,26 @@
       try{
         const drafts=(await this.drafts(id)).sort((a,b)=>Number(b.revision)-Number(a.revision));if(epoch!==this.epoch)return;
         if(drafts.length){
-          this.base=accountModel.copy(drafts[0].base);this.local=accountModel.copy(drafts[0].local);this.revision=Number(drafts[0].revision)||0;
+          this.base=accountModel.copy(drafts[0].base);
+          await this.yieldTask();if(epoch!==this.epoch)return;
+          this.local=accountModel.copy(drafts[0].local);this.revision=Number(drafts[0].revision)||0;
           for(const draft of drafts.slice(1)){this.local=await this.combine(draft.base,draft.local,this.local);if(epoch!==this.epoch)return;}
+          await this.yieldTask();if(epoch!==this.epoch)return;
           this.adopted=drafts;this.ready=true;this.provisional=true;this.onData(accountModel.copy(this.local));
           this.status('Showing saved account data. Checking for updates…','neutral');root.HVAccountDiagnostics?.record('Cached UI ready',{elapsed:Date.now()-started});
+          await this.yieldTask();if(epoch!==this.epoch)return;
         }
         const result=await remoteFlight;if(epoch!==this.epoch)return;if(result.error)throw result.error;const remote=result.value;operation='account hydration';
         if(this.ready&&!remote.exists&&Object.keys(this.base).length)throw Object.assign(new Error('The account copy is unavailable. Your saved device data is unchanged.'),{kind:'data'});
         const previous=this.local;
         if(this.ready&&accountModel.equal(this.base,remote.payload)&&accountModel.equal(previous,this.base)){this.local=previous;}else if(this.ready){const combined=await this.combine(this.base,previous,remote.payload);if(epoch!==this.epoch)return;this.local=await this.combine(previous,this.local,combined);}else this.local=accountModel.copy(remote.payload);
+        // Independent large copies must not occupy one uninterrupted browser task.
+        // A first load is still locked here; provisional editors are already live.
+        if(!previous){await this.yieldTask();if(epoch!==this.epoch)return;}
         if(epoch!==this.epoch)return;this.base=remote.payload;this.revision=remote.revision;if(!Object.keys(this.local).length)this.local=accountModel.copy(empty);
         this.ready=true;this.provisional=false;this.reconciling=false;
         if(!previous||!accountModel.equal(previous,this.local))this.onData(accountModel.copy(this.local));this.onReady?.();
+        await this.yieldTask();if(epoch!==this.epoch)return;
         const cached=await this.cache();if(epoch!==this.epoch)return;if(this.pending())await this.flush();else this.savedStatus(await this.clean(cached));
         root.HVAccountDiagnostics?.record('UI ready',{elapsed:Date.now()-started});
       }catch(error){

@@ -16,6 +16,13 @@ test('failed cached startup retains pending deletions and never reports a server
  const data=seed(),local=M.copy(data),storage=new Storage();local.stays=[];storage.setItem('whereIveBeen.outbox.v1.A.previous',JSON.stringify({base:data,local,revision:1}));const api=backend(data);api.from=()=>({select(){return this;},eq(){return this;},abortSignal(){return this;},async maybeSingle(){return{error:{status:503,message:'Unavailable'}};}});
  const messages=[],sync=engine(api,storage);sync.onStatus=message=>messages.push(message);await sync.start('A',data);assert.equal(sync.ready,true);assert.deepEqual(sync.local.stays,[]);assert.equal(sync.pending(),true);assert.equal(api.writes,0);assert.ok(!messages.includes('Saved to account'));sync.stop();
 });
+test('an identity change between large startup copies cannot hydrate or checkpoint the old account',async()=>{
+ for(const cached of [false,true]){
+  const data=seed(),storage=new Storage(),api=backend(data);const raw=JSON.stringify({base:data,local:data,revision:1});if(cached)storage.setItem('whereIveBeen.outbox.v1.A.previous',raw);
+  let release,reached;const paused=new Promise(resolve=>reached=resolve),shown=[],sync=engine(api,storage,value=>shown.push(value));sync.yieldTask=()=>new Promise(resolve=>{release=resolve;reached();});
+  const loading=sync.start('A',data);await paused;assert.equal(sync.ready,false);sync.stop();release();await loading;assert.deepEqual(shown,[]);assert.equal(sync.user,null);assert.equal(sync.local,undefined);assert.equal(api.writes,0);if(cached)assert.equal(storage.getItem('whereIveBeen.outbox.v1.A.previous'),raw);
+ }
+});
 test('malformed or other-owner recovery snapshots cannot substitute an empty account',async()=>{
  const data=seed(),storage=new Storage(),raw=JSON.stringify({base:'broken',local:'broken',revision:1});storage.setItem('whereIveBeen.outbox.v1.A.bad',raw);storage.setItem('whereIveBeen.outbox.v1.B.other',JSON.stringify({base:data,local:{...data,notes:[{id:'private'}]},revision:9}));const sync=engine(backend(data),storage);await sync.start('A',data);assert.deepEqual(sync.local,data);assert.equal(storage.getItem('whereIveBeen.outbox.v1.A.bad'),raw);sync.stop();
 });

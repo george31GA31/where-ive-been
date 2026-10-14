@@ -220,6 +220,9 @@ hydration and a normalization-only save. Past-plan promotion waits until the
 account is reconciled. The mutable editor state and acknowledged merge base remain
 independent copies; structural sharing only reuses unchanged subtrees inside the
 separately owned sync draft.
+Startup yields between independent large copies and after hydration so the browser
+can paint and process input. Every yield rechecks the account epoch; the first
+load stays locked until hydration, and provisional edits stay within reconciliation.
 
 `account-size.js` counts the exact UTF-8 size of PostgreSQL `jsonb::text`, including
 separator spaces and numeric expansion, against the existing 5,000,000-byte limit.
