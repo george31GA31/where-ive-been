@@ -8,7 +8,7 @@
   const manual=code=>V.manualRows(state,today()).find(r=>r.countryCode===code);
   // Follow Herald's existing visited-country model, without treating a saved
   // hotel or location as a duplicate country assertion that the Atlas lacks.
-  const proven=()=>HVJourney.summary({...state,manualCountryVisits:[]},today()).countries;
+  const proven=()=>HVJourney.summary(state,today()).recordedCountries;
   let tracker;
   function commit(kind,destination,visited,details={}) {
     const key=kind==='tcc'?'tccVisits':'manualCountryVisits',before=JSON.parse(JSON.stringify(state[key]||[]));
@@ -16,7 +16,7 @@
       if(kind==='tcc')V.setTcc(state,destination,visited,details,today());else V.setManual(state,destination,visited,details,today(),proven());
       if(persist()===false)throw new Error('This change could not be saved. Keep the page open and try again.');
     } catch(error) {state[key]=before;throw error;}
-    renderAll();updateMapColors();window.dispatchEvent(new CustomEvent('hv-visits-changed'));
+    if(kind!=='tcc'){renderAll();updateMapColors();}window.dispatchEvent(new CustomEvent('hv-visits-changed'));
   }
   function control(code) {
     const record=manual(code),real=proven().has(code)||HVJourney.homeCountryCodes(state,state.activeProfileId,today()).includes(code);
@@ -46,9 +46,10 @@
       if(state!==data||state.activeProfileId!==profileId){dialog.close();return;}
       const term=search.value.trim().toLocaleLowerCase(),previous=new Map([...list.querySelectorAll('details')].map(d=>[d.dataset.region,d.open]));
       const rows=tcc?V.scoped(state.tccVisits,state.activeProfileId).filter(r=>r.visited!==false):V.manualRows(state,today()),selected=new Set(rows.map(r=>tcc?r.destinationId:r.countryCode)),real=tcc?new Set():proven(),visited=tcc?selected:HVJourney.summary(state,today()).countries;
+      const recordsById=new Map(rows.map(row=>[tcc?row.destinationId:row.countryCode,row]));
       count.textContent=tcc?'TCC destinations visited: '+destinations.filter(d=>selected.has(d.id)).length+' / '+destinations.length:'Countries visited: '+[...visited].filter(WIBCountryCount.isCounted).length+' · your country definition';
       function row(id,name,region='') {
-        const record=rows.find(r=>(tcc?r.destinationId:r.countryCode)===id),checked=selected.has(id)||real.has(id)||!tcc&&visited.has(id),disabled=!tcc&&checked&&!record;
+        const record=recordsById.get(id),checked=selected.has(id)||real.has(id)||!tcc&&visited.has(id),disabled=!tcc&&checked&&!record;
         return `<div class="country-tracker-row"><label>${tcc?'':flagHtml(id,'flag-img flag-sm')}<span><strong>${E(name)}</strong><small>${region?E(region)+' · ':''}${disabled?'Travel history':record?.date?E(record.date):record?.year?'Approx. '+record.year:checked?'Visited · date not recorded':'Not yet visited'}</small></span><input type="checkbox" data-visit="${E(id)}" ${checked?'checked':''} ${disabled?'disabled':''} aria-label="Visited ${E(name)}"></label>${record?`<button type="button" class="text-btn" data-details="${E(id)}" aria-label="Visit details for ${E(name)}">Details</button>`:''}</div>`;
       }
       if(tcc) {

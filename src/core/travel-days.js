@@ -34,8 +34,8 @@ function residenceAppliesOnDate(countryCode, date, profileId = state.activeProfi
       (!r.end || r.end >= date),
   );
 }
-function travelDaySet(list = staysForProfile(state.activeProfileId)) {
-  return HVJourney.summary({ ...state, stays: list }, isoDate(new Date())).days;
+function travelDaySet(list = null) {
+  return HVJourney.summary(list ? { ...state, stays: list } : state, isoDate(new Date())).days;
 }
 function schengenDaySet(min = null, max = null, profileId = state.activeProfileId, extra = []) {
   let set = new Set();
@@ -172,4 +172,5 @@ function updatePassedPlannedTrips() {
     staysChanged = HVJourney.reviewPlanned(state.stays, today),
     transportChanged = HVJourney.reviewTransport(state.transports, today);
   if (staysChanged || transportChanged) persist(true);
+  return staysChanged || transportChanged;
 }

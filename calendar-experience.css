@@ -1950,3 +1950,7 @@ html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--h
 .journey-map-marker.marker-train { background:#685600; }
 .journey-map-marker.marker-walk { background:#535353; }
 .journey-map-marker.marker-other { background:#5C004C; }
+
+/* Dated notes occupy the existing day-status line without changing cell geometry. */
+.calendar-note-indicator{border:0;background:transparent;color:var(--hv-blue);padding:0 2px;font-size:12px;line-height:1;cursor:pointer;}
+.calendar-note-indicator:focus-visible{outline:2px solid var(--hv-gold);outline-offset:2px;}

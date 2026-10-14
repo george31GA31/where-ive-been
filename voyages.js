@@ -420,10 +420,12 @@
     const pages=new Map(qa('main > .view').map(el=>[el.id.replace(/View$/,''),el]));
     const host=q('.main');
     const elements = new Map(), rendered = new Map();
-    let revision = 0;
-    const stamp = view => [state, revision, state.activeProfileId, isoDate(new Date()),
-      view === 'calendar' ? calendarCursor.getTime() : '',
-      view === 'country' ? location.hash : ''];
+    let revision=0,forcedRevision=0;const contextRevisions=new Map();
+    const travel=['stays','trips','profiles','residences','transports','accommodations','placeVisits','manualCountryVisits','excludedCountryCodes','countryCountExcludedCodes','countryCountIncludedExtraCodes'];
+    const dependencies={dashboard:[...travel,'calendarNotes'],stats:travel,countries:travel,country:travel,calendar:['stays','trips','profiles','residences','transports','accommodations','placeVisits','calendarNotes','visualLayers'],map:[...travel,'visualLayers','savedPlaces','routeData','logoData'],journeys:['stays','trips','profiles','residences','transports','accommodations','placeVisits','savedPlaces','visualLayers','routeData','logoData'],transport:['transports','transportOperators','trips','profiles','residences','routeData','logoData'],notes:['notes','checklists','trips','profiles','transports','accommodations','stays','placeVisits'],budget:['budgets','expenses','trips','profiles','transports','accommodations','currencyRates'],tools:['profiles'],schengen:['stays','profiles','residences'],profiles:['profiles','residences'],homes:['profiles','residences']};
+    HVData.observe(state);
+    const featureRevision=view=>HVData.token(state,dependencies[view]||HVData.collections)+'|'+(contextRevisions.get(view)||0);
+    const stamp=view=>[state,forcedRevision,featureRevision(view),state.activeProfileId,isoDate(new Date()),view==='calendar'?calendarCursor.getTime():'',view==='country'?location.hash:''];
     const unchanged = view => {
       const old = rendered.get(view), next = stamp(view);
       return old && next.every((value, index) => value === old[index]);
@@ -431,14 +433,17 @@
     window.HVPages={
       get(id){const cached=elements.get(id);if(cached && [...pages.values()].some(page=>page===cached||page.contains(cached)))return cached;for(const page of pages.values()){if(page.id===id)return page;const found=page.querySelector(`[id="${CSS.escape(id)}"]`);if(found){elements.set(id,found);return found;}}return null;},
       get revision(){return revision;},
+      revisionFor:featureRevision,
+      invalidateViews(views){for(const view of views){contextRevisions.set(view,(contextRevisions.get(view)||0)+1);rendered.delete(view);}},
+      markRendered(view){rendered.set(view,stamp(view));},
       reusing:false,
-      invalidate(){revision++;rendered.clear();},
+      invalidate(changed){revision++;if(!changed){forcedRevision++;rendered.clear();}},
       mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.insertBefore(target,q('.herald-site-footer',host));target.classList.add('active');}
     };
     const save = window.persist;
-    window.persist = function(...args){window.HVPages.invalidate();return save.apply(this,args);};
+    window.persist = function(...args){const changed=HVData.observe(state,[...HVData.collections,'routeData','logoData']);window.HVPages.invalidate(changed);return save.apply(this,args);};
     const render = window.renderAll;
-    window.renderAll = function(...args){const result=render.apply(this,args);const view=document.body.dataset.currentView||'dashboard';if(['stats','countries'].includes(view))renderAtlas();rendered.set(view,stamp(view));return result;};
+    window.renderAll = function(...args){HVData.observe(state);const result=render.apply(this,args);const view=document.body.dataset.currentView||'dashboard';if(['stats','countries'].includes(view))renderAtlas();rendered.set(view,stamp(view));return result;};
     const previous=window.switchView;
     window.switchView=function(view,{replaceRoute=false}={}){
       const reuse=unchanged(view);window.HVPages.mount(view);previous(view,{render:false});
@@ -448,7 +453,7 @@
       try{window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));}
       finally{window.HVPages.reusing=false;}
     };
-    window.addEventListener('hv-airports-ready',()=>window.HVPages.invalidate());
+    window.addEventListener('hv-airports-ready',()=>window.HVPages.invalidateViews(['country','transport','places','journeys']));
     window.addEventListener('hv-data-changed',()=>{elements.clear();rendered.clear();});
     window.HVPages.mount(routeFromHash()||'dashboard');
   }
@@ -485,7 +490,7 @@
 
   function atlasRecords() {
     const today=isoDate(new Date());
-    return staysForProfile().filter(s=>s.start<=today&&s.status==='actual'&&(HVJourney.isTravelStay(state,s)));
+    return [...HVJourney.summary(state,today).byCountry.values()].flatMap(country=>country.records);
   }
   function atlasCoverage() {
     const universe=COUNTRIES.filter(c=>c.code!=='SEA'&&WIBCountryCount.isCounted(c.code));
@@ -498,15 +503,14 @@
     const {codes}=atlasCoverage();const term=$('atlasCountrySearch').value.trim().toLocaleLowerCase(),filter=$('atlasCountryFilter').value;
     const rows=COUNTRIES.filter(c=>c.code!=='SEA'&&c.name.toLocaleLowerCase().includes(term)&&($('atlasContinent').value==='all'||HVAtlas.region(c.code)===$('atlasContinent').value)).filter(c=>filter==='all'||filter==='visited'&&codes.has(c.code)||filter==='unvisited'&&!codes.has(c.code)||filter==='planned'&&staysForProfile().some(s=>s.countryCode===c.code&&s.status==='planned'));
     el.innerHTML=rows.length?rows.map(c=>{
-      const records=atlasRecords().filter(s=>s.countryCode===c.code).sort((a,b)=>a.start.localeCompare(b.start));
-      const days=new Set(records.flatMap(s=>datesForStay(s,null,isoDate(new Date()))));
+      const days=HVJourney.summary(state,isoDate(new Date())).byCountry.get(c.code)?.days||new Set();
       return `<a class="atlas-country country-link" href="#/country/${c.code}"><span class="atlas-country-name">${flagHtml(c.code)}<strong>${escapeHtml(c.name)}</strong></span><span>${codes.has(c.code)?days.size?`${HVJourneyUI.count(days.size,'logged day')} · Visited`:'Visited · '+(HVCountryVisits.manualRows(state,isoDate(new Date())).find(r=>r.countryCode===c.code)?.year||'dates not recorded'):'Not yet visited'}</span><span aria-hidden="true">↗</span></a>`;
     }).join(''):'<p class="empty-state">No countries match your filters.</p>';
   }
   function renderTravelMemory(todayDate) {
     const panel=$('travelMemoryPanel');if(!panel)return;
     const [currentYear,month,day]=todayDate.split('-').map(Number);
-    const memory=HVJourney.memories(state,todayDate);
+    const memory=HVData.memo(state,'travel-memories',['stays','profiles','residences','placeVisits','accommodations','transports','trips'],todayDate+'|'+state.activeProfileId,()=>HVJourney.memories(state,todayDate));
     const dateLabel=new Date(Date.UTC(currentYear,month-1,day)).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'});
     panel.innerHTML=`<div class="travel-memory-mark" aria-hidden="true">↶</div><div class="travel-memory-copy"><p class="eyebrow">ON THIS DATE</p><h2>Travel memories</h2>${memory.length?`<div class="travel-memory-list">${memory.map(({year,places})=>{const when=currentYear-year;return `<p>This day ${when} ${when===1?'year':'years'} ago, you were in <strong>${escapeHtml(new Intl.ListFormat('en-GB',{style:'long',type:'conjunction'}).format(places.map(p=>p.name)))}</strong>.</p><div class="travel-memory-places">${places.map(p=>`<span>${flagHtml(p.flagCode||p.code,'flag-img flag-sm')}${escapeHtml(p.name)}</span>`).join('')}</div>`;}).join('')}</div>`:`<p class="travel-memory-empty">No travel outside your home country is recorded for ${escapeHtml(dateLabel)} in previous years.</p>`}</div>`;
   }
@@ -522,13 +526,13 @@
     $('atlasOverview').innerHTML=featured
       ? `<section class="home-hero home-hero--trip"><div><p class="eyebrow">${featuredLabel}</p><h2>${escapeHtml(state.trips.find(t=>t.id===featured.tripId)?.name||countryByCode(featured.countryCode)?.name||featured.countryName)}</h2><p>${friendlyDate(featuredDates[0])} to ${friendlyDate(featuredDates.at(-1))}</p></div><div class="home-hero-actions"><a class="primary" href="#/trips">Open trip</a><a class="secondary" href="#/travel-tools/stay-planner">Plan another trip</a></div></section>`
       : `<section class="home-hero home-hero--empty"><div><p class="eyebrow">TRAVEL, MADE SIMPLE</p><h2>One calm place for every journey.</h2><p>Plan what is next, log where you have been, and let Herald keep the practical details together.</p></div><div class="home-hero-actions"><button type="button" class="primary" data-plan-trip>Plan a trip</button><button type="button" class="secondary" data-add-first-trip data-trip-intent="actual">Log a past trip</button></div></section>`;
-    renderTravelMemory(todayDate);
+    if(view==='dashboard'){renderTravelMemory(todayDate);window.HVDailyAgenda?.render(todayDate);}
     $('dashboardGaps').closest('.panel').hidden=!(staysForProfile().length||(state.transports||[]).length);
     const summary=HVJourney.summary(state,todayDate);
     if($('recordedTripCount'))$('recordedTripCount').textContent=summary.trips.size;
     $('schengenRemaining').closest('.stat-card').hidden=isSchengenExemptProfile()||!staysForProfile().some(s=>countsForPlanning(s)&&SCHENGEN.has(s.countryCode));
     if(view==='dashboard')return;
-    const counts=new Map();records.forEach(s=>{if(!counts.has(s.countryCode))counts.set(s.countryCode,{days:new Set(),trips:0});const c=counts.get(s.countryCode);datesForStay(s,null,today).filter(d=>HVJourney.isTravelStay(state,s,d)).forEach(d=>c.days.add(d));c.trips++;});
+    const counts=summary.byCountry;
     const sorted=[...counts].sort((a,b)=>b[1].days.size-a[1].days.size);const max=sorted[0]?.[1].days.size||1;
     $('atlasStatistics').innerHTML=`<div class="atlas-stats-heading"><p class="eyebrow">YOUR TRAVEL AT A GLANCE</p><h2>${visited.length?`${visited.length} ${visited.length===1?'country':'countries'} explored`:'Your story starts with one trip'}</h2><p>${visited.length?`${percent}% of your selected country definition · ${HVJourneyUI.count(summary.trips.size,'recorded trip')} · `:''}${escapeHtml(activeProfile().name)} · your recorded travel</p></div>${window.HVTravelStats?.cards(state,todayDate)||''}<article class="panel"><div class="panel-head"><h2>Travel days by country</h2><span>Excludes home days · overlapping dates counted once per country</span></div>${sorted.length?sorted.map(([code,c])=>`<div class="atlas-rank"><strong>${escapeHtml(countryByCode(code)?.name||code)}</strong><div><span style="width:${c.days.size/max*100}%"></span></div><span>${HVJourneyUI.count(c.days.size,'day')} · ${HVJourneyUI.count(c.trips,'stay')}</span></div>`).join(''):'<p class="empty-state">Your travel statistics will appear after you add your first trip.</p>'}</article>`;
     const frequency=HVJourney.travelFrequency(state,todayDate),frequencyPanel=document.createElement('article');frequencyPanel.className='panel';

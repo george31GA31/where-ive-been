@@ -4,7 +4,7 @@
   const $=id=>document.getElementById(id)||window.HVPages?.get(id);
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let query='',mapSurface,timer,range={from:'',to:''},lastStamp,fullScreen=false,previousFocus,background=[];
-  const stamp=()=>[state,window.HVPages?.revision,state.activeProfileId,isoDate(new Date()),query,JSON.stringify(range),JSON.stringify(HVGlobalJourney.preferences(state))];
+  const stamp=()=>[state,window.HVPages?.revisionFor?.('journeys'),state.activeProfileId,isoDate(new Date()),query,JSON.stringify(range),JSON.stringify(HVGlobalJourney.preferences(state))];
   function render(preserveMap=false){
     if(lastStamp&&lastStamp[0]!==state){mapSurface?.remove();mapSurface=null;lastStamp=null;}
     if(document.body.dataset.currentView!=='journeys')return;

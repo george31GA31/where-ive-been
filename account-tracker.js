@@ -10,7 +10,7 @@
     authSubscription,
     retryFlight,
     previewWorker,
-    previewId = 0;
+    previewId = 0,guestUndurable=false;
   let preservedRows = {};
   // The mutable display copy contains normalization defaults. Keep its baseline
   // beside the original hydration payload so unchanged defaults are never edits.
@@ -21,6 +21,7 @@
     tabId = crypto.randomUUID();
     sessionStorage.setItem('whereIveBeen.tab.v1', tabId);
   }
+  window.HVAccountState={get userId(){return userId;},get ready(){return !!engine?.ready;},get loading(){return !!engine?.loading;},get undurable(){return guestUndurable;},async ensureDurable(){return !userId||!engine?.pending()||await engine.cache();}};
   const originalPersist = persist;
   function empty() {
     const d = defaultState();
@@ -60,7 +61,7 @@
           0,
         ),
       });
-    if (userId && engine?.ready) updatePassedPlannedTrips();
+    if (userId && engine?.ready && !engine.provisional) updatePassedPlannedTrips();
     const selections = new Map(['stayProfile', 'plannerProfile'].map((id) => [id, $(id)?.value]));
     populateProfileSelects();
     for (const [id, value] of selections)
@@ -83,20 +84,20 @@
       }
     } else if (!localStorage.getItem(OWNER_KEY)) {
       try {
-        originalPersist(true);
+        originalPersist(true);guestUndurable=false;
         status('Saved on this device — sign in to sync', 'neutral');
         return true;
       } catch {
-        status('Could not save on this device. Keep this page open.', 'bad');
+        guestUndurable=true;status('Could not save on this device. Keep this page open.', 'bad');
         return false;
       }
     } else {
       try {
-        localStorage.setItem('whereIveBeen.guest.v1', JSON.stringify(state));
+        localStorage.setItem('whereIveBeen.guest.v1', JSON.stringify(state));guestUndurable=false;
         status('Saved on this device — sign in to sync', 'neutral');
         return true;
       } catch {
-        status('Could not save on this device. Keep this page open.', 'bad');
+        guestUndurable=true;status('Could not save on this device. Keep this page open.', 'bad');
         return false;
       }
     }
@@ -361,6 +362,7 @@
         tabId,
         onData: apply,
         onStatus: status,
+        onReady:()=>{if(updatePassedPlannedTrips())renderAll();},
         resolve: WIBResolveConflicts,
       });
       authSubscription ||= client.auth.onAuthStateChange((event, session) => {
@@ -382,6 +384,7 @@
         await changed(cachedBefore);
         return;
       }
+      if(cachedBefore)changed(cachedBefore).catch(error=>engine?.diagnostic('cached session restore',error));
       let restored;
       try {
         restored = await WIBAuth.restoreSession();
@@ -419,6 +422,7 @@
     // Manual Retry and browser reconnection share this promise and existing SDK
     // session verification. No extra authentication listener is registered here.
     if (retryFlight) return retryFlight;
+    if(!userId&&!WIBAuth.cachedSession()){const saved=persist();if(saved!==false)renderAll();return Promise.resolve(saved);}
     const buttons = [$('retrySaveBtn'), $('retryAccountLoadBtn')].filter(Boolean),
       labels = buttons.map((button) => button.textContent);
     buttons.forEach((button) => {
@@ -512,7 +516,7 @@
       if (!document.hidden && engine?.ready) engine.flush({ scheduled: true });
     }, 30000);
     window.addEventListener('beforeunload', (e) => {
-      if (engine?.pending()) {
+      if (guestUndurable||engine?.pending()) {
         e.preventDefault();
         e.returnValue = '';
       }

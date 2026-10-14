@@ -10,7 +10,7 @@
   let mode='flight',search='',year='',operator='',country='',page=0,selected='',source,sourceStamp,all=[],surface,mapStamp,detail,minuteTimer,lastRender;
   try{mode=D.mode(sessionStorage.getItem('herald.transport.mode.v1'))||'flight';}catch{}
   function records() {
-    const stamp=[state,window.HVPages?.revision,state.activeProfileId];
+    const stamp=[state,window.HVPages?.revisionFor?.('transport'),state.activeProfileId];
     if(!sourceStamp||!stamp.every((value,i)=>value===sourceStamp[i])) {
       source=state;sourceStamp=stamp;
       all=D.rows(state).map(row=>{
@@ -56,7 +56,7 @@
     get('pageTitle').textContent=D.modes[mode].title;
     document.title=D.modes[mode].title+' — Herald Voyages';
     clearTimeout(minuteTimer);minuteTimer=setTimeout(()=>{if(document.body.dataset.currentView==='transport')render();},60000);
-    const renderStamp=[state,window.HVPages?.revision,state.activeProfileId,mode,currentPeriod(),search,year,operator,country,page,Math.floor(Date.now()/60000)];
+    const renderStamp=[state,window.HVPages?.revisionFor?.('transport'),state.activeProfileId,mode,currentPeriod(),search,year,operator,country,page,Math.floor(Date.now()/60000)];
     if(surface&&lastRender&&renderStamp.every((value,index)=>value===lastRender[index])){surface.resize();return;}
     const rows=D.filter(records(),{mode,period:currentPeriod(),search,year,operator,country});
     page=Math.min(page,Math.max(0,Math.ceil(rows.length/pageSize)-1));
@@ -78,7 +78,7 @@
     const pagination=host.querySelector('[data-transport-pagination]');pagination.hidden=rows.length<=pageSize;
     pagination.querySelector('span').textContent=`${page*pageSize+1}–${Math.min((page+1)*pageSize,rows.length)} of ${rows.length}`;
     pagination.querySelector('[data-transport-page="-1"]').disabled=page===0;pagination.querySelector('[data-transport-page="1"]').disabled=(page+1)*pageSize>=rows.length;
-    const nextStamp=[state,window.HVPages?.revision,state.activeProfileId,visible.map(row=>row.key).join('|')];
+    const nextStamp=[state,window.HVPages?.revisionFor?.('transport'),state.activeProfileId,visible.map(row=>row.key).join('|')];
     if(!surface||!mapStamp||!nextStamp.every((value,i)=>value===mapStamp[i])) {
       surface?.remove();
       surface=HVJourneyMap.mountGlobal(host.querySelector('[data-transport-map]'),mapRows(visible),D.dayAt(Date.now()),host.querySelector('[data-transport-map-status]'),{viewer:true,onSelect:row=>{selected=row.type==='flight'?row.key:`transport:${row.record.id}:0`;highlight();}});

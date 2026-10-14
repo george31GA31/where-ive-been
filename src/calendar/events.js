@@ -165,6 +165,10 @@ function captureCalendarAction(event) {
     selectDate(date.dataset.calendarDateSelect);
     return;
   }
+  const noteDate=target.closest('[data-calendar-notes-date]');
+  if(noteDate){event.preventDefault();event.stopPropagation();selectedDate=noteDate.dataset.calendarNotesDate;calendarSelectionStart=selectedDate;calendarSelectionEnd=null;selectedJourneyKey='';dateAction='';renderMonth();return;}
+  const noteAction=target.closest('[data-calendar-date-action="note"]');
+  if(noteAction){event.preventDefault();event.stopPropagation();window.HVTravelTools?.openNote(null,{date:calendarSelectionStart||selectedDate,tripId:null});return;}
   const action = target.closest('[data-calendar-date-action]');
   if (action) {
     event.preventDefault();
@@ -315,6 +319,7 @@ function boot() {
   );
   $('addStayBtn').onclick = () => openTripPlanner({ source: 'manual' });
   $('addStayFromListBtn').onclick = () => openTripPlanner({ source: 'manual' });
+  window.addEventListener('hv-airports-ready',()=>{journeyCache=undefined;});
   document.addEventListener('click', captureCalendarAction, true);
   document.addEventListener('submit', saveDateEntry, true);
   document.addEventListener('click', (event) => {

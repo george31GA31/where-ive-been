@@ -68,5 +68,6 @@ document.write([
   '<script src="travel-stats.js?v=trackers-20261006"><\/script>',
   '<script src="trip-experience.js?v=journey-editors-20261004&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006"><\/script>',
   '<script src="journey-library.js?v=journey-editors-20261004&previous=refinements-20260929&release=master-complete-20261002&performance=20261007&offline=20261006&transport=20261008"><\/script>',
+  '<script src="daily-agenda.js?v=daily-plans-20261014"><\/script>',
   '<script src="transport-dashboard.js?v=transport-20261008"><\/script>',
 ].join(''));

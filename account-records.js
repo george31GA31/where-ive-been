@@ -106,55 +106,29 @@
   }
   // Display normalization may add empty/default fields. Apply only differences
   // from the displayed baseline to the original account, never those defaults.
-  function changes(original, before, after) {
-    if (M.equal(before, after)) return original;
-    if (Array.isArray(before) && Array.isArray(after) && Array.isArray(original)) {
-      const index = (rows) => {
-        const seen = new Set();
-        return new Map(
-          rows.map((row, i) => {
-            const id = row?.id,
-              unique = typeof id === 'string' && !seen.has(id);
-            seen.add(id);
-            return [unique ? id : '\u0000legacy:' + i, row];
-          }),
-        );
-      };
-      const records = (rows) =>
-        rows.every((row) => row == null || (typeof row === 'object' && !Array.isArray(row)));
-      if (records(before) && records(after)) {
-        const raw = index(original),
-          previous = index(before),
-          current = index(after);
-        return [...current].map(([key, row]) => changes(raw.get(key), previous.get(key), row));
-      }
-      return after;
+  function changes(original,before,after){
+    if(original&&typeof original==='object'&&!Array.isArray(original)&&original.notes!=null&&!Array.isArray(original.notes)&&Array.isArray(before?.notes)&&Array.isArray(after?.notes)&&!M.equal(before.notes,after.notes)){
+      let key='legacyTravelNotes';while(Object.hasOwn(original,key)&&!M.equal(original[key],original.notes))key+='Recovery';original={...original,[key]:M.copy(original.notes)};
     }
-    if (
-      before &&
-      after &&
-      typeof before === 'object' &&
-      typeof after === 'object' &&
-      !Array.isArray(before) &&
-      !Array.isArray(after)
-    ) {
-      const result = {
-        ...(original && typeof original === 'object' && !Array.isArray(original) ? original : {}),
-      };
-      for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
-        if (M.equal(before[key], after[key])) continue;
-        if (!Object.hasOwn(after, key)) delete result[key];
-        else
-          Object.defineProperty(result, key, {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: changes(original?.[key], before[key], after[key]),
-          });
+    if(before===after)return original;
+    if(Array.isArray(before)&&Array.isArray(after)&&Array.isArray(original)){
+      const records=rows=>rows.every(row=>row==null||typeof row==='object'&&!Array.isArray(row));
+      if(records(before)&&records(after)){
+        const index=rows=>{const seen=new Set();return new Map(rows.map((row,i)=>{const id=row?.id,unique=typeof id==='string'&&!seen.has(id);seen.add(id);return[unique?id:'\u0000legacy:'+i,row];}));};
+        const raw=index(original),previous=index(before),current=index(after),result=[...current].map(([key,row])=>changes(raw.get(key),previous.get(key),row));
+        return result.length===original.length&&result.every((row,i)=>row===original[i])?original:result;
+      }
+      return M.equal(before,after)?original:after;
+    }
+    if(before&&after&&typeof before==='object'&&typeof after==='object'&&!Array.isArray(before)&&!Array.isArray(after)){
+      let result=original;const writable=()=>{if(result===original)result={...(original&&typeof original==='object'&&!Array.isArray(original)?original:{})};};
+      for(const key of new Set([...Object.keys(before),...Object.keys(after)])){
+        if(!Object.hasOwn(after,key)){if(Object.hasOwn(before,key)){writable();delete result[key];}continue;}
+        const value=changes(original?.[key],before[key],after[key]);if(value===original?.[key])continue;writable();Object.defineProperty(result,key,{enumerable:true,configurable:true,writable:true,value});
       }
       return result;
     }
-    return after;
+    return M.equal(before,after)?original:after;
   }
   const api = { project, restore, changes };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

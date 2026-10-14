@@ -85,37 +85,8 @@ function createGroup(groups, key, trip = null) {
 }
 
 function buildJourneys() {
-  const lists = [
-    state.trips,
-    state.stays,
-    state.accommodations,
-    state.transports,
-    state.profiles,
-    state.residences,
-  ];
-  const omitted = new Set([
-    'notes',
-    'body',
-    'resolvedRoutes',
-    'geometry',
-    'coordinates',
-    'polyline',
-    'src',
-    'artwork',
-    'logoDraft',
-  ]);
-  const stamp = JSON.stringify([state.activeProfileId, today(), lists], (key, value) =>
-    omitted.has(key) ? undefined : value,
-  );
-  if (
-    journeyCache?.stamp === stamp &&
-    lists.every(
-      (rows, i) =>
-        (rows || []).length === journeyCache.rows[i].length &&
-        (rows || []).every((row, j) => row === journeyCache.rows[i][j]),
-    )
-  )
-    return journeyCache.groups;
+  const stamp=HVData.token(state,['trips','stays','accommodations','transports','profiles','residences'],state.activeProfileId+'|'+today());
+  if(journeyCache?.state===state&&journeyCache.stamp===stamp)return journeyCache.groups;
   const groups = new Map();
   const trips = scoped(state.trips || []);
   const knownTrips = new Map(trips.map((trip) => [trip.id, trip]));
@@ -127,25 +98,11 @@ function buildJourneys() {
     createGroup(groups, key, knownTrips.get(stay.tripId) || null).stays.push(stay);
   }
 
+  const stayIndex=new HVData.Intervals(scoped(state.stays||[])),linkedAccommodation=new Map((state.stays||[]).filter(s=>s.source==='accommodation').map(s=>[s.sourceAccommodationId,s]));
+  const stayOwners=new Map();for(const group of groups.values())for(const stay of group.stays)stayOwners.set(stay.id,group);
   for (const accommodation of scoped(state.accommodations || [])) {
-    const candidates = !accommodation.tripId
-      ? [...groups.values()].filter(
-          (g) =>
-            !g.trip?.excludedRecordIds?.accommodations?.includes(accommodation.id) &&
-            g.stays.some(
-              (stay) =>
-                stay.status !== 'cancelled' &&
-                stay.start <= accommodation.checkIn &&
-                stay.end >= accommodation.checkOut &&
-                HVJourney.isTravelStay(state, stay) &&
-                HVJourney.isTravelStay(state, stay, accommodation.checkIn) &&
-                HVJourney.isTravelStay(state, stay, accommodation.checkOut),
-            ),
-        )
-      : [];
-    const linkedStay = state.stays.find(
-      (s) => s.source === 'accommodation' && s.sourceAccommodationId === accommodation.id,
-    );
+    const candidates=!accommodation.tripId?[...new Set(stayIndex.containing(accommodation.checkIn,accommodation.checkOut).filter(stay=>stay.status!=='cancelled'&&HVJourney.isTravelStay(state,stay)&&HVJourney.isTravelStay(state,stay,accommodation.checkIn)&&HVJourney.isTravelStay(state,stay,accommodation.checkOut)).map(stay=>stayOwners.get(stay.id)))].filter(group=>!group.trip?.excludedRecordIds?.accommodations?.includes(accommodation.id)):[];
+    const linkedStay=linkedAccommodation.get(accommodation.id);
     const key = accommodation.tripId
       ? tripKey(accommodation.tripId)
       : linkedStay
@@ -158,37 +115,12 @@ function buildJourneys() {
     );
   }
 
-  const findInferredGroup = (transport) => {
-    const transportDates = [localDate(transport.startLocal), localDate(transport.endLocal)].filter(
-      Boolean,
-    );
-    const candidates = [...groups.values()]
-      .filter(
-        (group) =>
-          group.trip &&
-          !group.trip.excludedRecordIds?.transports?.includes(transport.id) &&
-          group.stays.length &&
-          (!transport.profileId ||
-            !group.trip.profileId ||
-            transport.profileId === group.trip.profileId ||
-            group.trip.profileIds?.includes(transport.profileId)),
-      )
-      .map((group) => {
-        const start = group.stays.map((stay) => stay.start).sort()[0];
-        const end = group.stays
-          .map((stay) => stay.end)
-          .sort()
-          .at(-1);
-        return {
-          group,
-          score: Math.min(...transportDates.map((date) => distanceToRange(date, start, end))),
-        };
-      })
-      .filter((candidate) => candidate.score <= 1)
-      .sort((a, b) => a.score - b.score);
-    if (!candidates.length) return null;
-    if (candidates.length > 1 && candidates[0].score === candidates[1].score) return null;
-    return candidates[0].group;
+  const ranges=new HVData.Intervals([...groups.values()].filter(g=>g.trip&&g.stays.length).map(group=>({group,start:group.stays.map(s=>s.start).sort()[0],end:group.stays.map(s=>s.end).sort().at(-1)})));
+  const findInferredGroup=transport=>{
+    const dates=[localDate(transport.startLocal),localDate(transport.endLocal)].filter(Boolean),nearby=new Set();
+    for(const date of dates)for(const range of ranges.overlap(HVCalendarData.next(date,-1),HVCalendarData.next(date)))nearby.add(range);
+    const candidates=[...nearby].filter(({group})=>!group.trip.excludedRecordIds?.transports?.includes(transport.id)&&(!transport.profileId||!group.trip.profileId||transport.profileId===group.trip.profileId||group.trip.profileIds?.includes(transport.profileId))).map(({group,start,end})=>({group,score:Math.min(...dates.map(date=>distanceToRange(date,start,end)))})).filter(row=>row.score<=1).sort((a,b)=>a.score-b.score);
+    if(!candidates.length||candidates.length>1&&candidates[0].score===candidates[1].score)return null;return candidates[0].group;
   };
 
   for (const transport of scoped(state.transports || [])) {
@@ -254,32 +186,18 @@ function buildJourneys() {
       return group;
     })
     .sort((a, b) => (a.start || '9999-12-31').localeCompare(b.start || '9999-12-31'));
-  journeyCache = { stamp, rows: lists.map((rows) => [...(rows || [])]), groups: result };
+  const memberships={stays:new Map(),transports:new Map(),accommodations:new Map()};const order=new Map();
+  result.forEach((group,index)=>{order.set(group,index);for(const key of Object.keys(memberships))for(const row of group[key])memberships[key].set(row.id,group);});
+  journeyCache={state,stamp,groups:result,memberships,order};
   return result;
 }
 
-function groupsForDate(date, groups, layers) {
-  return groups.filter((group) => {
-    const country =
-      layers.countries &&
-      group.stays.some(
-        (stay) =>
-          stay.status !== 'cancelled' &&
-          stay.start <= date &&
-          stay.end >= date &&
-          HVJourney.isTravelStay(state, stay, date),
-      );
-    const transport =
-      layers.transport &&
-      group.transports.some(
-        (record) =>
-          record.status !== 'cancelled' && HVJourney.transportDates(record).includes(date),
-      );
-    const accommodation =
-      layers.accommodation &&
-      group.accommodations.some((record) => record.checkIn <= date && record.checkOut >= date);
-    return country || transport || accommodation;
-  });
+function groupsForDate(date,groups,layers,day=HVCalendarData.window(state,date,1).get(date)){
+  const selected=new Set();for(const key of ['stays','transports','accommodations']){
+    if(!(key==='stays'?layers.countries:key==='transports'?layers.transport:layers.accommodation))continue;
+    for(const row of day[key]){const group=journeyCache.memberships[key].get(row.id);if(group)selected.add(group);}
+  }
+  return [...selected].sort((a,b)=>journeyCache.order.get(a)-journeyCache.order.get(b));
 }
 
 function homesForDate(date) {

@@ -65,7 +65,11 @@
           <div class="atlas-masthead-copy"><p class="eyebrow">YOUR PERSONAL ATLAS</p><h2>Where you’ve been.<br><em>Where you’re going.</em></h2><a href="#/trips" class="atlas-text-link">Explore your journeys <span aria-hidden="true">↗</span></a></div>
           <div class="atlas-masthead-art"><img src="assets/herald-logo-dark.png" alt="Herald trumpet travel mark" width="1672" height="941"><span>HERALD VOYAGES</span></div>
         </div>
-        <article id="travelMemoryPanel" class="panel travel-memory-panel" aria-live="polite"></article>
+        <div class="daily-dashboard-row">
+          <article id="travelMemoryPanel" class="panel travel-memory-panel" aria-live="polite"></article>
+          <article id="todayAgenda" class="panel daily-agenda-panel" aria-label="Today"></article>
+          <article id="tomorrowAgenda" class="panel daily-agenda-panel" aria-label="Tomorrow"></article>
+        </div>
         <div class="stats-grid">
           <article class="stat-card"><span class="stat-label">Countries visited</span><strong id="countriesLogged">0</strong><small>Completed visits through today</small><button type="button" id="editCountryCountBtn" class="country-count-edit-btn" aria-label="Choose which places count as countries">Edit</button></article>
           <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique days away from recorded homes</small></article>
@@ -353,6 +357,7 @@
   <script src="account-cache.js?v=performance-20261007&cleanup=20261007&transport=20261008"></script>
   <script src="account-diagnostics.js?v=performance-20261007"></script>
   <script src="account-client.js?v=rollback-20261001-1&performance=20261007&offline=20261006&cleanup=20261007"></script>
+  <script src="account-size.js?v=save-parity-20261014"></script>
   <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006&cleanup=20261007"></script>
   <script src="app.js?trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008"></script>
 </body>
