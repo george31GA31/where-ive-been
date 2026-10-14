@@ -331,7 +331,9 @@ async function capture(pair, label, prepare) {
         page.on('pageerror', (error) => errors.push(error.message));
         // Hold Date constant while leaving timers/animation frames free to settle.
         // Route persistence timestamps must not depend on machine speed.
-        await page.clock.setFixedTime(new Date('2026-09-21T12:00:00Z'));
+        // Completed history isolates visual parity from the intentional elapsed-day fix.
+        // Ongoing/future travel has separate model and browser correctness coverage.
+        await page.clock.setFixedTime(new Date('2026-10-02T12:00:00Z'));
         await page.route('**/*', (route) => {
           const url = route.request().url();
           if (url.startsWith(origin)) return route.continue();
