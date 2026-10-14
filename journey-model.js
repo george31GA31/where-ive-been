@@ -2,23 +2,47 @@
 (function(root) {
   'use strict';
   const A=typeof module!=='undefined'&&module.exports?require('./address-display.js'):null;
+  const D=typeof module!=='undefined'&&module.exports?require('./view-data.js'):root.HVData;
   const V=typeof module!=='undefined'&&module.exports?require('./country-visit-model.js'):null;
   const roman=value=>(A||root.HVAddress)?.text(value)||value;
   const categories = {buildings:'Tallest buildings', mountains:'Highest natural points', unesco:'UNESCO sites', airports:'Airports'};
   const types = {flight:'Flight',train:'Train',bus:'Bus / coach',boat:'Boat / ferry',car:'Car / taxi',walk:'Walking',other:'Other'};
-  const scoped = (rows,profileId) => (rows || []).filter(r => profileId === 'all' || !r.profileId || r.profileId === profileId || r.profileIds?.includes(profileId));
-  const visibleTransport = (state,profileId=state.activeProfileId) => scoped(state.transports,profileId).filter(t => t.status !== 'cancelled' && !(state.trips||[]).some(trip=>trip.id===t.tripId&&trip.status==='cancelled'));
-  const summary = (state,today,profileId=state.activeProfileId) => {
-    const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=today),countries=new Set(),days=new Set(),home=new Set(),trips=new Set();
-    for(const stay of stays){for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){const date=new Date(ms).toISOString().slice(0,10);const owner=stay.profileId||profileId;const atHome=!isTravelStay(state,stay,date,owner);(atHome?home:days).add(date);if(!atHome){if(!homeCountryCodes(state,owner,today).includes(stay.countryCode))countries.add(stay.countryCode);trips.add(stay.tripId||'stay:'+stay.id);}}}
-    for(const p of (profileId==='all'?state.profiles:[{id:profileId}]))homeCountryCodes(state,p.id,today).forEach(c=>countries.add(c));
-    for(const code of (V||root.HVCountryVisits)?.manualCodes(state,today,profileId)||[]) countries.add(code);
-    countries.delete('SEA');for(const date of days)home.delete(date);
-    return {stays,countries,days,home,trips};
-  };
-  function isHome(state,code,date,profileId=state.activeProfileId) {
-    if(code==='SEA') return false;
-    return (state.profiles.find(p=>p.id===profileId)?.homeCountryCodes || []).includes(code) || scoped(state.residences,profileId).some(r=>r.countryCode===code&&r.start<=date&&(!r.end||r.end>=date));
+  const scoped = (rows,profileId) => (rows || []).filter(r => profileId === 'all' || !r.profileId || r.profileId === profileId || (Array.isArray(r.profileIds)&&r.profileIds.includes(profileId)));
+  const contextKeys=['trips','profiles','residences','stays','accommodations','transports'];
+  function homeContext(state,profileId=state.activeProfileId){
+    return D.memo(state,'home-context',contextKeys,profileId,()=>{
+      const trips=new Map((state.trips||[]).map(t=>[t.id,t])),profiles=new Map((state.profiles||[]).map(p=>[p.id,p]));
+      const linked=new Map();for(const stay of state.stays||[])if(stay.source==='accommodation'){if(!linked.has(stay.sourceAccommodationId))linked.set(stay.sourceAccommodationId,new Set());linked.get(stay.sourceAccommodationId).add(stay.id);}
+      const evidence=[...scoped(state.accommodations,profileId),...scoped(state.transports,profileId)].filter(r=>r.status!=='cancelled'&&r.travelKind!=='home'&&trips.get(r.tripId)?.status!=='cancelled');
+      return {trips,profiles,linked,cancelled:new Set([...trips.values()].filter(t=>t.status==='cancelled').map(t=>t.id)),residences:new D.Intervals(scoped(state.residences,profileId),r=>r.start,r=>r.end||'9999-12-31'),stays:new D.Intervals(scoped(state.stays,profileId)),evidence:new D.Intervals(evidence,r=>r.checkIn||r.startLocal?.slice(0,10),r=>r.checkOut||r.endLocal?.slice(0,10)||r.startLocal?.slice(0,10))};
+    });
+  }
+  const visibleTransport=(state,profileId=state.activeProfileId)=>D.memo(state,'visible-transports',['trips','transports'],profileId,()=>{const cancelled=new Set((state.trips||[]).filter(t=>t.status==='cancelled').map(t=>t.id));return scoped(state.transports,profileId).filter(t=>t.status!=='cancelled'&&!cancelled.has(t.tripId));});
+  function isElapsedStay(state,stay,today){return countsForPlanning(stay)&&validDate(stay.start)&&validDate(stay.end)&&stay.start<=today&&!homeContext(state,stay.profileId||state.activeProfileId).cancelled.has(stay.tripId);}
+  const summary=(state,today,profileId=state.activeProfileId)=>D.memo(state,'travel-summary',[...contextKeys,'manualCountryVisits'],today+'|'+profileId,()=>{
+    const stays=scoped(state.stays,profileId).filter(s=>isElapsedStay(state,s,today)),countries=new Set(),days=new Set(),home=new Set(),trips=new Set(),byCountry=new Map();
+    for(const stay of stays){
+      const owner=stay.profileId||profileId;let contributes=false;
+      for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){
+        const date=new Date(ms).toISOString().slice(0,10),atHome=!isTravelStay(state,stay,date,owner);(atHome?home:days).add(date);
+        if(!atHome){trips.add(stay.tripId||'stay:'+stay.id);if(!homeCountryCodes(state,owner,today).includes(stay.countryCode))countries.add(stay.countryCode);
+          if(stay.countryCode!=='SEA'){
+            contributes=true;if(!byCountry.has(stay.countryCode))byCountry.set(stay.countryCode,{days:new Set(),trips:0,records:[],owners:new Map()});const country=byCountry.get(stay.countryCode);country.days.add(date);
+            if(!country.owners.has(owner))country.owners.set(owner,new Set());country.owners.get(owner).add(date);
+          }
+        }
+      }
+      if(contributes)byCountry.get(stay.countryCode).records.push(stay);
+    }
+    for(const country of byCountry.values())for(const ownerDates of country.owners.values()){let previous;for(const date of [...ownerDates].sort()){if(!previous||Date.parse(date)-Date.parse(previous)!==86400000)country.trips++;previous=date;}}
+    for(const p of (profileId==='all'?state.profiles||[]:[{id:profileId}]))homeCountryCodes(state,p.id,today).forEach(c=>countries.add(c));
+    countries.delete('SEA');const recordedCountries=new Set(countries);
+    for(const code of (V||root.HVCountryVisits)?.manualCodes(state,today,profileId)||[])countries.add(code);
+    countries.delete('SEA');for(const date of days)home.delete(date);return {stays,countries,recordedCountries,days,home,trips,byCountry};
+  });
+  function isHome(state,code,date,profileId=state.activeProfileId){
+    if(code==='SEA')return false;const context=homeContext(state,profileId);
+    return (context.profiles.get(profileId)?.homeCountryCodes||[]).includes(code)||context.residences.overlap(date).some(r=>r.countryCode===code);
   }
   function homeKind(state,r,date=r.start||r.date,profileId=r.profileId||state.activeProfileId){
     if(r.travelKind==='home')return 'home';
@@ -27,12 +51,11 @@
     if(r.isHome===true||r.home===true||r.location==='Home')return 'home';
     if(r.domesticHoliday===true)return 'trip';
     if(!isHome(state,r.countryCode||r.place?.countryCode,date,profileId))return 'foreign';
-    if(r.tripId&&(state.trips||[]).some(t=>t.id===r.tripId))return 'trip';
-    // A domestic hotel/transport is evidence only for its recorded dates. It
-    // must not turn the surrounding unclassified home interval into a trip.
-    const evidence=[...scoped(state.accommodations,profileId),...scoped(state.transports,profileId)].some(a=>{
-      const start=a.checkIn||a.startLocal?.slice(0,10),end=a.checkOut||a.endLocal?.slice(0,10)||start;
-      return !(state.stays||[]).some(s=>s.source==='accommodation'&&s.sourceAccommodationId===a.id&&s.id!==r.id)&&a.status!=='cancelled'&&a.travelKind!=='home'&&validDate(date)&&start<=date&&end>=date&&((r.tripId&&a.tripId===r.tripId)||(a.place?.countryCode===r.countryCode||a.start?.countryCode===r.countryCode||a.end?.countryCode===r.countryCode));
+    if(r.tripId&&homeContext(state,profileId).trips.has(r.tripId))return 'trip';
+    const context=homeContext(state,profileId);
+    const evidence=validDate(date)&&context.evidence.overlap(date).some(a=>{
+      const linked=context.linked.get(a.id);
+      return !(linked&&[...linked].some(id=>id!==r.id))&&((r.tripId&&a.tripId===r.tripId)||(a.place?.countryCode===r.countryCode||a.start?.countryCode===r.countryCode||a.end?.countryCode===r.countryCode));
     });
     return evidence?'trip':'ambiguous';
   }
@@ -60,11 +83,11 @@
     const date=r.checkIn||r.date||r.startLocal?.slice(0,10),end=r.checkOut||r.endDate||r.endLocal?.slice(0,10)||date;
     const countryCodes=[r.place?.countryCode,r.start?.countryCode,r.end?.countryCode,...(r.legs||[]).flatMap(l=>[l.start?.countryCode,l.end?.countryCode])].filter(Boolean);
     if(countryCodes.some(code=>!isHome(state,code,date,r.profileId||state.activeProfileId)))return false;
-    const own=scoped(state.stays,r.profileId||state.activeProfileId).filter(s=>s.status!=='cancelled'&&s.start<=date&&s.end>=end&&(!r.tripId||s.tripId===r.tripId));
+    const own=homeContext(state,r.profileId||state.activeProfileId).stays.containing(date,end).filter(s=>s.status!=='cancelled'&&(!r.tripId||s.tripId===r.tripId));
     return own.some(s=>homeKind(state,s)==='home')&&!own.some(s=>isTravelStay(state,s));
   }
   function travelFrequency(state,today,profileId=state.activeProfileId){
-    const dates=new Set();for(const s of scoped([...(state.stays||[]),...(state.residences||[])],profileId).filter(isActual)){
+    const dates=new Set();for(const s of scoped([...(state.stays||[]),...(state.residences||[])],profileId).filter(s=>isElapsedStay(state,{...s,end:s.end||today},today))){
       const owner=s.profileId||profileId;
       if(s.countryCode==='SEA'||!validDate(s.start)||homeCountryCodes(state,owner,today).includes(s.countryCode)||homeKind(state,s,s.start,owner)==='home')continue;
       for(let n=Date.parse(s.start),end=Math.min(Date.parse(s.end||today),Date.parse(today));n<=end;n+=86400000)dates.add(new Date(n).toISOString().slice(0,10));
@@ -83,9 +106,9 @@
     return candidates.length===1?candidates[0].id:null;
   }
   function homeCountryCodes(state,profileId=state.activeProfileId,date=new Date().toISOString().slice(0,10)) {
-    const configured=(state.profiles||[]).find(p=>p.id===profileId)?.homeCountryCodes||[];
+    const context=homeContext(state,profileId),configured=context.profiles.get(profileId)?.homeCountryCodes||[];
     // Older accounts recorded their home as a residence, without permanent-home settings.
-    return [...new Set([...configured,...(!configured.length?scoped(state.residences,profileId).filter(r=>r.start<=date&&(!r.end||r.end>=date)).map(r=>r.countryCode):[])])];
+    return [...new Set([...configured,...(!configured.length?context.residences.overlap(date).map(r=>r.countryCode):[])])];
   }
   const domesticDestinations = [
     {code:'GB',name:'England',domesticDestination:'GB-ENG'},
@@ -203,6 +226,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={syncAccommodationStay,removeAccommodationStay,airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#006768',bus:'#076800',boat:'#001B68',car:'#680000',train:'#685600',walk:'#535353',other:'#5C004C'}[type]||'#5C004C')};
+  const api={isElapsedStay,syncAccommodationStay,removeAccommodationStay,airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#006768',bus:'#076800',boat:'#001B68',car:'#680000',train:'#685600',walk:'#535353',other:'#5C004C'}[type]||'#5C004C')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

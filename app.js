@@ -5,6 +5,7 @@
 })();
 // Parser ordering is intentional: models, core, then the existing feature layers.
 document.write([
+  '<script src="view-data.js?v=performance-20261014"><\/script>',
   '<script src="assets/slaps-countries.js?v=completion-3&release=master-complete-20261002&performance=20261007&offline=20261006"><\/script>',
   '<script src="assets/flag-manifest.js?v=completion-3&release=master-complete-20261002&performance=20261007&offline=20261006"><\/script>',
   '<script src="assets/flag-thumbnails.js?v=completion-3&release=master-complete-20261002&performance=20261007&offline=20261006"><\/script>',
@@ -12,6 +13,7 @@ document.write([
   '<script src="transport-dashboard-model.js?v=transport-20261008"><\/script>',
   '<script src="country-visit-model.js?v=trackers-20261006"><\/script>',
   '<script src="travel-history-model.js?v=trackers-20261006"><\/script>',
+  '<script src="calendar-data-model.js?v=performance-20261014"><\/script>',
   '<script src="atlas-model.js?v=completion-3&release=master-complete-20261002&performance=20261007&offline=20261006"><\/script>',
   '<script src="vendor/anyascii/anyascii.js?v=master-complete-20261002&performance=20261007&offline=20261006"><\/script>',
   '<script src="address-display.js?v=master-complete-20261002&performance=20261007&offline=20261006"><\/script>',

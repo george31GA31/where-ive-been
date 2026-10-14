@@ -3,12 +3,14 @@
   'use strict';
   const J = typeof module !== 'undefined' && module.exports ? require('./journey-model.js') : root.HVJourney;
   const V = typeof module !== 'undefined' && module.exports ? require('./country-visit-model.js') : root.HVCountryVisits;
+  const D=typeof module!=='undefined'&&module.exports?require('./view-data.js'):root.HVData;
   const DAY = 86400000;
   const nextDate = date => new Date(Date.parse(date) + DAY).toISOString().slice(0,10);
-  function history(data, today, profileId = data.activeProfileId) {
+  function buildHistory(data, today, profileId = data.activeProfileId) {
     const dates = new Map(), first = new Map(), countryYears = new Map(), proven = new Set(), returns = new Set();
     if (!J.validDate(today)) return {dates,first,countryYears,proven,returns};
-    const eligible = r => !['cancelled','unconfirmed','want','not-recorded'].includes(r.status) && !(data.trips || []).some(t => t.id === r.tripId && t.status === 'cancelled');
+    const cancelled=new Set((data.trips||[]).filter(t=>t.status==='cancelled').map(t=>t.id));
+    const eligible = r => !['cancelled','unconfirmed','want','not-recorded'].includes(r.status) && !cancelled.has(r.tripId);
     function country(code,date) {
       if (!code || code === 'SEA') return;
       proven.add(code);
@@ -77,6 +79,7 @@
     }
     return {dates,first,countryYears,proven,returns};
   }
+  const history=(data,today,profileId=data.activeProfileId)=>D.memo(data,'travel-history',['stays','accommodations','transports','placeVisits','trips','residences','profiles','manualCountryVisits'],today+'|'+profileId,()=>buildHistory(data,today,profileId));
   function calculate(data,today,profileId = data.activeProfileId,isCounted = () => true) {
     const result=history(data,today,profileId),months=new Map(),years=new Map();
     const away=[...result.dates].filter(([,d]) => d.away).map(([date]) => date).sort();
