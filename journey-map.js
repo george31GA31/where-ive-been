@@ -116,6 +116,7 @@
     if(signal.aborted)return Promise.reject(new DOMException('Closed','AbortError'));
     const key=JSON.stringify([type,start.lat,start.lon,end.lat,end.lon,refreshToken]);if(cache.has(key))return Promise.resolve(cache.get(key));
     let pending=pendingRoutes.get(key);
+    if(pending?.controller.signal.aborted)pending=null;
     if(!pending){
       pending={controller:new AbortController(),subscribers:new Set()};pendingRoutes.set(key,pending);
       pending.promise=calculateRoute(type,start,end,pending.controller.signal).then(result=>{if(!result.unavailable){cache.set(key,result);if(cache.size>80)cache.delete(cache.keys().next().value);}return result;}).finally(()=>{if(pendingRoutes.get(key)===pending)pendingRoutes.delete(key);});
@@ -177,7 +178,7 @@
     return {refresh(){}};
   }
   function savedRoute(record,index,type,start,end){const saved=R.get(record,index,type,start,end,window.HVNetwork?.state==='offline');return type==='boat'&&saved?.unavailable?null:saved;}
-  function rememberRoute(record,index,type,start,end,result){
+  function rememberRoute(record,index,type,start,end,result,persistNow=true){
     const current=(state.transports||[]).find(t=>t.id===record.id);
     if(!current)return null;
     const leg=(current.type==='flight'?HVJourney.flightLegs(current):HVJourney.groundLegs(current))[index];
@@ -188,12 +189,12 @@
     const previous=R.get(current,index,type,start,end,true);
     if(result.unavailable||window.HVNetwork?.state==='offline')return previous||result;
     if(impaired&&/^(Illustrative water|Direct water)/.test(result.label||'')&&previous?.coordinates?.length>=2&&!previous.unavailable)return previous;
-    const saved=R.set(current,index,type,start,end,result);if(saved)persist();return saved||result;
+    const saved=R.set(current,index,type,start,end,result);if(saved&&persistNow)persist();return saved||result;
   }
-  function primeWaterRoute(record,index,start,end,signal,draw,report=()=>{}){
+  function primeWaterRoute(record,index,start,end,signal,draw,report=()=>{},active=()=>true){
     waterFallback(start,end,signal).then(result=>{
       const previous=R.get(record,index,'boat',start,end,true);
-      if(signal.aborted||result.unavailable||previous?.coordinates?.length>=2&&!previous.unavailable)return;
+      if(signal.aborted||!active()||result.unavailable||previous?.coordinates?.length>=2&&!previous.unavailable)return;
       const stored=rememberRoute(record,index,'boat',start,end,result);if(stored){draw(stored.coordinates);report(stored.label+' · checking mapped routes…');}
     });
   }
@@ -206,7 +207,8 @@
 
   function open(key,filters={}){
     const group=HVCalendar.journeyGroups().find(g=>g.key===key);if(!group)return;
-    dialog?.close();const opener=document.activeElement,controller=new AbortController();
+    dialog?.close();const opener=document.activeElement,controller=new AbortController(),owner=window.HVAccountState?.userId||'guest',profile=state.activeProfileId;
+    const sameScope=()=>owner===(window.HVAccountState?.userId||'guest')&&profile===state.activeProfileId;
     const own=document.createElement('dialog');dialog=own;own.className='journey-map-dialog';own.setAttribute('aria-labelledby','journeyMapTitle');
     const transports=group.transports.filter(t=>t.status!=='cancelled'&&!HVJourney.hiddenHomeRecord(state,t));
     const rows=transports.flatMap(t=>(t.type==='flight'?HVJourney.flightLegs(t):HVJourney.groundLegs(t)).map((l,i)=>({record:t,leg:l,index:i,date:l.startLocal||t.startLocal||'',type:t.type}))).concat(group.accommodations.filter(a=>!HVJourney.hiddenHomeRecord(state,a)).map(a=>({type:'accommodation',record:a,date:a.checkIn,place:a.place||{name:a.propertyName,lat:a.lat,lon:a.lon}})));
@@ -232,16 +234,16 @@
     const routeLines=new Map();
     function draw(coords,type,i){const old=routeLines.get(i),selectedAt=old?.isPopupOpen()?old.getPopup().getLatLng():null;old?._routeCasing?.remove();old?.remove();if(coords.length<2){routeLines.delete(i);return;}routeLines.set(i,drawRoute(map,coords,type,{weight:1.5,opacity:.85},HVJourneyUI.popup({...rows[i],group})));if(selectedAt)routeLines.get(i).openPopup(selectedAt);rowBounds.set(i,coords);}
     (async()=>{for(const [i,r] of rows.entries()){
-      if(controller.signal.aborted)return;const status=own.querySelector(`[data-route-status="${i}"]`);
+      if(controller.signal.aborted||!sameScope())return;const status=own.querySelector(`[data-route-status="${i}"]`);
       if(r.type==='country'){status.textContent='Country stay · '+r.record.start+' – '+r.record.end;continue;}
       if(!r.leg){if(!G.point(r.place))status.textContent='No map position yet. Edit to search or place a pin.';continue;}
       if(!G.point(r.start)||!G.point(r.end)){status.textContent='Choose both locations in Edit transport to map this leg.';continue;}
       const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,r.start,r.end);
       if(saved){draw(saved.coordinates,type,i);status.textContent='Saved route · '+saved.label;continue;}
       if(r.type==='flight'){const stored=rememberRoute(r.record,legIndex,'flight',r.start,r.end,{coordinates:G.flightArc(r.start,r.end),label:'Flight connection'});if(stored){draw(stored.coordinates,'flight',i);status.textContent='Flight connection · saved';}continue;}
-      if(type==='boat'&&window.HVNetwork?.state!=='offline')primeWaterRoute(r.record,legIndex,r.start,r.end,controller.signal,coords=>draw(coords,type,i),label=>status.textContent=label);const previous=R.get(r.record,legIndex,type,r.start,r.end,true);if(previous)draw(previous.coordinates,type,i);else if(type!=='boat')draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],type,i);status.textContent='Checking for a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),60000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
-      try{const result=await route(type,r.start,r.end,requestController.signal,r.record.routeRefreshToken||'');if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}
-      catch{if(!controller.signal.aborted){const result=type==='boat'?await waterFallback(r.start,r.end,controller.signal):{coordinates:[[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],label:'Recorded stops joined by a straight line; route unavailable.',unavailable:true};if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}}
+      if(type==='boat'&&window.HVNetwork?.state!=='offline')primeWaterRoute(r.record,legIndex,r.start,r.end,controller.signal,coords=>draw(coords,type,i),label=>status.textContent=label,sameScope);const previous=R.get(r.record,legIndex,type,r.start,r.end,true);if(previous)draw(previous.coordinates,type,i);else if(type!=='boat')draw([[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],type,i);status.textContent='Checking for a mapped route…';const requestController=new AbortController(),timeout=setTimeout(()=>requestController.abort(),60000);const abort=()=>requestController.abort();controller.signal.addEventListener('abort',abort,{once:true});
+      try{const result=await route(type,r.start,r.end,requestController.signal,r.record.routeRefreshToken||'');if(!controller.signal.aborted&&sameScope()){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}
+      catch{if(!controller.signal.aborted&&sameScope()){const result=type==='boat'?await waterFallback(r.start,r.end,controller.signal):{coordinates:[[r.start.lat,r.start.lon],[r.end.lat,r.end.lon]],label:'Recorded stops joined by a straight line; route unavailable.',unavailable:true};if(!controller.signal.aborted&&sameScope()){const stored=rememberRoute(r.record,legIndex,type,r.start,r.end,result);if(stored){draw(stored.coordinates,type,i);status.textContent=stored.label+' · saved';}}}}
       finally{clearTimeout(timeout);controller.signal.removeEventListener('abort',abort);}
     }})();
     own.querySelector('[data-map-close]').onclick=()=>own.close();
@@ -251,6 +253,11 @@
   document.addEventListener('click',e=>{const button=e.target.closest('[data-journey-map]');if(button){e.preventDefault();open(button.dataset.journeyMap,button.closest('#journeysView')?HVJourneyLibrary.filters():{});}});
   // The global surface owns only Leaflet layers, never copies of saved records.
   function mountGlobal(host,rows,today,status,options={}){
+    const owner=window.HVAccountState?.userId||'guest',profile=state.activeProfileId;
+    let pageVisible=true,activeRequest,initialRouteWrites=false;const waiters=new Set(),suspended=new WeakSet();
+    const sameOwner=()=>owner===(window.HVAccountState?.userId||'guest')&&profile===state.activeProfileId;
+    const paused=()=>!pageVisible||document.hidden;
+    const wake=()=>{for(const resolve of waiters)resolve();waiters.clear();};
     const controller=new AbortController(),reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const map=L.map(host,{scrollWheelZoom:true,zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([25,0],2);const unregisterMap=HVJourneyUI.registerMap(map);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map).on('tileerror',()=>{status.textContent='Map background unavailable. Your saved stops and routes remain available.';});
@@ -258,11 +265,31 @@
     function addPoint(p,r){if(!G.point(p))return;const position=[Number(p.lat),Number(p.lon)];bounds.push(position);points.push({position,r,type:r.type,label:r.type==='flight'?HVJourney.airportLabel(p):r.type==='accommodation'?'⌂':'•',name:p.name||r.record.propertyName||'Location'});}
     const routeLines=new Map(), rowBounds=new Map();
     function draw(coords,r,label){const old=routeLines.get(r.key),selectedAt=old?.isPopupOpen()?old.getPopup().getLatLng():null;old?._routeCasing?.remove();old?.remove();if(coords.length<2){routeLines.delete(r.key);return;}const past=r.end&&r.end<today;routeLines.set(r.key,drawRoute(map,coords,routeType(r.type,r.record),{weight:past?1.2:1.6,opacity:past?.72:.95},HVJourneyUI.popup(r)));rowBounds.set(r.key,coords);if(options.onSelect)routeLines.get(r.key).on('click',()=>options.onSelect(r));if(selectedAt)routeLines.get(r.key).openPopup(selectedAt);}
-    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,start,end);if(saved){draw(saved.coordinates,r,saved.label);if(saved.unavailable)unavailable++;}else if(r.type==='flight'){const connection={coordinates:G.flightArc(start,end),label:'Flight connection'};const stored=options.viewer?connection:rememberRoute(r.record,legIndex,'flight',start,end,connection);if(stored)draw(stored.coordinates,r,stored.label);}else{if(options.viewer){const stored=R.get(r.record,legIndex,type,start,end,true);if(stored)draw(stored.coordinates,r,stored.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Recorded connection; mapped route not saved');else unavailable++;return;}if(type==='boat'&&window.HVNetwork?.state!=='offline')primeWaterRoute(r.record,legIndex,start,end,controller.signal,coords=>draw(coords,r));const previous=R.get(r.record,legIndex,type,start,end,true);if(previous)draw(previous.coordinates,r,previous.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; checking mapped route');routes.push({r,start,end,type,legIndex});}}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
+    rows.forEach(r=>{if(r.leg){const start=r.type==='flight'?airport(r.leg.start):r.leg.start,end=r.type==='flight'?airport(r.leg.end):r.leg.end;addPoint(start,r);addPoint(end,r);if(G.point(start)&&G.point(end)){const type=routeType(r.type,r.record),legIndex=Number.isInteger(r.index)?r.index:0,saved=savedRoute(r.record,legIndex,type,start,end);if(saved){draw(saved.coordinates,r,saved.label);if(saved.unavailable)unavailable++;}else if(r.type==='flight'){const connection={coordinates:G.flightArc(start,end),label:'Flight connection'};const stored=options.viewer?connection:rememberRoute(r.record,legIndex,'flight',start,end,connection,false);if(stored){if(!options.viewer)initialRouteWrites=true;draw(stored.coordinates,r,stored.label);}}else{if(options.viewer){const stored=R.get(r.record,legIndex,type,start,end,true);if(stored)draw(stored.coordinates,r,stored.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Recorded connection; mapped route not saved');else unavailable++;return;}const previous=R.get(r.record,legIndex,type,start,end,true);if(previous)draw(previous.coordinates,r,previous.label);else if(type!=='boat')draw([[start.lat,start.lon],[end.lat,end.lon]],r,'Straight connection between recorded stops; checking mapped route');routes.push({r,start,end,type,legIndex});}}else unavailable++;}else{addPoint(r.place,r);if(!G.point(r.place))unavailable++;}});
+    if(initialRouteWrites)persist();
     const pointSurface=pointLayer(map,points);
     const fit=()=>{map.invalidateSize();if(bounds.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:12,animate:false});pointSurface.refresh();};fit();
     const report=()=>{status.textContent=`${rows.length} entries · ${points.length} mapped stops${pending?' · Loading '+pending+' surface routes…':''}${unavailable?' · '+unavailable+' entries have missing positions or unavailable routes; recorded stops remain visible.':''}${rows.length?'':' · No matching records. Change the filters or add a journey.'}`;};pending=routes.length;report();
-    (async()=>{for(const {r,start,end,type,legIndex} of routes){if(controller.signal.aborted)return;const request=new AbortController(),abort=()=>request.abort(),timer=setTimeout(abort,60000);controller.signal.addEventListener('abort',abort,{once:true});try{const result=await route(type,start,end,request.signal,r.record.routeRefreshToken||'');if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,start,end,result);if(stored)draw(stored.coordinates,r,stored.label);}}catch{if(!controller.signal.aborted){const result=type==='boat'?await waterFallback(start,end,controller.signal):{coordinates:[[start.lat,start.lon],[end.lat,end.lon]],label:'Straight connection between recorded stops; route unavailable',unavailable:true};if(result.unavailable)unavailable++;if(!controller.signal.aborted){const stored=rememberRoute(r.record,legIndex,type,start,end,result);if(stored)draw(stored.coordinates,r,stored.label);}}}finally{clearTimeout(timer);controller.signal.removeEventListener('abort',abort);}if(controller.signal.aborted)return;pending--;report();}})();
+    async function waitUntilVisible(){while(paused()&&!controller.signal.aborted)await new Promise(resolve=>waiters.add(resolve));}
+    const setVisible=value=>{pageVisible=!!value;if(!sameOwner())controller.abort();if(paused()&&activeRequest){suspended.add(activeRequest);activeRequest.abort();}else if(!paused())wake();};
+    const visibility=()=>setVisible(pageVisible);document.addEventListener('visibilitychange',visibility);controller.signal.addEventListener('abort',wake,{once:true});
+    (async()=>{
+      for(let index=0;index<routes.length;){
+        await waitUntilVisible();if(controller.signal.aborted||!sameOwner())return;
+        const {r,start,end,type,legIndex}=routes[index],request=new AbortController(),abort=()=>request.abort(),timer=setTimeout(abort,60000);
+        activeRequest=request;controller.signal.addEventListener('abort',abort,{once:true});
+        const saved=result=>{if(controller.signal.aborted||request.signal.aborted||paused()||!sameOwner())return;const stored=rememberRoute(r.record,legIndex,type,start,end,result);if(stored){draw(stored.coordinates,r,stored.label);options.onRouteSaved?.();}};
+        try{
+          if(type==='boat'&&window.HVNetwork?.state!=='offline')primeWaterRoute(r.record,legIndex,start,end,request.signal,coords=>{if(!paused()&&sameOwner()){draw(coords,r);options.onRouteSaved?.();}},()=>{},()=>!paused()&&sameOwner());
+          const result=await route(type,start,end,request.signal,r.record.routeRefreshToken||'');if(suspended.has(request))continue;saved(result);
+        }catch(error){
+          if(controller.signal.aborted||!sameOwner())return;if(paused()||suspended.has(request))continue;
+          const result=type==='boat'?await waterFallback(start,end,request.signal):{coordinates:[[start.lat,start.lon],[end.lat,end.lon]],label:'Straight connection between recorded stops; route unavailable',unavailable:true};
+          if(paused()||suspended.has(request))continue;if(result.unavailable)unavailable++;saved(result);
+        }finally{clearTimeout(timer);controller.signal.removeEventListener('abort',abort);if(activeRequest===request)activeRequest=null;}
+        if(controller.signal.aborted||!sameOwner())return;if(paused())continue;index++;pending--;report();
+      }
+    })();
     let width=host.clientWidth,height=host.clientHeight;
     const resize=camera=>{if(!camera&&width===host.clientWidth&&height===host.clientHeight)return;width=host.clientWidth;height=host.clientHeight;const center=camera?.center||map.getCenter(),zoom=camera?.zoom??map.getZoom();map.invalidateSize({pan:false});map.setView(center,zoom,{animate:false,reset:true});};
     function select(key,{popup=false}={}){
@@ -271,7 +298,7 @@
       for(const [id,line]of routeLines){const match=id===key||selected?.type!=='flight'&&prefix&&id.startsWith(prefix);line.setStyle({opacity:match?1:.25,weight:line.options.weight});if(line._routeCasing)line._routeCasing.setStyle({opacity:match?.85:.2});if(match){line.bringToFront();selectedBounds.push(...(rowBounds.get(id)||[]));if(popup)line.openPopup();}}
       if(selectedBounds.length)map.fitBounds(selectedBounds,{padding:[35,35],maxZoom:12,animate:false});
     }
-    return {fit,resize,select,map,remove(){controller.abort();unregisterMap();map.remove();}};
+    return {fit,resize,select,map,setVisible,remove(){controller.abort();activeRequest?.abort();document.removeEventListener('visibilitychange',visibility);unregisterMap();map.remove();}};
   }
 
   window.HVJourneyMap={open,mountGlobal,waterFallback,route};

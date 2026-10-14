@@ -453,7 +453,7 @@
       try{window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));}
       finally{window.HVPages.reusing=false;}
     };
-    window.addEventListener('hv-airports-ready',()=>window.HVPages.invalidateViews(['country','transport','places','journeys']));
+    window.addEventListener('hv-airports-ready',()=>window.HVPages.invalidateViews(['country','transport','places']));
     window.addEventListener('hv-data-changed',()=>{elements.clear();rendered.clear();});
     window.HVPages.mount(routeFromHash()||'dashboard');
   }

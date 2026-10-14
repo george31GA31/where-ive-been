@@ -5,12 +5,13 @@
   const D=typeof module!=='undefined'&&module.exports?require('./view-data.js'):root.HVData;
   const V=typeof module!=='undefined'&&module.exports?require('./country-visit-model.js'):null;
   const roman=value=>(A||root.HVAddress)?.text(value)||value;
+  const regionNames=typeof Intl.DisplayNames==='function'?new Intl.DisplayNames(['en'],{type:'region'}):null;
   const categories = {buildings:'Tallest buildings', mountains:'Highest natural points', unesco:'UNESCO sites', airports:'Airports'};
   const types = {flight:'Flight',train:'Train',bus:'Bus / coach',boat:'Boat / ferry',car:'Car / taxi',walk:'Walking',other:'Other'};
   const scoped = (rows,profileId) => (rows || []).filter(r => profileId === 'all' || !r.profileId || r.profileId === profileId || (Array.isArray(r.profileIds)&&r.profileIds.includes(profileId)));
   const contextKeys=['trips','profiles','residences','stays','accommodations','transports'];
   function homeContext(state,profileId=state.activeProfileId){
-    return D.memo(state,'home-context',contextKeys,profileId,()=>{
+    return D.memo(state,'home-context:'+profileId,contextKeys,profileId,()=>{
       const trips=new Map((state.trips||[]).map(t=>[t.id,t])),profiles=new Map((state.profiles||[]).map(p=>[p.id,p]));
       const linked=new Map();for(const stay of state.stays||[])if(stay.source==='accommodation'){if(!linked.has(stay.sourceAccommodationId))linked.set(stay.sourceAccommodationId,new Set());linked.get(stay.sourceAccommodationId).add(stay.id);}
       const evidence=[...scoped(state.accommodations,profileId),...scoped(state.transports,profileId)].filter(r=>r.status!=='cancelled'&&r.travelKind!=='home'&&trips.get(r.tripId)?.status!=='cancelled');
@@ -126,7 +127,7 @@
   const airportLabel=(p,lookup=()=>null)=>p?.manualAirport?(p.iata||p.icao||p.name||''):p?.iata||(p?.name?.trim()?lookup(p.name)?.iata:'')||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
   function airportDetails(p,lookup=()=>null){
     if(!p)return '';const key=p.iata||p.icao||p.name||'';if(!key.trim())return '';const found=lookup(key)||{},a={...found,...p,name:p.manualAirport||p.personal?p.name:found.name||p.name};
-    const country=a.countryName||((typeof Intl.DisplayNames==='function'&&(a.countryCode||a.countryCodes?.[0]))?new Intl.DisplayNames(['en'],{type:'region'}).of(a.countryCode||a.countryCodes[0]):'');
+    const country=a.countryName||((regionNames&&(a.countryCode||a.countryCodes?.[0]))?regionNames.of(a.countryCode||a.countryCodes[0]):'');
     return roman([...new Set([a.name,a.city||a.area,country].filter(Boolean))].join(', '))+(a.iata||a.icao?' ('+[a.iata,a.icao].filter(Boolean).join(' / ')+')':'');
   }
   function transportLabel(record,lookup=()=>null) {

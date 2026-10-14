@@ -12,6 +12,7 @@ binary.setGraphicsMode = false;
 
 const root = path.resolve(process.env.HV_CANDIDATE_ROOT || path.join(__dirname, '..'));
 const baselineRoot = process.env.HV_BASELINE_ROOT;
+const scenes=process.env.HV_VISUAL_SCENES?.split(',');
 if (!baselineRoot)
   throw new Error('Set HV_BASELINE_ROOT to a checkout of the release being preserved.');
 const out = path.join(root, 'test-results/visual-parity');
@@ -378,6 +379,7 @@ async function capture(pair, label, prepare) {
         'travel-tools/road-trip',
         'people',
       ]) {
+        if(scenes&&!scenes.includes(route))continue;
         await capture(pair, route.replaceAll('/', '-') + '-' + suffix, (page, origin) =>
           page.goto(origin + '/#/' + route),
         );
@@ -393,6 +395,7 @@ async function capture(pair, label, prepare) {
         ['journey-popup', () => HVJourneyMap.open('trip:alps')],
       ];
       for (const [name, open] of forms) {
+        if(scenes&&!scenes.includes(name))continue;
         await capture(pair, name + '-' + suffix, async (page, origin) => {
           await page.goto(origin + '/#/calendar');
           await settled(page);

@@ -35,7 +35,7 @@
   }
   async function request(input, options = {}, policy = {}) {
     const url = new URL(
-        typeof input === 'string' ? input : input.url,
+        typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
         root.location?.href || 'http://localhost/',
       ),
       external = url.origin !== root.location?.origin,
@@ -129,11 +129,16 @@
     banner.setAttribute('aria-live', 'polite');
     document.body.prepend(banner);
     render();
-    if ('serviceWorker' in navigator)
-      navigator.serviceWorker
-        .register(new URL('sw.js', document.querySelector('script[src*="network.js"]').src), {
-          updateViaCache: 'none',
-        })
-        .catch(() => {});
+    if('serviceWorker' in navigator){
+      const register=()=>{
+        if(document.querySelector('.app-shell')?.inert||window.HVAccountState?.loading){setTimeout(register,1000);return;}
+        navigator.serviceWorker.register(new URL('sw.js',document.querySelector('script[src*="network.js"]').src),{updateViaCache:'none'}).then(registration=>{
+          if(!registration)return;
+          let timer;const stage=()=>{clearTimeout(timer);if(document.querySelector('.app-shell')?.inert||window.HVAccountState?.loading){timer=setTimeout(stage,1000);return;}const worker=registration.active||registration.waiting;if(worker)worker.postMessage({type:'cache-extra-assets'});};
+          timer=setTimeout(stage,3000);navigator.serviceWorker.addEventListener('controllerchange',()=>{clearTimeout(timer);timer=setTimeout(stage,1000);});window.addEventListener('hv-reconnect',stage);
+        }).catch(()=>{});
+      };setTimeout(register,1000);
+    }
+
   });
 })(typeof window !== 'undefined' ? window : globalThis);
