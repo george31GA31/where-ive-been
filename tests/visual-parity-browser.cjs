@@ -12,6 +12,7 @@ binary.setGraphicsMode = false;
 
 const root = path.resolve(process.env.HV_CANDIDATE_ROOT || path.join(__dirname, '..'));
 const baselineRoot = process.env.HV_BASELINE_ROOT;
+const scenes=process.env.HV_VISUAL_SCENES?.split(',');
 if (!baselineRoot)
   throw new Error('Set HV_BASELINE_ROOT to a checkout of the release being preserved.');
 const out = path.join(root, 'test-results/visual-parity');
@@ -203,7 +204,7 @@ async function capture(pair, label, prepare) {
     if (label.startsWith('map-')) await page.waitForSelector('.map-country');
     roundedElements.push(
       await page.evaluate(() =>
-        [...document.querySelectorAll('input,select,textarea,button,dialog[open]')]
+        [...document.querySelectorAll('input,select,textarea,button,dialog[open],.date-range-row')]
           .map((input) => {
             const rect = input.getBoundingClientRect(),
               style = getComputedStyle(input);
@@ -330,7 +331,9 @@ async function capture(pair, label, prepare) {
         page.on('pageerror', (error) => errors.push(error.message));
         // Hold Date constant while leaving timers/animation frames free to settle.
         // Route persistence timestamps must not depend on machine speed.
-        await page.clock.setFixedTime(new Date('2026-09-21T12:00:00Z'));
+        // Completed history isolates visual parity from the intentional elapsed-day fix.
+        // Ongoing/future travel has separate model and browser correctness coverage.
+        await page.clock.setFixedTime(new Date('2026-10-02T12:00:00Z'));
         await page.route('**/*', (route) => {
           const url = route.request().url();
           if (url.startsWith(origin)) return route.continue();
@@ -378,6 +381,7 @@ async function capture(pair, label, prepare) {
         'travel-tools/road-trip',
         'people',
       ]) {
+        if(scenes&&!scenes.includes(route))continue;
         await capture(pair, route.replaceAll('/', '-') + '-' + suffix, (page, origin) =>
           page.goto(origin + '/#/' + route),
         );
@@ -393,6 +397,7 @@ async function capture(pair, label, prepare) {
         ['journey-popup', () => HVJourneyMap.open('trip:alps')],
       ];
       for (const [name, open] of forms) {
+        if(scenes&&!scenes.includes(name))continue;
         await capture(pair, name + '-' + suffix, async (page, origin) => {
           await page.goto(origin + '/#/calendar');
           await settled(page);

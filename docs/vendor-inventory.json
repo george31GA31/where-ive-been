@@ -1,0 +1,74 @@
+{
+  "reviewedOn": "2026-10-14",
+  "notes": "Runtime versions are unchanged. npm audit covers development dependencies; vendored artifacts require separate upstream advisory review. AnyAscii uses the existing joined classic-script wrapper.",
+  "libraries": [
+    {
+      "name": "D3",
+      "version": "7.9.0",
+      "path": "vendor/d3.min.js",
+      "source": "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js",
+      "sha256": "f2094bbf6141b359722c4fe454eb6c4b0f0e42cc10cc7af921fc158fceb86539"
+    },
+    {
+      "name": "TopoJSON client",
+      "version": "3.1.0",
+      "path": "vendor/topojson-client.min.js",
+      "source": "https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js",
+      "sha256": "25cd02ae486cc5063e0215a4e4cfb15de83700c87ac48bac4d57dc6aaf3ebb89"
+    },
+    {
+      "name": "Leaflet",
+      "version": "1.9.4",
+      "path": "vendor/leaflet/leaflet.js",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+      "sha256": "db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a"
+    },
+    {
+      "name": "Leaflet styles",
+      "version": "1.9.4",
+      "path": "vendor/leaflet/leaflet.css",
+      "source": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
+      "sha256": "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6"
+    },
+    {
+      "name": "Supabase JS",
+      "version": "2.57.4",
+      "path": "vendor/supabase/supabase.min.js",
+      "source": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js",
+      "sha256": "9f73dc4c7325b9eca904f9f2798eb7fe96b3caaabcddcf5f4563e90cf52bd835"
+    },
+    {
+      "name": "AnyAscii",
+      "version": "0.3.3",
+      "path": "vendor/anyascii/anyascii.js",
+      "source": "https://github.com/anyascii/anyascii/tree/0.3.3",
+      "sha256": "78a33097e53f12ab06066f4de7d5cd62870063cecdf74c349f75d873e8fa97ff"
+    }
+  ],
+  "advisoryReview": [
+    {
+      "component": "D3, TopoJSON client, Supabase JS",
+      "sources": [
+        "https://github.com/d3/d3/security",
+        "https://github.com/topojson/topojson-client/security",
+        "https://github.com/supabase/supabase-js/security"
+      ],
+      "result": "Upstream repository security pages showed no published advisories on the review date. This is not a complete transitive-package audit."
+    },
+    {
+      "component": "Leaflet",
+      "sources": [
+        "https://github.com/advisories/GHSA-h5cx-hfj5-x8v3",
+        "https://leafletjs.com/reference.html#layer-bindpopup"
+      ],
+      "result": "GHSA-h5cx-hfj5-x8v3 (CVE-2025-69993) describes raw HTML passed to bindPopup. The advisory is unreviewed and lists no known patched version. Leaflet documents string content as HTML. Herald keeps its escaped popup templates: journey-presentation.js escapes record text and validates artwork URLs; journey-map.js uses those builders; road-trip-planner.js escapes stop text. No runtime library upgrade or generic sanitiser was introduced in this scoped release. Re-review when changing any popup builder."
+    },
+    {
+      "component": "AnyAscii",
+      "sources": [
+        "https://github.com/anyascii/anyascii/tree/0.3.3"
+      ],
+      "result": "Version/provenance and local checksum recorded. Upstream security page could not be retrieved during this review, so no absence-of-advisories claim is made."
+    }
+  ]
+}

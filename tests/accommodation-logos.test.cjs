@@ -5,6 +5,11 @@ const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCA
 const place={id:'osm:N:1',externalPlaceId:'sur-hotel',name:'Best Western Sur',type:'Hotel',city:'Sur',countryCode:'OM',countryName:'Oman',address:'Sur Meandering Road, Sur, Oman',lat:22.57,lon:59.52};
 const stay=(id,p=place,profileId='p')=>({id,profileId,propertyName:p.name,location:'Sur',checkIn:'2026-02-21',checkOut:'2026-02-22',notes:'Keep '+id,place:M.copy(p)});
 const seed=()=>({version:2,activeProfileId:'p',profiles:[{id:'p',name:'Me'}],stays:[],trips:[],residences:[],transports:[],placeVisits:[],accommodations:[stay('first'),stay('repeat',{...place,id:'osm:W:2',name:'Best Western Sur Hotel'}),stay('other',{...place,id:'osm:N:3',externalPlaceId:'different',lat:22.58})],savedPlaces:[],custom:{keep:true}});
+test('a replacement catalogue snapshot refreshes artwork even with unchanged IDs and timestamps',()=>{
+ const data=seed();Logos.set(data,'first',image,'2026-10-14');assert.equal(Logos.logo(data,'repeat'),image);
+ const replacement=image.replace(/=$/,'');data.savedPlaces=data.savedPlaces.map(row=>({...row,accommodationLogo:{...row.accommodationLogo,src:replacement}}));
+ assert.equal(Logos.logo(data,'repeat'),replacement);assert.equal(data.savedPlaces[0].accommodationLogo.updatedAt,'2026-10-14');
+});
 test('one location logo covers recognised repeat stays and future stays without changing any travel record',()=>{
   const data=seed(),before=M.copy(data);Logos.set(data,'first',image);
   assert.equal(data.savedPlaces.length,1);assert.equal(Logos.logo(data,'repeat'),image);assert.equal(Logos.logo(data,'other'),null);

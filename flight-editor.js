@@ -15,11 +15,27 @@
     host.querySelectorAll('input,button').forEach(input=>{input.disabled=!flight;});host.querySelector('[data-leg-up="0"]')?.setAttribute('disabled','');host.querySelector(`[data-leg-down="${form._legs.length-1}"]`)?.setAttribute('disabled','');if(form._legs.length===1)host.querySelector('[data-leg-remove]')?.setAttribute('disabled','');
     // The previous connection control is retained in the DOM for older integrations only.
     queueMicrotask(()=>{form.querySelector('#flightViaFields').hidden=true;form.querySelector('#flightNumberField').hidden=true;});
-    if(flight)loadAirlines();
+    if(flight){HVJourneys.loadAirports();loadAirlines().then(()=>refreshDirectory(form,['airline']));}
   }
   function airportChoices(form){
     const personal=HVJourney.scoped(state.transports,state.activeProfileId).filter(t=>t.type==='flight').flatMap(t=>HVJourney.flightLegs(t).flatMap(l=>[l.start,l.end])).concat(form._legs.flatMap(l=>[l.start,l.end])).filter(p=>p?.manualAirport);
     return [...new Map([...HVJourneys.airports(),...personal,...HVJourney.scoped(state.savedPlaces||[],state.activeProfileId).filter(r=>!r.deleted&&(r.place.type==='Airport'||r.place.manualAirport)).map(r=>({...r.place,savedPlaceId:r.id}))].map(p=>[p.airportId||p.id,p])).values()];
+  }
+  function showChoices(form,row,input,field){
+    const leg=form._legs[Number(row.dataset.leg)],term=norm(input.value.trim()),results=row.querySelector(`[data-results="${field}"]`);
+    results.replaceChildren();if(term.length<2)return;
+    const source=field==='airline'?[...HVOperators.suggestions(state,'flight').map(HVOperators.choice),...airlines.filter(a=>!HVOperators.find(state,'flight',a))]:airportChoices(form);
+    const matches=source.filter(a=>[a.name,a.iata,a.icao,a.city].some(v=>norm(v).includes(term))).sort((a,b)=>Number([b.iata,b.icao].some(v=>norm(v)===term))-Number([a.iata,a.icao].some(v=>norm(v)===term))||Number(norm(b.name).startsWith(term))-Number(norm(a.name).startsWith(term))).slice(0,15);
+    results.innerHTML=matches.map((a,j)=>`<button type="button" data-choice="${j}">${(a.countryCode||a.countryCodes?.[0])?flagHtml(a.countryCode||a.countryCodes[0],'flag-img flag-sm'):''}<span><strong>${E(a.name)}</strong>${a.savedPlaceId?'<small>Saved place</small>':''}<small>${E([a.iata,a.icao,a.city,a.countryName||a.country||countryByCode(a.countryCode||a.countryCodes?.[0])?.name].filter(Boolean).join(' · '))}</small></span><span aria-hidden="true">→</span></button>`).join('')||`<p class="helper" role="status">${source.length?'No match. You can enter the name manually.':'Directory loading or unavailable. You can enter the name manually.'}</p>`;
+    results.onclick=e=>{const button=e.target.closest('[data-choice]');if(!button)return;const a=matches[Number(button.dataset.choice)];leg[field]={...a,...(field==='airline'?{}:{airportId:a.id,countryCode:a.countryCode||a.countryCodes?.[0],countryName:a.countryName||countryByCode(a.countryCode||a.countryCodes?.[0])?.name||''})};input.value=a.name;if(field==='airline')row._operatorEditor.refresh();const detail=row.querySelector(`[data-airport-details="${field}"]`);if(detail)detail.textContent=HVJourney.airportDetails(leg[field],HVJourneys.airportFor);results.replaceChildren();input.focus();};
+  }
+  function refreshDirectory(form,fields){
+    const host=form?.querySelector('.flight-legs');if(!form?.isConnected||!form.closest('dialog')?.open||host?.hidden||!form._legs)return;
+    host.querySelectorAll('[data-leg]').forEach(row=>fields.forEach(field=>{
+      const input=row.querySelector(`[data-leg-field="${field}"]`),results=row.querySelector(`[data-results="${field}"]`);
+      if(results?.childNodes.length)showChoices(form,row,input,field);
+      const detail=row.querySelector(`[data-airport-details="${field}"]`);if(detail)detail.textContent=HVJourney.airportDetails(form._legs[Number(row.dataset.leg)][field],HVJourneys.airportFor);
+    }));
   }
   function manualAirport(form,index,side){
     const previous=form._legs[index][side]||{},opener=document.activeElement;let position=Number.isFinite(previous.lat)&&Number.isFinite(previous.lon)?{...previous}:null;
@@ -42,18 +58,14 @@
     host.querySelectorAll('[data-leg]').forEach(row=>{row._operatorEditor=HVOperators.bind(form,row.querySelector('.operator-logo-editor'),'flight',()=>form._legs[Number(row.dataset.leg)].airline);});
     host.oninput=event=>{
       const input=event.target,field=input.dataset.legField,row=input.closest('[data-leg]');if(!field||!row)return;
-      const leg=form._legs[Number(row.dataset.leg)],term=norm(input.value.trim());
+      const leg=form._legs[Number(row.dataset.leg)];
       if(field.endsWith('Terminal')){const side=field.replace('Terminal','');leg[side]={...leg[side],terminal:input.value};return;}
       if(!['start','end','airline'].includes(field)){leg[field]=input.value;return;}
       // Typing a new name clears stale coordinates and codes, never reuses the previous airport.
       leg[field]=field==='airline'?{name:input.value}:{name:input.value,lat:null,lon:null};
       if(field==='airline')row._operatorEditor.refresh();
       const oldDetail=row.querySelector(`[data-airport-details="${field}"]`);if(oldDetail)oldDetail.textContent='';
-      const results=row.querySelector(`[data-results="${field}"]`);results.replaceChildren();if(term.length<2)return;
-      const source=field==='airline'?[...HVOperators.suggestions(state,'flight').map(HVOperators.choice),...airlines.filter(a=>!HVOperators.find(state,'flight',a))]:airportChoices(form);
-      const matches=source.filter(a=>[a.name,a.iata,a.icao,a.city].some(v=>norm(v).includes(term))).sort((a,b)=>Number([b.iata,b.icao].some(v=>norm(v)===term))-Number([a.iata,a.icao].some(v=>norm(v)===term))||Number(norm(b.name).startsWith(term))-Number(norm(a.name).startsWith(term))).slice(0,15);
-      results.innerHTML=matches.map((a,j)=>`<button type="button" data-choice="${j}">${(a.countryCode||a.countryCodes?.[0])?flagHtml(a.countryCode||a.countryCodes[0],'flag-img flag-sm'):''}<span><strong>${E(a.name)}</strong>${a.savedPlaceId?'<small>Saved place</small>':''}<small>${E([a.iata,a.icao,a.city,a.countryName||a.country||countryByCode(a.countryCode||a.countryCodes?.[0])?.name].filter(Boolean).join(' · '))}</small></span><span aria-hidden="true">→</span></button>`).join('')||`<p class="helper" role="status">${source.length?'No match. You can enter the name manually.':'Directory loading or unavailable. You can enter the name manually.'}</p>`;
-      results.onclick=e=>{const button=e.target.closest('[data-choice]');if(!button)return;const a=matches[Number(button.dataset.choice)];leg[field]={...a,...(field==='airline'?{}:{airportId:a.id,countryCode:a.countryCode||a.countryCodes?.[0],countryName:a.countryName||countryByCode(a.countryCode||a.countryCodes?.[0])?.name||''})};input.value=a.name;if(field==='airline')row._operatorEditor.refresh();const detail=row.querySelector(`[data-airport-details="${field}"]`);if(detail)detail.textContent=HVJourney.airportDetails(leg[field],HVJourneys.airportFor);results.replaceChildren();input.focus();};
+      showChoices(form,row,input,field);
     };
     host.onkeydown=e=>{const input=e.target;if(input.matches('input[data-leg-field]')&&e.key==='ArrowDown'){const results=input.closest('[data-leg]').querySelector(`[data-results="${input.dataset.legField}"]`);if(results?.querySelector('button')){e.preventDefault();results.querySelector('button').focus();}}if(e.key==='Escape'){input.closest('.flight-search-results')?.replaceChildren();}};
     host.onclick=e=>{
@@ -77,5 +89,7 @@
     if(legs.length===1)record.flightNumber=first.flightNumber;
     HVTransportDetails.finish(form,record);
   }
+  window.addEventListener('hv-airports-ready',()=>refreshDirectory(document.getElementById('transportForm')||window.HVPages?.get('transportForm'),['start','end']));
+  window.addEventListener('hv-reconnect',()=>{const form=document.getElementById('transportForm')||window.HVPages?.get('transportForm');if(form?.closest('dialog')?.open&&!form.querySelector('.flight-legs')?.hidden)loadAirlines().then(()=>refreshDirectory(form,['airline']));});
   window.HVFlights={toggle,save};
 })();

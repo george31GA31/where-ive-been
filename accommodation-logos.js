@@ -2,18 +2,22 @@
 (function (root) {
   'use strict';
   const Hotels = typeof module !== 'undefined' && module.exports ? require('./accommodation-place-model.js') : root.HVAccommodationPlaces;
+  const D=typeof module!=='undefined'&&module.exports?require('./view-data.js'):root.HVData;
   const Saved = typeof module !== 'undefined' && module.exports ? require('./saved-places-model.js') : root.HVSavedModel;
   const E = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const valid = src => typeof src === 'string' && src.length <= 100000 && /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(src);
   const linked = (row, record) => row.accommodationIds?.includes(record.id) && !Hotels.point(row.place) && !Hotels.point(Hotels.place(record)) && Hotels.norm(row.place.name) === Hotels.norm(record.propertyName) && Hotels.norm(row.place.area) === Hotels.norm(record.location);
 
   function context(data, recordId) {
-    const records = data?.accommodations || [], record = records.find(r => r.id === recordId);
-    if (!record) return null;
-    // The same all-member matching rule as the map prevents transitive/name-only merges.
-    const group = Hotels.groups(records).find(g => g.records.includes(record));
-    const rows = (data?.savedPlaces || []).filter(row => row.place && group.records.every(r => Hotels.same(row.place, Hotels.place(r)) || linked(row,r)));
-    return {record, group, rows};
+    if(!data)return null;
+    return D.memo(data,'hotel-logo-groups',['accommodations','savedPlaces','logoData'],'',()=>{
+      const groups=Hotels.groups(data.accommodations||[]),byId=new Map();
+      for(const group of groups){
+        const rows=(data.savedPlaces||[]).filter(row=>row.place&&group.records.every(record=>Hotels.same(row.place,Hotels.place(record))||linked(row,record)));
+        for(const record of group.records)byId.set(record.id,{record,group,rows});
+      }
+      return byId;
+    }).get(recordId)||null;
   }
   function logo(data, recordId) {
     const rows = context(data, recordId)?.rows || [];
@@ -22,6 +26,7 @@
   }
   function set(data, recordId, src, updatedAt = new Date().toISOString()) {
     if (src !== null && !valid(src)) throw new Error('Choose a valid hotel logo.');
+    D.observe(data,['accommodations','savedPlaces']);
     const target = context(data, recordId);
     if (!target) throw new Error('This stay is no longer available.');
     data.savedPlaces ||= [];

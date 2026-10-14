@@ -22,10 +22,24 @@
     const left = keys(a), right = keys(b);
     return left.length === right.length && left.every(k => Object.hasOwn(b, k) && equal(a[k], b[k]));
   }
+  // Reuse branches only inside the sync engine's independently owned local copy.
+  // Mutable display objects and acknowledged merge baselines are never shared.
+  function copyChanged(value,previous){
+    if(value===null||typeof value!=='object')return typeof value==='number'&&!Number.isFinite(value)?null:value;
+    if(typeof value.toJSON==='function')return copyChanged(value.toJSON(),previous);
+    if(Array.isArray(value)){
+      const old=Array.isArray(previous)?previous:[],result=value.map((item,i)=>copyChanged(item===undefined?null:item,old[i]));
+      return Array.isArray(previous)&&result.length===old.length&&result.every((item,i)=>item===old[i])?previous:result;
+    }
+    const keys=Object.keys(value).filter(key=>value[key]!==undefined&&typeof value[key]!=='function'&&typeof value[key]!=='symbol');
+    const old=previous&&typeof previous==='object'&&!Array.isArray(previous)?previous:{},result={};let same=!!previous&&typeof previous==='object'&&!Array.isArray(previous)&&keys.length===Object.keys(old).length;
+    for(const key of keys){const next=copyChanged(value[key],old[key]);same&&=Object.hasOwn(old,key)&&next===old[key];Object.defineProperty(result,key,{enumerable:true,configurable:true,writable:true,value:next});}
+    return same?previous:result;
+  }
   const collections = new Set(['trips', 'stays', 'profiles', 'residences', 'transports', 'transportOperators', 'accommodations', 'notes', 'checklists', 'budgets', 'expenses', 'roadTrips', 'currencyRates', 'currencyPreferences', 'manualCountryVisits', 'tccVisits', 'placeVisits', 'savedPlaces', 'visaAcknowledgements']);
   function compatibleNotes(data) {
     if (data.notes == null || Array.isArray(data.notes)) return data;
-    const result=copy(data);result.legacyTravelNotes??=copy(result.notes);
+    const result=copy(data);let recoveryKey='legacyTravelNotes';while(Object.hasOwn(result,recoveryKey)&&!equal(result[recoveryKey],result.notes))recoveryKey+='Recovery';result[recoveryKey]=copy(result.notes);
     result.notes=typeof result.notes==='string'&&result.notes.trim()?[{id:'legacy-travel-note',title:'Imported travel notes',body:result.notes,profileId:result.activeProfileId||null,category:'General'}]:[];
     return result;
   }
@@ -203,7 +217,7 @@
     }
     return data;
   }
-  const api = {copy, equal, merge, importData, validateImport, describeConflict};
+  const api = {copy, copyChanged, equal, merge, importData, validateImport, describeConflict};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.WIBModel = api;
 })(typeof window !== 'undefined' ? window : globalThis);

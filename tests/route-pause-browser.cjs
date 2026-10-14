@@ -1,0 +1,23 @@
+/* Paused provider responses must not save a fallback or remount the retained map. */
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+const {chromium}=require('playwright'),binary=require('@sparticuz/chromium');binary.setGraphicsMode=false;
+const root=path.resolve(__dirname,'..'),seed={version:2,activeProfileId:'p',profiles:[{id:'p',name:'Route fixture',homeCountryCodes:['GB'],citizenships:['GB']}],trips:[],stays:[],residences:[],accommodations:[],placeVisits:[],savedPlaces:[],notes:[],transports:[0,1].map(i=>({id:'road-'+i,profileId:'p',type:'car',start:{name:'Start '+i,lat:33+i,lon:22},end:{name:'End '+i,lat:33+i,lon:23},startLocal:'2026-11-01T08:00',endLocal:'2026-11-01T10:00',status:'planned'}))};
+const server=http.createServer((req,res)=>{const file=path.resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html')));if(!file.startsWith(root+path.sep)){res.writeHead(403);return res.end();}try{res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp'})[path.extname(file)]||'application/octet-stream');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}});
+let browser,release;
+(async()=>{
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
+ browser=await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH||await binary.executablePath(),args:binary.args.filter(arg=>arg!=='--single-process'),headless:true});
+ const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage(),errors=[];let requests=0;page.on('pageerror',error=>errors.push(error.message));
+ await page.route('**/*',async route=>{
+  const url=route.request().url();if(url.startsWith(origin))return route.continue();
+  if(url.includes('routing.openstreetmap.de/')){requests++;if(requests===1)await new Promise(resolve=>release=resolve);const lat=url.includes('22,34')?34:33;try{return await route.fulfill({json:{code:'Ok',routes:[{geometry:{coordinates:[[22,lat],[22.5,lat+.05],[23,lat]]},distance:1000,duration:100}]}});}catch{return;}}
+  if(route.request().resourceType()==='image')return route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSe8AAAAASUVORK5CYII=','base64')});return route.abort();
+ });
+ await page.addInitScript(seed=>localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed)),seed);await page.goto(origin+'/#/journey-map',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!HVJourneyLibrary.surface());
+ const deadline=Date.now()+10000;while(!release&&Date.now()<deadline)await page.waitForTimeout(20);assert.ok(release,'The first route request started');
+ await page.evaluate(()=>{window.originalSurface=HVJourneyLibrary.surface();switchView('dashboard');});release();await page.waitForTimeout(1400);assert.equal(requests,1,'Hidden map starts no queued requests');assert.equal(await page.evaluate(()=>state.transports.every(record=>!Object.keys(record.resolvedRoutes||{}).length)),true,'Aborted responses do not persist geometry');
+ await page.evaluate(()=>switchView('journeys'));await page.waitForFunction(()=>state.transports.every(record=>Object.keys(record.resolvedRoutes||{}).length),null,{timeout:10000});assert.equal(await page.evaluate(()=>HVJourneyLibrary.surface()===originalSurface),true);assert.equal(requests,3);
+ for(const record of await page.evaluate(()=>state.transports))assert.deepEqual(require('../route-persistence').get(record,0,'car',record.start,record.end).coordinates,[[record.start.lat,22],[record.start.lat+.05,22.5],[record.start.lat,23]]);
+ const geometry=await page.evaluate(()=>JSON.stringify(state.transports.map(record=>record.resolvedRoutes)));await page.evaluate(()=>{state.notes.push({id:'undated',title:'Keep note'});persist();switchView('dashboard');switchView('journeys');});assert.equal(await page.evaluate(()=>HVJourneyLibrary.surface()===originalSurface),true,'Unrelated notes retain the same map');assert.equal(requests,3);assert.equal(await page.evaluate(()=>JSON.stringify(state.transports.map(record=>record.resolvedRoutes))),geometry);assert.deepEqual(errors,[]);await context.close();console.log('Hidden map routing passed: pause, single retry, queued resume, camera/surface reuse and exact geometry.');
+})().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{release?.();await browser?.close();server.closeAllConnections();server.close();});

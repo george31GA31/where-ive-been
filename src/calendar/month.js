@@ -38,6 +38,7 @@ function renderMonth() {
   );
   const groups = buildJourneys();
   window.HVCalendar._groups = groups;
+  const dateWindow=HVCalendarData.window(state,dayKey(start),42);
 
   $('calendarTitle').textContent = cursor.toLocaleDateString('en-GB', {
     month: 'long',
@@ -54,9 +55,10 @@ function renderMonth() {
     .join('');
   for (let index = 0; index < 42; index++) {
     const date = dayKey(addDays(start, index));
-    const activeGroups = groupsForDate(date, groups, layers);
+    const day=dateWindow.get(date);
+    const activeGroups = groupsForDate(date, groups, layers,day);
 
-    const sea = layers.countries ? seaForDate(date) : [];
+    const sea = layers.countries ? day.sea : [];
     const selectionRange =
       calendarSelectionStart &&
       calendarSelectionEnd &&
@@ -64,18 +66,8 @@ function renderMonth() {
       date <= calendarSelectionEnd;
     const selectionStart = date === calendarSelectionStart;
     const selectionEnd = date === calendarSelectionEnd;
-    const allTransport = HVJourney.visibleTransport(state).filter(
-      (t) => !HVJourney.hiddenHomeRecord(state, t) && HVJourney.transportDates(t).includes(date),
-    );
-    const dayStays = layers.countries
-      ? scoped(state.stays).filter(
-          (s) =>
-            s.status !== 'cancelled' &&
-            s.start <= date &&
-            s.end >= date &&
-            HVJourney.isTravelStay(state, s, date),
-        )
-      : [];
+    const allTransport=day.transports;
+    const dayStays=layers.countries?day.stays:[];
     const countries = HVCalendarLayout.countries(dayStays, allTransport, date);
     const visibleCountries = countries.slice(0, 4),
       columns = countries.length >= 4 ? 2 : Math.max(1, countries.length);
@@ -86,7 +78,7 @@ function renderMonth() {
       countryRows.push(
         `<div class="calendar-country-row ${countries.length === 2 ? 'calendar-country-pair' : ''} ${split ? 'calendar-country-split' : ''} ${countries.length === 3 ? 'calendar-country-triple' : ''}" style="grid-template-columns:${chunk.map((s) => `minmax(0,${split ? 1 : s.width}fr)`).join(' ')}">${chunk
           .map(({ record: s }) => {
-            const group = groups.find((g) => g.stays.some((x) => x.id === s.id));
+            const group = journeyCache.memberships.stays.get(s.id);
             return `<div class="calendar-country-section"><button type="button" class="calendar-journey-chip" data-calendar-journey="${E(group?.key || stayKey(s.id))}" data-calendar-edit-country="${E(s.id)}" aria-label="${E(s.countryName)}${SCHENGEN.has(s.countryCode) ? ' · Schengen Area' : ''}" data-calendar-date="${date}" title="${E(s.countryName)}${s.location ? ' · ' + E(s.location) : ''}">${flagHtml(s.domesticDestination || s.countryCode, 'calendar-chip-flag')}<span class="calendar-journey-copy"><strong class="country-name-full">${E(s.countryName)}</strong><strong class="country-name-compact" aria-hidden="true">${E(s.domesticDestination ? s.countryName.slice(0, 3) : s.countryCode)}</strong></span>${SCHENGEN.has(s.countryCode) ? '<span class="calendar-schengen in" role="img" aria-label="Schengen Area" title="Schengen Area">' + (countries.length === 1 ? 'S' : '') + '</span>' : ''}</button>${window.HVVisaNotices?.indicator(s) || ''}</div>`;
           })
           .join('')}</div>`,
@@ -119,34 +111,19 @@ function renderMonth() {
           })
           .join('')
       : '';
-    const stays = layers.accommodation
-      ? scoped(state.accommodations).filter(
-          (a) =>
-            !HVJourney.hiddenHomeRecord(state, a) &&
-            !state.trips.some((t) => t.id === a.tripId && t.status === 'cancelled'),
-        )
-      : [];
+    const stays=layers.accommodation?day.accommodations:[];
     const segments = HVCalendarLayout.lodging(stays, date);
     const lodging = segments.length
       ? `<div class="calendar-lodging-row" aria-label="Accommodation on ${date}: ${E(segments.map(({ record: a }) => a.propertyName + ', ' + a.location).join('; '))}" style="grid-template-columns:${segments[0].columns.map((width) => `minmax(0,${width}fr)`).join(' ')}">${segments.map(({ record: a, column, span }) => `<button type="button" class="calendar-lodging-half occupied ${a.checkOut === date ? 'lodging-end' : ''} ${a.checkIn === date ? 'lodging-start' : ''}" style="grid-column:${column}/span ${span};grid-row:1" data-calendar-edit-accommodation="${E(a.id)}" aria-label="${E(a.propertyName)} · ${a.checkIn === date ? 'Check-in' : a.checkOut === date ? 'Check-out' : 'Staying'}" title="${E(a.propertyName)} · ${E(a.checkIn + ' ' + (a.checkInTime || '') + ' to ' + a.checkOut + ' ' + (a.checkOutTime || ''))}"><small><span class="calendar-lodging-cue" aria-hidden="true">⌂</span>${E(a.propertyName)}</small></button>`).join('')}</div>`
       : '';
-    const places = layers.countries
-      ? scoped(state.placeVisits).filter(
-          (v) =>
-            v.category === 'locations' &&
-            v.status === 'visited' &&
-            v.date <= date &&
-            (v.endDate || v.date) >= date &&
-            !HVJourney.hiddenHomeRecord(state, v),
-        )
-      : [];
+    const places=layers.countries?day.places:[];
     const placeChips = places
       .map(
         (v) =>
           `<button type="button" class="calendar-place-chip" data-place-edit="${E(v.id)}" title="${E(HVAddress.address(v.place))}">◎ ${E(HVAddress.field(v.place, 'name') || 'Saved location')}</button>`,
       )
       .join('');
-    const homeStatus = HVJourney.dayStatus(state, date);
+    const homeStatus = day.status;
     const homeLabel =
       homeStatus === 'home'
         ? `<button type="button" class="calendar-home-icon" data-calendar-home-select="${date}" aria-label="Home, select ${date}" title="Home">⌂</button>`
@@ -155,7 +132,7 @@ function renderMonth() {
     const seaLabel = sea.length
       ? `<span class="calendar-sea-mark" title="At sea">≈ At sea</span>`
       : '';
-    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${homeStatus}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${homeLabel}${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}${transportChips}</div>${placeChips ? `<div class="calendar-place-row">${placeChips}</div>` : ''}<div class="calendar-day-markers">${seaLabel}</div></div>`;
+    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${homeStatus}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${homeLabel}${day.notes.length?`<button type="button" class="calendar-note-indicator" data-calendar-notes-date="${date}" aria-label="${day.notes.length} notes on ${E(dateText(date))}" title="${E(day.notes.map(n=>n.title).join('; '))}">✎</button>`:''}${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}${transportChips}</div>${placeChips ? `<div class="calendar-place-row">${placeChips}</div>` : ''}<div class="calendar-day-markers">${seaLabel}</div></div>`;
   }
   window.HVCalendarDetails?.hide();
   calendar.innerHTML = html;

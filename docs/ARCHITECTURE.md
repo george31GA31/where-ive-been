@@ -44,7 +44,8 @@ offline manifests. Their feature ownership is listed here.
 | Area | Main files | Responsibility |
 | --- | --- | --- |
 | Shared state and compatibility | `src/core/state.js`, `src/core/display.js`, `src/core/travel-days.js`, `src/core/catalogs.js` | Version-2 normalization, guest saves, UTC date calculations, flags, country/rule constants |
-| Initialization and Home | `src/core/shell.js`, `src/core/startup.js`, `dashboard-enhancements.js` | Original event binding, active-page rendering, dashboard widgets |
+| Initialization and Home | `src/core/shell.js`, `src/core/startup.js`, `dashboard-enhancements.js`, `daily-agenda.js` | Event binding, dashboard widgets, Today/Tomorrow projections and UTC rollover |
+| Derived view data | `view-data.js`, `calendar-data-model.js` | Collection revisions, bounded read-only caches and shared date interval indices |
 | Navigation and shared chrome | `voyages.js`, `theme.js`, `index.html` | Hash routes, detached pages, navigation, document titles, theme |
 | Trips and stays | `src/core/stays.js`, `trip-experience.js`, `journey-model.js` | Country date entries, trip editors, phase/scoping calculations |
 | People and home history | `src/core/people.js`, `home-choice.js`, `journeys.js` | Traveller passports, residences, home-country choices |
@@ -67,7 +68,7 @@ offline manifests. Their feature ownership is listed here.
 | Entry and health guidance | `entry-checker.js`, `entry-rules.js`, `entry-health.js`, `visa-notices.js`, `src/core/planning.js`, `data/entry-requirements/` | Passport/destination lookup, optional trip context, health and acknowledgements |
 | Account pages | `account-pages.js`, `login/`, `register/`, `profile/`, `reset-password/` | Email/password forms, profile settings, password recovery and account imports |
 | Auth and account adapter | `account-client.js`, `account-tracker.js` | SDK instance/session checks, identity changes, UI hydration and shared Retry |
-| Sync and recovery | `account-sync.js`, `account-model.js`, `account-records.js`, `account-cache.js` | Reconciliation, revisions, preserved legacy rows and durable checkpoints |
+| Sync and recovery | `account-sync.js`, `account-model.js`, `account-records.js`, `account-cache.js`, `account-size.js` | Reconciliation, revisions, preserved legacy rows, durable checkpoints and PostgreSQL JSONB byte accounting |
 | Transfers | `herald.js` | Current encrypted guest transfer, account import and pending-import recovery |
 | Connectivity and diagnostics | `network.js`, `account-diagnostics.js`, `account-preview-worker.js` | Bounded service requests, connection events, opt-in metadata and background import previews |
 
@@ -93,13 +94,37 @@ helpers use `document.getElementById(id) || HVPages.get(id)`. Retain that fallba
 Removing a detached node or cloning a form would invalidate saved element
 references and event handlers.
 
-Completed page renders are reused until persistence, account hydration, the active
-traveller, the day, Calendar month or country route changes. `HVPages.revision`
-invalidates feature projections when records are saved. Inactive People panels
+Completed page renders depend on their relevant collections, account state object,
+active traveller, UTC day, Calendar month and country route. `HVData.observe` runs
+at persistence and full-render boundaries. Editors must call `persist()` after a
+mutation; a fixture that bypasses an editor must do the same. `HVPages.revisionFor`
+exposes a view-specific revision. An undated note does not invalidate Calendar,
+Home, countries or statistics. Dated notes have a separate `calendarNotes` revision.
+Route geometry and artwork have exact revisions for their visual consumers and
+are excluded from ordinary metadata fingerprints. Inactive People panels
 are not rebuilt on every link click; the traveller selector has its own inexpensive
 refresh. Journey Map retains the same Leaflet surface across unchanged visits.
 Full-screen layout captures the camera before changing dimensions and resizes that
 surface without rebuilding routes, filters or the selected popup.
+
+`view-data.js` owns a WeakMap per state object with at most 24 derived results.
+Profile/date/collection revisions prevent cross-traveller reuse. Shared interval
+indices answer month, year, selected-day and Home queries without scanning every
+record for each date. `HVJourney.summary` is the common elapsed-travel source:
+eligible actual or ongoing planned dates count through today, overlapping dates
+count once, and consecutive entries in the same country form one visit. Future
+dates, cancellations, ordinary home days and other travellers retain their existing
+exclusions. Manual visits and independent TCC records retain their own semantics.
+
+The Home row contains equal-width On this date, Today and Tomorrow panels on
+desktop. Tablet uses a full-width memory panel above two daily panels; phone
+stacks them. Current Trip remains below. Daily items are ordered transport,
+accommodation, countries, then notes and other records. Each category can expand
+without clipping. Dated notes reuse `notes[].date` and the existing note editor;
+no duplicate task collection is introduced. Calendar markers and selected-date
+details use those same notes. Saving waits for a verified checkpoint or server
+acknowledgement, retains a failed draft and its ID, and rejects a stale owner or
+traveller. UTC midnight and focus/visibility changes refresh the date projections.
 
 Existing layers wrap global hooks such as `renderAll`, `switchView`, `persist`
 and editor functions. `app.js` keeps their deliberate order. The Calendar
@@ -187,6 +212,25 @@ the current payload, run the existing three-way merge, and call `save_travel_acc
 with `p_payload` and `p_revision`. A conflict never authorizes blind replacement.
 Edits arriving during a save remain pending; old-identity responses are ignored.
 
+Owned local checkpoints and the remote read start together. A valid checkpoint can
+hydrate the UI provisionally while the network is slow. Edits are checkpointed,
+but remote writes wait for reconciliation. An unavailable or missing remote row
+cannot erase a cached history. Identical clean cache/server data avoids a second
+hydration and a normalization-only save. Past-plan promotion waits until the
+account is reconciled. The mutable editor state and acknowledged merge base remain
+independent copies; structural sharing only reuses unchanged subtrees inside the
+separately owned sync draft.
+Startup yields between independent large copies and after hydration so the browser
+can paint and process input. Every yield rechecks the account epoch; the first
+load stays locked until hydration, and provisional edits stay within reconciliation.
+
+`account-size.js` counts the exact UTF-8 size of PostgreSQL `jsonb::text`, including
+separator spaces and numeric expansion, against the existing 5,000,000-byte limit.
+Invalid JSONB strings and oversized drafts retain local recovery data with distinct
+errors. The existing RPC signature and ownership/revision checks are unchanged;
+the client requests only its returned `revision`. Guest storage failures retain the
+same Retry/unload protection rather than claiming every failure is a quota error.
+
 `account-cache.js` writes atomic, verified per-account/per-tab IndexedDB checkpoints.
 It pools **identical** logo strings locally and expands them back to the unchanged
 remote format. Legacy localStorage outboxes remain readable and are a fallback.
@@ -248,6 +292,15 @@ algorithms, thresholds and styles are unchanged here. Geometry is not country-vi
 evidence. Road ideas become transport/Calendar records only through the existing
 explicit genuine-trip action.
 
+The retained global map pauses active and queued provider work when its view or
+document is hidden. A paused request cannot persist a fallback; returning resumes
+one pending lookup. Owner/profile guards discard late work after an identity change.
+Ordinary route saves update the retained revision in place. Related data changes
+preserve the camera for the same traveller/search/filters. Airport labels can
+refresh in small batches without rebuilding a valid surface. Airports, airlines
+and place catalogues load on demand with shared in-flight requests and retry after
+failure or reconnection. Catalogue readiness refreshes only the affected section.
+
 ## External services and bundled assets
 
 | Service | Existing role |
@@ -263,6 +316,9 @@ explicit genuine-trip action.
 
 Vendor code, transport icons, flags, country geometry and planning datasets retain
 their existing paths and licences. Generated data is not hand-refactored.
+`docs/vendor-inventory.json` records runtime versions, provenance and checksums;
+`scripts/check-vendor-integrity.cjs` checks it in CI. npm audit covers npm
+dependencies, not a separate assurance about these vendored files.
 
 ## Development and deployment
 
@@ -288,6 +344,8 @@ npm run check:build
 npm test
 npm run test:dom
 npm run test:browser
+npm run test:performance
+node scripts/check-vendor-integrity.cjs
 python tests/test_country_import.py
 ```
 
@@ -301,15 +359,16 @@ For an invisible refactor, make a separate checkout of the release being preserv
 and run the new comparison runner against it:
 
 ```sh
-HV_BASELINE_ROOT=/absolute/path/to/baseline npm run test:visual
+HV_BASELINE_ROOT=/absolute/path/to/baseline HV_VISUAL_SCENES=calendar,map,countries,stats,trips,travel-tools,people npm run test:visual
 ```
 
-It compares populated pages, tools, forms and a Journey Map popup at 390/768/1440px
+The optional scene filter excludes intentionally changed screens such as the new
+Home row. The runner compares populated pages, tools, forms and a Journey Map popup at 390/768/1440px
 in both themes, with a fixed Date and identical unavailable external services.
 It checks exact pixels and normalized travel/storage snapshots. Identical-release
 control runs reproduced 1–2 RGB-level rounding at form-control corners. The
 comparator permits at most 64 pixels with a maximum channel delta of 3, confined
-to rounded control/dialog corners with identical computed styles and bounds.
+to rounded control/dialog/date-range-group corners with identical computed styles and bounds.
 No screen is masked and all other pixels must match. Before/after
 images and `comparison.json` are in `test-results/visual-parity/`. Existing browser
 runners cover live interactions, auth/sync, offline recovery, routes and logos.
@@ -317,10 +376,14 @@ These are complementary checks, not a substitute for real-account email delivery
 
 Publishing uses the existing GitHub Pages build/deployment from `main`. Merge only
 the checked commit, wait for Pages success, then check the public asset hashes and
-the served UI. `sw.js` installs complete public shells in bounded batches; failed
-installation retains the previous version. It excludes account APIs, tokens and
-third-party tiles. Cached users can therefore see an earlier working shell until
-the new installation completes; do not ask them to clear their travel storage.
+the served UI. `sw.js` installs a SHA-256-verified core of runtime files in six
+parallel requests; reference catalogues and full-size flags follow with two.
+Registration waits until the account is usable. Documents and maintenance files
+are excluded. Separate core/full completion markers retain the old complete shell
+until extras finish, including stalled response-body failures. Runtime allowlisted
+GETs use a coherent cache first. Account APIs, token-bearing requests, writes and
+third-party tiles remain outside it. Updates wait for existing clients to close;
+the first installation can claim the page. Do not clear travel storage to update.
 
 The scheduled health refresh also rebuilds the offline manifest before committing
 its public dataset. The SlapsGame artwork import is intentionally **workflow_dispatch
@@ -330,8 +393,10 @@ import and existing Pages process.
 
 ## Boundaries kept deliberately
 
-This pass changes code organization and clarity, not business rules. It keeps
-classic-script adapters, legacy compatibility, route algorithms, persisted keys,
-vendor versions and the CSS cascade. Do not combine their removal/replacement with
-a feature change. Future work should start with the owning files above, extend the
-existing model/editor/persistence path, and protect that feature's data and visuals.
+The performance and daily-plan work retains classic-script adapters, legacy
+compatibility, route algorithms, persisted keys, vendor versions and the CSS
+cascade. Elapsed country totals, dated notes and the requested Home row are the
+intentional visible behaviour changes. No Supabase migration, auth/RLS policy,
+account schema or recovery format changed. Future work should use the owning
+files above, extend existing editor/persistence paths, and protect IDs, unknown
+legacy fields, pending deletions, complete geometry and artwork.

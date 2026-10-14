@@ -7,6 +7,7 @@
     typeof module !== 'undefined' && module.exports
       ? require('./account-cache.js')
       : root.WIBAccountCache;
+  const accountSize=typeof module!=='undefined'&&module.exports?require('./account-size.js'):root.WIBAccountSize;
   class AccountSync {
     // base = last acknowledged account payload; local = current edits against it.
     // revision protects the RPC write; epoch rejects results from an old identity.
@@ -18,7 +19,9 @@
       tabId,
       onData,
       onStatus,
+      onReady,
       resolve,
+      yieldTask = () => new Promise(resolve => setTimeout(resolve, 0)),
       timeout = 25000,
     }) {
       Object.assign(this, {
@@ -28,7 +31,9 @@
         tabId,
         onData,
         onStatus,
+        onReady,
         resolve,
+        yieldTask,
         timeout,
       });
       this.epoch = 0;
@@ -57,6 +62,7 @@
       else if (error?.name === 'TimeoutError') category = 'timeout';
       else if (error?.name === 'QuotaExceededError') category = 'quota';
       else if (error?.kind) category = error.kind;
+      else if (code==='22023') category='validation';
       else if (/fetch|network|offline/i.test(error?.message || '')) category = 'network';
       this.lastFailure = {
         operation,
@@ -76,6 +82,7 @@
       this.ready = false;
       this.saving = false;
       this.loading = false;
+      this.reconciling=false;this.provisional=false;this.pendingMarker=undefined;
       for (const controller of this.requests) controller.abort();
       this.requests.clear();
       clearTimeout(this.timer);
@@ -137,7 +144,7 @@
         elapsed: Date.now() - started,
         revision: Number(data?.revision || 0),
       });
-      return { payload, revision: Number(data?.revision || 0) };
+      return { payload, revision: Number(data?.revision || 0), exists:!!data };
     }
     async combine(base, local, remote) {
       let merged = accountModel.merge(base, local, remote);
@@ -225,7 +232,7 @@
         try {
           const raw = entry.source === 'cache' ? accountCache.unpack(entry.value) : entry.raw;
           const draft = this.draft(raw);
-          if (!draft?.base || !draft?.local) throw new Error('Invalid recovery snapshot.');
+          if(!draft?.base||!draft?.local||typeof draft.base!=='object'||typeof draft.local!=='object'||Array.isArray(draft.base)||Array.isArray(draft.local)||draft.revision!=null&&(!Number.isInteger(Number(draft.revision))||Number(draft.revision)<0))throw new Error('Invalid recovery snapshot.');
           result.push({ ...entry, ...draft });
         } catch (error) {
           // A broken device checkpoint must not hide a successful account read.
@@ -301,82 +308,46 @@
       });
       return this.loadFlight;
     }
-    async performStart(id, empty, epoch) {
-      const started = Date.now();
-      let operation = 'account fetch';
-      this.status('Loading account…');
-      try {
-        const remote = await this.read(id);
-        if (epoch !== this.epoch) return;
-        operation = 'account hydration';
-        this.base = remote.payload;
-        this.local = accountModel.copy(remote.payload);
-        this.revision = remote.revision;
-        for (const draft of await this.drafts(id)) {
-          if (epoch !== this.epoch) return;
-          this.local = await this.combine(draft.base, draft.local, this.local);
-          this.adopted.push(draft);
+    async performStart(id,empty,epoch){
+      const started=Date.now();let operation='account fetch';this.status('Loading account…');this.reconciling=true;
+      const remoteFlight=this.read(id).then(value=>({value}),error=>({error}));
+      try{
+        const drafts=(await this.drafts(id)).sort((a,b)=>Number(b.revision)-Number(a.revision));if(epoch!==this.epoch)return;
+        if(drafts.length){
+          this.base=accountModel.copy(drafts[0].base);
+          await this.yieldTask();if(epoch!==this.epoch)return;
+          this.local=accountModel.copy(drafts[0].local);this.revision=Number(drafts[0].revision)||0;
+          for(const draft of drafts.slice(1)){this.local=await this.combine(draft.base,draft.local,this.local);if(epoch!==this.epoch)return;}
+          await this.yieldTask();if(epoch!==this.epoch)return;
+          this.adopted=drafts;this.ready=true;this.provisional=true;this.onData(accountModel.copy(this.local));
+          this.status('Showing saved account data. Checking for updates…','neutral');root.HVAccountDiagnostics?.record('Cached UI ready',{elapsed:Date.now()-started});
+          await this.yieldTask();if(epoch!==this.epoch)return;
         }
-        if (epoch !== this.epoch) return;
-        if (!Object.keys(this.local).length) this.local = accountModel.copy(empty);
-        this.ready = true;
-        this.onData(accountModel.copy(this.local));
-        const cached = await this.cache();
-        if (epoch !== this.epoch) return;
-        if (this.pending()) await this.flush();
-        else this.savedStatus(await this.clean(cached));
-        root.HVAccountDiagnostics?.record('UI ready', { elapsed: Date.now() - started });
-      } catch (error) {
-        if (epoch !== this.epoch) return;
-        this.ready = false;
-        const kind = this.diagnostic(operation, error, Date.now() - started);
-        if (['auth', 'permission', 'schema', 'data', 'client', 'programming'].includes(kind))
-          this.retryAt = Infinity;
-        const drafts = (await this.drafts(id)).sort(
-          (a, b) => Number(b.revision) - Number(a.revision),
-        );
-        if (epoch !== this.epoch) return;
-        if (drafts.length) {
-          try {
-            this.base = accountModel.copy(drafts[0].base);
-            this.local = accountModel.copy(drafts[0].local);
-            this.revision = Number(drafts[0].revision) || 0;
-            for (const draft of drafts.slice(1))
-              this.local = await this.combine(draft.base, draft.local, this.local);
-            if (epoch !== this.epoch) return;
-            this.adopted = drafts;
-            this.ready = true;
-            this.onData(accountModel.copy(this.local));
-            await this.cache();
-            this.status(
-              'Showing saved account data. Changes will sync when the account service reconnects.',
-              'neutral',
-            );
-            return;
-          } catch (recoveryError) {
-            this.ready = false;
-            this.diagnostic('cached account hydration', recoveryError);
-          }
-        }
-        const messages = {
-          offline: 'You are offline. Your device data is safe. Reconnect and retry.',
-          auth: 'Your sign-in could not be verified. Your device data is safe. Open Account settings or retry.',
-          permission: 'The account service could not provide access. Your device data is safe.',
-          schema: 'The account service could not read this account. Your device data is safe.',
-          data: 'Account data could not be processed. Your original data is safe.',
-          timeout: 'Account loading timed out. Your device data is safe. Retry connection.',
-        };
-        this.status(
-          messages[kind] || 'Could not load account. Your device data is safe. Retry connection.',
-          'bad',
-        );
+        const result=await remoteFlight;if(epoch!==this.epoch)return;if(result.error)throw result.error;const remote=result.value;operation='account hydration';
+        if(this.ready&&!remote.exists&&Object.keys(this.base).length)throw Object.assign(new Error('The account copy is unavailable. Your saved device data is unchanged.'),{kind:'data'});
+        const previous=this.local;
+        if(this.ready&&accountModel.equal(this.base,remote.payload)&&accountModel.equal(previous,this.base)){this.local=previous;}else if(this.ready){const combined=await this.combine(this.base,previous,remote.payload);if(epoch!==this.epoch)return;this.local=await this.combine(previous,this.local,combined);}else this.local=accountModel.copy(remote.payload);
+        // Independent large copies must not occupy one uninterrupted browser task.
+        // A first load is still locked here; provisional editors are already live.
+        if(!previous){await this.yieldTask();if(epoch!==this.epoch)return;}
+        if(epoch!==this.epoch)return;this.base=remote.payload;this.revision=remote.revision;if(!Object.keys(this.local).length)this.local=accountModel.copy(empty);
+        this.ready=true;this.provisional=false;this.reconciling=false;
+        if(!previous||!accountModel.equal(previous,this.local))this.onData(accountModel.copy(this.local));this.onReady?.();
+        await this.yieldTask();if(epoch!==this.epoch)return;
+        const cached=await this.cache();if(epoch!==this.epoch)return;if(this.pending())await this.flush();else this.savedStatus(await this.clean(cached));
+        root.HVAccountDiagnostics?.record('UI ready',{elapsed:Date.now()-started});
+      }catch(error){
+        if(epoch!==this.epoch)return;this.reconciling=false;const kind=this.diagnostic(operation,error,Date.now()-started);
+        if(['auth','permission','schema','data','client','programming'].includes(kind))this.retryAt=Infinity;
+        if(this.ready){await this.cache();if(epoch!==this.epoch)return;this.status(['auth','permission'].includes(kind)?'Showing saved account data. Sign-in needs checking before account sync. Retry connection.':'Showing saved account data. Changes will sync when the account service reconnects.','neutral');return;}
+        this.ready=false;const messages={offline:'You are offline. Your device data is safe. Reconnect and retry.',auth:'Your sign-in could not be verified. Your device data is safe. Open Account settings or retry.',permission:'The account service could not provide access. Your device data is safe.',schema:'The account service could not read this account. Your device data is safe.',data:'Account data could not be processed. Your original data is safe.',timeout:'Account loading timed out. Your device data is safe. Retry connection.'};
+        this.status(messages[kind]||'Could not load account. Your device data is safe. Retry connection.','bad');
       }
     }
     edit(data) {
       if (!this.ready) throw new Error('Wait for your account to finish loading.');
       // Hydration/rendering is not a user mutation.
-      if (accountModel.equal(this.local, data)) return;
-      this.local = accountModel.copy(data);
+      const next=accountModel.copyChanged(data,this.local);if(next===this.local)return;this.local=next;
       const epoch = this.epoch,
         local = this.local;
       const message = (cached) => {
@@ -386,7 +357,7 @@
             ? root.navigator?.onLine === false
               ? 'Saved on this device - changes waiting to sync'
               : 'Saving…'
-            : 'Device storage is full. Keep this page open until your changes are saved to account.',
+            : 'Device storage is unavailable. Keep this page open until your changes are saved to account.',
           cached ? 'neutral' : 'bad',
         );
       };
@@ -400,7 +371,7 @@
     }
     flush({ scheduled = false } = {}) {
       if (this.saving) return this.flight;
-      if (!this.ready) return Promise.resolve();
+      if (!this.ready||this.reconciling) return Promise.resolve();
       if (root.navigator?.onLine === false || (scheduled && Date.now() < (this.retryAt || 0))) {
         if (this.pending())
           Promise.resolve(this.cache()).then((cached) =>
@@ -447,10 +418,9 @@
           }
           const sent = accountModel.copy(this.local);
           this.status('Saving…');
-          const { data, error, status } = await this.client.rpc('save_travel_account', {
-            p_payload: sent,
-            p_revision: remote.revision,
-          });
+          const size=accountSize.measure(sent);if(size.bytes>size.limit)throw Object.assign(new Error('This account exceeds the 5 MB account-save limit.'),{kind:'size'});
+          const request=this.client.rpc('save_travel_account',{p_payload:sent,p_revision:remote.revision});
+          const {data,error,status}=await(request.select?request.select('revision'):request);
           if (epoch !== this.epoch) return;
           if (error?.code === '40001') continue;
           if (error) {
@@ -477,9 +447,7 @@
           const cached = await this.cache();
           if (epoch !== this.epoch) return;
           this.status(
-            cached
-              ? 'Changes saved on this device - waiting for account sync.'
-              : 'Account save unavailable - waiting for account sync. Keep this page open to retain your changes.',
+            kind==='size'?'Account-save limit reached (5 MB). '+(cached?'Changes are saved on this device, but have not synced to your account.':'Keep this page open; these changes are not yet saved.'):kind==='validation'?'Account data could not be accepted. '+(cached?'Changes are saved on this device, but have not synced.':'Keep this page open to retain your changes.'):cached?'Changes saved on this device - waiting for account sync.':'Account save unavailable - waiting for account sync. Keep this page open to retain your changes.',
             cached ? 'neutral' : 'bad',
           );
           if (
@@ -487,6 +455,7 @@
               'auth',
               'permission',
               'validation',
+              'size',
               'schema',
               'data',
               'client',
@@ -551,7 +520,9 @@
       return this.flush();
     }
     pending() {
-      return this.ready && this.user && this.local && !accountModel.equal(this.local, this.base);
+      if(!this.ready||!this.user||!this.local)return false;
+      if(this.pendingMarker?.base===this.base&&this.pendingMarker.local===this.local)return this.pendingMarker.value;
+      const value=!accountModel.equal(this.local,this.base);this.pendingMarker={base:this.base,local:this.local,value};return value;
     }
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = AccountSync;
