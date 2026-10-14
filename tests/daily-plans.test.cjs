@@ -16,6 +16,10 @@ test('manual visits, TCC and notes never create travel dates or visits',()=>{
  const data=seed();data.notes=[{id:'n',profileId:'p',date:'2026-10-14',title:'Get yellow fever vaccine'}];data.manualCountryVisits=[{id:'m',profileId:'p',countryCode:'DZ',visited:true}];data.tccVisits=[{id:'t',destinationId:'algeria',visited:true}];
  assert.equal(J.summary(data,'2026-10-14').days.size,0);assert.equal(J.summary(data,'2026-10-14').byCountry.size,0);assert.equal(C.window(data,'2026-10-14',1).get('2026-10-14').notes.length,1);
 });
+test('At Sea retains its elapsed statistics row without becoming a visited country',()=>{
+ const data=seed();data.stays=[stay('sea','2026-10-13','2026-10-20',{countryCode:'SEA',countryName:'At Sea',status:'planned'})];
+ const result=J.summary(data,'2026-10-14');assert.equal(result.byCountry.get('SEA').days.size,2);assert.equal(result.byCountry.get('SEA').trips,1);assert.equal(result.byCountry.get('SEA').records[0].id,'sea');assert.equal(result.days.size,2);assert.equal(result.countries.has('SEA'),false);assert.equal(result.recordedCountries.has('SEA'),false);
+});
 test('Calendar windows preserve inclusive transport, hotel and independent dated-note boundaries',()=>{
  const data=seed();data.transports=[{id:'night',profileId:'p',type:'train',startLocal:'2026-10-14T22:00',endLocal:'2026-10-15T06:00',start:{name:'A'},end:{name:'B'}}];data.accommodations=[{id:'hotel',profileId:'p',checkIn:'2026-10-14',checkOut:'2026-10-15',propertyName:'Hotel'}];data.notes=[{id:'dated',date:'2026-10-14',title:'Visa'},{id:'undated',title:'Keep existing note'},{id:'private',profileId:'other',date:'2026-10-14'}];
  const days=C.window(data,'2026-10-14',3);assert.equal(days.get('2026-10-14').notes.length,1);assert.equal(days.get('2026-10-15').transports.length,1);assert.equal(days.get('2026-10-15').accommodations.length,1);assert.equal(days.get('2026-10-16').accommodations.length,0);

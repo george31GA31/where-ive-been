@@ -27,10 +27,8 @@
       for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){
         const date=new Date(ms).toISOString().slice(0,10),atHome=!isTravelStay(state,stay,date,owner);(atHome?home:days).add(date);
         if(!atHome){trips.add(stay.tripId||'stay:'+stay.id);if(!homeCountryCodes(state,owner,today).includes(stay.countryCode))countries.add(stay.countryCode);
-          if(stay.countryCode!=='SEA'){
-            contributes=true;if(!byCountry.has(stay.countryCode))byCountry.set(stay.countryCode,{days:new Set(),trips:0,records:[],owners:new Map()});const country=byCountry.get(stay.countryCode);country.days.add(date);
-            if(!country.owners.has(owner))country.owners.set(owner,new Set());country.owners.get(owner).add(date);
-          }
+          contributes=true;if(!byCountry.has(stay.countryCode))byCountry.set(stay.countryCode,{days:new Set(),trips:0,records:[],owners:new Map()});const country=byCountry.get(stay.countryCode);country.days.add(date);
+          if(!country.owners.has(owner))country.owners.set(owner,new Set());country.owners.get(owner).add(date);
         }
       }
       if(contributes)byCountry.get(stay.countryCode).records.push(stay);
