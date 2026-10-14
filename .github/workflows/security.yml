@@ -72,3 +72,17 @@ jobs:
         uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4
         with:
           category: "/language:javascript-typescript"
+      - name: Summarise CodeQL findings
+        if: always()
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('node:fs'),path=require('node:path');
+          const directory=path.resolve(process.env.GITHUB_WORKSPACE,'../results');
+          if(fs.existsSync(directory))for(const file of fs.readdirSync(directory).filter(file=>file.endsWith('.sarif'))){
+            const report=JSON.parse(fs.readFileSync(path.join(directory,file),'utf8'));
+            const results=(report.runs||[]).flatMap(run=>run.results||[]);
+            console.log(`${file}: ${results.length} findings`);
+            for(const result of results)console.log(JSON.stringify({rule:result.ruleId,message:result.message,locations:result.locations,codeFlows:result.codeFlows}));
+          }
+          NODE
