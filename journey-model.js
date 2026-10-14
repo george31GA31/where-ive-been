@@ -20,7 +20,7 @@
   }
   const visibleTransport=(state,profileId=state.activeProfileId)=>D.memo(state,'visible-transports',['trips','transports'],profileId,()=>{const cancelled=new Set((state.trips||[]).filter(t=>t.status==='cancelled').map(t=>t.id));return scoped(state.transports,profileId).filter(t=>t.status!=='cancelled'&&!cancelled.has(t.tripId));});
   function isElapsedStay(state,stay,today){return countsForPlanning(stay)&&validDate(stay.start)&&validDate(stay.end)&&stay.start<=today&&!homeContext(state,stay.profileId||state.activeProfileId).cancelled.has(stay.tripId);}
-  const summary=(state,today,profileId=state.activeProfileId)=>D.memo(state,'travel-summary',[...contextKeys,'manualCountryVisits'],today+'|'+profileId,()=>{
+  const summary=(state,today,profileId=state.activeProfileId)=>D.memo(state,'travel-summary:'+profileId,[...contextKeys,'manualCountryVisits'],today+'|'+profileId,()=>{
     const stays=scoped(state.stays,profileId).filter(s=>isElapsedStay(state,s,today)),countries=new Set(),days=new Set(),home=new Set(),trips=new Set(),byCountry=new Map();
     for(const stay of stays){
       const owner=stay.profileId||profileId;let contributes=false;

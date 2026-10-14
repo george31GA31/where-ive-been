@@ -31,7 +31,7 @@
     const sameStamp=mapSurface&&lastStamp&&next.every((value,index)=>value===lastStamp[index]);
     if(sameStamp&&!directoryChanged){mapSurface.resize();return;}
     if(sameStamp&&directoryChanged&&!needsDirectoryMap){directoryChanged=false;refreshDirectory();mapSurface.resize();return;}
-    const camera=directoryChanged&&mapSurface?{center:mapSurface.map.getCenter(),zoom:mapSurface.map.getZoom()}:null;
+    const camera=mapSurface&&lastStamp&&[0,2,4,5,6].every(index=>next[index]===lastStamp[index])?{center:mapSurface.map.getCenter(),zoom:mapSurface.map.getZoom()}:null;
     if(directoryChanged&&sameStamp&&!needsDirectoryMap)preserveMap=true;
     if(!preserveMap){mapSurface?.remove();mapSurface=null;}
     const page=$('journeysView'),host=$('journeyLibraryRecords');if(!host||!window.HVCalendar?.journeyGroups)return;

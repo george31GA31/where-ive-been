@@ -10,7 +10,7 @@
 
   function context(data, recordId) {
     if(!data)return null;
-    return D.memo(data,'hotel-logo-groups',['accommodations','savedPlaces'],'',()=>{
+    return D.memo(data,'hotel-logo-groups',['accommodations','savedPlaces','logoData'],'',()=>{
       const groups=Hotels.groups(data.accommodations||[]),byId=new Map();
       for(const group of groups){
         const rows=(data.savedPlaces||[]).filter(row=>row.place&&group.records.every(record=>Hotels.same(row.place,Hotels.place(record))||linked(row,record)));

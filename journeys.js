@@ -8,11 +8,11 @@
   let ready=false,category='mountains',search='',page=0,visitDate='',countryCode='',selectedMapCountry='',opener=null;
   const paths={flight:'m3 10 7 2 4 8 2-1-2-7 6-4-1-2-7 2-6-5-2 1 4 6-5-1Z',train:'M5 16V6a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v10H5Zm0-6h14M8 20l2-4m6 4-2-4M8 13h1m6 0h1',bus:'M4 17V5h16v12H4Zm0-7h16M7 17v3m10-3v3M7 13h1m8 0h1',car:'m3 12 3-7h12l3 7v6H3v-6Zm0 0h18M6 18v3m12-3v3M6 15h2m8 0h2',boat:'M4 11h16l-3 7H7l-3-7Zm4 0V5h8v6M12 5V2M3 21l3-1 3 1 3-1 3 1 3-1 3 1',other:'M4 12h16m-6-6 6 6-6 6'};
   const icon=type=>HVTransportIcons.html(type);
-  const loads=new Map();
+  const loads=new Map();let catalogueRevision=0,lastAchievements;
   function loadCatalog(key){
     if(catalog[key]||failures.has(key))return Promise.resolve(catalog[key]);if(loads.has(key))return loads.get(key);
     const loading=(window.HVNetwork?HVNetwork.request:fetch)(new URL('data/'+key+'.json?v=flight-home-3',root)).then(r=>{if(!r.ok)throw Error(r.status);return r.json();}).then(data=>{
-      catalog[key]=data;window.HVPages?.invalidateViews?.(['country','stats','places']);render();if(document.body.dataset.currentView==='map')renderMap();
+      catalog[key]=data;catalogueRevision++;window.HVPages?.invalidateViews?.(['country','places']);render();if(document.body.dataset.currentView==='map')renderMap();
       if(key==='airports'){window.dispatchEvent(new Event('hv-airports-ready'));if(document.body.dataset.currentView==='calendar')window.HVCalendar?.renderMonth();}
       const view=document.body.dataset.currentView;if(['country','stats','places'].includes(view))window.HVPages?.markRendered?.(view);return data;
     }).catch(()=>{failures.add(key);render();return null;}).finally(()=>loads.delete(key));loads.set(key,loading);return loading;
@@ -54,7 +54,7 @@
 
   }
   function renderAchievements(){
-    const host=get('atlasStatistics');if(!host)return;host.querySelector('#placeAchievements')?.remove();
+    const host=get('atlasStatistics');if(!host)return;const signature=HVData.token(state,['stays','trips','profiles','residences','transports','accommodations','placeVisits','manualCountryVisits','countryCountExcludedCodes','countryCountIncludedExtraCodes'],state.activeProfileId+'|'+today()+'|'+catalogueRevision);if(host.querySelector('#placeAchievements')&&lastAchievements?.data===state&&lastAchievements.signature===signature)return;lastAchievements={data:state,signature};host.querySelector('#placeAchievements')?.remove();
     const panel=document.createElement('article');panel.id='placeAchievements';panel.className='panel';
     const universe=COUNTRIES.filter(c=>c.code!=='SEA'&&WIBCountryCount.isCounted(c.code)),visited=J.summary(state,today()).countries;
     panel.innerHTML=`<h2>Places experienced</h2><p class="helper">Your recorded visits, counted once per place. Totals reflect imported reference data.</p><div class="achievement-grid"><div><span>Countries visited</span><strong>${universe.filter(c=>visited.has(c.code)).length} <small>/ ${universe.length}</small></strong></div>${Object.entries(J.categories).map(([key,label])=>{const ids=J.visits(state,key,today()),list=items(key);return `<div><span>${E(label)} visited</span><strong>${list.length?list.filter(r=>ids.has(r.id)).length:'—'} <small>${list.length?'/ '+list.length:''}</small></strong>${!list.length?'<small>Data not available yet</small>':''}</div>`;}).join('')}</div>`;
@@ -232,7 +232,7 @@ HVTransportDetails.setup(form,t||prefill);get('transportDelete').hidden=!t;get('
     const labels=window.updateTimelineLabels;window.updateTimelineLabels=function(){labels();if(get('timelineManualDate'))get('timelineManualDate').value=timelineDate||'';};
     window.setTimelineDate=function(value){if(!J.validDate(value)||!els.timelineSlider.dataset.start)return;els.timelineSlider.value=Math.max(0,Math.min(Number(els.timelineSlider.max),diffDays(els.timelineSlider.dataset.start,value)));setTimelineFromSlider();};
     const colors=window.updateMapColors;window.updateMapColors=function(){colors();renderMap();};
-    window.addEventListener('hv-route',()=>{for(const view of ['map','calendar'])get(view+'View')?.querySelectorAll('[data-layer]').forEach(input=>input.checked=layer(view)[input.dataset.layer]);});
+    window.addEventListener('hv-route',()=>{if(document.body.dataset.currentView==='stats')renderAchievements();for(const view of ['map','calendar'])get(view+'View')?.querySelectorAll('[data-layer]').forEach(input=>input.checked=layer(view)[input.dataset.layer]);});
     refresh();
     window.addEventListener('hv-reconnect',()=>{const retry=[...failures];failures.clear();retry.forEach(loadCatalog);});
   }

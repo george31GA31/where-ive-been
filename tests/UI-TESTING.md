@@ -7,12 +7,14 @@ npm ci --ignore-scripts
 npm test
 npm run test:dom
 npm run test:browser
+npm run test:performance
+node scripts/check-vendor-integrity.cjs
 python tests/test_country_import.py
 ```
 
 Browser checks use the pinned Chromium package and write screenshots to `test-results/browser` (ignored by git, uploaded by CI). Set `HV_CHROMIUM_PATH` to an existing compatible Chromium executable if extraction is unavailable. `HV_SCREENSHOTS` changes the output location.
 
-Fixtures are fictional. Real D3 and world-atlas geometry are served locally, while account/visa external services are blocked. Test dimensions are 390, 768 and 1440 pixels in both themes. Screenshots plus geometry/keyboard assertions support review; there are no pixel-diff baseline claims.
+Fixtures are fictional. Real D3 and world-atlas geometry are served locally, while account/visa external services are intercepted. Test dimensions are 390, 768 and 1440 pixels in both themes. The separate visual-parity runner compares two checkouts with identical fixtures and clocks. Exclude an intentionally changed scene with `HV_VISUAL_SCENES`; never use a mask to conceal a regression. Direct fixture mutations must call `persist()` before querying cached views, as real editors do. Airport-dependent fixtures request the lazy directory by opening the editor before waiting for it.
 
 ## Connectivity expectations
 
@@ -20,10 +22,11 @@ Fixtures are fictional. Real D3 and world-atlas geometry are served locally, whi
 | --- | --- |
 | Normal connection | Account sync and reference/map services can load; a real-account test is still required |
 | Connection lost after loading | Guest edits persist locally; account engine preserves its durable outbox |
-| Full offline reload | Not supported: no service worker/application-shell cache is provided; existing browser data must remain intact |
+| Full offline reload | Works after the verified core shell is installed; unavailable reference data/tiles retain explicit fallback states and existing browser data remains intact |
 | Account library unavailable | Clear library failure and a retry control that reloads the library |
-| Account load failure | Tracker remains locked to avoid overwriting unread account data; retry remains outside the lock |
+| Account load failure | An owned checkpoint can display provisionally with local edits retained; remote writes wait for reconciliation. Without a usable checkpoint the tracker stays locked and Retry remains available |
 | Save failure | Durable account outbox remains; explicit local-save wording |
+| Guest storage failure | Form and in-memory edits remain, Retry attempts persistence, and unload protection remains until saved |
 | Map libraries/geography unavailable | Map fallback remains visible |
 | Reference dataset unavailable | Explicit unavailable/loading failure state, never a false zero achievement total |
 | Visa source unavailable | No definitive result; link to live requirements |
@@ -47,3 +50,40 @@ Exactly two countries appear side by side as flags, with complete country names 
 Screenshots and geometry are saved to `test-results/calendar-cell`. To compare the same fixture before and after, run the suite with `HV_COMPARE_ROOT` pointing to a checkout of the previous version, `HV_CALENDAR_BASELINE=1`, and `HV_SCREENSHOTS` pointing to a separate output directory. Run the changed version with `HV_BASELINE_SCREENSHOTS` pointing to that directory. This compares every cell's width, height and borders, the Calendar dimensions and the single-country presentation; inspect both sets of screenshots as well.
 
 `tests/calendar-cell.test.cjs` verifies the half-day model without altering any source record, including optional times, reversed records and concurrent arrivals/departures.
+
+## October performance and daily plans
+
+`tests/daily-plans.test.cjs` checks elapsed country totals, overlapping/split visits,
+home/profile/cancellation rules, interval windows and priority projections.
+`tests/daily-plans-browser.cjs` verifies the Algeria 11 + 10 = 21 days / 2 visits
+example, next-day rollover, Calendar note create/edit/move/delete/reload, failed-save
+retention with a stable ID, existing hotel/transport editors, profile isolation,
+responsive panels and unchanged unrelated payload fields.
+
+`tests/account-loading.test.cjs` covers early cache display, stalled/missing remote
+rows, edits during reconciliation, identical clean hydration, immutable merge bases
+and revision-only acknowledgements. `tests/account-size.test.cjs` checks PostgreSQL
+JSONB byte formatting, numeric expansion and invalid strings. One fictional UTF-8
+fixture was also checked directly against `octet_length(jsonb::text)` on the existing
+server. No production payload is a fixture.
+
+`tests/route-pause-browser.cjs` holds a provider response while leaving the map,
+asserts abort/no queued requests, resumes it once, and verifies camera, geometry and
+retained-surface behaviour. `tests/offline-shell-delivery-browser.cjs` uses real
+service workers and miniature releases to check hashes, cache-first reads, waiting
+updates, old-cache retention, stalled bodies, encoded paths and private-request
+exclusions.
+
+`tests/priority-performance-browser.cjs` runs fictional signed-in histories with
+8, 160 linked and 800 unlinked records. Large payloads include saved geometry and
+repeated artwork and remain below the existing server cap. Cached reloads delay
+the remote read by 3 seconds. `HV_BENCH_OUTPUT` writes JSON and `HV_ROOT` targets a
+baseline checkout. `HV_PERF_ASSERT=1` enforces cache-ready under 2 seconds, first
+priority handlers under 750 ms and repeat/post-note handlers under 150 ms. Service
+workers are blocked for this view-work comparison; worker delivery is tested
+separately. Report handler and paint timings as controlled Chromium measurements,
+not field INP, low-end phone performance or proof that every long task is removed.
+
+Keep runtime checksum/advisory review separate from `npm audit`: the latter covers
+the npm graph, while the app serves committed vendor files. The inventory records
+versions/provenance and application handling of relevant upstream advisories.
