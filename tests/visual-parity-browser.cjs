@@ -204,7 +204,7 @@ async function capture(pair, label, prepare) {
     if (label.startsWith('map-')) await page.waitForSelector('.map-country');
     roundedElements.push(
       await page.evaluate(() =>
-        [...document.querySelectorAll('input,select,textarea,button,dialog[open]')]
+        [...document.querySelectorAll('input,select,textarea,button,dialog[open],.date-range-row')]
           .map((input) => {
             const rect = input.getBoundingClientRect(),
               style = getComputedStyle(input);

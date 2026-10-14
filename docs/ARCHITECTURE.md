@@ -365,7 +365,7 @@ in both themes, with a fixed Date and identical unavailable external services.
 It checks exact pixels and normalized travel/storage snapshots. Identical-release
 control runs reproduced 1–2 RGB-level rounding at form-control corners. The
 comparator permits at most 64 pixels with a maximum channel delta of 3, confined
-to rounded control/dialog corners with identical computed styles and bounds.
+to rounded control/dialog/date-range-group corners with identical computed styles and bounds.
 No screen is masked and all other pixels must match. Before/after
 images and `comparison.json` are in `test-results/visual-parity/`. Existing browser
 runners cover live interactions, auth/sync, offline recovery, routes and logos.
