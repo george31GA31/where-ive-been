@@ -74,7 +74,10 @@ asserts abort/no queued requests, resumes it once, and verifies camera, geometry
 retained-surface behaviour. `tests/offline-shell-delivery-browser.cjs` uses real
 service workers and miniature releases to check hashes, cache-first reads, waiting
 updates, old-cache retention, stalled bodies, encoded paths and private-request
-exclusions.
+exclusions. It also checks hash-validated reuse of unchanged public assets and
+network replacement of deliberately corrupted cached bytes. The real release
+upgrade fixture records core download counts and checks that unchanged D3 is
+reused while the repaired Pakistan flag is fetched.
 
 `tests/priority-performance-browser.cjs` runs fictional signed-in histories with
 8, 160 linked and 800 unlinked records. Large payloads include saved geometry and

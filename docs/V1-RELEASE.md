@@ -103,6 +103,16 @@ All images use fictional records. Baseline and candidate fixtures differ where t
 
 The measured sticky header is 64px on desktop, 60px at 768px and 58px on the two phone widths. At 1440px the prior shell measured 174.7px; the 390px prior header measured 80px. All essential destinations remain available in the grouped menus.
 
+## Public-cache update follow-up
+
+PR #34 passed every GitHub check and deployed as `f6c5a7d30cf0a706f9782c3a10766c00571416ab`. Published HTML, scripts, styles and repaired flags matched the tested bytes. Live verification then found the cloud browser continuing to display its old cached shell. Its internal worker diagnostics were unavailable, so the exact internal state was unconfirmed.
+
+The update installer required 377 core public assets to be downloaded again for each release. A separate check of those exact versioned asset URLs from the container, with twelve concurrent requests, took 134.2 seconds and encountered one transient 503 on an unchanged flag. This download requirement exposes activation to unnecessary network delay and transient failures.
+
+The follow-up reuses an older public-cache response only after its bytes match the current release's SHA-256 hash. New, changed, missing or invalid cached assets still require a verified download. The public allowlist, staged completion, previous complete shell, private-request exclusions and all travel/account storage remain unchanged. No browser storage reset or forced activation is used.
+
+The same real baseline-to-candidate upgrade fixture requested **377 core assets before and 30 after** this change. An unchanged D3 asset made one network request before and zero after; the changed Pakistan flag was downloaded and decoded. Both runs preserved record fields, identities, references, logos, stored routes, pending/deletion markers and offline reload. The small lifecycle fixture additionally rejected deliberately corrupted cached bytes and fetched a verified replacement, while preserving the old shell through a failed install. See [before](v1-evidence/cache-upgrade-before.txt) and [after](v1-evidence/cache-upgrade-after.txt). These are deterministic local request counts; the view timings above deliberately block workers and are unaffected by this change.
+
 ## Exact remaining activation dependency
 
 The owner must supply and confirm the enquiry receiving email, then set `HV_PLANNING_CONFIG.enquiryEmail` in `trip-planning-config.js`. No existing repository address was assumed to be the service inbox. Until configured, the service says enquiries are not open and offers review/copy/download; it never claims a request was sent. With a configured address, the button opens the user's email app with the reviewed request, and explains that the email still needs sending. A fictional `planning@example.test` address verified this handoff without sending email. Real receipt can only be verified once the owner-confirmed inbox exists.

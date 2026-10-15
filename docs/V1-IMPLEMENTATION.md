@@ -57,3 +57,7 @@ Rollback code to the baseline commit through a normal revert. Because payload co
 ## Verification record
 
 See [V1-RELEASE.md](V1-RELEASE.md) for the twelve-page completion table, actual coverage, before/after measurements, synthetic screenshots, the enquiry activation dependency and limits. Local unit (265), DOM, all 25 browser scripts, vendor/import/build checks, dependency audit and actual previous-worker upgrade checks passed. GitHub CI and the deployed build are checked separately after this candidate is committed. No real owner record was changed during testing.
+
+## Live update follow-up
+
+The first release passed CI and deployed in PR #34. A live cached-shell check led to a public update-path improvement: unchanged assets are now reused only after validation against the new manifest hash. The controlled baseline-to-new upgrade downloads 30 core assets instead of 377; corrupted cached bytes are rejected. Travel storage, private exclusions, old-shell retention and all record fields remain protected. See the release review and paired upgrade logs.

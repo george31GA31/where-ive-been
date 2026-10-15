@@ -4,9 +4,9 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
 const {chromium}=require('playwright'),binary=require('@sparticuz/chromium');binary.setGraphicsMode=false;
 const candidate=path.resolve(__dirname,'..'),previous=process.env.HV_PREVIOUS_ROOT;
 if(!previous)throw new Error('Set HV_PREVIOUS_ROOT to an unchanged checkout of the previous release.');
-const {largeAccount}=require('./fixtures/large-account.cjs'),data=largeAccount(8,8);let current=path.resolve(previous);
+const {largeAccount}=require('./fixtures/large-account.cjs'),data=largeAccount(8,8),candidateRequests=[];let current=path.resolve(previous);
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml'};
-const server=http.createServer((req,res)=>{const file=path.resolve(current,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html')));if(!file.startsWith(current+path.sep)){res.writeHead(403);return res.end();}try{res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');res.setHeader('Cache-Control','no-store');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}});
+const server=http.createServer((req,res)=>{if(current===candidate)candidateRequests.push(new URL(req.url,'http://localhost').pathname);const file=path.resolve(current,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname.replace(/\/$/,'/index.html')));if(!file.startsWith(current+path.sep)){res.writeHead(403);return res.end();}try{res.setHeader('Content-Type',mime[path.extname(file)]||'application/octet-stream');res.setHeader('Cache-Control','no-store');res.end(fs.readFileSync(file));}catch{res.writeHead(404);res.end();}});
 let browser;
 (async()=>{
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
@@ -22,6 +22,8 @@ let browser;
  assert.deepEqual(await next.evaluate(()=>JSON.parse(JSON.stringify(state))),JSON.parse(before),'IDs, fields, associations, logos and stored routes survive the actual application update');
  assert.equal(await next.evaluate(()=>localStorage.getItem('whereIveBeen.outbox.v1.fixture-owner.fixture-tab')),'fictional pending edits and deletion tombstone');
  await next.evaluate(()=>switchView('countries'));await next.locator('#atlasCountrySearch').fill('Pakistan');await next.waitForFunction(()=>document.querySelector('img[alt="Pakistan flag"]')?.naturalWidth>0);
+ assert.equal(candidateRequests.filter(path=>path==='/vendor/d3.min.js').length,0,'Unchanged, hash-verified public assets are reused across the real release upgrade');assert.ok(candidateRequests.some(path=>path==='/assets/flags-display/PK.webp'),'The changed Pakistan flag is downloaded and verified');
  await context.setOffline(true);await next.reload();await next.waitForFunction(()=>!!document.querySelector('.header-nav-group'));assert.deepEqual(await next.evaluate(()=>JSON.parse(JSON.stringify(state))),JSON.parse(before));
+ const core=new Set(JSON.parse(fs.readFileSync(path.join(candidate,'sw.js'),'utf8').match(/const CORE_FILES=(\[.*?\]);/)[1]).map(file=>'/'+file));console.log(JSON.stringify({coreAssets:core.size,downloadedCoreAssets:new Set(candidateRequests.filter(file=>core.has(file))).size,unchangedD3Requests:candidateRequests.filter(file=>file==='/vendor/d3.min.js').length}));
  await context.close();console.log('Actual previous-to-candidate application/worker upgrade passed: saved travel, stable identities, references, routes, logos, pending/deletion sentinel, Pakistan flag and offline reload.');
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{await browser?.close();server.closeAllConnections();server.close();});
