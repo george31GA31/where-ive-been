@@ -11,7 +11,7 @@
       document.head.appendChild(script);
     };
     const loadBrand = () => {
-      if (document.querySelector('script[data-herald-ui]')) return;
+      if (document.querySelector('script[data-herald-ui]') || [...document.scripts].some(script => /\/herald\.js(?:[?#]|$)/.test(script.src))) return;
       const script = document.createElement('script');
       script.dataset.heraldUi = 'true';
       script.src = new URL('herald.js?v=herald-1', base).href;

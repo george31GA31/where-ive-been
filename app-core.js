@@ -558,6 +558,7 @@ function daysInclusive(a, b) {
   return diffDays(a, b) + 1;
 }
 function fmt(s, o = { day: 'numeric', month: 'short', year: 'numeric' }) {
+  if (!s) return 'Date not recorded';
   return parseDate(s).toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
 }
 function fmtObj(d, o = { day: 'numeric', month: 'short', year: 'numeric' }) {
@@ -645,7 +646,7 @@ function countsForPlanning(s) {
 }
 function datesForStay(s, min = null, max = null) {
   let a = parseDate(s.start),
-    b = parseDate(s.end),
+    b = parseDate(s.end || isoDate(new Date())),
     lo = min ? parseDate(min) : a,
     hi = max ? parseDate(max) : b,
     start = a > lo ? a : lo,
@@ -1026,13 +1027,13 @@ function bindEvents() {
   document.addEventListener('click', handleDelegatedClick);
   $('prevMonth').onclick = () => {
     calendarCursor = new Date(
-      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() - 1, 1),
+      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() - (document.querySelector('.calendar-month-panel')?.dataset.calendarView==='year'?12:1), 1),
     );
     renderCalendar();
   };
   $('nextMonth').onclick = () => {
     calendarCursor = new Date(
-      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() + 1, 1),
+      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() + (document.querySelector('.calendar-month-panel')?.dataset.calendarView==='year'?12:1), 1),
     );
     renderCalendar();
   };
@@ -1239,7 +1240,7 @@ function renderMiniCalendar() {
   for (let i = 0; i < 42; i++) {
     let d = addDays(start, i),
       k = dayKey(d),
-      has = list.some((s) => s.start <= k && s.end >= k);
+      has = list.some((s) => s.start <= k && (s.end || today) >= k);
     h += `<div class="mini-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'muted'} ${k === today ? 'today' : ''} ${has ? 'has-stay' : ''}">${d.getUTCDate()}</div>`;
   }
   els.miniCalendar.innerHTML = h;
@@ -1431,7 +1432,7 @@ function renderCountries() {
               s.countryCode === code &&
               s.status === 'actual' &&
               s.start <= d &&
-              s.end >= d &&
+              (!s.end || s.end >= d) &&
               HVJourney.isTravelStay(state, s, d),
           ),
       ).length,
@@ -1593,7 +1594,7 @@ function renderSchengen() {
 function stayRowHtml(s) {
   let label =
     s.status === 'actual' ? 'COMPLETED' : s.status === 'planned' ? 'PLANNED' : 'CANCELLED';
-  return `<div class="stay-row ${s.status}"><div class="flag-box">${flagHtml(s.domesticDestination || s.countryCode)}</div><div class="stay-main"><strong>${esc(s.countryName)} <span class="pill ${s.status}">${label}</span></strong><span>${fmt(s.start)} – ${fmt(s.end)}${s.notes ? ` · ${esc(s.notes)}` : ''}</span></div><div class="stay-days"><strong>${daysInclusive(s.start, s.end)}</strong><span>days</span></div><button class="edit-btn" data-action="edit-stay" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.countryName)} stay">⋯</button></div>`;
+  return `<div class="stay-row ${s.status}"><div class="flag-box">${flagHtml(s.domesticDestination || s.countryCode)}</div><div class="stay-main"><strong>${esc(s.countryName)} <span class="pill ${s.status}">${label}</span></strong><span>${fmt(s.start)} – ${s.end?fmt(s.end):'Present'}${s.notes ? ` · ${esc(s.notes)}` : ''}</span></div><div class="stay-days"><strong>${daysInclusive(s.start, s.end||isoDate(new Date()))}</strong><span>days</span></div><button class="edit-btn" data-action="edit-stay" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.countryName)} stay">⋯</button></div>`;
 }
 function renderStayLists() {
   const term = ($('tripSearch')?.value || '').toLowerCase(),
@@ -1623,19 +1624,22 @@ function renderStayLists() {
         const dates = [
           g.trip?.start,
           g.trip?.end,
-          ...g.stays.flatMap((s) => [s.start, s.end]),
+          ...g.stays.flatMap((s) => [s.start, s.end||isoDate(new Date())]),
           ...g.transports.flatMap((t) => HVJourney.transportDates(t)),
         ]
           .filter(Boolean)
           .sort();
-        return { ...g, start: dates[0], end: dates.at(-1) };
+        const start=dates[0],end=dates.at(-1),records=[...g.stays,...g.transports];
+        const cancelled=g.trip?.status==='cancelled'||records.length&&records.every(r=>r.status==='cancelled');
+        const phase=cancelled?'cancelled':!start?'draft':end<today?'completed':start>today?'upcoming':'current';
+        return { ...g, start, end,phase };
       })
       .filter((g) => {
         const records = [...g.stays, ...g.transports],
           matches = records.some((r) => r.status === status) || g.trip?.status === status;
-        const phase = g.end < today ? 'completed' : g.start > today ? 'upcoming' : 'current';
+        const phase = g.phase;
         return (
-          (status === 'all' || matches || (status === phase && records.some(countsAsTravel))) &&
+          (status === 'all' || matches || (status === phase && (records.some(countsForPlanning)||!!g.trip))) &&
           (!year || (g.start <= year + '-12-31' && g.end >= year + '-01-01')) &&
           [
             g.trip?.name,
@@ -1661,7 +1665,7 @@ function renderStayLists() {
               ? window.HVJourneys?.transportLabel(g.transports[0]) ||
                 HVJourney.transportLabel(g.transports[0])
               : 'Journey');
-        return `<article class="trip-group"><div class="trip-group-head"><div><h3>${esc(name)}</h3><p>${g.start ? `${fmt(g.start)} to ${fmt(g.end)}` : 'Add stays or transport to set dates'} · ${esc(activeProfile().name)}</p><p>${countries.map((c) => flagHtml(c, 'flag-img flag-sm') + ' ' + esc(countryByCode(c)?.name || c)).join(' · ')}</p></div>${g.trip ? `<div class="trip-group-actions"><button type="button" class="secondary compact" data-trip-open="${esc(g.trip.id)}">Trip details</button><button type="button" class="secondary compact" data-journey-map="trip:${esc(g.trip.id)}">Journey Map</button><button type="button" class="secondary compact" data-add-transport-trip="${esc(g.trip.id)}">+ Add transport</button><button type="button" class="secondary compact" data-edit-trip="${esc(g.trip.id)}">Edit trip</button></div>` : ''}</div>${g.trip?.notes ? `<p>${esc(g.trip.notes)}</p>` : ''}<div class="trip-group-stays">${g.stays
+        return `<article class="trip-group"><div class="trip-group-head"><div><h3>${esc(name)}</h3><span class="status-badge neutral">${esc({current:'Current',upcoming:'Upcoming',completed:'Completed',cancelled:'Cancelled',draft:'Dates not set'}[g.phase])}</span><p>${g.start ? `${fmt(g.start)} to ${fmt(g.end)}` : 'Add stays or transport to set dates'} · ${esc(activeProfile().name)}</p><p>${countries.map((c) => flagHtml(c, 'flag-img flag-sm') + ' ' + esc(countryByCode(c)?.name || c)).join(' · ')}</p></div>${g.trip ? `<div class="trip-group-actions"><button type="button" class="secondary compact" data-trip-open="${esc(g.trip.id)}">Trip details</button><button type="button" class="secondary compact" data-journey-map="trip:${esc(g.trip.id)}">Journey Map</button><button type="button" class="secondary compact" data-add-transport-trip="${esc(g.trip.id)}">+ Add transport</button><button type="button" class="secondary compact" data-edit-trip="${esc(g.trip.id)}">Edit trip</button></div>` : ''}</div>${g.trip?.notes ? `<p>${esc(g.trip.notes)}</p>` : ''}<div class="trip-group-stays">${g.stays
           .sort((a, b) => a.start.localeCompare(b.start))
           .map(stayRowHtml)
           .join('')}${g.transports
@@ -1672,7 +1676,7 @@ function renderStayLists() {
           )
           .join('')}</div></article>`;
       })
-      .join('') || '<p class="empty-state">No trips match these filters. Add a trip to begin.</p>';
+      .join('') || `<p class="empty-state">${groups.size?'No trips match your filters.':'No trips yet. Build a trip or add individual travel records to begin.'}</p>`;
   const gaps = findGaps();
   els.gapList.className = gaps.length ? 'gap-list' : 'gap-list empty-state';
   els.gapList.innerHTML = gaps.length
@@ -2210,7 +2214,7 @@ function runPlanner() {
         : earliestOneDayEntry(entry, p.id);
     els.plannerResultTitle.innerHTML = `${flagHtml(c.code)} ${esc(c.name)} · Schengen`;
     let ok = !exit || !over;
-    els.plannerResultBody.innerHTML = `<div class="result-hero"><div class="result-stat"><span>MAX CONTINUOUS STAY</span><strong>${plural(max, 'day')}</strong></div><div class="result-stat"><span>SAFE DEPARTURE</span><strong>${safeEnd ? fmt(safeEnd, { day: 'numeric', month: 'short' }) : 'Not available'}</strong></div><div class="result-stat"><span>RE-ENTRY AFTER USING MAX</span><strong>${reentry ? fmt(reentry, { day: 'numeric', month: 'short' }) : '—'}</strong></div></div><div class="result-message ${ok ? '' : 'bad'}">${exit ? (over ? `Your proposed trip would first exceed the 90/180 limit on <strong>${fmt(over.date)}</strong>. Shorten the trip or change the dates.` : `Your proposed ${daysInclusive(entry, exit)}-day trip stays within the recorded 90/180 history.`) : max ? `If you enter on <strong>${fmt(entry)}</strong>, your current records allow up to <strong>${plural(max, 'consecutive day')}</strong>, leaving by <strong>${fmt(safeEnd)}</strong>.` : `Your recorded history does not leave a Schengen day available on ${fmt(entry)}. Earliest one-day entry found: <strong>${reentry ? fmt(reentry) : 'not within the next 2 years'}</strong>.`}</div>`;
+    els.plannerResultBody.innerHTML = `<p class="planner-assumptions"><strong>${esc(p.name)}</strong> · ${p.citizenships?.length?'Recorded passports: '+p.citizenships.map(code=>esc(countryByCode(code)?.name||code)).join(', '):'No passport recorded'}. Based on recorded stays and the standard 90/180 calculation. Other nationality, residence and permit rules may apply. <a href="#/travel-tools/schengen">Review assumptions</a>.</p><div class="result-hero"><div class="result-stat"><span>MAX CONTINUOUS STAY</span><strong>${plural(max, 'day')}</strong></div><div class="result-stat"><span>CALCULATED LATEST DEPARTURE</span><strong>${safeEnd ? fmt(safeEnd) : 'Not available'}</strong></div><div class="result-stat"><span>RE-ENTRY AFTER USING MAX</span><strong>${reentry ? fmt(reentry) : '—'}</strong></div></div><div class="result-message ${ok ? '' : 'bad'}">${exit ? (over ? `Your proposed trip would first exceed the 90/180 limit on <strong>${fmt(over.date)}</strong>. Shorten the trip or change the dates.` : `Your proposed ${daysInclusive(entry, exit)}-day trip stays within the recorded 90/180 history.`) : max ? `If you enter on <strong>${fmt(entry)}</strong>, your current records allow up to <strong>${plural(max, 'consecutive day')}</strong>, leaving by <strong>${fmt(safeEnd)}</strong>.` : `Your recorded history does not leave a Schengen day available on ${fmt(entry)}. Earliest one-day entry found: <strong>${reentry ? fmt(reentry) : 'not within the next 2 years'}</strong>.`}</div>`;
     if (tripExit && ok) {
       lastPlannerTrip = { country: c, start: entry, end: tripExit, profileId: p.id };
       els.addPlannedTripBtn.classList.remove('hidden');
@@ -2225,7 +2229,7 @@ function runPlanner() {
       : rule.limit
         ? dayKey(addDays(parseDate(entry), rule.limit - 1))
         : null;
-    els.plannerResultBody.innerHTML = `<div class="result-hero"><div class="result-stat"><span>TRACKER TEMPLATE</span><strong>${rule.months ? `Up to ${rule.months} months` : `${plural(rule.limit, 'day')}`}</strong></div><div class="result-stat"><span>PLANNING DATE</span><strong>${leave ? fmt(leave, { day: 'numeric', month: 'short' }) : '—'}</strong></div></div><div class="result-message warn">${esc(rule.desc)} This is only a planning template; verify that you are eligible and check the actual permission granted to you.</div>`;
+    els.plannerResultBody.innerHTML = `<p class="planner-assumptions"><strong>${esc(p.name)}</strong> · ${p.citizenships?.length?'Recorded passports: '+p.citizenships.map(code=>esc(countryByCode(code)?.name||code)).join(', '):'No passport recorded'}. Based on recorded stays and the standard 90/180 calculation. Other nationality, residence and permit rules may apply. <a href="#/travel-tools/schengen">Review assumptions</a>.</p><div class="result-hero"><div class="result-stat"><span>TRACKER TEMPLATE</span><strong>${rule.months ? `Up to ${rule.months} months` : `${plural(rule.limit, 'day')}`}</strong></div><div class="result-stat"><span>PLANNING DATE</span><strong>${leave ? fmt(leave, { day: 'numeric', month: 'short' }) : '—'}</strong></div></div><div class="result-message warn">${esc(rule.desc)} This is only a planning template; verify that you are eligible and check the actual permission granted to you.</div>`;
   } else
     els.plannerResultBody.innerHTML =
       '<div class="result-message">No built-in visa-day template is attached to this country yet. You can still add the trip to your travel history.</div>';
@@ -2265,7 +2269,7 @@ async function addPlannerTrip() {
 
 // Source: src/core/atlas.js
 function renderMapTimeline() {
-  let list = state.stays;
+  let list = state.stays.map(stay=>({...stay,end:stay.end||isoDate(new Date())}));
   if (!list.length) {
     els.timelineEmpty.classList.remove('hidden');
     els.timelineContent.classList.add('hidden');
@@ -2319,7 +2323,7 @@ function setTimelineDate(k) {
 function updateTimelineLabels() {
   if (!timelineDate) return;
   let on = staysForProfile().filter(
-    (s) => countsForPlanning(s) && s.start <= timelineDate && s.end >= timelineDate,
+    (s) => countsForPlanning(s) && s.start <= timelineDate && (!s.end || s.end >= timelineDate),
   );
   els.timelineDateLabel.textContent = fmt(timelineDate, {
     weekday: 'long',

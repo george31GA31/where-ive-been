@@ -68,8 +68,11 @@ function renderMonth() {
     const selectionEnd = date === calendarSelectionEnd;
     const allTransport=day.transports;
     const dayStays=layers.countries?day.stays:[];
+    const stays=layers.accommodation?day.accommodations:[];
+    const segments = HVCalendarLayout.lodging(stays, date);
     const countries = HVCalendarLayout.countries(dayStays, allTransport, date);
-    const visibleCountries = countries.slice(0, 4),
+    const countryLimit=allTransport.length+segments.length>2?2:4;
+    const visibleCountries = countries.slice(0, countryLimit),
       columns = countries.length >= 4 ? 2 : Math.max(1, countries.length);
     const countryRows = [];
     for (let n = 0; n < visibleCountries.length; n += columns) {
@@ -84,13 +87,13 @@ function renderMonth() {
           .join('')}</div>`,
       );
     }
-    const extraCountries = countries.slice(4).map(({ record }) => record);
+    const extraCountries = countries.slice(countryLimit).map(({ record }) => record);
     const moreCountries = extraCountries.length
       ? `<button type="button" class="calendar-more-countries" data-calendar-more-countries="${E(JSON.stringify(extraCountries.map((s) => s.id)))}" aria-label="${E(extraCountries.length + ' more countries: ' + extraCountries.map((s) => s.countryName).join(', '))}" title="${E(extraCountries.map((s) => s.countryName).join(', '))}">+${extraCountries.length} countries</button>`
       : '';
     const chips = countryRows.join('') + moreCountries;
     const transportChips = layers.transport
-      ? allTransport
+      ? allTransport.slice(0,2)
           .map((t) => {
             const fullLabel = HVJourneys.transportLabel(t),
               cellLabel =
@@ -111,13 +114,12 @@ function renderMonth() {
           })
           .join('')
       : '';
-    const stays=layers.accommodation?day.accommodations:[];
-    const segments = HVCalendarLayout.lodging(stays, date);
+    const lodgingLimit=allTransport.length>1?1:2;
     const lodging = segments.length
-      ? `<div class="calendar-lodging-row" aria-label="Accommodation on ${date}: ${E(segments.map(({ record: a }) => a.propertyName + ', ' + a.location).join('; '))}" style="grid-template-columns:${segments[0].columns.map((width) => `minmax(0,${width}fr)`).join(' ')}">${segments.map(({ record: a, column, span }) => `<button type="button" class="calendar-lodging-half occupied ${a.checkOut === date ? 'lodging-end' : ''} ${a.checkIn === date ? 'lodging-start' : ''}" style="grid-column:${column}/span ${span};grid-row:1" data-calendar-edit-accommodation="${E(a.id)}" aria-label="${E(a.propertyName)} · ${a.checkIn === date ? 'Check-in' : a.checkOut === date ? 'Check-out' : 'Staying'}" title="${E(a.propertyName)} · ${E(a.checkIn + ' ' + (a.checkInTime || '') + ' to ' + a.checkOut + ' ' + (a.checkOutTime || ''))}"><small><span class="calendar-lodging-cue" aria-hidden="true">⌂</span>${E(a.propertyName)}</small></button>`).join('')}</div>`
+      ? `<div class="calendar-lodging-row" aria-label="Accommodation on ${date}: ${E(segments.map(({ record: a }) => a.propertyName + ', ' + a.location).join('; '))}" style="grid-template-columns:${segments[0].columns.map((width) => `minmax(0,${width}fr)`).join(' ')}">${segments.slice(0,lodgingLimit).map(({ record: a, column, span }) => `<button type="button" class="calendar-lodging-half occupied ${a.checkOut === date ? 'lodging-end' : ''} ${a.checkIn === date ? 'lodging-start' : ''}" style="grid-column:${column}/span ${span};grid-row:1" data-calendar-edit-accommodation="${E(a.id)}" aria-label="${E(a.propertyName)} · ${a.checkIn === date ? 'Check-in' : a.checkOut === date ? 'Check-out' : 'Staying'}" title="${E(a.propertyName)} · ${E(a.checkIn + ' ' + (a.checkInTime || '') + ' to ' + a.checkOut + ' ' + (a.checkOutTime || ''))}"><small><span class="calendar-lodging-cue" aria-hidden="true">⌂</span>${a.checkIn===date||a.checkOut===date?`<span class="calendar-lodging-state">${a.checkIn===date?'In':'Out'}</span>`:''}${E(a.propertyName)}</small></button>`).join('')}</div>`
       : '';
     const places=layers.countries?day.places:[];
-    const placeChips = places
+    const placeChips = places.slice(0,1)
       .map(
         (v) =>
           `<button type="button" class="calendar-place-chip" data-place-edit="${E(v.id)}" title="${E(HVAddress.address(v.place))}">◎ ${E(HVAddress.field(v.place, 'name') || 'Saved location')}</button>`,
@@ -128,11 +130,14 @@ function renderMonth() {
       homeStatus === 'home'
         ? `<button type="button" class="calendar-home-icon" data-calendar-home-select="${date}" aria-label="Home, select ${date}" title="Home">⌂</button>`
         : '';
+    const entryCount=countries.length+(layers.transport?allTransport.length:0)+segments.length+places.length+day.notes.length;
+    const busy=countries.length>1||segments.length>1||allTransport.length>2||places.length>1;
+    const dayDetails=entryCount?`<button type="button" class="calendar-day-detail-link ${busy?'':'calendar-detail-mobile'}" data-calendar-day-detail="${date}" aria-label="View all ${entryCount} entries for ${E(dateText(date))}">${busy?'View all '+entryCount:segments.length?segments.length+' stay'+(segments.length===1?'':'s')+' · details':'Day details'}</button>`:'';
     const primary = activeGroups[0]?.key || '';
     const seaLabel = sea.length
       ? `<span class="calendar-sea-mark" title="At sea">≈ At sea</span>`
       : '';
-    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${homeStatus}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${homeLabel}${day.notes.length?`<button type="button" class="calendar-note-indicator" data-calendar-notes-date="${date}" aria-label="${day.notes.length} notes on ${E(dateText(date))}" title="${E(day.notes.map(n=>n.title).join('; '))}">✎</button>`:''}${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}${transportChips}</div>${placeChips ? `<div class="calendar-place-row">${placeChips}</div>` : ''}<div class="calendar-day-markers">${seaLabel}</div></div>`;
+    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${homeStatus}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${homeLabel}${day.notes.length?`<button type="button" class="calendar-note-indicator" data-calendar-notes-date="${date}" aria-label="${day.notes.length} notes on ${E(dateText(date))}" title="${E(day.notes.map(n=>n.title).join('; '))}">✎</button>`:''}${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${transportChips}${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}</div>${placeChips ? `<div class="calendar-place-row">${placeChips}</div>` : ''}<div class="calendar-day-markers">${seaLabel}</div>${dayDetails}</div>`;
   }
   window.HVCalendarDetails?.hide();
   calendar.innerHTML = html;
@@ -158,85 +163,11 @@ function renderMonth() {
 }
 
 function fitCalendarContent(calendar) {
-  // Measure real content, rather than abbreviating because a day is classified dense.
-  if (!calendar.querySelector('.calendar-day')?.getBoundingClientRect().width) return;
-  const canvas = document.createElement('canvas'),
-    context = canvas.getContext('2d');
-  if (!context) return;
-  const natural = (node) => {
-    context.font = getComputedStyle(node).font;
-    return context.measureText(node.textContent).width;
-  };
-  for (const day of calendar.querySelectorAll('.calendar-day')) {
-    if (!day.getBoundingClientRect().width) continue;
-    day.classList.remove('calendar-day-dense');
-    day
-      .querySelectorAll('.calendar-entry-wrap')
-      .forEach((n) => n.classList.remove('calendar-entry-wrap'));
-    const bottom = () =>
-      Math.max(
-        ...[
-          ...day.querySelectorAll(
-            '.calendar-day-top,.calendar-journeys,.calendar-place-row,.calendar-day-markers:has(*)',
-          ),
-        ].map((n) => n.getBoundingClientRect().bottom),
-      );
-    const limit = () => {
-      const style = getComputedStyle(day);
-      return (
-        day.getBoundingClientRect().bottom -
-        parseFloat(style.paddingBottom) -
-        (parseFloat(style.borderBottomWidth) || 0)
-      );
-    };
-    for (const row of day.querySelectorAll('.calendar-country-row')) {
-      if (row.classList.contains('calendar-country-split')) continue;
-      const sections = [...row.children],
-        needs = sections.map((section) => {
-          const label = section.querySelector('.country-name-full'),
-            chip = section.querySelector('button'),
-            style = getComputedStyle(chip);
-          return (
-            natural(label) +
-            parseFloat(style.paddingLeft) +
-            parseFloat(style.paddingRight) +
-            (section.querySelector('.calendar-chip-flag')?.getBoundingClientRect().width || 0) +
-            (parseFloat(style.columnGap) || 0) +
-            1
-          );
-        });
-      row.style.gridTemplateColumns = needs.map((n) => `minmax(0,${Math.max(1, n)}fr)`).join(' ');
-      if (sections.length > 1 && needs.reduce((a, b) => a + b, 0) > row.clientWidth) {
-        row.style.gridTemplateColumns = 'minmax(0,1fr)';
-        if (bottom() > limit())
-          row.style.gridTemplateColumns = needs
-            .map((n) => `minmax(0,${Math.max(1, n)}fr)`)
-            .join(' ');
-      }
-    }
-    // Use the established compact treatment only when the actual rows exceed this cell.
-    if (bottom() > limit()) day.classList.add('calendar-day-dense');
-    const labels = [
-      ...day.querySelectorAll(
-        '.country-name-full,.calendar-route-label,.calendar-lodging-half small',
-      ),
-    ];
-    for (const label of labels) {
-      if (!label.getClientRects().length) continue;
-      if (label.scrollWidth > label.clientWidth + 1) {
-        const button = label.closest('button');
-        button.classList.add('calendar-entry-wrap');
-        // Hotels wrap inside their fixed row; other entries may use a second line only if it fits.
-        if (button.matches('.calendar-lodging-half')) {
-          const style = getComputedStyle(button),
-            available =
-              button.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-          if (parseFloat(getComputedStyle(label).lineHeight) * 2 > available)
-            button.classList.remove('calendar-entry-wrap');
-        } else if (bottom() > limit()) button.classList.remove('calendar-entry-wrap');
-      }
-    }
-  }
+  // CSS controls truncation consistently. Complete names and every entry remain
+  // available by keyboard/tap in the editor and day details, without layout thrashing.
+  calendar.querySelectorAll('.calendar-day').forEach(day=>{
+    day.classList.toggle('calendar-day-dense',day.querySelectorAll('.calendar-day-transport,.calendar-lodging-half,.calendar-journey-chip').length>4);
+  });
 }
 
 function selectDate(date) {

@@ -55,3 +55,13 @@ test('failed flag images still fail closed through the captured error listener',
   assert.equal(image.style.display, 'none');
   listener({ target: {} });
 });
+
+test('every bundled flag thumbnail is a nonempty WebP, including Pakistan',()=>{
+ const context=vm.createContext({window:{}});new vm.Script(fs.readFileSync(path.join(__dirname,'../assets/flag-thumbnails.js'),'utf8')).runInContext(context);
+ for(const [code,file] of Object.entries(context.window.HVFlagThumbnails)){
+  const bytes=fs.readFileSync(path.join(__dirname,'..',file));
+  assert.ok(bytes.length>20,code+' display flag must not be empty');
+  assert.equal(bytes.toString('ascii',0,4),'RIFF',code+' WebP container');
+  assert.equal(bytes.toString('ascii',8,12),'WEBP',code+' WebP image');
+ }
+});

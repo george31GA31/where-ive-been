@@ -15,16 +15,16 @@
       const trips=new Map((state.trips||[]).map(t=>[t.id,t])),profiles=new Map((state.profiles||[]).map(p=>[p.id,p]));
       const linked=new Map();for(const stay of state.stays||[])if(stay.source==='accommodation'){if(!linked.has(stay.sourceAccommodationId))linked.set(stay.sourceAccommodationId,new Set());linked.get(stay.sourceAccommodationId).add(stay.id);}
       const evidence=[...scoped(state.accommodations,profileId),...scoped(state.transports,profileId)].filter(r=>r.status!=='cancelled'&&r.travelKind!=='home'&&trips.get(r.tripId)?.status!=='cancelled');
-      return {trips,profiles,linked,cancelled:new Set([...trips.values()].filter(t=>t.status==='cancelled').map(t=>t.id)),residences:new D.Intervals(scoped(state.residences,profileId),r=>r.start,r=>r.end||'9999-12-31'),stays:new D.Intervals(scoped(state.stays,profileId)),evidence:new D.Intervals(evidence,r=>r.checkIn||r.startLocal?.slice(0,10),r=>r.checkOut||r.endLocal?.slice(0,10)||r.startLocal?.slice(0,10))};
+      return {trips,profiles,linked,cancelled:new Set([...trips.values()].filter(t=>t.status==='cancelled').map(t=>t.id)),residences:new D.Intervals(scoped(state.residences,profileId),r=>r.start,r=>r.end||'9999-12-31'),stays:new D.Intervals(scoped(state.stays,profileId),r=>r.start,r=>r.end||'9999-12-31'),evidence:new D.Intervals(evidence,r=>r.checkIn||r.startLocal?.slice(0,10),r=>r.checkOut||r.endLocal?.slice(0,10)||r.startLocal?.slice(0,10))};
     });
   }
   const visibleTransport=(state,profileId=state.activeProfileId)=>D.memo(state,'visible-transports',['trips','transports'],profileId,()=>{const cancelled=new Set((state.trips||[]).filter(t=>t.status==='cancelled').map(t=>t.id));return scoped(state.transports,profileId).filter(t=>t.status!=='cancelled'&&!cancelled.has(t.tripId));});
-  function isElapsedStay(state,stay,today){return countsForPlanning(stay)&&validDate(stay.start)&&validDate(stay.end)&&stay.start<=today&&!homeContext(state,stay.profileId||state.activeProfileId).cancelled.has(stay.tripId);}
+  function isElapsedStay(state,stay,today){return countsForPlanning(stay)&&validDate(stay.start)&&(!stay.end||validDate(stay.end))&&stay.start<=today&&!homeContext(state,stay.profileId||state.activeProfileId).cancelled.has(stay.tripId);}
   const summary=(state,today,profileId=state.activeProfileId)=>D.memo(state,'travel-summary:'+profileId,[...contextKeys,'manualCountryVisits'],today+'|'+profileId,()=>{
     const stays=scoped(state.stays,profileId).filter(s=>isElapsedStay(state,s,today)),countries=new Set(),days=new Set(),home=new Set(),trips=new Set(),byCountry=new Map();
     for(const stay of stays){
       const owner=stay.profileId||profileId;let contributes=false;
-      for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end),Date.parse(today));ms<=last;ms+=86400000){
+      for(let ms=Date.parse(stay.start),last=Math.min(Date.parse(stay.end||today),Date.parse(today));ms<=last;ms+=86400000){
         const date=new Date(ms).toISOString().slice(0,10),atHome=!isTravelStay(state,stay,date,owner);(atHome?home:days).add(date);
         if(!atHome){trips.add(stay.tripId||'stay:'+stay.id);if(!homeCountryCodes(state,owner,today).includes(stay.countryCode))countries.add(stay.countryCode);
           contributes=true;if(!byCountry.has(stay.countryCode))byCountry.set(stay.countryCode,{days:new Set(),trips:0,records:[],owners:new Map()});const country=byCountry.get(stay.countryCode);country.days.add(date);
@@ -173,7 +173,7 @@
       // A plan becomes completed only once its final calendar day has passed.
       // This leaves active journeys editable as planned and avoids inventing a
       // partial completed trip while the traveller is still away.
-      const finished=(stay.end||stay.start)<today;
+      const finished=!!stay.end&&stay.end<today;
       if(stay.status==='planned'&&finished){stay.status='actual';delete stay.plannedReviewStart;changed=true;}
       // Earlier versions created a manual-review state. Retire it safely so
       // existing records follow the new automatic-completion behaviour.
@@ -196,9 +196,9 @@
     return changed;
   }
   function dayStatus(state,date,profileId=state.activeProfileId) {
-    const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=date&&s.end>=date);
+    const stays=scoped(state.stays,profileId).filter(s=>isActual(s)&&s.start<=date&&(!s.end||s.end>=date));
     const home=stays.some(s=>!isTravelStay(state,s,date,s.profileId||profileId));
-    const planned=scoped(state.stays,profileId).filter(s=>countsForPlanning(s)&&s.start<=date&&s.end>=date);
+    const planned=scoped(state.stays,profileId).filter(s=>countsForPlanning(s)&&s.start<=date&&(!s.end||s.end>=date));
     const places=scoped([...(state.accommodations||[]),...(state.placeVisits||[])],profileId).filter(r=>!hiddenHomeRecord(state,r)&&r.status!=='not-recorded'&&r.status!=='cancelled'&&(r.checkIn||r.date)<=date&&(r.checkOut||r.endDate||r.date)>=date);
     const travel=places.some(r=>homeKind(state,r,date,r.profileId||profileId)==='trip'||(r.place?.countryCode&&!isHome(state,r.place.countryCode,date,r.profileId||profileId)))||planned.some(s=>isTravelStay(state,s,date,s.profileId||profileId))||visibleTransport(state,profileId).some(t=>!hiddenHomeRecord(state,t)&&transportDates(t).includes(date));
     return travel ? (home?'mixed':'travel') : home||homeCountryCodes(state,profileId,date).length?'home':'unrecorded';

@@ -1,0 +1,2369 @@
+{
+  "coverage": [
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "stays",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "transport",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 64,
+      "mapTop": 438.890625
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "map",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "planner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "countries",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "places",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "stats",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "tools",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "notes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "budget",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "currency",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "rules",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "homes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "settings",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "light",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "stays",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "transport",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 64,
+      "mapTop": 438.890625
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "map",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "planner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "countries",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "places",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "stats",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "tools",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "notes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "budget",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "currency",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "rules",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "homes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "settings",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "theme": "dark",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "stays",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "transport",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 64,
+      "mapTop": 438.890625
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "map",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "planner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "countries",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "places",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "stats",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "tools",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "notes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "budget",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "currency",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "rules",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "homes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "settings",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "light",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "stays",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "transport",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 64,
+      "mapTop": 438.890625
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "map",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "planner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "countries",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "places",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "stats",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "tools",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "notes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "budget",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "currency",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "rules",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "homes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "settings",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "theme": "dark",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "stays",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "transport",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 64,
+      "mapTop": 504.0625
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "map",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "planner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "countries",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "places",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "stats",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "tools",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "notes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "budget",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "currency",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "rules",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "homes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "settings",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "light",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "stays",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "transport",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 64,
+      "mapTop": 504.0625
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "map",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "planner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "countries",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "places",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "stats",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "tools",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "notes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "budget",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "currency",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "rules",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "homes",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "settings",
+      "overflow": 0,
+      "header": 64
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "theme": "dark",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "stays",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "transport",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 60,
+      "mapTop": 606.921875
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "map",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "planner",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "countries",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "places",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "stats",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "tools",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "notes",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "budget",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "currency",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "rules",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "homes",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "settings",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "light",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "stays",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "transport",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 60,
+      "mapTop": 606.921875
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "map",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "planner",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "countries",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "places",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "stats",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "tools",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "notes",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "budget",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "currency",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "rules",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "homes",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "settings",
+      "overflow": 0,
+      "header": 60
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "theme": "dark",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "stays",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "transport",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 58,
+      "mapTop": 752.328125
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "map",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "planner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "countries",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "places",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "stats",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "tools",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "notes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "budget",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "currency",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "rules",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "homes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "settings",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "light",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "stays",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "transport",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 58,
+      "mapTop": 752.328125
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "map",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "planner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "countries",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "places",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "stats",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "tools",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "notes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "budget",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "currency",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "rules",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "homes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "settings",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "theme": "dark",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "stays",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "transport",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 58,
+      "mapTop": 871.421875
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "map",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "planner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "countries",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "places",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "stats",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "tools",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "notes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "budget",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "currency",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "rules",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "homes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "settings",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "view": "profile/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "dashboard",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "calendar",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "stays",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "transport",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "journeys",
+      "overflow": 0,
+      "header": 58,
+      "mapTop": 871.421875
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "map",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "planner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "countries",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "places",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "stats",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "tools",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "profiles",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "notes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "budget",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "currency",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "roadTrip",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "stayPlanner",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "rules",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "schengen",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "homes",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "settings",
+      "overflow": 0,
+      "header": 58
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "login/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "register/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "reset-password/",
+      "overflow": 0
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "view": "profile/",
+      "overflow": 0
+    }
+  ],
+  "errors": []
+}

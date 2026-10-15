@@ -29,6 +29,7 @@ function daysInclusive(a, b) {
   return diffDays(a, b) + 1;
 }
 function fmt(s, o = { day: 'numeric', month: 'short', year: 'numeric' }) {
+  if (!s) return 'Date not recorded';
   return parseDate(s).toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
 }
 function fmtObj(d, o = { day: 'numeric', month: 'short', year: 'numeric' }) {

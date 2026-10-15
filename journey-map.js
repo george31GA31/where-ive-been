@@ -269,7 +269,7 @@
     if(initialRouteWrites)persist();
     const pointSurface=pointLayer(map,points);
     const fit=()=>{map.invalidateSize();if(bounds.length)map.fitBounds(bounds,{padding:[35,35],maxZoom:12,animate:false});pointSurface.refresh();};fit();
-    const report=()=>{status.textContent=`${rows.length} entries · ${points.length} mapped stops${pending?' · Loading '+pending+' surface routes…':''}${unavailable?' · '+unavailable+' entries have missing positions or unavailable routes; recorded stops remain visible.':''}${rows.length?'':' · No matching records. Change the filters or add a journey.'}`;};pending=routes.length;report();
+    const report=()=>{status.textContent=`${rows.length} entries · ${points.length} mapped stops${pending?' · Loading '+pending+' surface routes…':''}${unavailable?' · '+unavailable+' entries have missing positions or unavailable routes; recorded stops remain visible.':''}${rows.length?'':(HVGlobalJourney.rows(state).length?' · No journeys match these filters.':' · Add your first journey to start this map.')}`;};pending=routes.length;report();
     async function waitUntilVisible(){while(paused()&&!controller.signal.aborted)await new Promise(resolve=>waiters.add(resolve));}
     const setVisible=value=>{pageVisible=!!value;if(!sameOwner())controller.abort();if(paused()&&activeRequest){suspended.add(activeRequest);activeRequest.abort();}else if(!paused())wake();};
     const visibility=()=>setVisible(pageVisible);document.addEventListener('visibilitychange',visibility);controller.signal.addEventListener('abort',wake,{once:true});

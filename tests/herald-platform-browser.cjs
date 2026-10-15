@@ -37,7 +37,7 @@ async function session(origin,width,theme){
   return r.abort();
  });
  await page.goto(origin+'/login/');await page.getByLabel('Email',{exact:true}).fill(fixture.email);await page.getByLabel('Password',{exact:true}).fill(fixture.password);await page.getByRole('button',{name:'Log in',exact:true}).click();
- await page.waitForURL(origin+'/',{timeout:60000});await settled(page);await noOverflow(page);assert.ok(await page.locator('.herald-account-access a[data-account-user]').isVisible());
+ await page.waitForURL(origin+'/',{timeout:60000});await settled(page);await noOverflow(page);assert.equal(await page.locator('#accountLink').textContent(),'Account');
  return control;
 }
 (async()=>{
