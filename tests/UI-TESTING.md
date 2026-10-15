@@ -75,7 +75,8 @@ retained-surface behaviour. `tests/offline-shell-delivery-browser.cjs` uses real
 service workers and miniature releases to check hashes, cache-first reads, waiting
 updates, old-cache retention, stalled bodies, encoded paths and private-request
 exclusions. It also checks hash-validated reuse of unchanged public assets and
-network replacement of deliberately corrupted cached bytes. The real release
+network replacement of deliberately corrupted cached bytes, legacy cleanup during
+a waiting update and protection of later in-progress caches. The real release
 upgrade fixture records core download counts and checks that unchanged D3 is
 reused while the repaired Pakistan flag is fetched.
 

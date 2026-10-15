@@ -1,0 +1,1 @@
+Offline delivery passed: integrity, cache-first reload, waiting updates, staged completion, stalled-body retry and private exclusions.

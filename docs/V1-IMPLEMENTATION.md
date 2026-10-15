@@ -61,3 +61,5 @@ See [V1-RELEASE.md](V1-RELEASE.md) for the twelve-page completion table, actual 
 ## Live update follow-up
 
 The first release passed CI and deployed in PR #34. A live cached-shell check led to a public update-path improvement: unchanged assets are now reused only after validation against the new manifest hash. The controlled baseline-to-new upgrade downloads 30 core assets instead of 377; corrupted cached bytes are rejected. Travel storage, private exclusions, old-shell retention and all record fields remain protected. See the release review and paired upgrade logs.
+
+The recovery regression also reproduced deletion of a newer in-progress cache. The follow-up uses a public-cache family protected from legacy cleanup and retires only recorded predecessors, once. Legacy handover and later-installation retention now pass alongside private-storage preservation.

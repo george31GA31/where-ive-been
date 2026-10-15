@@ -8,7 +8,7 @@ const files=[...fs.readdirSync(root).filter(file=>/\.(js|css)$/.test(file)&&file
 // Reference JSON and original flags stage after account startup; thumbnails stay core.
 const core=files.filter(file=>!file.startsWith('assets/flags/')&&!(file.startsWith('data/')&&file.endsWith('.json')));
 const hashes=Object.fromEntries(files.map(file=>[file,crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')]));
-const implementation=old.replace(/herald-shell-[a-f0-9]+/,'herald-shell-VERSION').replace(/const FILES=\[.*?\];/,'const FILES=[];').replace(/const CORE_FILES=\[.*?\];/,'const CORE_FILES=[];').replace(/const HASHES=\{.*?\};/,'const HASHES={};');
+const implementation=old.replace(/herald-(?:shell|public)-[a-f0-9]+/,'herald-public-VERSION').replace(/const FILES=\[.*?\];/,'const FILES=[];').replace(/const CORE_FILES=\[.*?\];/,'const CORE_FILES=[];').replace(/const HASHES=\{.*?\};/,'const HASHES={};');
 const hash=crypto.createHash('sha256').update(implementation);for(const file of files)hash.update(file).update(hashes[file]);
-const next=old.replace(/herald-shell-[a-f0-9]+/,'herald-shell-'+hash.digest('hex').slice(0,12)).replace(/const FILES=\[.*?\];/,'const FILES='+JSON.stringify(files)+';').replace(/const CORE_FILES=\[.*?\];/,'const CORE_FILES='+JSON.stringify(core)+';').replace(/const HASHES=\{.*?\};/,'const HASHES='+JSON.stringify(hashes)+';');
+const next=old.replace(/herald-(?:shell|public)-[a-f0-9]+/,'herald-public-'+hash.digest('hex').slice(0,12)).replace(/const FILES=\[.*?\];/,'const FILES='+JSON.stringify(files)+';').replace(/const CORE_FILES=\[.*?\];/,'const CORE_FILES='+JSON.stringify(core)+';').replace(/const HASHES=\{.*?\};/,'const HASHES='+JSON.stringify(hashes)+';');
 if(process.argv.includes('--check')){if(next!==old)throw new Error('Run node scripts/build-offline-shell.cjs before deployment.');}else fs.writeFileSync(sw,next);
