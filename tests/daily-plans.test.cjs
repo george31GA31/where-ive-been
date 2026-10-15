@@ -33,3 +33,12 @@ test('interval lookups preserve inclusive overlaps and empty windows',()=>{
  const rows=[{start:'2026-01-01',end:'2026-01-03'},{start:'2026-01-03',end:'2026-01-09'},{start:'2026-01-15',end:'2026-01-18'}],index=new D.Intervals(rows);
  assert.equal(index.overlap('2026-01-03').length,2);assert.deepEqual(index.overlap('2026-01-10'),[]);assert.deepEqual(index.containing('2026-01-05','2026-01-08'),[rows[1]]);
 });
+
+test('unknown-ended country stay remains ongoing, counts elapsed days and retains its original record',()=>{
+ const data=seed();data.stays=[stay('prior','2025-01-01','2025-01-11'),stay('open','2026-10-05',null,{status:'planned'})];
+ const before=JSON.stringify(data),result=J.summary(data,'2026-10-14').byCountry.get('DZ');
+ assert.equal(result.days.size,21);assert.equal(result.trips,2);assert.equal(J.reviewPlanned(data.stays,'2026-10-14'),false);assert.equal(JSON.stringify(data),before);
+ const H=require('../travel-history-model');assert.equal(H.calculate(data,'2026-10-14').awayDays.size,21);
+ assert.equal(J.summary(data,'2026-10-15').byCountry.get('DZ').days.size,22);
+ data.stays[1].status='cancelled';assert.equal(J.summary(data,'2026-10-15').byCountry.get('DZ').days.size,11);
+});

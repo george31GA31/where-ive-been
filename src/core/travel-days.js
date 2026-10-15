@@ -15,7 +15,7 @@ function countsForPlanning(s) {
 }
 function datesForStay(s, min = null, max = null) {
   let a = parseDate(s.start),
-    b = parseDate(s.end),
+    b = parseDate(s.end || isoDate(new Date())),
     lo = min ? parseDate(min) : a,
     hi = max ? parseDate(max) : b,
     start = a > lo ? a : lo,

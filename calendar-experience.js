@@ -120,7 +120,7 @@ function buildJourneys() {
     );
   }
 
-  const ranges=new HVData.Intervals([...groups.values()].filter(g=>g.trip&&g.stays.length).map(group=>({group,start:group.stays.map(s=>s.start).sort()[0],end:group.stays.map(s=>s.end).sort().at(-1)})));
+  const ranges=new HVData.Intervals([...groups.values()].filter(g=>g.trip&&g.stays.length).map(group=>({group,start:group.stays.map(s=>s.start).sort()[0],end:group.stays.map(s=>s.end||today()).sort().at(-1)})));
   const findInferredGroup=transport=>{
     const dates=[localDate(transport.startLocal),localDate(transport.endLocal)].filter(Boolean),nearby=new Set();
     for(const date of dates)for(const range of ranges.overlap(HVCalendarData.next(date,-1),HVCalendarData.next(date)))nearby.add(range);
@@ -145,7 +145,7 @@ function buildJourneys() {
         (a, b) =>
           a.start.localeCompare(b.start) ||
           Number(a.tripOrder || 0) - Number(b.tripOrder || 0) ||
-          a.end.localeCompare(b.end),
+          String(a.end||today()).localeCompare(String(b.end||today())),
       );
       group.transports.sort((a, b) => String(a.startLocal).localeCompare(String(b.startLocal)));
       group.accommodations.sort((a, b) => String(a.checkIn).localeCompare(String(b.checkIn)));
@@ -155,7 +155,7 @@ function buildJourneys() {
         ...(!group.trip && !group.stays.length && !group.transports.length
           ? group.accommodations.flatMap((a) => [a.checkIn, a.checkOut])
           : []),
-        ...group.stays.flatMap((stay) => [stay.start, stay.end]),
+        ...group.stays.flatMap((stay) => [stay.start, stay.end||today()]),
         ...group.transports.flatMap((transport) => HVJourney.transportDates(transport)),
       ]
         .filter(Boolean)
@@ -210,7 +210,7 @@ function homesForDate(date) {
     (stay) =>
       stay.status !== 'cancelled' &&
       stay.start <= date &&
-      stay.end >= date &&
+      (!stay.end || stay.end >= date) &&
       !HVJourney.isDomesticHoliday(stay) &&
       window.HVJourney.isHome(state, stay.countryCode, date),
   );
@@ -222,7 +222,7 @@ function seaForDate(date) {
       stay.status !== 'cancelled' &&
       stay.countryCode === 'SEA' &&
       stay.start <= date &&
-      stay.end >= date,
+      (!stay.end || stay.end >= date),
   );
 }
 
@@ -312,8 +312,11 @@ function renderMonth() {
     const selectionEnd = date === calendarSelectionEnd;
     const allTransport=day.transports;
     const dayStays=layers.countries?day.stays:[];
+    const stays=layers.accommodation?day.accommodations:[];
+    const segments = HVCalendarLayout.lodging(stays, date);
     const countries = HVCalendarLayout.countries(dayStays, allTransport, date);
-    const visibleCountries = countries.slice(0, 4),
+    const countryLimit=allTransport.length+segments.length>2?2:4;
+    const visibleCountries = countries.slice(0, countryLimit),
       columns = countries.length >= 4 ? 2 : Math.max(1, countries.length);
     const countryRows = [];
     for (let n = 0; n < visibleCountries.length; n += columns) {
@@ -328,13 +331,13 @@ function renderMonth() {
           .join('')}</div>`,
       );
     }
-    const extraCountries = countries.slice(4).map(({ record }) => record);
+    const extraCountries = countries.slice(countryLimit).map(({ record }) => record);
     const moreCountries = extraCountries.length
       ? `<button type="button" class="calendar-more-countries" data-calendar-more-countries="${E(JSON.stringify(extraCountries.map((s) => s.id)))}" aria-label="${E(extraCountries.length + ' more countries: ' + extraCountries.map((s) => s.countryName).join(', '))}" title="${E(extraCountries.map((s) => s.countryName).join(', '))}">+${extraCountries.length} countries</button>`
       : '';
     const chips = countryRows.join('') + moreCountries;
     const transportChips = layers.transport
-      ? allTransport
+      ? allTransport.slice(0,2)
           .map((t) => {
             const fullLabel = HVJourneys.transportLabel(t),
               cellLabel =
@@ -355,13 +358,12 @@ function renderMonth() {
           })
           .join('')
       : '';
-    const stays=layers.accommodation?day.accommodations:[];
-    const segments = HVCalendarLayout.lodging(stays, date);
+    const lodgingLimit=allTransport.length>1?1:2;
     const lodging = segments.length
-      ? `<div class="calendar-lodging-row" aria-label="Accommodation on ${date}: ${E(segments.map(({ record: a }) => a.propertyName + ', ' + a.location).join('; '))}" style="grid-template-columns:${segments[0].columns.map((width) => `minmax(0,${width}fr)`).join(' ')}">${segments.map(({ record: a, column, span }) => `<button type="button" class="calendar-lodging-half occupied ${a.checkOut === date ? 'lodging-end' : ''} ${a.checkIn === date ? 'lodging-start' : ''}" style="grid-column:${column}/span ${span};grid-row:1" data-calendar-edit-accommodation="${E(a.id)}" aria-label="${E(a.propertyName)} · ${a.checkIn === date ? 'Check-in' : a.checkOut === date ? 'Check-out' : 'Staying'}" title="${E(a.propertyName)} · ${E(a.checkIn + ' ' + (a.checkInTime || '') + ' to ' + a.checkOut + ' ' + (a.checkOutTime || ''))}"><small><span class="calendar-lodging-cue" aria-hidden="true">⌂</span>${E(a.propertyName)}</small></button>`).join('')}</div>`
+      ? `<div class="calendar-lodging-row" aria-label="Accommodation on ${date}: ${E(segments.map(({ record: a }) => a.propertyName + ', ' + a.location).join('; '))}" style="grid-template-columns:${segments[0].columns.map((width) => `minmax(0,${width}fr)`).join(' ')}">${segments.slice(0,lodgingLimit).map(({ record: a, column, span }) => `<button type="button" class="calendar-lodging-half occupied ${a.checkOut === date ? 'lodging-end' : ''} ${a.checkIn === date ? 'lodging-start' : ''}" style="grid-column:${column}/span ${span};grid-row:1" data-calendar-edit-accommodation="${E(a.id)}" aria-label="${E(a.propertyName)} · ${a.checkIn === date ? 'Check-in' : a.checkOut === date ? 'Check-out' : 'Staying'}" title="${E(a.propertyName)} · ${E(a.checkIn + ' ' + (a.checkInTime || '') + ' to ' + a.checkOut + ' ' + (a.checkOutTime || ''))}"><small><span class="calendar-lodging-cue" aria-hidden="true">⌂</span>${a.checkIn===date||a.checkOut===date?`<span class="calendar-lodging-state">${a.checkIn===date?'In':'Out'}</span>`:''}${E(a.propertyName)}</small></button>`).join('')}</div>`
       : '';
     const places=layers.countries?day.places:[];
-    const placeChips = places
+    const placeChips = places.slice(0,1)
       .map(
         (v) =>
           `<button type="button" class="calendar-place-chip" data-place-edit="${E(v.id)}" title="${E(HVAddress.address(v.place))}">◎ ${E(HVAddress.field(v.place, 'name') || 'Saved location')}</button>`,
@@ -372,11 +374,14 @@ function renderMonth() {
       homeStatus === 'home'
         ? `<button type="button" class="calendar-home-icon" data-calendar-home-select="${date}" aria-label="Home, select ${date}" title="Home">⌂</button>`
         : '';
+    const entryCount=countries.length+(layers.transport?allTransport.length:0)+segments.length+places.length+day.notes.length;
+    const busy=countries.length>1||segments.length>1||allTransport.length>2||places.length>1;
+    const dayDetails=entryCount?`<button type="button" class="calendar-day-detail-link ${busy?'':'calendar-detail-mobile'}" data-calendar-day-detail="${date}" aria-label="View all ${entryCount} entries for ${E(dateText(date))}">${busy?'View all '+entryCount:segments.length?segments.length+' stay'+(segments.length===1?'':'s')+' · details':'Day details'}</button>`:'';
     const primary = activeGroups[0]?.key || '';
     const seaLabel = sea.length
       ? `<span class="calendar-sea-mark" title="At sea">≈ At sea</span>`
       : '';
-    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${homeStatus}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${homeLabel}${day.notes.length?`<button type="button" class="calendar-note-indicator" data-calendar-notes-date="${date}" aria-label="${day.notes.length} notes on ${E(dateText(date))}" title="${E(day.notes.map(n=>n.title).join('; '))}">✎</button>`:''}${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}${transportChips}</div>${placeChips ? `<div class="calendar-place-row">${placeChips}</div>` : ''}<div class="calendar-day-markers">${seaLabel}</div></div>`;
+    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start, index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selectionRange ? 'selection-range' : ''} ${selectionStart ? 'selection-start' : ''} ${selectionEnd ? 'selection-end' : ''}" data-calendar-date="${E(date)}" data-calendar-primary="${E(primary)}" data-home-status="${homeStatus}" role="group" aria-label="${E(dateText(date))}"><div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${E(date)}" aria-label="Select ${E(dateText(date))}" aria-pressed="${!!(selectionRange || selectionStart || selectionEnd)}">${addDays(start, index).getUTCDate()}</button><div class="calendar-day-status">${homeLabel}${day.notes.length?`<button type="button" class="calendar-note-indicator" data-calendar-notes-date="${date}" aria-label="${day.notes.length} notes on ${E(dateText(date))}" title="${E(day.notes.map(n=>n.title).join('; '))}">✎</button>`:''}${date === current ? '<span>Today</span>' : ''}</div></div><div class="calendar-journeys">${chips}${transportChips}${lodging ? `<div class="calendar-lodging">${lodging}</div>` : ''}</div>${placeChips ? `<div class="calendar-place-row">${placeChips}</div>` : ''}<div class="calendar-day-markers">${seaLabel}</div>${dayDetails}</div>`;
   }
   window.HVCalendarDetails?.hide();
   calendar.innerHTML = html;
@@ -402,85 +407,11 @@ function renderMonth() {
 }
 
 function fitCalendarContent(calendar) {
-  // Measure real content, rather than abbreviating because a day is classified dense.
-  if (!calendar.querySelector('.calendar-day')?.getBoundingClientRect().width) return;
-  const canvas = document.createElement('canvas'),
-    context = canvas.getContext('2d');
-  if (!context) return;
-  const natural = (node) => {
-    context.font = getComputedStyle(node).font;
-    return context.measureText(node.textContent).width;
-  };
-  for (const day of calendar.querySelectorAll('.calendar-day')) {
-    if (!day.getBoundingClientRect().width) continue;
-    day.classList.remove('calendar-day-dense');
-    day
-      .querySelectorAll('.calendar-entry-wrap')
-      .forEach((n) => n.classList.remove('calendar-entry-wrap'));
-    const bottom = () =>
-      Math.max(
-        ...[
-          ...day.querySelectorAll(
-            '.calendar-day-top,.calendar-journeys,.calendar-place-row,.calendar-day-markers:has(*)',
-          ),
-        ].map((n) => n.getBoundingClientRect().bottom),
-      );
-    const limit = () => {
-      const style = getComputedStyle(day);
-      return (
-        day.getBoundingClientRect().bottom -
-        parseFloat(style.paddingBottom) -
-        (parseFloat(style.borderBottomWidth) || 0)
-      );
-    };
-    for (const row of day.querySelectorAll('.calendar-country-row')) {
-      if (row.classList.contains('calendar-country-split')) continue;
-      const sections = [...row.children],
-        needs = sections.map((section) => {
-          const label = section.querySelector('.country-name-full'),
-            chip = section.querySelector('button'),
-            style = getComputedStyle(chip);
-          return (
-            natural(label) +
-            parseFloat(style.paddingLeft) +
-            parseFloat(style.paddingRight) +
-            (section.querySelector('.calendar-chip-flag')?.getBoundingClientRect().width || 0) +
-            (parseFloat(style.columnGap) || 0) +
-            1
-          );
-        });
-      row.style.gridTemplateColumns = needs.map((n) => `minmax(0,${Math.max(1, n)}fr)`).join(' ');
-      if (sections.length > 1 && needs.reduce((a, b) => a + b, 0) > row.clientWidth) {
-        row.style.gridTemplateColumns = 'minmax(0,1fr)';
-        if (bottom() > limit())
-          row.style.gridTemplateColumns = needs
-            .map((n) => `minmax(0,${Math.max(1, n)}fr)`)
-            .join(' ');
-      }
-    }
-    // Use the established compact treatment only when the actual rows exceed this cell.
-    if (bottom() > limit()) day.classList.add('calendar-day-dense');
-    const labels = [
-      ...day.querySelectorAll(
-        '.country-name-full,.calendar-route-label,.calendar-lodging-half small',
-      ),
-    ];
-    for (const label of labels) {
-      if (!label.getClientRects().length) continue;
-      if (label.scrollWidth > label.clientWidth + 1) {
-        const button = label.closest('button');
-        button.classList.add('calendar-entry-wrap');
-        // Hotels wrap inside their fixed row; other entries may use a second line only if it fits.
-        if (button.matches('.calendar-lodging-half')) {
-          const style = getComputedStyle(button),
-            available =
-              button.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-          if (parseFloat(getComputedStyle(label).lineHeight) * 2 > available)
-            button.classList.remove('calendar-entry-wrap');
-        } else if (bottom() > limit()) button.classList.remove('calendar-entry-wrap');
-      }
-    }
-  }
+  // CSS controls truncation consistently. Complete names and every entry remain
+  // available by keyboard/tap in the editor and day details, without layout thrashing.
+  calendar.querySelectorAll('.calendar-day').forEach(day=>{
+    day.classList.toggle('calendar-day-dense',day.querySelectorAll('.calendar-day-transport,.calendar-lodging-half,.calendar-journey-chip').length>4);
+  });
 }
 
 function selectDate(date) {
@@ -525,7 +456,7 @@ function monthInsight(groups) {
     )
     .filter((group) => group.start && group.start <= end && group.end >= start);
   const upcoming = groups.filter((group) => group.phase === 'upcoming').slice(0, 3);
-  return `<div class="calendar-detail-empty"><p class="eyebrow">YOUR MONTH</p><h2>${E(cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }))}</h2><p>${inMonth.length ? `${inMonth.length} ${inMonth.length === 1 ? 'journey' : 'journeys'} touch this month. Select a journey to see every stop, transfer and stay in order.` : 'No journeys touch this month yet. Pick dates on the calendar when you are ready to plan one.'}</p>${upcoming.length ? `<div class="calendar-next-list"><span>Coming up</span>${upcoming.map((group) => `<button type="button" data-calendar-open-journey="${E(group.key)}"><i style="--journey-colour:${E(group.colour)}"></i><strong>${E(group.title)}</strong><small>${E(dateRangeText(group.start, group.end))}</small></button>`).join('')}</div>` : ''}<button type="button" class="primary wide" data-calendar-plan>Plan a trip</button></div>`;
+  return `<div class="calendar-detail-empty"><p class="eyebrow">YOUR MONTH</p><h2>${E(cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }))}</h2><p>${inMonth.length ? `${inMonth.length} ${inMonth.length === 1 ? 'journey' : 'journeys'} touch this month. Select a journey to see every stop, transfer and stay in order.` : 'No journeys touch this month yet. Pick dates on the calendar when you are ready to plan one.'}</p>${upcoming.length ? `<div class="calendar-next-list"><span>Coming up</span>${upcoming.map((group) => `<button type="button" data-calendar-open-journey="${E(group.key)}"><i style="--journey-colour:${E(group.colour)}"></i><strong>${E(group.title)}</strong><small>${E(dateRangeText(group.start, group.end))}</small></button>`).join('')}</div>` : ''}<button type="button" class="primary wide" data-calendar-plan>Build a trip</button></div>`;
 }
 
 function dayInsight(date, groups) {
@@ -533,7 +464,7 @@ function dayInsight(date, groups) {
     end = calendarSelectionEnd || start;
   const active = groups.filter(
     (group) =>
-      group.stays.some((s) => s.status !== 'cancelled' && s.start <= end && s.end >= start) ||
+      group.stays.some((s) => s.status !== 'cancelled' && s.start <= end && (!s.end || s.end >= start)) ||
       group.accommodations.some((a) => a.checkIn <= end && a.checkOut >= start) ||
       group.transports.some((t) => HVJourney.transportDates(t).some((d) => d >= start && d <= end)),
   );
@@ -542,7 +473,7 @@ function dayInsight(date, groups) {
       .map(
         (group) =>
           `<div class="date-entry-group"><strong>${E(!group.trip && !group.stays.length && group.transports.length === 1 ? (group.transports[0].type === 'flight' ? 'Flight details' : 'Transport details') : group.title)}</strong><button type="button" class="text-btn" data-journey-map="${E(group.key)}">Journey Map →</button>${group.stays
-            .filter((s) => s.start <= end && s.end >= start)
+            .filter((s) => s.start <= end && (!s.end || s.end >= start))
             .map(
               (s) =>
                 `<button type="button" data-calendar-edit-stay="${E(s.id)}">${flagHtml(s.domesticDestination || s.countryCode, 'calendar-chip-flag')} ${E(s.countryName)} · ${E(dateRangeText(s.start, s.end))} <span>Edit</span></button>`,
@@ -740,7 +671,7 @@ function ensurePlannerDialog() {
   plannerDialog.id = 'tripPlannerDialog';
   plannerDialog.className = 'dialog trip-planner-dialog';
   plannerDialog.addEventListener('close', () => {
-    planner = null;
+    if (!plannerDialog.open) planner = null;
   });
   document.body.append(plannerDialog);
   return plannerDialog;
@@ -755,6 +686,7 @@ function openTripPlanner(prefill = {}) {
     end,
     status: plannerStatusFrom(prefill),
     profileId: prefill.profileId || state.activeProfileId || '',
+    source: prefill.source || '',
     name: prefill.tripName || '',
     notes: prefill.notes || '',
     stops: [blankStop(start, end, prefill.countryName || '')],
@@ -988,7 +920,7 @@ function renderPlanner() {
       planner.accommodations[index].logoDraft = src;
     });
   });
-  q('[data-planner-cancel]', form).onclick = () => dialog.close();
+  qa('[data-planner-cancel]', form).forEach(button => button.onclick = () => dialog.close());
   q('[data-planner-back]', form)?.addEventListener('click', () => {
     readPlannerStep();
     planner.step -= 1;
@@ -1244,8 +1176,10 @@ async function savePlanner() {
     calendarSelectionEnd = null;
     selectedJourneyKey = tripKey(trip.id);
     selectedDate = '';
+    const returnToBudget=planner.source==='budget';
     plannerDialog.close();
     renderAll();
+    if(returnToBudget)window.HVTravelTools?.openTrip(trip.id,'budget');
     window.HVJourneys?.render();
   } catch (error) {
     Object.assign(data, beforeSave);
@@ -1553,7 +1487,7 @@ function captureCalendarAction(event) {
   const noteDate=target.closest('[data-calendar-notes-date]');
   if(noteDate){event.preventDefault();event.stopPropagation();selectedDate=noteDate.dataset.calendarNotesDate;calendarSelectionStart=selectedDate;calendarSelectionEnd=null;selectedJourneyKey='';dateAction='';renderMonth();return;}
   const noteAction=target.closest('[data-calendar-date-action="note"]');
-  if(noteAction){event.preventDefault();event.stopPropagation();window.HVTravelTools?.openNote(null,{date:calendarSelectionStart||selectedDate,tripId:null});return;}
+  if(noteAction){event.preventDefault();event.stopPropagation();window.HVTravelTools?.openNote(null,{date:calendarSelectionStart||selectedDate,tripId:null,rangeEnd:calendarSelectionEnd});return;}
   const action = target.closest('[data-calendar-date-action]');
   if (action) {
     event.preventDefault();
@@ -1593,7 +1527,9 @@ function captureCalendarAction(event) {
     event.stopPropagation();
     selectedJourneyKey = '';
     selectedDate = more.dataset.calendarDayDetail;
-    renderJourneyDetail();
+    calendarSelectionStart=selectedDate;calendarSelectionEnd=null;dateAction='';
+    renderMonth();
+    const detail=$('calendarJourneyDetail');detail?.setAttribute('tabindex','-1');detail?.focus({preventScroll:true});detail?.scrollIntoView({block:'nearest',behavior:'smooth'});
     return;
   }
   const open = target.closest('[data-calendar-open-journey]');

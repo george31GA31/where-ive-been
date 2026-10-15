@@ -115,7 +115,7 @@ function buildJourneys() {
     );
   }
 
-  const ranges=new HVData.Intervals([...groups.values()].filter(g=>g.trip&&g.stays.length).map(group=>({group,start:group.stays.map(s=>s.start).sort()[0],end:group.stays.map(s=>s.end).sort().at(-1)})));
+  const ranges=new HVData.Intervals([...groups.values()].filter(g=>g.trip&&g.stays.length).map(group=>({group,start:group.stays.map(s=>s.start).sort()[0],end:group.stays.map(s=>s.end||today()).sort().at(-1)})));
   const findInferredGroup=transport=>{
     const dates=[localDate(transport.startLocal),localDate(transport.endLocal)].filter(Boolean),nearby=new Set();
     for(const date of dates)for(const range of ranges.overlap(HVCalendarData.next(date,-1),HVCalendarData.next(date)))nearby.add(range);
@@ -140,7 +140,7 @@ function buildJourneys() {
         (a, b) =>
           a.start.localeCompare(b.start) ||
           Number(a.tripOrder || 0) - Number(b.tripOrder || 0) ||
-          a.end.localeCompare(b.end),
+          String(a.end||today()).localeCompare(String(b.end||today())),
       );
       group.transports.sort((a, b) => String(a.startLocal).localeCompare(String(b.startLocal)));
       group.accommodations.sort((a, b) => String(a.checkIn).localeCompare(String(b.checkIn)));
@@ -150,7 +150,7 @@ function buildJourneys() {
         ...(!group.trip && !group.stays.length && !group.transports.length
           ? group.accommodations.flatMap((a) => [a.checkIn, a.checkOut])
           : []),
-        ...group.stays.flatMap((stay) => [stay.start, stay.end]),
+        ...group.stays.flatMap((stay) => [stay.start, stay.end||today()]),
         ...group.transports.flatMap((transport) => HVJourney.transportDates(transport)),
       ]
         .filter(Boolean)
@@ -205,7 +205,7 @@ function homesForDate(date) {
     (stay) =>
       stay.status !== 'cancelled' &&
       stay.start <= date &&
-      stay.end >= date &&
+      (!stay.end || stay.end >= date) &&
       !HVJourney.isDomesticHoliday(stay) &&
       window.HVJourney.isHome(state, stay.countryCode, date),
   );
@@ -217,7 +217,7 @@ function seaForDate(date) {
       stay.status !== 'cancelled' &&
       stay.countryCode === 'SEA' &&
       stay.start <= date &&
-      stay.end >= date,
+      (!stay.end || stay.end >= date),
   );
 }
 

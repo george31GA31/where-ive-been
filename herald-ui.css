@@ -1,0 +1,282 @@
+/* Shared Herald UI roles. Feature styles own maps and data visualisations. */
+:root{--ui-radius:10px;--ui-gap:20px;--ui-control:44px;--ui-selected:#639fc6;--ui-focus:#28618b;scroll-padding-top:88px}
+html[data-theme=dark]{--ui-selected:#568db6;--ui-focus:#b2daf3}
+body{padding-bottom:0}
+body :is(button,a,input,select,textarea):focus-visible{outline:2px solid var(--ui-focus);outline-offset:3px}
+body :is(.panel,.stat-card,.travel-note-card,.travel-checklist-card){border-color:var(--hv-line);border-radius:var(--ui-radius);box-shadow:none}
+body :is(.panel h2,.tool-page-heading h2,.dialog-head h2,.journey-editor-heading h2){font-family:var(--hv-serif);font-weight:500;font-size:24px;line-height:1.25;letter-spacing:-.025em}
+body .eyebrow,body .stat-label{font-family:var(--hv-sans);font-size:11px;font-weight:650;letter-spacing:.12em;line-height:1.5}
+body .helper,body .panel-copy{color:var(--hv-muted);line-height:1.6}
+body .field{min-width:0}
+body .field :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea){width:100%;min-width:0;min-height:var(--ui-control);padding:10px 12px;border:1px solid var(--hv-line);border-radius:7px;background:var(--hv-surface);color:var(--hv-ink);font:inherit;line-height:1.4;box-sizing:border-box}
+body .field textarea{resize:vertical}
+body .field>span{font-size:13px;font-weight:600;letter-spacing:0}
+body :is(.primary,.secondary,.icon-btn){min-height:40px;border-radius:7px;font-weight:600;line-height:1.4}
+body :is(.primary,.secondary){display:inline-flex;justify-content:center;align-items:center;gap:6px;text-decoration:none;padding:10px 16px}
+body .primary{background:var(--hv-red);color:#fff;border:1px solid transparent}
+html[data-theme=dark] body .primary{background:#9b3449;color:#fff}
+body .secondary{background:var(--hv-surface);color:var(--hv-ink);border:1px solid var(--hv-line)}
+body .text-btn{color:var(--hv-blue);font-family:var(--hv-sans);font-weight:600}
+body dialog{max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);color:var(--hv-ink);background:var(--hv-surface);border:1px solid var(--hv-line);border-radius:12px;overscroll-behavior:contain}
+body dialog::backdrop{background:rgba(15,27,34,.48)}
+body .dialog-actions,body .planner-dialog-actions{flex-wrap:wrap;gap:10px}
+/* One compact, sticky row. Page titles and save feedback scroll with the page. */
+body .sidebar{display:flex;position:sticky;top:0;min-height:64px;height:64px;width:100%;margin:0;padding:0 clamp(16px,3vw,48px);gap:24px;flex-wrap:nowrap;background:var(--hv-paper);border-bottom:1px solid var(--hv-line);z-index:80;box-shadow:none}
+body .sidebar .brand{display:block;flex:0 0 150px;min-width:150px;width:150px;margin:0;padding:0}
+body .sidebar .brand-mark{width:100%;height:auto}
+body .sidebar .nav{display:flex;flex:1;align-items:center;justify-content:center;gap:2px;overflow:visible;margin:0;padding:0;width:auto}
+body .sidebar .nav-item{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;width:auto;min-height:44px;padding:10px 11px;margin:0;border:0;border-bottom:2px solid transparent;border-radius:0;font:600 13px/1.3 var(--hv-sans);color:var(--hv-muted);background:transparent;text-decoration:none;white-space:nowrap;cursor:pointer}
+body .sidebar .nav-item.active{color:var(--hv-red);border-bottom-color:var(--hv-red)}
+body .sidebar .nav-icon{display:none}
+body .sidebar .nav-caret{font-size:12px}
+body .header-nav-group{position:relative;min-width:0;border:0;margin:0;padding:0}
+body .header-nav-group>summary{list-style:none}
+body .header-nav-group>summary::-webkit-details-marker{display:none}
+body .header-nav-menu{position:absolute;top:calc(100% + 8px);left:0;width:240px;max-width:calc(100vw - 32px);padding:8px;background:var(--hv-surface);border:1px solid var(--hv-line);border-radius:10px;box-shadow:0 12px 30px #10212b1a;color:var(--hv-ink);max-height:calc(100dvh - 88px);overflow:auto;z-index:90}
+body .header-nav-group:last-child .header-nav-menu{left:auto;right:0}
+body .header-nav-menu :is(a,button){display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:44px;padding:10px 12px;border:0;border-radius:6px;background:transparent;color:var(--hv-ink);font:500 14px/1.4 var(--hv-sans);text-align:left;text-decoration:none}
+body .header-nav-menu :is(a,button):hover{background:var(--hv-soft)}
+body .header-nav-menu a.active{background:var(--blue-soft);color:var(--hv-blue);font-weight:650}
+body .header-nav-menu .herald-account-access{display:block;margin:0;padding:0 0 8px;border-bottom:1px solid var(--hv-line)}
+body .header-nav-menu .herald-account-access :is(a,button){display:flex;min-height:44px;padding:10px 12px;justify-content:flex-start;font-size:14px}
+body .sidebar-footer{display:flex;flex:0 0 auto;gap:0;margin:0;padding:0;border:0;min-width:0;width:auto}
+body .sidebar-footer #themeToggleBtn{display:flex;width:40px;height:40px;min-height:40px;padding:0;margin:0}
+body .sidebar-footer .theme-toggle-label{display:none}
+body .header-menu-toggle{display:none}
+body .main{width:100%;max-width:1700px;margin:0 auto;padding:24px clamp(16px,3vw,48px) 32px}
+body .topbar{position:static;display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;padding:0;margin:0 0 12px;min-height:0;border:0;background:transparent}
+body .topbar>div:first-child{flex:1;min-width:0}
+body .topbar h1{font:600 clamp(25px,2.5vw,32px)/1.25 var(--hv-sans);letter-spacing:-.04em;margin:0}
+body .page-save-status{display:flex;align-items:center;flex:0 0 100%;gap:12px;font-size:12px;color:var(--hv-muted);min-height:18px}
+body .page-save-status p{margin:0;font-size:12px;line-height:1.4}
+body .topbar-actions{margin:0;gap:10px}
+body .page-location{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--hv-muted);margin:0 0 18px;line-height:1.5}
+body .page-location [aria-current=page]{color:var(--hv-ink)}
+body .page-location a{color:var(--hv-blue)}
+body .calendar-hero{padding:0;margin-bottom:20px;align-items:center}
+body .calendar-hero h2{font-size:25px;line-height:1.2;margin:3px 0 6px}
+body .calendar-hero p:not(.eyebrow){font-size:14px;margin:0;color:var(--hv-muted)}
+/* Coordinated Home cards: display titles, readable rows, natural content height. */
+body .daily-dashboard-row{grid-template-columns:.9fr 1.05fr 1.05fr;gap:18px;align-items:start;margin:0 0 22px}
+body :is(.travel-memory-panel,.daily-agenda-panel){padding:22px;min-height:190px;height:auto;align-self:start}
+body .travel-memory-panel{gap:12px;border-left:3px solid var(--hv-gold)}
+body .travel-memory-mark{width:30px;height:30px;flex:0 0 30px;font-size:17px}
+body :is(.travel-memory-copy,.daily-panel-head) .eyebrow{color:var(--hv-muted);margin:0 0 6px}
+body :is(.travel-memory-copy,.daily-panel-head) h2{font:500 22px/1.25 var(--hv-serif);letter-spacing:-.025em;margin:0 0 16px}
+body .travel-memory-copy p:not(.eyebrow){font-size:14px;line-height:1.6;margin:12px 0}
+body .travel-memory-copy strong{font-weight:600}
+body .daily-category{margin:16px 0 0}
+body .daily-category h3{font:650 10px/1.5 var(--hv-sans);letter-spacing:.12em;color:var(--hv-muted);margin:0 0 6px}
+body .daily-entry{padding:7px 0;gap:10px}
+body .daily-entry strong{font-size:15px;font-weight:600;line-height:1.4}
+body .daily-entry small{font-size:13px;color:var(--hv-muted);line-height:1.5;margin-top:3px}
+body .daily-add-note{margin-top:16px;padding:6px 0;min-height:36px}
+body .daily-empty{margin:0;font-size:14px}
+body .daily-note-body{font-size:13px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+body .home-hero{padding:22px 24px;min-height:0;gap:20px}
+body .home-hero h2{font-size:28px;line-height:1.25;margin:4px 0 8px}
+body .home-hero p{font-size:14px;max-width:65ch}
+body #dashboardView>.two-col{align-items:start}
+body #dashboardView>.two-col>.panel{min-height:0;height:auto}
+body .atlas-stats-heading{padding:18px 0;margin:0 0 22px}
+body .atlas-stats-heading h2{font-size:30px;margin:5px 0 10px}
+/* Countries, maps and tools share legible result surfaces. */
+body :is(.result-stat,.result-message){background:var(--hv-soft);color:var(--hv-ink);border-color:var(--hv-line)}
+body .result-stat :is(span,strong){color:var(--hv-ink)}
+body .result-stat span{font-size:11px;line-height:1.5}
+body .planner-assumptions{font-size:13px;line-height:1.6;color:var(--hv-muted);margin:0 0 18px}
+body .ring{background:var(--hv-soft)}
+body .ring::after{background:var(--hv-surface)}
+body #ringUsed{color:var(--hv-ink);position:relative;z-index:2}
+body .travel-tool-link{display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:210px}
+body .travel-tool-copy{flex:1;display:block}
+body .travel-tool-open{margin-top:auto;align-self:flex-start}
+body .tracker-save-status{position:sticky;top:0;background:var(--hv-surface);z-index:2;padding:8px 0;border-bottom:1px solid var(--hv-line);font-size:12px}
+body .tracker-save-status p{margin:3px 0}
+body .selected-country-cue{font-size:13px;line-height:1.5;padding:10px 18px;margin:0;background:var(--blue-soft);color:var(--hv-ink)}
+body .selected-country-cue a{display:inline-block;color:var(--hv-blue);margin-left:8px}
+body .map-country.selected{fill:var(--ui-selected);stroke:#28618b;stroke-width:1.3;filter:none}
+body .map-country:focus-visible{fill:var(--ui-selected);stroke:var(--ui-focus);stroke-width:2;stroke-dasharray:3 2}
+body .journey-global-panel{padding:18px}
+body .journey-global-panel>.panel-head{margin-bottom:12px}
+body .transport-scope-hint{font-size:12px;padding:0 20px;margin:0 0 6px}
+body #mapCountrySummary{scroll-margin-top:88px}
+body [data-trip-library]{padding:16px 20px;margin-bottom:18px}
+body [data-trip-library] .panel-head{margin-bottom:4px}
+body [data-trip-library] h2{font-size:19px}
+body [data-trip-library] p{font-size:13px;margin:6px 0}
+/* Keep the Calendar month grid and borders. Give long labels useful width. */
+body .calendar-lodging-row{display:flex;flex-direction:column;gap:3px}
+body .calendar-lodging-half{width:100%;min-width:0;display:block;min-height:25px;height:auto;padding:3px 5px;border-radius:3px;text-align:left}
+body .calendar-lodging-half small{display:block;overflow:hidden;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;text-overflow:ellipsis;font-size:11px;font-weight:500;line-height:1.4}
+body .calendar-lodging-state{font-size:9px;font-weight:650;margin-right:4px;color:var(--hv-blue)}
+body .calendar-journeys{gap:5px}
+body .calendar-country-row{min-height:24px}
+body .calendar-journey-copy strong{font-weight:600;font-size:12px;word-break:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body .calendar-country-split .country-name-compact{display:inline;font-size:10px}
+body .calendar-day-transport{font-weight:600;line-height:1.35;padding-block:2px}
+body .calendar-route-label{word-break:normal;overflow-wrap:normal}
+body .calendar-day-detail-link{display:block;min-height:24px;font:600 10px/1.4 var(--hv-sans);padding:3px 0;color:var(--hv-blue);border:0;background:transparent;text-align:left}
+body .calendar-country-pair .calendar-journey-copy{display:block;min-width:0}
+body .calendar-country-pair .country-name-full{display:none}
+body .calendar-country-pair .country-name-compact{display:block}
+body .calendar-day{overflow:hidden}
+body .calendar-month-panel .calendar-day{height:auto;min-height:160px}
+body .calendar-chip-flag{flex-shrink:0}
+body .calendar-footnote{font-size:12px}
+body .travel-tool-links{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1100px){
+ body .sidebar{gap:16px}
+ body .sidebar .brand{width:124px;min-width:124px;flex-basis:124px}
+ body .sidebar .nav-item{padding-inline:8px;font-size:12px}
+ body .daily-dashboard-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body :is(.travel-memory-panel,.daily-agenda-panel){padding:18px}
+ body .calendar-month-panel .calendar-day{min-height:145px}
+ body .travel-memory-mark{display:none}
+}
+@media(max-width:960px){
+ body .sidebar{height:60px;min-height:60px;gap:12px;justify-content:flex-end}
+ body .sidebar .brand{margin-right:auto}
+ body .header-menu-toggle{display:inline-flex;min-height:40px;padding:8px 14px}
+ body .sidebar .nav{display:none;position:absolute;top:59px;left:0;right:0;width:100%;max-height:calc(100dvh - 60px);overflow:auto;flex-direction:column;align-items:stretch;gap:0;padding:12px 16px;background:var(--hv-surface);border-bottom:1px solid var(--hv-line)}
+ body .sidebar .nav.header-nav-open{display:flex}
+ body .sidebar .nav-item{justify-content:flex-start;font-size:15px;min-height:44px}
+ body .header-nav-menu{position:static;width:auto;max-width:none;max-height:none;box-shadow:none;border:0;border-left:2px solid var(--hv-line);margin:0 0 8px 12px;padding:4px 8px;border-radius:0}
+ body .header-nav-menu :is(a,button){font-size:14px}
+ body .main{padding-top:20px;padding-bottom:24px}
+ body .calendar-hero h2{font-size:23px}
+ body .travel-tool-links{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+ body .sidebar{height:58px;min-height:58px;padding-inline:16px}
+ body .sidebar .nav{top:57px;max-height:calc(100dvh - 58px)}
+ body .main{padding-inline:14px}
+ body .topbar h1{font-size:25px}
+ body .topbar-actions .primary{font-size:12px;padding:8px 12px}
+ body .page-save-status p{font-size:11px}
+ body .daily-dashboard-row{grid-template-columns:1fr;gap:12px}
+ body .travel-memory-panel{order:3}
+ body :is(.travel-memory-panel,.daily-agenda-panel){min-height:0;padding:18px}
+ body .travel-memory-panel{display:flex}
+ body .travel-memory-mark{display:flex}
+ body :is(.travel-memory-copy,.daily-panel-head) h2{font-size:21px;margin-bottom:12px}
+ body .daily-add-note{margin-top:12px}
+ body .home-hero{padding:20px;flex-direction:column;align-items:flex-start}
+ body .home-hero h2{font-size:25px}
+ body .atlas-stats-heading h2{font-size:25px}
+ body .travel-tool-links{grid-template-columns:1fr}
+ body .travel-tool-link{min-height:170px}
+ body .calendar-hero h2{font-size:21px}
+ body .calendar-hero-actions{display:none}
+ body .calendar-month-panel .calendar-day{min-height:104px;padding:4px 3px}
+ body .calendar-day-status>span{font-size:8px;letter-spacing:0}
+ body .calendar-journeys{gap:3px}
+ body .calendar-journey-chip{padding:2px;min-height:22px;gap:2px}
+ body .calendar-chip-flag{width:15px;height:11px}
+ body .calendar-journey-copy .country-name-full{display:none}
+ body .calendar-journey-copy .country-name-compact{display:block;font-size:9px}
+ body .calendar-lodging{display:none}
+ body .calendar-day-transport{font-size:9px;gap:2px;min-height:20px}
+ body .calendar-route-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ body .calendar-place-row{display:none}
+ body .calendar-day-detail-link{font-size:9px;min-height:25px;white-space:normal}
+ body .calendar-country-row{min-height:20px}
+ body .form-grid{grid-template-columns:1fr}
+ body .calendar-day-top .day-number{min-width:25px;min-height:25px}
+ body .calendar-day-status{gap:1px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}body *,body *::before,body *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+@media(min-width:651px){body .calendar-detail-mobile{display:none}}
+/* A considered service page, with a real draft/review boundary. */
+body .itinerary-service{display:grid;gap:22px;max-width:1180px;margin:auto}
+body .planning-intro{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;padding:40px}
+body .planning-intro h2{font-size:clamp(32px,4vw,48px);max-width:13ch;line-height:1.08;margin:12px 0 22px}
+body .planning-lead{font-size:18px;line-height:1.6}
+body .planning-intro p{max-width:60ch}
+body .planning-intro .text-btn{display:block;margin-top:16px;font-size:13px}
+body .planning-note{align-self:stretch;display:flex;flex-direction:column;justify-content:center;border-left:2px solid var(--hv-gold);padding:28px;background:var(--hv-soft);border-radius:0 10px 10px 0}
+body .planning-note h3{font:500 27px/1.25 var(--hv-serif);margin:5px 0 10px;max-width:15ch}
+body .planning-note p{font-size:14px}
+body .planning-note .status-badge{align-self:flex-start;margin-top:16px}
+body .planning-columns{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+body .planning-columns :is(ol,ul){padding-left:20px;line-height:1.7;font-size:15px}
+body .planning-columns li{margin:12px 0}
+body .planning-request{max-width:900px;width:100%;margin:auto;padding:30px;scroll-margin-top:88px}
+body .planning-request form{display:grid;gap:18px}
+body .planning-activation{padding:14px 16px;background:var(--blue-soft);border:1px solid var(--hv-line);border-radius:7px;font-size:14px;line-height:1.6;margin:0 0 24px}
+body .planning-budget{border:1px solid var(--hv-line);border-radius:8px;padding:16px;min-width:0}
+body .planning-budget legend{font-size:14px;font-weight:600;padding-inline:6px}
+body .planning-budget legend span{font-weight:400;color:var(--hv-muted)}
+body .planning-budget .form-grid{margin:0}
+body .planning-request-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+body .enquiry-review{max-width:900px;width:100%;margin:auto;padding:30px}
+body .enquiry-review dl>div{display:grid;grid-template-columns:170px 1fr;gap:18px;border-bottom:1px solid var(--hv-line);padding:12px 0}
+body .enquiry-review dt{font-size:13px;color:var(--hv-muted)}
+body .enquiry-review dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+body .planning-faq details{border-top:1px solid var(--hv-line);padding:16px 0}
+body .planning-faq summary{cursor:pointer;font-weight:600;min-height:30px}
+body .planning-faq p{max-width:75ch;color:var(--hv-muted);font-size:14px;line-height:1.7}
+@media(max-width:768px){body .planning-intro{grid-template-columns:1fr;gap:24px;padding:24px}body .planning-intro h2{max-width:18ch}body .planning-note{padding:20px}body .planning-columns{grid-template-columns:1fr}body .planning-request,body .enquiry-review{padding:20px}body .enquiry-review dl>div{grid-template-columns:1fr;gap:5px}}
+/* Keep shared header actions on the title row after feature initialisation. */
+body .topbar>div:first-child{order:0}
+body .topbar .topbar-actions{order:1;width:auto;flex:0 0 auto;display:flex}
+body .topbar .global-traveller{order:2}
+body .topbar .page-save-status{order:3}
+body .page-save-status p{font-weight:400;letter-spacing:0;background:transparent;border:0;padding:0}
+body .journey-library-heading{margin:0 0 14px;gap:18px}
+body .journey-library-heading h2{font-size:22px;margin:0 0 4px}
+body .journey-library-heading .eyebrow{display:none}
+body .journey-library-heading p{font-size:13px;line-height:1.5;margin:4px 0}
+body .global-journey-filters{margin:12px 0;gap:10px}
+body #calendarView .calendar-day{min-height:160px;height:160px}
+body #calendarView .calendar-lodging-row{display:flex;flex-direction:column;gap:3px;height:auto;min-height:0}
+body #calendarView .calendar-lodging-half{height:auto;min-height:25px;display:block;padding:3px 5px}
+body #calendarView .calendar-lodging-half small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;line-height:1.35;font-size:10.5px;font-weight:500;text-overflow:ellipsis}
+body #calendarView .calendar-lodging-row:has(.calendar-lodging-half:nth-child(2)) small{display:block;white-space:nowrap!important}
+body #calendarView .calendar-lodging-half .calendar-lodging-cue{display:inline;float:none;width:auto;height:auto;font-size:10px;line-height:1.4}
+body #calendarView .calendar-journeys{gap:4px}
+body #calendarView .calendar-country-pair .country-name-full{display:none}
+body #calendarView .calendar-country-row.calendar-country-pair .country-name-compact{display:block;font-size:10px}
+body #calendarView .calendar-country-pair .calendar-journey-copy{display:block;min-width:12px}
+body #calendarView .calendar-journey-chip{gap:4px}
+@media(max-width:1100px){body #calendarView .calendar-day{min-height:145px;height:145px}}
+@media(max-width:650px){
+ body #calendarView .calendar-day{min-height:104px;height:104px;padding:4px 3px}
+ body #calendarView .calendar-lodging{display:none}
+ body #calendarView .calendar-country-row .country-name-full{display:none}
+ body #calendarView .calendar-country-row .country-name-compact{display:block;font-size:9px}
+ body #calendarView .calendar-journey-copy{display:block;min-width:0}
+ body #calendarView .calendar-journey-chip{gap:2px;padding:2px}
+ body #calendarView .calendar-chip-flag{width:14px;height:10px}
+ body #calendarView .calendar-country-pair .calendar-journey-copy{min-width:0}
+ body #calendarView .calendar-country-row.calendar-country-pair .country-name-compact{font-size:8px}
+ body #calendarView .calendar-place-row{display:none}
+ body #calendarView .calendar-day-transport{font-size:9px;min-height:18px;padding:0}
+ body #calendarView .calendar-day-status>span{font-size:7px}
+}
+body .page-save-status [data-sync-status]{font-size:12px;line-height:1.5;color:var(--hv-muted);font-weight:400;letter-spacing:0;background:transparent;border:0;padding:0;white-space:normal;text-transform:none}
+body .page-save-status [data-sync-status].bad{color:var(--red)}
+body .calendar-layout{margin-top:0}
+@media(max-width:650px){
+ body .transport-map-pane{margin-inline:-14px}
+ body #calendarView .calendar-toolbar{padding:12px;gap:10px}
+ body #calendarView .calendar-toolbar-actions{margin:0;padding:0;min-height:0;height:auto}
+ body #calendarView .calendar-view-switch{margin:0}
+ body #calendarView .calendar-selection-info{padding:10px 12px;min-height:0;gap:5px}
+}
+/* Keep the all-entry action visible even on unusually crowded dates. */
+body #calendarView .calendar-day:has(.calendar-day-detail-link:not(.calendar-detail-mobile)){position:relative;padding-bottom:25px}
+body #calendarView .calendar-day-detail-link{position:absolute;bottom:3px;left:5px;right:4px;margin:0;z-index:1;background:var(--hv-surface)}
+body #calendarView .calendar-day:has(.calendar-day-detail-link:not(.calendar-detail-mobile)) .calendar-journeys{max-height:100px;overflow:hidden}
+@media(max-width:650px){
+ body #calendarView .calendar-day:has(.calendar-day-detail-link){position:relative;padding-bottom:28px}
+ body #calendarView .calendar-day .calendar-journeys{max-height:50px;overflow:hidden}
+ body #calendarView .calendar-country-row:nth-of-type(n+2){display:none}
+ body #calendarView .calendar-day-detail-link{background:var(--hv-surface)}
+}
+body #calendarView .calendar-country-split .country-name-full{display:none}
+body #calendarView .calendar-country-split .country-name-compact{display:block;font-size:10px}
+body #calendarView .calendar-country-split .calendar-journey-copy{display:block;min-width:10px}
+@media(max-width:650px){body #calendarView .calendar-country-split .country-name-compact{font-size:8px}body #calendarView .calendar-country-split .calendar-journey-copy{min-width:0}}
+body[data-current-view=stays] #addStayBtn{display:none}

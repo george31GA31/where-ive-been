@@ -34,7 +34,7 @@
       if (!J.validDate(last) || last < start) return;
       for (let n=Date.parse(start),limit=Math.min(Date.parse(last),Date.parse(today));n<=limit;n+=DAY) day(new Date(n).toISOString().slice(0,10),code,r);
     }
-    for (const r of J.scoped(data.stays,profileId)) range(r.start,r.end,r.countryCode,r);
+    for (const r of J.scoped(data.stays,profileId)) range(r.start,r.end||today,r.countryCode,r);
     for (const r of J.scoped(data.accommodations,profileId).filter(r=>!J.hiddenHomeRecord(data,r))) range(r.checkIn,r.checkOut,r.place?.countryCode || r.countryCode,r);
     for (const r of J.scoped(data.placeVisits,profileId).filter(r => r.category === 'locations' && (!r.status || r.status === 'visited') && !J.hiddenHomeRecord(data,r))) range(r.date,r.endDate || r.date,r.place?.countryCode || r.countryCode,r);
     for (const r of J.scoped(data.transports,profileId).filter(eligible)) {

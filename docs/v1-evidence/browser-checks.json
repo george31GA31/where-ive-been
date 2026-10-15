@@ -1,0 +1,107 @@
+[
+  {
+    "name": "browser-smoke.cjs",
+    "code": 0
+  },
+  {
+    "name": "refinements-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "master-browser.cjs",
+    "code": 0,
+    "verification": "Final focused rerun passed after correction."
+  },
+  {
+    "name": "entry-map-browser.cjs",
+    "code": 0,
+    "verification": "Final focused rerun passed after correction."
+  },
+  {
+    "name": "calendar-cell-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "entry-requirements-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "health-water-browser.cjs",
+    "code": 0,
+    "verification": "Final focused rerun passed after correction."
+  },
+  {
+    "name": "travel-tools-browser.cjs",
+    "code": 0,
+    "verification": "Final focused rerun passed after correction."
+  },
+  {
+    "name": "city-autofill-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "journey-presentation-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "accommodation-logo-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "network-routing-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "herald-platform-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "currency-road-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "map-planner-calendar-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "account-quota-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "offline-resilience-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "country-trackers-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "startup-performance-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "transport-dashboard-browser.cjs",
+    "code": 0,
+    "verification": "Final focused rerun passed after correction."
+  },
+  {
+    "name": "navigation-performance-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "daily-plans-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "route-pause-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "offline-shell-delivery-browser.cjs",
+    "code": 0
+  },
+  {
+    "name": "v1-release-browser.cjs",
+    "code": 0
+  }
+]

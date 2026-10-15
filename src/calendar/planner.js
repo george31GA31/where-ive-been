@@ -28,7 +28,7 @@ function ensurePlannerDialog() {
   plannerDialog.id = 'tripPlannerDialog';
   plannerDialog.className = 'dialog trip-planner-dialog';
   plannerDialog.addEventListener('close', () => {
-    planner = null;
+    if (!plannerDialog.open) planner = null;
   });
   document.body.append(plannerDialog);
   return plannerDialog;
@@ -43,6 +43,7 @@ function openTripPlanner(prefill = {}) {
     end,
     status: plannerStatusFrom(prefill),
     profileId: prefill.profileId || state.activeProfileId || '',
+    source: prefill.source || '',
     name: prefill.tripName || '',
     notes: prefill.notes || '',
     stops: [blankStop(start, end, prefill.countryName || '')],
@@ -276,7 +277,7 @@ function renderPlanner() {
       planner.accommodations[index].logoDraft = src;
     });
   });
-  q('[data-planner-cancel]', form).onclick = () => dialog.close();
+  qa('[data-planner-cancel]', form).forEach(button => button.onclick = () => dialog.close());
   q('[data-planner-back]', form)?.addEventListener('click', () => {
     readPlannerStep();
     planner.step -= 1;
@@ -532,8 +533,10 @@ async function savePlanner() {
     calendarSelectionEnd = null;
     selectedJourneyKey = tripKey(trip.id);
     selectedDate = '';
+    const returnToBudget=planner.source==='budget';
     plannerDialog.close();
     renderAll();
+    if(returnToBudget)window.HVTravelTools?.openTrip(trip.id,'budget');
     window.HVJourneys?.render();
   } catch (error) {
     Object.assign(data, beforeSave);

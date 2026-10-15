@@ -114,7 +114,7 @@ function renderSchengen() {
 function stayRowHtml(s) {
   let label =
     s.status === 'actual' ? 'COMPLETED' : s.status === 'planned' ? 'PLANNED' : 'CANCELLED';
-  return `<div class="stay-row ${s.status}"><div class="flag-box">${flagHtml(s.domesticDestination || s.countryCode)}</div><div class="stay-main"><strong>${esc(s.countryName)} <span class="pill ${s.status}">${label}</span></strong><span>${fmt(s.start)} – ${fmt(s.end)}${s.notes ? ` · ${esc(s.notes)}` : ''}</span></div><div class="stay-days"><strong>${daysInclusive(s.start, s.end)}</strong><span>days</span></div><button class="edit-btn" data-action="edit-stay" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.countryName)} stay">⋯</button></div>`;
+  return `<div class="stay-row ${s.status}"><div class="flag-box">${flagHtml(s.domesticDestination || s.countryCode)}</div><div class="stay-main"><strong>${esc(s.countryName)} <span class="pill ${s.status}">${label}</span></strong><span>${fmt(s.start)} – ${s.end?fmt(s.end):'Present'}${s.notes ? ` · ${esc(s.notes)}` : ''}</span></div><div class="stay-days"><strong>${daysInclusive(s.start, s.end||isoDate(new Date()))}</strong><span>days</span></div><button class="edit-btn" data-action="edit-stay" data-id="${esc(s.id)}" aria-label="Edit ${esc(s.countryName)} stay">⋯</button></div>`;
 }
 function renderStayLists() {
   const term = ($('tripSearch')?.value || '').toLowerCase(),
@@ -144,19 +144,22 @@ function renderStayLists() {
         const dates = [
           g.trip?.start,
           g.trip?.end,
-          ...g.stays.flatMap((s) => [s.start, s.end]),
+          ...g.stays.flatMap((s) => [s.start, s.end||isoDate(new Date())]),
           ...g.transports.flatMap((t) => HVJourney.transportDates(t)),
         ]
           .filter(Boolean)
           .sort();
-        return { ...g, start: dates[0], end: dates.at(-1) };
+        const start=dates[0],end=dates.at(-1),records=[...g.stays,...g.transports];
+        const cancelled=g.trip?.status==='cancelled'||records.length&&records.every(r=>r.status==='cancelled');
+        const phase=cancelled?'cancelled':!start?'draft':end<today?'completed':start>today?'upcoming':'current';
+        return { ...g, start, end,phase };
       })
       .filter((g) => {
         const records = [...g.stays, ...g.transports],
           matches = records.some((r) => r.status === status) || g.trip?.status === status;
-        const phase = g.end < today ? 'completed' : g.start > today ? 'upcoming' : 'current';
+        const phase = g.phase;
         return (
-          (status === 'all' || matches || (status === phase && records.some(countsAsTravel))) &&
+          (status === 'all' || matches || (status === phase && (records.some(countsForPlanning)||!!g.trip))) &&
           (!year || (g.start <= year + '-12-31' && g.end >= year + '-01-01')) &&
           [
             g.trip?.name,
@@ -182,7 +185,7 @@ function renderStayLists() {
               ? window.HVJourneys?.transportLabel(g.transports[0]) ||
                 HVJourney.transportLabel(g.transports[0])
               : 'Journey');
-        return `<article class="trip-group"><div class="trip-group-head"><div><h3>${esc(name)}</h3><p>${g.start ? `${fmt(g.start)} to ${fmt(g.end)}` : 'Add stays or transport to set dates'} · ${esc(activeProfile().name)}</p><p>${countries.map((c) => flagHtml(c, 'flag-img flag-sm') + ' ' + esc(countryByCode(c)?.name || c)).join(' · ')}</p></div>${g.trip ? `<div class="trip-group-actions"><button type="button" class="secondary compact" data-trip-open="${esc(g.trip.id)}">Trip details</button><button type="button" class="secondary compact" data-journey-map="trip:${esc(g.trip.id)}">Journey Map</button><button type="button" class="secondary compact" data-add-transport-trip="${esc(g.trip.id)}">+ Add transport</button><button type="button" class="secondary compact" data-edit-trip="${esc(g.trip.id)}">Edit trip</button></div>` : ''}</div>${g.trip?.notes ? `<p>${esc(g.trip.notes)}</p>` : ''}<div class="trip-group-stays">${g.stays
+        return `<article class="trip-group"><div class="trip-group-head"><div><h3>${esc(name)}</h3><span class="status-badge neutral">${esc({current:'Current',upcoming:'Upcoming',completed:'Completed',cancelled:'Cancelled',draft:'Dates not set'}[g.phase])}</span><p>${g.start ? `${fmt(g.start)} to ${fmt(g.end)}` : 'Add stays or transport to set dates'} · ${esc(activeProfile().name)}</p><p>${countries.map((c) => flagHtml(c, 'flag-img flag-sm') + ' ' + esc(countryByCode(c)?.name || c)).join(' · ')}</p></div>${g.trip ? `<div class="trip-group-actions"><button type="button" class="secondary compact" data-trip-open="${esc(g.trip.id)}">Trip details</button><button type="button" class="secondary compact" data-journey-map="trip:${esc(g.trip.id)}">Journey Map</button><button type="button" class="secondary compact" data-add-transport-trip="${esc(g.trip.id)}">+ Add transport</button><button type="button" class="secondary compact" data-edit-trip="${esc(g.trip.id)}">Edit trip</button></div>` : ''}</div>${g.trip?.notes ? `<p>${esc(g.trip.notes)}</p>` : ''}<div class="trip-group-stays">${g.stays
           .sort((a, b) => a.start.localeCompare(b.start))
           .map(stayRowHtml)
           .join('')}${g.transports
@@ -193,7 +196,7 @@ function renderStayLists() {
           )
           .join('')}</div></article>`;
       })
-      .join('') || '<p class="empty-state">No trips match these filters. Add a trip to begin.</p>';
+      .join('') || `<p class="empty-state">${groups.size?'No trips match your filters.':'No trips yet. Build a trip or add individual travel records to begin.'}</p>`;
   const gaps = findGaps();
   els.gapList.className = gaps.length ? 'gap-list' : 'gap-list empty-state';
   els.gapList.innerHTML = gaps.length

@@ -1,5 +1,5 @@
 function renderMapTimeline() {
-  let list = state.stays;
+  let list = state.stays.map(stay=>({...stay,end:stay.end||isoDate(new Date())}));
   if (!list.length) {
     els.timelineEmpty.classList.remove('hidden');
     els.timelineContent.classList.add('hidden');
@@ -53,7 +53,7 @@ function setTimelineDate(k) {
 function updateTimelineLabels() {
   if (!timelineDate) return;
   let on = staysForProfile().filter(
-    (s) => countsForPlanning(s) && s.start <= timelineDate && s.end >= timelineDate,
+    (s) => countsForPlanning(s) && s.start <= timelineDate && (!s.end || s.end >= timelineDate),
   );
   els.timelineDateLabel.textContent = fmt(timelineDate, {
     weekday: 'long',

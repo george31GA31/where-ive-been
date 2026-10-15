@@ -1,0 +1,2180 @@
+[
+  {
+    "stage": "before",
+    "sample": 1,
+    "reports": [
+      {
+        "count": 8,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 46821,
+        "postgresBytes": 48061,
+        "readyMs": 544,
+        "cachedSlowNetworkReadyMs": 324,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 2,
+        "saveFeedbackMs": 742,
+        "accountPageMs": [
+          87,
+          57
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 79,
+            "paintMs": 94
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 11,
+            "paintMs": 41
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 12,
+            "paintMs": 46
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 23,
+            "paintMs": 51
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 22,
+            "paintMs": 50
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 7,
+            "paintMs": 21
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 28
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 23,
+            "paintMs": 35
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 32,
+            "paintMs": 35
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 82
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 27,
+            "paintMs": 45
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 16,
+            "paintMs": 31
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 15,
+            "paintMs": 30
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 4,
+            "paintMs": 27
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 9,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 14,
+            "paintMs": 65
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 20,
+            "paintMs": 37
+          }
+        ],
+        "heapAtReady": 5880484,
+        "heapAfterNavigation": 12267664,
+        "maxReloadTaskMs": 59,
+        "errors": []
+      },
+      {
+        "count": 160,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 922887,
+        "postgresBytes": 946015,
+        "readyMs": 401,
+        "cachedSlowNetworkReadyMs": 467,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 17,
+        "saveFeedbackMs": 917,
+        "accountPageMs": [
+          71,
+          60
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 56,
+            "paintMs": 79
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 26,
+            "paintMs": 53
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 11,
+            "paintMs": 25
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 18,
+            "paintMs": 40
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 23,
+            "paintMs": 67
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 8,
+            "paintMs": 24
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 28
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 23,
+            "paintMs": 31
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 53
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 30,
+            "paintMs": 50
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 32,
+            "paintMs": 43
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 32,
+            "paintMs": 40
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 6,
+            "paintMs": 21
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 14,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 13,
+            "paintMs": 32
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 24,
+            "paintMs": 33
+          }
+        ],
+        "heapAtReady": 13407808,
+        "heapAfterNavigation": 23196072,
+        "maxReloadTaskMs": 59,
+        "errors": []
+      },
+      {
+        "count": 800,
+        "linked": false,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 4505136,
+        "postgresBytes": 4610825,
+        "readyMs": 573,
+        "cachedSlowNetworkReadyMs": 451,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 55,
+        "saveFeedbackMs": 1587,
+        "accountPageMs": [
+          116,
+          57
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 88,
+            "paintMs": 110
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 51,
+            "paintMs": 82
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 20,
+            "paintMs": 26
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 37,
+            "paintMs": 61
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 53
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 13
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 20,
+            "paintMs": 67
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 21
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 37,
+            "paintMs": 61
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 33,
+            "paintMs": 40
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 43,
+            "paintMs": 50
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 4,
+            "paintMs": 23
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 16,
+            "paintMs": 33
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 17,
+            "paintMs": 67
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 33,
+            "paintMs": 48
+          }
+        ],
+        "heapAtReady": 45644976,
+        "heapAfterNavigation": 77269944,
+        "maxReloadTaskMs": 94,
+        "errors": []
+      }
+    ]
+  },
+  {
+    "stage": "after",
+    "sample": 1,
+    "reports": [
+      {
+        "count": 8,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 46821,
+        "postgresBytes": 48061,
+        "readyMs": 413,
+        "cachedSlowNetworkReadyMs": 251,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 2,
+        "saveFeedbackMs": 739,
+        "accountPageMs": [
+          57,
+          55
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 53,
+            "paintMs": 57
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 22,
+            "paintMs": 42
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 12,
+            "paintMs": 23
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 28,
+            "paintMs": 35
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 37
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 12
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 31
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 21,
+            "paintMs": 72
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 21
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 12,
+            "paintMs": 31
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 10,
+            "paintMs": 27
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 9,
+            "paintMs": 32
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 4,
+            "paintMs": 32
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 8,
+            "paintMs": 33
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 14,
+            "paintMs": 60
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 25,
+            "paintMs": 30
+          }
+        ],
+        "heapAtReady": 5910320,
+        "heapAfterNavigation": 15978964,
+        "maxReloadTaskMs": 0,
+        "errors": []
+      },
+      {
+        "count": 160,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 922887,
+        "postgresBytes": 946015,
+        "readyMs": 407,
+        "cachedSlowNetworkReadyMs": 285,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 18,
+        "saveFeedbackMs": 887,
+        "accountPageMs": [
+          72,
+          62
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 44,
+            "paintMs": 48
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 39,
+            "paintMs": 61
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 15,
+            "paintMs": 20
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 32,
+            "paintMs": 41
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 33
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 7,
+            "paintMs": 28
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 21,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 37
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 15,
+            "paintMs": 37
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 16,
+            "paintMs": 34
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 14,
+            "paintMs": 33
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 4,
+            "paintMs": 31
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 8,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 14,
+            "paintMs": 62
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 24,
+            "paintMs": 27
+          }
+        ],
+        "heapAtReady": 13455108,
+        "heapAfterNavigation": 34237772,
+        "maxReloadTaskMs": 0,
+        "errors": []
+      },
+      {
+        "count": 800,
+        "linked": false,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 4505136,
+        "postgresBytes": 4610825,
+        "readyMs": 601,
+        "cachedSlowNetworkReadyMs": 590,
+        "reads": 2,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 60,
+        "saveFeedbackMs": 1429,
+        "accountPageMs": [
+          118,
+          59
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 70,
+            "paintMs": 74
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 58,
+            "paintMs": 79
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 24,
+            "paintMs": 26
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 57,
+            "paintMs": 68
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 39
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 7,
+            "paintMs": 17
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 19,
+            "paintMs": 31
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 20,
+            "paintMs": 65
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 22
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 18,
+            "paintMs": 41
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 19,
+            "paintMs": 37
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 23,
+            "paintMs": 61
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 6,
+            "paintMs": 17
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 39,
+            "paintMs": 44
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 17,
+            "paintMs": 22
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 45,
+            "paintMs": 50
+          }
+        ],
+        "heapAtReady": 32956760,
+        "heapAfterNavigation": 83512048,
+        "maxReloadTaskMs": 90,
+        "errors": []
+      }
+    ]
+  },
+  {
+    "stage": "before",
+    "sample": 2,
+    "reports": [
+      {
+        "count": 8,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 46821,
+        "postgresBytes": 48061,
+        "readyMs": 407,
+        "cachedSlowNetworkReadyMs": 243,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 2,
+        "saveFeedbackMs": 734,
+        "accountPageMs": [
+          75,
+          54
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 58,
+            "paintMs": 74
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 10,
+            "paintMs": 47
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 9,
+            "paintMs": 23
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 14,
+            "paintMs": 35
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 14,
+            "paintMs": 50
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 19
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 31
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 22,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 36
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 24,
+            "paintMs": 39
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 18,
+            "paintMs": 22
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 14,
+            "paintMs": 29
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 4,
+            "paintMs": 30
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 10,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 16,
+            "paintMs": 61
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 18,
+            "paintMs": 28
+          }
+        ],
+        "heapAtReady": 5889492,
+        "heapAfterNavigation": 12273636,
+        "maxReloadTaskMs": 58,
+        "errors": []
+      },
+      {
+        "count": 160,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 922887,
+        "postgresBytes": 946015,
+        "readyMs": 386,
+        "cachedSlowNetworkReadyMs": 301,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 17,
+        "saveFeedbackMs": 897,
+        "accountPageMs": [
+          70,
+          52
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 58,
+            "paintMs": 76
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 28,
+            "paintMs": 52
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 11,
+            "paintMs": 24
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 17,
+            "paintMs": 38
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 65
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 20
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 22,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 21,
+            "paintMs": 38
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 33,
+            "paintMs": 53
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 37,
+            "paintMs": 43
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 36,
+            "paintMs": 49
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 5,
+            "paintMs": 28
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 13,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 14,
+            "paintMs": 69
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 23,
+            "paintMs": 35
+          }
+        ],
+        "heapAtReady": 13516352,
+        "heapAfterNavigation": 34293232,
+        "maxReloadTaskMs": 64,
+        "errors": []
+      },
+      {
+        "count": 800,
+        "linked": false,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 4505136,
+        "postgresBytes": 4610825,
+        "readyMs": 585,
+        "cachedSlowNetworkReadyMs": 489,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 59,
+        "saveFeedbackMs": 1383,
+        "accountPageMs": [
+          103,
+          58
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 96,
+            "paintMs": 122
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 52,
+            "paintMs": 95
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 19,
+            "paintMs": 25
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 41,
+            "paintMs": 80
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 21,
+            "paintMs": 60
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 15
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 22,
+            "paintMs": 68
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 15,
+            "paintMs": 19
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 32,
+            "paintMs": 52
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 32,
+            "paintMs": 42
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 32,
+            "paintMs": 43
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 5,
+            "paintMs": 14
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 16,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 13,
+            "paintMs": 64
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 30,
+            "paintMs": 40
+          }
+        ],
+        "heapAtReady": 45843572,
+        "heapAfterNavigation": 77446000,
+        "maxReloadTaskMs": 90,
+        "errors": []
+      }
+    ]
+  },
+  {
+    "stage": "after",
+    "sample": 2,
+    "reports": [
+      {
+        "count": 8,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 46821,
+        "postgresBytes": 48061,
+        "readyMs": 403,
+        "cachedSlowNetworkReadyMs": 228,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 3,
+        "saveFeedbackMs": 733,
+        "accountPageMs": [
+          67,
+          54
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 51,
+            "paintMs": 55
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 24,
+            "paintMs": 43
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 12,
+            "paintMs": 24
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 29,
+            "paintMs": 39
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 14,
+            "paintMs": 17
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 7,
+            "paintMs": 21
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 30
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 35
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 21,
+            "paintMs": 27
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 36
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 13,
+            "paintMs": 35
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 11,
+            "paintMs": 21
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 8,
+            "paintMs": 30
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 6,
+            "paintMs": 32
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 8,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 16,
+            "paintMs": 66
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 37,
+            "paintMs": 43
+          }
+        ],
+        "heapAtReady": 5943536,
+        "heapAfterNavigation": 15933544,
+        "maxReloadTaskMs": 53,
+        "errors": []
+      },
+      {
+        "count": 160,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 922887,
+        "postgresBytes": 946015,
+        "readyMs": 414,
+        "cachedSlowNetworkReadyMs": 275,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 18,
+        "saveFeedbackMs": 885,
+        "accountPageMs": [
+          69,
+          55
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 53,
+            "paintMs": 57
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 41,
+            "paintMs": 63
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 14,
+            "paintMs": 26
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 30,
+            "paintMs": 38
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 20,
+            "paintMs": 45
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 7,
+            "paintMs": 24
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 31
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 21,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 37
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 14,
+            "paintMs": 37
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 15,
+            "paintMs": 32
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 15,
+            "paintMs": 32
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 5,
+            "paintMs": 24
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 8,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 13,
+            "paintMs": 65
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 27,
+            "paintMs": 30
+          }
+        ],
+        "heapAtReady": 13488700,
+        "heapAfterNavigation": 23131976,
+        "maxReloadTaskMs": 53,
+        "errors": []
+      },
+      {
+        "count": 800,
+        "linked": false,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 4505136,
+        "postgresBytes": 4610825,
+        "readyMs": 666,
+        "cachedSlowNetworkReadyMs": 409,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 62,
+        "saveFeedbackMs": 1369,
+        "accountPageMs": [
+          140,
+          64
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 78,
+            "paintMs": 83
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 70,
+            "paintMs": 95
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 25,
+            "paintMs": 27
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 61,
+            "paintMs": 72
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 19,
+            "paintMs": 42
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 32
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 20,
+            "paintMs": 69
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 21
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 17,
+            "paintMs": 50
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 19,
+            "paintMs": 39
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 19,
+            "paintMs": 38
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 5,
+            "paintMs": 17
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 16,
+            "paintMs": 30
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 15,
+            "paintMs": 69
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 41,
+            "paintMs": 45
+          }
+        ],
+        "heapAtReady": 32249160,
+        "heapAfterNavigation": 74900700,
+        "maxReloadTaskMs": 84,
+        "errors": []
+      }
+    ]
+  },
+  {
+    "stage": "before",
+    "sample": 3,
+    "reports": [
+      {
+        "count": 8,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 46821,
+        "postgresBytes": 48061,
+        "readyMs": 418,
+        "cachedSlowNetworkReadyMs": 283,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 3,
+        "saveFeedbackMs": 735,
+        "accountPageMs": [
+          69,
+          61
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 69,
+            "paintMs": 83
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 8,
+            "paintMs": 39
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 9,
+            "paintMs": 25
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 15,
+            "paintMs": 36
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 13,
+            "paintMs": 30
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 18
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 31
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 30
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 25,
+            "paintMs": 31
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 35
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 25,
+            "paintMs": 40
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 13,
+            "paintMs": 31
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 14,
+            "paintMs": 32
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 5,
+            "paintMs": 32
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 8,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 15,
+            "paintMs": 65
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 20,
+            "paintMs": 37
+          }
+        ],
+        "heapAtReady": 5904976,
+        "heapAfterNavigation": 12218296,
+        "maxReloadTaskMs": 65,
+        "errors": []
+      },
+      {
+        "count": 160,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 922887,
+        "postgresBytes": 946015,
+        "readyMs": 388,
+        "cachedSlowNetworkReadyMs": 273,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 15,
+        "saveFeedbackMs": 866,
+        "accountPageMs": [
+          66,
+          64
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 61,
+            "paintMs": 82
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 28,
+            "paintMs": 71
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 12,
+            "paintMs": 16
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 18,
+            "paintMs": 41
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 61
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 7,
+            "paintMs": 14
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 29
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 16,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 21,
+            "paintMs": 31
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 35
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 36,
+            "paintMs": 63
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 43,
+            "paintMs": 53
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 34,
+            "paintMs": 47
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 5,
+            "paintMs": 16
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 14,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 13,
+            "paintMs": 65
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 25,
+            "paintMs": 42
+          }
+        ],
+        "heapAtReady": 13388060,
+        "heapAfterNavigation": 22954040,
+        "maxReloadTaskMs": 54,
+        "errors": []
+      },
+      {
+        "count": 800,
+        "linked": false,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 4505136,
+        "postgresBytes": 4610825,
+        "readyMs": 561,
+        "cachedSlowNetworkReadyMs": 446,
+        "reads": 2,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 55,
+        "saveFeedbackMs": 1378,
+        "accountPageMs": [
+          104,
+          63
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 89,
+            "paintMs": 113
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 58,
+            "paintMs": 100
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 23,
+            "paintMs": 29
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 35,
+            "paintMs": 57
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 20,
+            "paintMs": 61
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 16
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 31
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 19,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 19,
+            "paintMs": 64
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 14,
+            "paintMs": 17
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 33,
+            "paintMs": 51
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 32,
+            "paintMs": 40
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 34,
+            "paintMs": 45
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 5,
+            "paintMs": 19
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 16,
+            "paintMs": 33
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 13,
+            "paintMs": 59
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 30,
+            "paintMs": 43
+          }
+        ],
+        "heapAtReady": 45906524,
+        "heapAfterNavigation": 77293576,
+        "maxReloadTaskMs": 89,
+        "errors": []
+      }
+    ]
+  },
+  {
+    "stage": "after",
+    "sample": 3,
+    "reports": [
+      {
+        "count": 8,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 46821,
+        "postgresBytes": 48061,
+        "readyMs": 408,
+        "cachedSlowNetworkReadyMs": 281,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 3,
+        "saveFeedbackMs": 746,
+        "accountPageMs": [
+          65,
+          55
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 57,
+            "paintMs": 60
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 23,
+            "paintMs": 35
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 14,
+            "paintMs": 21
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 28,
+            "paintMs": 37
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 20,
+            "paintMs": 44
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 9,
+            "paintMs": 23
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 34
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 30
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 20,
+            "paintMs": 69
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 17,
+            "paintMs": 21
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 12,
+            "paintMs": 35
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 9,
+            "paintMs": 29
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 9,
+            "paintMs": 31
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 6,
+            "paintMs": 31
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 8,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 19,
+            "paintMs": 68
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 30,
+            "paintMs": 37
+          }
+        ],
+        "heapAtReady": 5937520,
+        "heapAfterNavigation": 15269720,
+        "maxReloadTaskMs": 60,
+        "errors": []
+      },
+      {
+        "count": 160,
+        "linked": true,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 922887,
+        "postgresBytes": 946015,
+        "readyMs": 387,
+        "cachedSlowNetworkReadyMs": 285,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 17,
+        "saveFeedbackMs": 899,
+        "accountPageMs": [
+          92,
+          63
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 45,
+            "paintMs": 49
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 40,
+            "paintMs": 65
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 14,
+            "paintMs": 24
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 34,
+            "paintMs": 42
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 20,
+            "paintMs": 46
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 7,
+            "paintMs": 15
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 5,
+            "paintMs": 30
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 19,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 26,
+            "paintMs": 30
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 21,
+            "paintMs": 47
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 16,
+            "paintMs": 45
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 18,
+            "paintMs": 37
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 16,
+            "paintMs": 37
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 6,
+            "paintMs": 21
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 9,
+            "paintMs": 34
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 16,
+            "paintMs": 65
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 24,
+            "paintMs": 28
+          }
+        ],
+        "heapAtReady": 13454868,
+        "heapAfterNavigation": 23131476,
+        "maxReloadTaskMs": 55,
+        "errors": []
+      },
+      {
+        "count": 800,
+        "linked": false,
+        "calendarMonth": "2018-01",
+        "payloadBytes": 4505136,
+        "postgresBytes": 4610825,
+        "readyMs": 634,
+        "cachedSlowNetworkReadyMs": 389,
+        "reads": 3,
+        "checks": 0,
+        "writes": 1,
+        "noteEditMs": 61,
+        "saveFeedbackMs": 1367,
+        "accountPageMs": [
+          179,
+          78
+        ],
+        "metrics": [
+          {
+            "view": "calendar",
+            "pass": 1,
+            "handlerMs": 87,
+            "paintMs": 91
+          },
+          {
+            "view": "stats",
+            "pass": 1,
+            "handlerMs": 68,
+            "paintMs": 79
+          },
+          {
+            "view": "dashboard",
+            "pass": 1,
+            "handlerMs": 26,
+            "paintMs": 30
+          },
+          {
+            "view": "countries",
+            "pass": 1,
+            "handlerMs": 63,
+            "paintMs": 81
+          },
+          {
+            "view": "calendar",
+            "pass": 2,
+            "handlerMs": 21,
+            "paintMs": 40
+          },
+          {
+            "view": "stats",
+            "pass": 2,
+            "handlerMs": 8,
+            "paintMs": 25
+          },
+          {
+            "view": "dashboard",
+            "pass": 2,
+            "handlerMs": 6,
+            "paintMs": 32
+          },
+          {
+            "view": "countries",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 31
+          },
+          {
+            "view": "tcc",
+            "pass": 1,
+            "handlerMs": 22,
+            "paintMs": 32
+          },
+          {
+            "view": "tcc",
+            "pass": 2,
+            "handlerMs": 18,
+            "paintMs": 39
+          },
+          {
+            "view": "day-details",
+            "handlerMs": 18,
+            "paintMs": 45
+          },
+          {
+            "view": "next-month",
+            "handlerMs": 19,
+            "paintMs": 46
+          },
+          {
+            "view": "choose-year",
+            "handlerMs": 28,
+            "paintMs": 62
+          },
+          {
+            "view": "year-overview",
+            "handlerMs": 22,
+            "paintMs": 33
+          },
+          {
+            "view": "next-year",
+            "handlerMs": 18,
+            "paintMs": 23
+          },
+          {
+            "view": "tcc-search",
+            "handlerMs": 16,
+            "paintMs": 26
+          },
+          {
+            "view": "calendar-after-note",
+            "handlerMs": 44,
+            "paintMs": 47
+          }
+        ],
+        "heapAtReady": 32955356,
+        "heapAfterNavigation": 81400436,
+        "maxReloadTaskMs": 81,
+        "errors": []
+      }
+    ]
+  }
+]

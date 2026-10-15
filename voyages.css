@@ -1256,13 +1256,15 @@ hr {
   outline:none
 }
 .map-country.selected {
-  stroke:var(--hv-gold);
-  stroke-width:3;
-  filter:drop-shadow(0 0 3px rgba(31,42,48,.2))
+  fill:#629fc5;
+  stroke:#28618b;
+  stroke-width:1.5;
+  filter:none
 }
 .map-country:focus-visible {
-  stroke:var(--hv-gold);
-  stroke-width:3;
+  fill:#629fc5;
+  stroke:#28618b;
+  stroke-width:1.5;
   stroke-dasharray:4 2;
   vector-effect:non-scaling-stroke
 }

@@ -168,7 +168,7 @@ function captureCalendarAction(event) {
   const noteDate=target.closest('[data-calendar-notes-date]');
   if(noteDate){event.preventDefault();event.stopPropagation();selectedDate=noteDate.dataset.calendarNotesDate;calendarSelectionStart=selectedDate;calendarSelectionEnd=null;selectedJourneyKey='';dateAction='';renderMonth();return;}
   const noteAction=target.closest('[data-calendar-date-action="note"]');
-  if(noteAction){event.preventDefault();event.stopPropagation();window.HVTravelTools?.openNote(null,{date:calendarSelectionStart||selectedDate,tripId:null});return;}
+  if(noteAction){event.preventDefault();event.stopPropagation();window.HVTravelTools?.openNote(null,{date:calendarSelectionStart||selectedDate,tripId:null,rangeEnd:calendarSelectionEnd});return;}
   const action = target.closest('[data-calendar-date-action]');
   if (action) {
     event.preventDefault();
@@ -208,7 +208,9 @@ function captureCalendarAction(event) {
     event.stopPropagation();
     selectedJourneyKey = '';
     selectedDate = more.dataset.calendarDayDetail;
-    renderJourneyDetail();
+    calendarSelectionStart=selectedDate;calendarSelectionEnd=null;dateAction='';
+    renderMonth();
+    const detail=$('calendarJourneyDetail');detail?.setAttribute('tabindex','-1');detail?.focus({preventScroll:true});detail?.scrollIntoView({block:'nearest',behavior:'smooth'});
     return;
   }
   const open = target.closest('[data-calendar-open-journey]');

@@ -1,0 +1,599 @@
+[
+  {
+    "recordsPerCollection": 8,
+    "before": {
+      "readyMs": {
+        "median": 418,
+        "range": [
+          407,
+          544
+        ]
+      },
+      "cacheReadyMs": {
+        "median": 283,
+        "range": [
+          243,
+          324
+        ]
+      },
+      "views": {
+        "calendar": {
+          "coldHandlerMs": {
+            "median": 69,
+            "range": [
+              58,
+              79
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 14,
+            "range": [
+              13,
+              22
+            ]
+          }
+        },
+        "stats": {
+          "coldHandlerMs": {
+            "median": 10,
+            "range": [
+              8,
+              11
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 6,
+            "range": [
+              5,
+              7
+            ]
+          }
+        },
+        "dashboard": {
+          "coldHandlerMs": {
+            "median": 9,
+            "range": [
+              9,
+              12
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 6,
+            "range": [
+              6,
+              6
+            ]
+          }
+        },
+        "countries": {
+          "coldHandlerMs": {
+            "median": 15,
+            "range": [
+              14,
+              23
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              16,
+              23
+            ]
+          }
+        },
+        "tcc": {
+          "coldHandlerMs": {
+            "median": 25,
+            "range": [
+              22,
+              32
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 17,
+            "range": [
+              16,
+              17
+            ]
+          }
+        }
+      }
+    },
+    "after": {
+      "readyMs": {
+        "median": 408,
+        "range": [
+          403,
+          413
+        ]
+      },
+      "cacheReadyMs": {
+        "median": 251,
+        "range": [
+          228,
+          281
+        ]
+      },
+      "views": {
+        "calendar": {
+          "coldHandlerMs": {
+            "median": 53,
+            "range": [
+              51,
+              57
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              14,
+              20
+            ]
+          }
+        },
+        "stats": {
+          "coldHandlerMs": {
+            "median": 23,
+            "range": [
+              22,
+              24
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 7,
+            "range": [
+              6,
+              9
+            ]
+          }
+        },
+        "dashboard": {
+          "coldHandlerMs": {
+            "median": 12,
+            "range": [
+              12,
+              14
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 5,
+            "range": [
+              5,
+              5
+            ]
+          }
+        },
+        "countries": {
+          "coldHandlerMs": {
+            "median": 28,
+            "range": [
+              28,
+              29
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 17,
+            "range": [
+              17,
+              18
+            ]
+          }
+        },
+        "tcc": {
+          "coldHandlerMs": {
+            "median": 21,
+            "range": [
+              20,
+              21
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 17,
+            "range": [
+              17,
+              18
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "recordsPerCollection": 160,
+    "before": {
+      "readyMs": {
+        "median": 388,
+        "range": [
+          386,
+          401
+        ]
+      },
+      "cacheReadyMs": {
+        "median": 301,
+        "range": [
+          273,
+          467
+        ]
+      },
+      "views": {
+        "calendar": {
+          "coldHandlerMs": {
+            "median": 58,
+            "range": [
+              56,
+              61
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              18,
+              23
+            ]
+          }
+        },
+        "stats": {
+          "coldHandlerMs": {
+            "median": 28,
+            "range": [
+              26,
+              28
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 7,
+            "range": [
+              6,
+              8
+            ]
+          }
+        },
+        "dashboard": {
+          "coldHandlerMs": {
+            "median": 11,
+            "range": [
+              11,
+              12
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 5,
+            "range": [
+              5,
+              5
+            ]
+          }
+        },
+        "countries": {
+          "coldHandlerMs": {
+            "median": 18,
+            "range": [
+              17,
+              18
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 17,
+            "range": [
+              16,
+              18
+            ]
+          }
+        },
+        "tcc": {
+          "coldHandlerMs": {
+            "median": 22,
+            "range": [
+              21,
+              23
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              16,
+              21
+            ]
+          }
+        }
+      }
+    },
+    "after": {
+      "readyMs": {
+        "median": 407,
+        "range": [
+          387,
+          414
+        ]
+      },
+      "cacheReadyMs": {
+        "median": 285,
+        "range": [
+          275,
+          285
+        ]
+      },
+      "views": {
+        "calendar": {
+          "coldHandlerMs": {
+            "median": 45,
+            "range": [
+              44,
+              53
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 20,
+            "range": [
+              16,
+              20
+            ]
+          }
+        },
+        "stats": {
+          "coldHandlerMs": {
+            "median": 40,
+            "range": [
+              39,
+              41
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 7,
+            "range": [
+              7,
+              7
+            ]
+          }
+        },
+        "dashboard": {
+          "coldHandlerMs": {
+            "median": 14,
+            "range": [
+              14,
+              15
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 5,
+            "range": [
+              5,
+              5
+            ]
+          }
+        },
+        "countries": {
+          "coldHandlerMs": {
+            "median": 32,
+            "range": [
+              30,
+              34
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              16,
+              19
+            ]
+          }
+        },
+        "tcc": {
+          "coldHandlerMs": {
+            "median": 21,
+            "range": [
+              21,
+              26
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 17,
+            "range": [
+              16,
+              21
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "recordsPerCollection": 800,
+    "before": {
+      "readyMs": {
+        "median": 573,
+        "range": [
+          561,
+          585
+        ]
+      },
+      "cacheReadyMs": {
+        "median": 451,
+        "range": [
+          446,
+          489
+        ]
+      },
+      "views": {
+        "calendar": {
+          "coldHandlerMs": {
+            "median": 89,
+            "range": [
+              88,
+              96
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 20,
+            "range": [
+              18,
+              21
+            ]
+          }
+        },
+        "stats": {
+          "coldHandlerMs": {
+            "median": 52,
+            "range": [
+              51,
+              58
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 5,
+            "range": [
+              5,
+              6
+            ]
+          }
+        },
+        "dashboard": {
+          "coldHandlerMs": {
+            "median": 20,
+            "range": [
+              19,
+              23
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 5,
+            "range": [
+              5,
+              5
+            ]
+          }
+        },
+        "countries": {
+          "coldHandlerMs": {
+            "median": 37,
+            "range": [
+              35,
+              41
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              16,
+              19
+            ]
+          }
+        },
+        "tcc": {
+          "coldHandlerMs": {
+            "median": 20,
+            "range": [
+              19,
+              22
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 15,
+            "range": [
+              14,
+              18
+            ]
+          }
+        }
+      }
+    },
+    "after": {
+      "readyMs": {
+        "median": 634,
+        "range": [
+          601,
+          666
+        ]
+      },
+      "cacheReadyMs": {
+        "median": 409,
+        "range": [
+          389,
+          590
+        ]
+      },
+      "views": {
+        "calendar": {
+          "coldHandlerMs": {
+            "median": 78,
+            "range": [
+              70,
+              87
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 19,
+            "range": [
+              17,
+              21
+            ]
+          }
+        },
+        "stats": {
+          "coldHandlerMs": {
+            "median": 68,
+            "range": [
+              58,
+              70
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 7,
+            "range": [
+              6,
+              8
+            ]
+          }
+        },
+        "dashboard": {
+          "coldHandlerMs": {
+            "median": 25,
+            "range": [
+              24,
+              26
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 5,
+            "range": [
+              5,
+              6
+            ]
+          }
+        },
+        "countries": {
+          "coldHandlerMs": {
+            "median": 61,
+            "range": [
+              57,
+              63
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              17,
+              19
+            ]
+          }
+        },
+        "tcc": {
+          "coldHandlerMs": {
+            "median": 20,
+            "range": [
+              20,
+              22
+            ]
+          },
+          "warmHandlerMs": {
+            "median": 18,
+            "range": [
+              16,
+              18
+            ]
+          }
+        }
+      }
+    }
+  }
+]

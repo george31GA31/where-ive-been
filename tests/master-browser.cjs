@@ -22,7 +22,7 @@ let browser;
   assert.equal(await page.locator('[data-airport-details=start]').textContent(),'','A blank flight must not show an unrelated airport');
   assert.equal(await page.evaluate(()=>HVJourneys.airportFor('')),null);await page.locator('[data-close-transport]').first().click();
   await page.evaluate(()=>HVJourneys.openTransport(null,{type:'train'}));
-  const f=page.locator('#transportForm');
+  const f=page.locator('#transportForm');await f.locator('[name=status]').selectOption('planned');
   for(const [side,term]of [['start','Stansted'],['end','Peterborough']]){await f.locator(`[name=${side}name]`).fill(term);await f.locator(`[data-airport-results=${side}] [data-travel-result]`).first().click();assert.match(await f.locator(`[name=${side}name]`).inputValue(),/railway station/);}
   await f.locator('[name=startLocal]').fill('2026-10-10T23:30');await f.locator('[name=endLocal]').fill('2026-10-12T06:30');
   await f.locator('[data-ground-add]').click();await f.locator('[data-via-field=name]').fill('Cambridge');await f.locator('[data-via-results] [data-travel-result]').first().click();

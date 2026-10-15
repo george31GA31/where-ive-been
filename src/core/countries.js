@@ -38,7 +38,7 @@ function renderCountries() {
               s.countryCode === code &&
               s.status === 'actual' &&
               s.start <= d &&
-              s.end >= d &&
+              (!s.end || s.end >= d) &&
               HVJourney.isTravelStay(state, s, d),
           ),
       ).length,

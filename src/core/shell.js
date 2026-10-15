@@ -218,13 +218,13 @@ function bindEvents() {
   document.addEventListener('click', handleDelegatedClick);
   $('prevMonth').onclick = () => {
     calendarCursor = new Date(
-      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() - 1, 1),
+      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() - (document.querySelector('.calendar-month-panel')?.dataset.calendarView==='year'?12:1), 1),
     );
     renderCalendar();
   };
   $('nextMonth').onclick = () => {
     calendarCursor = new Date(
-      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() + 1, 1),
+      Date.UTC(calendarCursor.getUTCFullYear(), calendarCursor.getUTCMonth() + (document.querySelector('.calendar-month-panel')?.dataset.calendarView==='year'?12:1), 1),
     );
     renderCalendar();
   };
@@ -431,7 +431,7 @@ function renderMiniCalendar() {
   for (let i = 0; i < 42; i++) {
     let d = addDays(start, i),
       k = dayKey(d),
-      has = list.some((s) => s.start <= k && s.end >= k);
+      has = list.some((s) => s.start <= k && (s.end || today) >= k);
     h += `<div class="mini-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'muted'} ${k === today ? 'today' : ''} ${has ? 'has-stay' : ''}">${d.getUTCDate()}</div>`;
   }
   els.miniCalendar.innerHTML = h;

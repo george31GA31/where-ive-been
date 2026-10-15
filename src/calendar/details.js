@@ -11,7 +11,7 @@ function monthInsight(groups) {
     )
     .filter((group) => group.start && group.start <= end && group.end >= start);
   const upcoming = groups.filter((group) => group.phase === 'upcoming').slice(0, 3);
-  return `<div class="calendar-detail-empty"><p class="eyebrow">YOUR MONTH</p><h2>${E(cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }))}</h2><p>${inMonth.length ? `${inMonth.length} ${inMonth.length === 1 ? 'journey' : 'journeys'} touch this month. Select a journey to see every stop, transfer and stay in order.` : 'No journeys touch this month yet. Pick dates on the calendar when you are ready to plan one.'}</p>${upcoming.length ? `<div class="calendar-next-list"><span>Coming up</span>${upcoming.map((group) => `<button type="button" data-calendar-open-journey="${E(group.key)}"><i style="--journey-colour:${E(group.colour)}"></i><strong>${E(group.title)}</strong><small>${E(dateRangeText(group.start, group.end))}</small></button>`).join('')}</div>` : ''}<button type="button" class="primary wide" data-calendar-plan>Plan a trip</button></div>`;
+  return `<div class="calendar-detail-empty"><p class="eyebrow">YOUR MONTH</p><h2>${E(cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }))}</h2><p>${inMonth.length ? `${inMonth.length} ${inMonth.length === 1 ? 'journey' : 'journeys'} touch this month. Select a journey to see every stop, transfer and stay in order.` : 'No journeys touch this month yet. Pick dates on the calendar when you are ready to plan one.'}</p>${upcoming.length ? `<div class="calendar-next-list"><span>Coming up</span>${upcoming.map((group) => `<button type="button" data-calendar-open-journey="${E(group.key)}"><i style="--journey-colour:${E(group.colour)}"></i><strong>${E(group.title)}</strong><small>${E(dateRangeText(group.start, group.end))}</small></button>`).join('')}</div>` : ''}<button type="button" class="primary wide" data-calendar-plan>Build a trip</button></div>`;
 }
 
 function dayInsight(date, groups) {
@@ -19,7 +19,7 @@ function dayInsight(date, groups) {
     end = calendarSelectionEnd || start;
   const active = groups.filter(
     (group) =>
-      group.stays.some((s) => s.status !== 'cancelled' && s.start <= end && s.end >= start) ||
+      group.stays.some((s) => s.status !== 'cancelled' && s.start <= end && (!s.end || s.end >= start)) ||
       group.accommodations.some((a) => a.checkIn <= end && a.checkOut >= start) ||
       group.transports.some((t) => HVJourney.transportDates(t).some((d) => d >= start && d <= end)),
   );
@@ -28,7 +28,7 @@ function dayInsight(date, groups) {
       .map(
         (group) =>
           `<div class="date-entry-group"><strong>${E(!group.trip && !group.stays.length && group.transports.length === 1 ? (group.transports[0].type === 'flight' ? 'Flight details' : 'Transport details') : group.title)}</strong><button type="button" class="text-btn" data-journey-map="${E(group.key)}">Journey Map →</button>${group.stays
-            .filter((s) => s.start <= end && s.end >= start)
+            .filter((s) => s.start <= end && (!s.end || s.end >= start))
             .map(
               (s) =>
                 `<button type="button" data-calendar-edit-stay="${E(s.id)}">${flagHtml(s.domesticDestination || s.countryCode, 'calendar-chip-flag')} ${E(s.countryName)} · ${E(dateRangeText(s.start, s.end))} <span>Edit</span></button>`,

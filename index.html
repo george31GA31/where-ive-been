@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
 <link rel="stylesheet" href="transport-dashboard.css?v=transport-20261008">
+  <link rel="stylesheet" href="herald-ui.css?v=20261015">
 </head>
 <body data-current-view="dashboard">
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -127,8 +128,8 @@
       <section id="roadTripView" class="view" aria-label="Road Trip Planner"><div id="roadTripPlannerTool"></div></section>
       <section id="statsView" class="view" aria-label="Statistics"><div id="atlasStatistics"></div></section>
       <section id="homesView" class="view" aria-label="Lived In"></section>
-      <section id="placesView" class="view"><article class="panel"><h2>Your places</h2><p class="helper">Individual place visits and your wish list. Country stays do not automatically imply visits to attractions.</p><div id="personalPlaces"></div></article></section>
-      <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">Open profile</a></article></section>
+      <section id="placesView" class="view"><article class="panel"><h2>Visited places &amp; wish list</h2><p class="helper">Reference places you have visited or want to see. Country stays do not automatically imply attraction visits. Reusable addresses and dated map locations are managed separately in Journey Map.</p><p><a class="text-btn" href="#/journey-map">Open Journey Map</a> · <button class="text-btn" type="button" data-manage-places>Saved locations for journeys</button></p><div id="personalPlaces"></div></article></section>
+      <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">My account &amp; sync</a></article></section>
       <section id="calendarView" class="view" aria-label="Trip calendar">
         <div class="calendar-experience">
           <header class="calendar-hero">
@@ -204,37 +205,11 @@
         </div>
       </section>
 
-      <section id="plannerView" class="view" aria-label="Plan a Trip">
-        <article class="panel personal-planning">
-          <header>
-            <p class="eyebrow">PERSONAL TRAVEL PLANNING</p>
-            <h2>Want help putting your trip together?</h2>
-            <p class="panel-copy">Herald’s personal trip-planning service is being developed to help travellers turn an idea into a realistic itinerary. The idea is for me to plan each itinerary personally, around your trip.</p>
-          </header>
-          <p class="personal-planning-status">Personal trip planning is currently being developed. More details will be available soon.</p>
-          <p class="panel-copy">These are the current ideas for the service, with the details still being worked out.</p>
-          <div class="personal-planning-services">
-            <section class="personal-planning-service" aria-labelledby="basicPlanTitle">
-              <div><h3 id="basicPlanTitle">Basic Plan</h3><p class="personal-planning-level">Free</p></div>
-              <p>A useful basic day-by-day itinerary covering where to go, the order and days to visit each place, and things worth doing.</p>
-            </section>
-            <section class="personal-planning-service" aria-labelledby="fullItineraryTitle">
-              <div><h3 id="fullItineraryTitle">Full Itinerary</h3><p class="personal-planning-level">£100</p></div>
-              <p>A detailed, personally researched trip plan with suggested flights and accommodation, departure and arrival timings, realistic travel times, airport information, trains, buses and ferries where relevant. It would also cover local transport, transfers, activities, guides or tours, and what to book in advance.</p>
-            </section>
-            <section class="personal-planning-service" aria-labelledby="fullBookingTitle">
-              <div><h3 id="fullBookingTitle">Full Trip Booking</h3><p class="personal-planning-level">Coming later</p></div>
-              <p>A possible future option where I may also be able to arrange the bookings for your trip for an additional fee. The details and fee are still to be confirmed.</p>
-            </section>
-          </div>
-          <p class="helper">Planning your own trip? <a class="atlas-text-link" href="#/travel-tools">Open Travel Tools <span aria-hidden="true">→</span></a></p>
-        </article>
-      </section>
-
+      <section id="plannerView" class="view" aria-label="Plan a Trip"></section>
       <section id="stayPlannerView" class="view" aria-label="Stay planner">
         <div class="planner-layout">
           <article class="panel planner-card">
-            <p class="eyebrow">BEFORE YOU BOOK</p><h2>Stay planner</h2><p class="panel-copy">Pick a destination and entry date. For Schengen, the planner tells you the maximum continuous stay, your safe departure date and when a one-day re-entry becomes possible after using the full allowance.</p>
+            <p class="eyebrow">BEFORE YOU BOOK</p><h2>Stay planner</h2><p class="panel-copy">Pick a destination and entry date. For Schengen, the planner tells you the maximum continuous stay, your calculated latest departure date and when a one-day re-entry becomes possible after using the full allowance.</p>
             <label class="field"><span>Traveller</span><select id="plannerProfile"></select></label>
             <label class="field"><span>Destination country</span><input id="plannerCountry" list="countryList" placeholder="Start typing a country…" autocomplete="off" /></label>
             <div class="form-grid"><label class="field"><span>Entry date</span><input type="date" id="plannerEntry" /></label><label class="field"><span>Planned departure <em>optional</em></span><input type="date" id="plannerExit" /></label></div>
@@ -285,7 +260,7 @@
           <article class="panel">
             <div class="panel-head"><div><p class="eyebrow">YOUR ACCOUNT</p><h2>Saved wherever you go</h2></div></div>
             <p class="panel-copy">Sign in to save your travel history automatically and access it on another device. Traveller profiles and home history are included.</p>
-            <a class="primary" href="profile/">Open my profile</a>
+            <a class="primary" href="profile/">My account &amp; sync</a>
             <p class="panel-copy">Already recorded travels on this device? Sign in, then import them into your account. Identical records will be skipped.</p>
             <button class="secondary" id="importDeviceBtn" type="button" hidden>Import existing device data</button>
           </article>
@@ -294,7 +269,7 @@
       <section id="transportView" class="view" aria-label="My transport"><div id="transportDashboard"></div></section>
 
       <section id="journeysView" class="view">
-        <header class="journey-library-heading"><div><p class="eyebrow">YOUR JOURNEYS</p><h2>Journeys Map</h2><p>Your complete travel history and future plans, together. Focus an individual journey from the records below.</p></div><div class="journey-library-actions"><button type="button" class="primary" data-library-transport>Add transport</button><button type="button" class="secondary" data-library-stay>Add accommodation</button><button type="button" class="secondary" data-manage-places>Saved places</button></div></header>
+        <header class="journey-library-heading"><div><p class="eyebrow">YOUR JOURNEYS</p><h2>Routes and places</h2><p>Your complete travel history and future plans, together. Focus an individual journey from the records below.</p></div><div class="journey-library-actions"><button type="button" class="primary" data-library-transport>Add transport</button><button type="button" class="secondary" data-library-stay>Add accommodation</button><button type="button" class="secondary" data-manage-places>Saved places</button></div></header>
         <div class="global-journey-filters">
           <div role="group" aria-label="Journey dates" class="calendar-layer-switch"><button type="button" data-journey-period="all">All</button><button type="button" data-journey-period="past">Past</button><button type="button" data-journey-period="upcoming">Upcoming</button></div>
           <div role="group" aria-label="Map layers" class="calendar-layer-switch"><button type="button" data-journey-layer="flights">Flights</button><button type="button" data-journey-layer="transport">Other transport</button><button type="button" data-journey-layer="accommodation">Accommodation</button><button type="button" data-journey-layer="locations">Locations</button></div>
@@ -360,5 +335,7 @@
   <script src="account-size.js?v=save-parity-20261014&daily=20261014"></script>
   <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006&cleanup=20261007&daily=20261014"></script>
   <script src="app.js?trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008&daily=20261014"></script>
+<script src="trip-planning-config.js?v=20261015"></script>
+<script src="trip-planning.js?v=20261015"></script>
 </body>
 </html>
