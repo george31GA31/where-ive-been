@@ -25,7 +25,7 @@
   function renderMapSelection(){
     const host=get('mapCountrySummary');if(!host)return;
     const code=selectedMapCountry,c=countryByCode(code);if(get('mapCountrySelect'))get('mapCountrySelect').value=code;
-    const cue=get('selectedCountryCue');if(cue){cue.hidden=!c;cue.innerHTML=c?`<strong>${E(c.name)}</strong> · blue selection · personal visit status unchanged <a href="#mapCountrySummary" data-view-country-history>View country history ↓</a>`:'';}if(!c){host.hidden=true;host.innerHTML='';return;}
+    const cue=get('selectedCountryCue');if(cue){cue.hidden=!c;cue.innerHTML=c?`Selected country: <strong>${E(c.name)}</strong> <a href="#mapCountrySummary" data-view-country-history>View country history ↓</a>`:'';}if(!c){host.hidden=true;host.innerHTML='';return;}
     const todayDate=today(),records=staysForProfile().filter(s=>s.countryCode===code&&J.countsForPlanning(s)).sort((a,b)=>a.start.localeCompare(b.start));
     const actual=records.filter(s=>J.isElapsedStay(state,s,todayDate)),planned=records.filter(s=>s.status==='planned'&&s.start>todayDate).sort((a,b)=>a.start.localeCompare(b.start));
     const countrySummary=J.summary(state,todayDate).byCountry.get(code),days=countrySummary?.days||new Set();

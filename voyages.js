@@ -374,7 +374,8 @@
     for(const [workspace,views]of Object.entries(WORKSPACE_TABS))for(const view of views){
       const host=$(`${view}View`);if(!host)continue;
       const cue=document.createElement('nav');cue.className='page-location';cue.setAttribute('aria-label','Page location');
-      cue.innerHTML=`<span>${WORKSPACES[workspace].label}</span><span aria-hidden="true">/</span>${workspace==='tools'&&view!=='tools'?'<a href="#/travel-tools">All tools</a><span aria-hidden="true">/</span>':''}<span aria-current="page">${VIEW_TITLES[view]}</span>`;host.prepend(cue);
+      const parent=WORKSPACES[workspace].label,title=VIEW_TITLES[view];
+      cue.innerHTML=`${parent===title?'':`${workspace==='tools'?`<a href="#/travel-tools">${parent}</a>`:`<span>${parent}</span>`}<span aria-hidden="true">/</span>`}<span aria-current="page">${title}</span>`;host.prepend(cue);
     }
   }
 
