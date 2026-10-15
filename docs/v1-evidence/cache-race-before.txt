@@ -1,0 +1,9 @@
+AssertionError [ERR_ASSERTION]: Cleanup must retain a newer in-progress cache
+    at /workspace/scratch/5dc55742eb37/herald-voyages/tests/offline-shell-delivery-browser.cjs:26:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

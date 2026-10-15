@@ -1,0 +1,2 @@
+{"coreAssets":377,"downloadedCoreAssets":30,"unchangedD3Requests":0}
+Actual previous-to-candidate application/worker upgrade passed: saved travel, stable identities, references, routes, logos, pending/deletion sentinel, Pakistan flag and offline reload.

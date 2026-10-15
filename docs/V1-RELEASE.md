@@ -25,7 +25,7 @@ Shared changes X1–4 apply throughout: serif heading/UI text roles, consistent 
 
 ## Data preservation and update evidence
 
-No database migration, payload schema change, storage-key rename or travel-record rewrite is introduced. Existing IDs, trip/profile associations, dates, logos, saved route geometry, manual visits, preferences and import/export contracts remain. The ongoing-stay correction changes read-only projections; the original record, including its absent end date, is unchanged. Enquiry drafts use separate per-user session storage and never create travel records.
+No database migration, payload schema change, travel/account storage-key rename or travel-record rewrite is introduced. Existing IDs, trip/profile associations, dates, logos, saved route geometry, manual visits, preferences and import/export contracts remain. The ongoing-stay correction changes read-only projections; the original record, including its absent end date, is unchanged. Enquiry drafts use separate per-user session storage and never create travel records.
 
 Tests compare fields and associations as well as counts. The account suites exercise pending edits, stale responses, conflict retries, deletion tombstones, account ownership, recovery, reconnects and two-device changes. The actual previous-app/service-worker upgrade test installs the baseline, preserves fixture records and a pending/deletion sentinel, activates the new worker by closing old tabs, then verifies the new shell, decoded Pakistan flag and offline reload without clearing storage. See [upgrade result](v1-evidence/update-check.txt). The sentinel check is supplemented by the account suites' semantic outbox/deletion tests; it is not a substitute for them.
 
@@ -102,6 +102,18 @@ All images use fictional records. Baseline and candidate fixtures differ where t
 | Personal trip planning | [Provisional page](v1-evidence/before-planner-1440-light.png) | [Service and request form](v1-evidence/after-planner-1440-light.png) |
 
 The measured sticky header is 64px on desktop, 60px at 768px and 58px on the two phone widths. At 1440px the prior shell measured 174.7px; the 390px prior header measured 80px. All essential destinations remain available in the grouped menus.
+
+## Public-cache update follow-up
+
+PR #34 passed every GitHub check and deployed as `f6c5a7d30cf0a706f9782c3a10766c00571416ab`. Published HTML, scripts, styles and repaired flags matched the tested bytes. Live verification then found the cloud browser continuing to display its old cached shell. Its internal worker diagnostics were unavailable, so the exact internal state was unconfirmed.
+
+The update installer required 377 core public assets to be downloaded again for each release. A separate check of those exact versioned asset URLs from the container, with twelve concurrent requests, took 134.2 seconds and encountered one transient 503 on an unchanged flag. This download requirement exposes activation to unnecessary network delay and transient failures.
+
+The follow-up reuses an older public-cache response only after its bytes match the current release's SHA-256 hash. New, changed, missing or invalid cached assets still require a verified download. The public allowlist, staged completion, previous complete shell, private-request exclusions and all travel/account storage remain unchanged. No browser storage reset or forced activation is used.
+
+A separate regression reproduced cleanup deleting a newer in-progress cache. The new public-cache family survives the legacy worker’s broad cleanup; each new worker records its predecessor caches and retires only those, once, after staged completion. Hash-verified reuse still reads legacy public caches. The lifecycle test now exercises legacy cleanup while the candidate waits, retention of a later installation, failed installs and corrupted bytes. See the [reproduced failure](v1-evidence/cache-race-before.txt) and [passing recovery test](v1-evidence/cache-race-after.txt).
+
+The same real baseline-to-candidate upgrade fixture requested **377 core assets before and 30 after** this change. An unchanged D3 asset made one network request before and zero after; the changed Pakistan flag was downloaded and decoded. Both runs preserved record fields, identities, references, logos, stored routes, pending/deletion markers and offline reload. The small lifecycle fixture additionally rejected deliberately corrupted cached bytes and fetched a verified replacement, while preserving the old shell through a failed install. See [before](v1-evidence/cache-upgrade-before.txt) and [after](v1-evidence/cache-upgrade-after.txt). These are deterministic local request counts; the view timings above deliberately block workers and are unaffected by this change.
 
 ## Exact remaining activation dependency
 
