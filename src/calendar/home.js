@@ -3,6 +3,8 @@ function renderHomeOverview() {
   const summary = $('homeMonthSummary'), upcomingHost = $('homeUpcomingTravelItems');
   if (!summary || !upcomingHost) return;
   const current = today(), start = current.slice(0, 7) + '-01';
+  // Immediate transport, accommodation and reminders already appear in Today/Tomorrow.
+  const upcomingStart = HVCalendarData.next(current,2);
   const end = HVCalendarData.next(startOfNextMonth(start), -1);
   const groups = buildJourneys().filter(group => group.trip?.status !== 'cancelled' && group.phase !== 'cancelled');
   const cancelled = new Set((state.trips||[]).filter(trip=>trip.status==='cancelled').map(trip=>trip.id));
@@ -15,12 +17,12 @@ function renderHomeOverview() {
   summary.innerHTML = `<button type="button" class="text-btn" data-home-calendar-month="${start}" aria-label="Open ${E(month)} calendar"><strong>${E(month)}</strong><span>${touching.length} ${touching.length === 1 ? 'journey' : 'journeys'} this month <span aria-hidden="true">↗</span></span></button>`;
 
   const journeys = groups.filter(group => group.phase === 'upcoming' && (group.trip || group.stays.length));
-  const transports = groups.flatMap(group => group.transports).filter(record => eligible(record) && localDate(record.startLocal) >= current)
+  const transports = groups.flatMap(group => group.transports).filter(record => eligible(record) && localDate(record.startLocal) >= upcomingStart)
     .sort((a,b) => String(a.startLocal).localeCompare(String(b.startLocal)));
   const accommodation = groups.filter(group => !group.trip && !group.stays.length && !group.transports.length)
-    .flatMap(group => group.accommodations).filter(record => eligible(record) && record.checkIn >= current)
+    .flatMap(group => group.accommodations).filter(record => eligible(record) && record.checkIn >= upcomingStart)
     .sort((a,b) => String(a.checkIn).localeCompare(String(b.checkIn)));
-  const notes = scoped(Array.isArray(state.notes) ? state.notes : []).filter(note => eligible(note) && HVJourney.validDate(note.date) && note.date >= current)
+  const notes = scoped(Array.isArray(state.notes) ? state.notes : []).filter(note => eligible(note) && HVJourney.validDate(note.date) && note.date >= upcomingStart)
     .sort((a,b) => a.date.localeCompare(b.date));
   const row = (kind, label, dates, action, date) => ({date,html:`<button type="button" class="home-upcoming-row" ${action}><span>${E(kind)}</span><strong>${E(label)}</strong><small>${E(dates)}</small></button>`});
   const items = [
