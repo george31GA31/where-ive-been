@@ -75,7 +75,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,s
 #dashboardView .atlas-current{min-height:0;padding:24px}
 #dashboardView .atlas-current h2{font-size:clamp(1.5rem,3vw,2.2rem)}
 #dashboardView .atlas-current p{margin-block:8px}
-body[data-current-view=calendar] #addStayBtn{display:none}
+
 body[data-current-view=country] #pageTitle{font-size:1.5rem}
 .country-heading h1{font-size:2rem}
 .calendar-toolbar{gap:12px}

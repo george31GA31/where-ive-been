@@ -29,6 +29,12 @@ test('Calendar statuses match permanent-home, domestic-trip and mixed-day rules'
  const data=seed();data.stays=[stay('home','2026-10-01','2026-10-31',{countryCode:'GB',travelKind:'home'}),stay('holiday','2026-10-14','2026-10-15',{countryCode:'GB',travelKind:'trip'})];
  for(const [date,day]of C.window(data,'2026-10-12',6))assert.equal(day.status,J.dayStatus(data,date));assert.equal(C.window(data,'2026-10-12',1).get('2026-10-12').status,'home');assert.equal(C.window(data,'2026-10-14',1).get('2026-10-14').status,'mixed');
 });
+test('Accommodation with a missing date is visible only at its known boundary, with storage untouched',()=>{
+ const data=seed();data.accommodations=[{id:'arrival',profileId:'p',checkIn:'2026-10-14',checkOut:null},{id:'departure',profileId:'p',checkIn:null,checkOut:'2026-10-15'}];
+ const before=JSON.stringify(data),days=C.window(data,'2026-10-13',4);
+ assert.deepEqual(days.get('2026-10-14').accommodations.map(a=>a.id),['arrival']);assert.deepEqual(days.get('2026-10-15').accommodations.map(a=>a.id),['departure']);
+ assert.equal(days.get('2026-10-13').accommodations.length,0);assert.equal(days.get('2026-10-16').accommodations.length,0);assert.equal(JSON.stringify(data),before);
+});
 test('interval lookups preserve inclusive overlaps and empty windows',()=>{
  const rows=[{start:'2026-01-01',end:'2026-01-03'},{start:'2026-01-03',end:'2026-01-09'},{start:'2026-01-15',end:'2026-01-18'}],index=new D.Intervals(rows);
  assert.equal(index.overlap('2026-01-03').length,2);assert.deepEqual(index.overlap('2026-01-10'),[]);assert.deepEqual(index.containing('2026-01-05','2026-01-08'),[rows[1]]);

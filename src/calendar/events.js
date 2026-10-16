@@ -99,6 +99,19 @@ async function saveDateEntry(event) {
 
 function captureCalendarAction(event) {
   const target = event.target;
+  const home = target.closest('[data-home-calendar-month],[data-home-journey]');
+  if (home) {
+    event.preventDefault();
+    event.stopPropagation();
+    const group = home.dataset.homeJourney ? buildJourneys().find(g => g.key === home.dataset.homeJourney) : null;
+    const date = home.dataset.homeCalendarMonth || group?.start || today();
+    calendarCursor = new Date(date.slice(0,7) + '-01T00:00:00Z');
+    switchView('calendar');
+    HVCalendar.clearSelection();
+    q('[data-calendar-view="month"]')?.click();
+    if (group) selectJourney(group.key,date);
+    return;
+  }
   if (target.closest('[data-place-edit],[data-visa-notice]')) return;
   const countryEntry = target.closest('[data-calendar-edit-country]');
   if (countryEntry) {
@@ -126,11 +139,14 @@ function captureCalendarAction(event) {
   if (target.closest('[data-calendar-close-date]')) {
     event.preventDefault();
     event.stopPropagation();
+    const returnDate = selectedDate || calendarSelectionStart;
     calendarSelectionStart = null;
     calendarSelectionEnd = null;
     selectedDate = '';
+    selectedJourneyKey = '';
     dateAction = '';
     renderMonth();
+    (q(`[data-calendar-date-select="${CSS.escape(returnDate || '')}"]`) || $('calendarMonthJump'))?.focus();
     return;
   }
   if (target.closest('#clearCalendarSelectionBtn')) {
@@ -202,12 +218,12 @@ function captureCalendarAction(event) {
     q('#calendarJourneyDetail input')?.focus();
     return;
   }
-  const more = target.closest('[data-calendar-day-detail]');
+  const more = target.closest('[data-calendar-day-detail],[data-calendar-lodging-detail]');
   if (more) {
     event.preventDefault();
     event.stopPropagation();
     selectedJourneyKey = '';
-    selectedDate = more.dataset.calendarDayDetail;
+    selectedDate = more.dataset.calendarDayDetail || more.dataset.calendarLodgingDetail;
     calendarSelectionStart=selectedDate;calendarSelectionEnd=null;dateAction='';
     renderMonth();
     const detail=$('calendarJourneyDetail');detail?.setAttribute('tabindex','-1');detail?.focus({preventScroll:true});detail?.scrollIntoView({block:'nearest',behavior:'smooth'});
@@ -301,24 +317,25 @@ function boot() {
   );
   window.HVCalendar = {
     clearSelection() {
+      const returnDate = selectedDate || calendarSelectionStart;
+      const restoreFocus = $('calendarJourneyDetail')?.contains(document.activeElement);
       calendarSelectionStart = null;
       calendarSelectionEnd = null;
       selectedDate = '';
       selectedJourneyKey = '';
       dateAction = '';
       renderMonth();
+      if (restoreFocus) (q(`[data-calendar-date-select="${CSS.escape(returnDate || '')}"]`) || $('calendarMonthJump'))?.focus();
     },
     ready: true,
     renderMonth,
     openTripPlanner,
     openAccommodationDialog,
     journeyGroups: buildJourneys,
+    renderHomeOverview,
   };
   calendar.dataset.journeyCalendar = 'true';
   moveLegacyTransportTools();
-  $('calendarPlanTripBtn')?.addEventListener('click', () =>
-    openTripPlanner({ source: 'calendar' }),
-  );
   $('addStayBtn').onclick = () => openTripPlanner({ source: 'manual' });
   $('addStayFromListBtn').onclick = () => openTripPlanner({ source: 'manual' });
   window.addEventListener('hv-airports-ready',()=>{journeyCache=undefined;});
@@ -348,15 +365,8 @@ function boot() {
     selectedDate = calendarSelectionStart;
     renderMonth();
   });
-  window.addEventListener('hv-route', () =>
-    requestAnimationFrame(() => fitCalendarContent(calendar)),
-  );
-  let fitTimer;
-  window.addEventListener('resize', () => {
-    clearTimeout(fitTimer);
-    fitTimer = setTimeout(() => fitCalendarContent(calendar), 120);
-  });
   renderMonth();
+  renderHomeOverview();
 }
 
 document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();

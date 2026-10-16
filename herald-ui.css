@@ -53,9 +53,14 @@ body .topbar-actions{margin:0;gap:10px}
 body .page-location{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--hv-muted);margin:0 0 18px;line-height:1.5}
 body .page-location [aria-current=page]{color:var(--hv-ink)}
 body .page-location a{color:var(--hv-blue)}
-body .calendar-hero{padding:0;margin-bottom:20px;align-items:center}
-body .calendar-hero h2{font-size:25px;line-height:1.2;margin:3px 0 6px}
-body .calendar-hero p:not(.eyebrow){font-size:14px;margin:0;color:var(--hv-muted)}
+body .calendar-hero{margin:0;align-items:center}
+body .calendar-hero p{margin:0}
+body .calendar-hero p:not(.eyebrow){font-size:13px;color:var(--hv-muted)}
+body[data-current-view=calendar] .topbar{gap:8px 18px;margin-bottom:8px}
+body[data-current-view=calendar] .topbar .page-save-status{flex:0 1 auto;order:1}
+body[data-current-view=calendar] .topbar .topbar-actions{order:2}
+body[data-current-view=calendar] .topbar #addStayBtn{display:inline-flex}
+body[data-current-view=calendar] .page-location{margin-bottom:10px}
 /* Coordinated Home cards: display titles, readable rows, natural content height. */
 body .daily-dashboard-row{grid-template-columns:.9fr 1.05fr 1.05fr;gap:18px;align-items:start;margin:0 0 22px}
 body :is(.travel-memory-panel,.daily-agenda-panel){padding:22px;min-height:190px;height:auto;align-self:start}
@@ -105,24 +110,6 @@ body [data-trip-library]{padding:16px 20px;margin-bottom:18px}
 body [data-trip-library] .panel-head{margin-bottom:4px}
 body [data-trip-library] h2{font-size:19px}
 body [data-trip-library] p{font-size:13px;margin:6px 0}
-/* Keep the Calendar month grid and borders. Give long labels useful width. */
-body .calendar-lodging-row{display:flex;flex-direction:column;gap:3px}
-body .calendar-lodging-half{width:100%;min-width:0;display:block;min-height:25px;height:auto;padding:3px 5px;border-radius:3px;text-align:left}
-body .calendar-lodging-half small{display:block;overflow:hidden;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;text-overflow:ellipsis;font-size:11px;font-weight:500;line-height:1.4}
-body .calendar-lodging-state{font-size:9px;font-weight:650;margin-right:4px;color:var(--hv-blue)}
-body .calendar-journeys{gap:5px}
-body .calendar-country-row{min-height:24px}
-body .calendar-journey-copy strong{font-weight:600;font-size:12px;word-break:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body .calendar-country-split .country-name-compact{display:inline;font-size:10px}
-body .calendar-day-transport{font-weight:600;line-height:1.35;padding-block:2px}
-body .calendar-route-label{word-break:normal;overflow-wrap:normal}
-body .calendar-day-detail-link{display:block;min-height:24px;font:600 10px/1.4 var(--hv-sans);padding:3px 0;color:var(--hv-blue);border:0;background:transparent;text-align:left}
-body .calendar-country-pair .calendar-journey-copy{display:block;min-width:0}
-body .calendar-country-pair .country-name-full{display:none}
-body .calendar-country-pair .country-name-compact{display:block}
-body .calendar-day{overflow:hidden}
-body .calendar-month-panel .calendar-day{height:auto;min-height:160px}
-body .calendar-chip-flag{flex-shrink:0}
 body .calendar-footnote{font-size:12px}
 body .travel-tool-links{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:1100px){
@@ -131,7 +118,6 @@ body .travel-tool-links{grid-template-columns:repeat(3,minmax(0,1fr))}
  body .sidebar .nav-item{padding-inline:8px;font-size:12px}
  body .daily-dashboard-row{grid-template-columns:repeat(3,minmax(0,1fr))}
  body :is(.travel-memory-panel,.daily-agenda-panel){padding:18px}
- body .calendar-month-panel .calendar-day{min-height:145px}
  body .travel-memory-mark{display:none}
 }
 @media(max-width:960px){
@@ -168,26 +154,10 @@ body .travel-tool-links{grid-template-columns:repeat(3,minmax(0,1fr))}
  body .travel-tool-link{min-height:170px}
  body .calendar-hero h2{font-size:21px}
  body .calendar-hero-actions{display:none}
- body .calendar-month-panel .calendar-day{min-height:104px;padding:4px 3px}
- body .calendar-day-status>span{font-size:8px;letter-spacing:0}
- body .calendar-journeys{gap:3px}
- body .calendar-journey-chip{padding:2px;min-height:22px;gap:2px}
- body .calendar-chip-flag{width:15px;height:11px}
- body .calendar-journey-copy .country-name-full{display:none}
- body .calendar-journey-copy .country-name-compact{display:block;font-size:9px}
- body .calendar-lodging{display:none}
- body .calendar-day-transport{font-size:9px;gap:2px;min-height:20px}
- body .calendar-route-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- body .calendar-place-row{display:none}
- body .calendar-day-detail-link{font-size:9px;min-height:25px;white-space:normal}
- body .calendar-country-row{min-height:20px}
  body .form-grid{grid-template-columns:1fr}
- body .calendar-day-top .day-number{min-width:25px;min-height:25px}
- body .calendar-day-status{gap:1px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}body *,body *::before,body *::after{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 
-@media(min-width:651px){body .calendar-detail-mobile{display:none}}
 /* A considered service page, with a real draft/review boundary. */
 body .itinerary-service{display:grid;gap:22px;max-width:1180px;margin:auto}
 body .planning-intro{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;padding:40px}
@@ -229,32 +199,7 @@ body .journey-library-heading h2{font-size:22px;margin:0 0 4px}
 body .journey-library-heading .eyebrow{display:none}
 body .journey-library-heading p{font-size:13px;line-height:1.5;margin:4px 0}
 body .global-journey-filters{margin:12px 0;gap:10px}
-body #calendarView .calendar-day{min-height:160px;height:160px}
-body #calendarView .calendar-lodging-row{display:flex;flex-direction:column;gap:3px;height:auto;min-height:0}
-body #calendarView .calendar-lodging-half{height:auto;min-height:25px;display:block;padding:3px 5px}
-body #calendarView .calendar-lodging-half small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;line-height:1.35;font-size:10.5px;font-weight:500;text-overflow:ellipsis}
-body #calendarView .calendar-lodging-row:has(.calendar-lodging-half:nth-child(2)) small{display:block;white-space:nowrap!important}
-body #calendarView .calendar-lodging-half .calendar-lodging-cue{display:inline;float:none;width:auto;height:auto;font-size:10px;line-height:1.4}
-body #calendarView .calendar-journeys{gap:4px}
-body #calendarView .calendar-country-pair .country-name-full{display:none}
-body #calendarView .calendar-country-row.calendar-country-pair .country-name-compact{display:block;font-size:10px}
-body #calendarView .calendar-country-pair .calendar-journey-copy{display:block;min-width:12px}
-body #calendarView .calendar-journey-chip{gap:4px}
-@media(max-width:1100px){body #calendarView .calendar-day{min-height:145px;height:145px}}
-@media(max-width:650px){
- body #calendarView .calendar-day{min-height:104px;height:104px;padding:4px 3px}
- body #calendarView .calendar-lodging{display:none}
- body #calendarView .calendar-country-row .country-name-full{display:none}
- body #calendarView .calendar-country-row .country-name-compact{display:block;font-size:9px}
- body #calendarView .calendar-journey-copy{display:block;min-width:0}
- body #calendarView .calendar-journey-chip{gap:2px;padding:2px}
- body #calendarView .calendar-chip-flag{width:14px;height:10px}
- body #calendarView .calendar-country-pair .calendar-journey-copy{min-width:0}
- body #calendarView .calendar-country-row.calendar-country-pair .country-name-compact{font-size:8px}
- body #calendarView .calendar-place-row{display:none}
- body #calendarView .calendar-day-transport{font-size:9px;min-height:18px;padding:0}
- body #calendarView .calendar-day-status>span{font-size:7px}
-}
+
 body .page-save-status [data-sync-status]{font-size:12px;line-height:1.5;color:var(--hv-muted);font-weight:400;letter-spacing:0;background:transparent;border:0;padding:0;white-space:normal;text-transform:none}
 body .page-save-status [data-sync-status].bad{color:var(--red)}
 body .calendar-layout{margin-top:0}
@@ -263,20 +208,34 @@ body .calendar-layout{margin-top:0}
  body #calendarView .calendar-toolbar{padding:12px;gap:10px}
  body #calendarView .calendar-toolbar-actions{margin:0;padding:0;min-height:0;height:auto}
  body #calendarView .calendar-view-switch{margin:0}
- body #calendarView .calendar-selection-info{padding:10px 12px;min-height:0;gap:5px}
 }
-/* Keep the all-entry action visible even on unusually crowded dates. */
-body #calendarView .calendar-day:has(.calendar-day-detail-link:not(.calendar-detail-mobile)){position:relative;padding-bottom:25px}
-body #calendarView .calendar-day-detail-link{position:absolute;bottom:3px;left:5px;right:4px;margin:0;z-index:1;background:var(--hv-surface)}
-body #calendarView .calendar-day:has(.calendar-day-detail-link:not(.calendar-detail-mobile)) .calendar-journeys{max-height:100px;overflow:hidden}
-@media(max-width:650px){
- body #calendarView .calendar-day:has(.calendar-day-detail-link){position:relative;padding-bottom:28px}
- body #calendarView .calendar-day .calendar-journeys{max-height:50px;overflow:hidden}
- body #calendarView .calendar-country-row:nth-of-type(n+2){display:none}
- body #calendarView .calendar-day-detail-link{background:var(--hv-surface)}
-}
-body #calendarView .calendar-country-split .country-name-full{display:none}
-body #calendarView .calendar-country-split .country-name-compact{display:block;font-size:10px}
-body #calendarView .calendar-country-split .calendar-journey-copy{display:block;min-width:10px}
-@media(max-width:650px){body #calendarView .calendar-country-split .country-name-compact{font-size:8px}body #calendarView .calendar-country-split .calendar-journey-copy{min-width:0}}
+
 body[data-current-view=stays] #addStayBtn{display:none}
+
+@media(max-width:960px){
+ body[data-current-view=calendar] .topbar>div:first-child{flex:1 1 auto}
+ body[data-current-view=calendar] .topbar .topbar-actions{order:0}
+ body[data-current-view=calendar] .topbar .global-traveller{order:3;flex:0 1 150px;min-width:0}
+ body[data-current-view=calendar] .global-traveller>span{display:none}
+ body[data-current-view=calendar] .global-traveller select{width:100%;min-width:0;min-height:36px;padding:7px 20px 7px 8px}
+ body[data-current-view=calendar] .topbar .page-save-status{order:4;flex:1 1 175px;min-width:0}
+ body[data-current-view=calendar] .page-save-status [data-sync-status]{font-size:11px}
+ body .calendar-hero p:not(.eyebrow){display:none}
+}
+@media(max-width:390px){
+ body[data-current-view=calendar] .topbar .global-traveller{flex-basis:140px}
+ body[data-current-view=calendar] .topbar .page-save-status{flex-basis:150px}
+}
+/* The consolidated Home card keeps the existing stays and their editing actions. */
+body .home-month-summary{border-block:1px solid var(--hv-line);padding:10px 0;margin:0 0 8px}
+body .home-month-summary button{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;width:100%;border:0;background:transparent;padding:3px 0;text-align:left}
+body .home-month-summary strong{font-size:14px;font-weight:600;color:var(--hv-ink)}
+body .home-month-summary span{font-size:12px;color:var(--hv-muted)}
+body .home-upcoming-travel{border-top:1px solid var(--hv-line);margin-top:10px;padding-top:10px}
+body .home-upcoming-travel summary{font-size:13px;font-weight:600;cursor:pointer;min-height:32px;padding:6px 0;color:var(--hv-blue)}
+body .home-upcoming-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;width:100%;padding:10px 0;border:0;border-top:1px solid var(--hv-line);background:transparent;text-align:left;color:var(--hv-ink)}
+body .home-upcoming-row>span{grid-column:1/-1;font-size:10px;color:var(--hv-muted);text-transform:uppercase;letter-spacing:.07em}
+body .home-upcoming-row strong{font-size:13px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+body .home-upcoming-row small{font-size:11px;color:var(--hv-muted);align-self:center}
+body .home-all-dates{border:0;background:transparent;padding:12px 0 4px;font-size:12px}
+@media(max-width:650px){body .home-upcoming-row{grid-template-columns:minmax(0,1fr)}body .home-upcoming-row small{grid-column:1}}
