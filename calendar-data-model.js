@@ -11,7 +11,7 @@
       const end=next(start,count-1),cancelled=new Set((data.trips||[]).filter(t=>t.status==='cancelled').map(t=>t.id));
       const eligible=r=>r.status!=='cancelled'&&!cancelled.has(r.tripId),scope=rows=>J.scoped(rows,profileId).filter(eligible);
       const {stays,hotels,transports,places}=D.memo(data,'calendar-index:'+profileId,keys.filter(key=>key!=='calendarNotes'),profileId+'|'+currentDate(),()=>{
-      const stays=new D.Intervals(scope(data.stays),r=>r.start,r=>r.end||currentDate()),hotels=new D.Intervals(scope(data.accommodations).filter(r=>!J.hiddenHomeRecord(data,r)),r=>r.checkIn,r=>r.checkOut);
+      const stays=new D.Intervals(scope(data.stays),r=>r.start,r=>r.end||currentDate()),hotels=new D.Intervals(scope(data.accommodations).filter(r=>!J.hiddenHomeRecord(data,r)),r=>r.checkIn||r.checkOut,r=>r.checkOut||r.checkIn);
       const transports=new D.Intervals(J.visibleTransport(data,profileId).filter(r=>!J.hiddenHomeRecord(data,r)),r=>J.transportDates(r)[0],r=>J.transportDates(r).at(-1));
       const places=new D.Intervals(scope(data.placeVisits).filter(r=>r.category==='locations'&&r.status==='visited'&&!J.hiddenHomeRecord(data,r)),r=>r.date,r=>r.endDate||r.date);
         return {stays,hotels,transports,places};

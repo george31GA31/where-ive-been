@@ -44,13 +44,13 @@ offline manifests. Their feature ownership is listed here.
 | Area | Main files | Responsibility |
 | --- | --- | --- |
 | Shared state and compatibility | `src/core/state.js`, `src/core/display.js`, `src/core/travel-days.js`, `src/core/catalogs.js` | Version-2 normalization, guest saves, UTC date calculations, flags, country/rule constants |
-| Initialization and Home | `src/core/shell.js`, `src/core/startup.js`, `dashboard-enhancements.js`, `daily-agenda.js` | Event binding, dashboard widgets, Today/Tomorrow projections and UTC rollover |
+| Initialization and Home | `src/core/shell.js`, `src/core/startup.js`, `dashboard-enhancements.js`, `daily-agenda.js`, `src/calendar/home.js` | Event binding, dashboard widgets, Today/Tomorrow projections and UTC rollover |
 | Derived view data | `view-data.js`, `calendar-data-model.js` | Collection revisions, bounded read-only caches and shared date interval indices |
 | Navigation and shared chrome | `voyages.js`, `theme.js`, `index.html` | Hash routes, detached pages, navigation, document titles, theme |
 | Trips and stays | `src/core/stays.js`, `trip-experience.js`, `journey-model.js` | Country date entries, trip editors, phase/scoping calculations |
 | People and home history | `src/core/people.js`, `home-choice.js`, `journeys.js` | Traveller passports, residences, home-country choices |
 | Calendar grouping | `src/calendar/groups.js` | Read-only trip/stay/transport groups and day membership |
-| Calendar display | `src/calendar/month.js`, `src/calendar/details.js`, `calendar-layout-model.js`, `calendar-details.js` | Month cells, measured wrapping, selected dates and details |
+| Calendar display | `src/calendar/month.js`, `src/calendar/details.js`, `calendar-layout-model.js`, `calendar-details.js` | Full-width month cells, shared content slots, chronological accommodation, selected dates and expandable details |
 | Calendar editing | `src/calendar/planner.js`, `src/calendar/events.js`, `accommodation-times.js` | Trip planner, validation, date actions and event capture |
 | Atlas and country counts | `src/core/atlas.js`, `map-enhancements.js`, `atlas-model.js`, `country-count-model.js` | World geometry, read-only grouping, count preferences and map colours |
 | Manual visits and TCC | `country-visit-model.js`, `country-trackers.js`, `data/tcc-destinations.js` | Manual country dates/precision; independent TCC destination IDs |

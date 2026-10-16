@@ -1,46 +1,39 @@
-function monthInsight(groups) {
-  const cursor = calendarCursor;
-  const start = isoDate(cursor),
-    end = isoDate(new Date(Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 0)));
-  const inMonth = groups
-    .filter(
-      (group) =>
-        group.stays.some((s) => HVJourney.isTravelStay(state, s)) ||
-        group.transports.length ||
-        group.accommodations.length,
-    )
-    .filter((group) => group.start && group.start <= end && group.end >= start);
-  const upcoming = groups.filter((group) => group.phase === 'upcoming').slice(0, 3);
-  return `<div class="calendar-detail-empty"><p class="eyebrow">YOUR MONTH</p><h2>${E(cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }))}</h2><p>${inMonth.length ? `${inMonth.length} ${inMonth.length === 1 ? 'journey' : 'journeys'} touch this month. Select a journey to see every stop, transfer and stay in order.` : 'No journeys touch this month yet. Pick dates on the calendar when you are ready to plan one.'}</p>${upcoming.length ? `<div class="calendar-next-list"><span>Coming up</span>${upcoming.map((group) => `<button type="button" data-calendar-open-journey="${E(group.key)}"><i style="--journey-colour:${E(group.colour)}"></i><strong>${E(group.title)}</strong><small>${E(dateRangeText(group.start, group.end))}</small></button>`).join('')}</div>` : ''}<button type="button" class="primary wide" data-calendar-plan>Build a trip</button></div>`;
+function accommodationDateText(record) {
+  if (record.checkIn && record.checkOut) return dateRangeText(record.checkIn,record.checkOut);
+  if (record.checkIn) return `Check-in ${dateText(record.checkIn)} · check-out not recorded`;
+  if (record.checkOut) return `Check-out ${dateText(record.checkOut)} · check-in not recorded`;
+  return 'Dates to be added';
 }
 
 function dayInsight(date, groups) {
   const start = calendarSelectionStart || date,
     end = calendarSelectionEnd || start;
-  const active = groups.filter(
+  const cancelled = new Set((state.trips||[]).filter(trip=>trip.status==='cancelled').map(trip=>trip.id));
+  const eligible = record => record.status !== 'cancelled' && !cancelled.has(record.tripId);
+  const active = groups.filter(group=>group.trip?.status!=='cancelled').filter(
     (group) =>
-      group.stays.some((s) => s.status !== 'cancelled' && s.start <= end && (!s.end || s.end >= start)) ||
-      group.accommodations.some((a) => a.checkIn <= end && a.checkOut >= start) ||
-      group.transports.some((t) => HVJourney.transportDates(t).some((d) => d >= start && d <= end)),
+      group.stays.some((s) => eligible(s) && s.start <= end && (!s.end || s.end >= start)) ||
+      group.accommodations.some((a) => eligible(a) && (a.checkIn||a.checkOut) <= end && (a.checkOut||a.checkIn) >= start) ||
+      group.transports.some((t) => eligible(t) && HVJourney.transportDates(t).some((d) => d >= start && d <= end)),
   );
   const entries =
     active
       .map(
         (group) =>
           `<div class="date-entry-group"><strong>${E(!group.trip && !group.stays.length && group.transports.length === 1 ? (group.transports[0].type === 'flight' ? 'Flight details' : 'Transport details') : group.title)}</strong><button type="button" class="text-btn" data-journey-map="${E(group.key)}">Journey Map →</button>${group.stays
-            .filter((s) => s.start <= end && (!s.end || s.end >= start))
+            .filter((s) => eligible(s) && s.start <= end && (!s.end || s.end >= start))
             .map(
               (s) =>
                 `<button type="button" data-calendar-edit-stay="${E(s.id)}">${flagHtml(s.domesticDestination || s.countryCode, 'calendar-chip-flag')} ${E(s.countryName)} · ${E(dateRangeText(s.start, s.end))} <span>Edit</span></button>`,
             )
             .join('')}${group.accommodations
-            .filter((a) => a.checkIn <= end && a.checkOut >= start)
+            .filter((a) => eligible(a) && (a.checkIn||a.checkOut) <= end && (a.checkOut||a.checkIn) >= start)
             .map(
               (a) =>
-                `<button type="button" data-calendar-edit-accommodation="${E(a.id)}">⌂ ${E(a.propertyName)} · ${E(dateRangeText(a.checkIn, a.checkOut))}${a.checkInTime || a.checkOutTime ? ' · ' + E([a.checkInTime, a.checkOutTime, a.timeZone].filter(Boolean).join(' / ')) : ''} <span>Edit</span></button>`,
+                `<button type="button" data-calendar-edit-accommodation="${E(a.id)}">⌂ ${E(a.propertyName)} · ${E(accommodationDateText(a))}${a.checkInTime || a.checkOutTime ? ' · ' + E([a.checkInTime, a.checkOutTime, a.timeZone].filter(Boolean).join(' / ')) : ''} <span>Edit</span></button>`,
             )
             .join('')}${group.transports
-            .filter((t) => HVJourney.transportDates(t).some((d) => d >= start && d <= end))
+            .filter((t) => eligible(t) && HVJourney.transportDates(t).some((d) => d >= start && d <= end))
             .map(
               (t) =>
                 `${window.HVCalendarDetails?.transport(t) || ''}<button type="button" class="text-btn" data-calendar-edit-transport="${E(t.id)}">Edit transport</button>`,
@@ -61,7 +54,7 @@ function dayInsight(date, groups) {
           `<div class="date-entry-group"><button type="button" data-place-edit="${E(v.id)}">◎ ${E(v.place?.name || 'Saved place')} · ${E(dateText(v.date))} <span>Edit</span></button></div>`,
       )
       .join('');
-  const noteEntries=scoped(Array.isArray(state.notes)?state.notes:[]).filter(n=>n.date>=start&&n.date<=end).map(n=>`<div class="date-entry-group"><button type="button" data-day-note-edit="${E(n.id)}">✎ ${E(n.title||'Note')} · ${E(dateText(n.date))} <span>Edit</span></button><p>${E(n.body||'')}</p></div>`).join('');
+  const noteEntries=scoped(Array.isArray(state.notes)?state.notes:[]).filter(n=>eligible(n)&&n.date>=start&&n.date<=end).map(n=>`<div class="date-entry-group"><button type="button" data-day-note-edit="${E(n.id)}">✎ ${E(n.title||'Note')} · ${E(dateText(n.date))} <span>Edit</span></button><p>${E(n.body||'')}</p></div>`).join('');
   const action =
     dateAction === 'country'
       ? `<form id="calendarQuickCountry" class="calendar-quick-form"><label class="field"><span>Country</span><input type="text" name="country" list="countryList" required autocomplete="off" placeholder="Search a country"></label><label class="field"><span>City or area <em>optional</em></span><input type="text" name="location" maxlength="160"></label><button class="primary" type="submit">Save country stay</button><p class="form-error" role="alert"></p></form>`
@@ -127,7 +120,7 @@ function detailTimeline(group) {
     })),
     ...group.accommodations.map((record) => ({
       kind: 'accommodation',
-      date: record.checkIn,
+      date: record.checkIn || record.checkOut,
       end: record.checkOut,
       order: 2,
       time: record.checkInTime || '',
@@ -160,7 +153,7 @@ function detailTimeline(group) {
           return `<li class="journey-timeline-item journey-transfer"><div class="journey-timeline-date">${E(dateRangeText(entry.date, entry.end))}</div><div class="journey-timeline-symbol">${transportIcon(record.type)}</div><div class="journey-timeline-copy">${window.HVCalendarDetails?.transport(record) || E(HVJourneys.transportLabel(record))}${record.status === 'cancelled' ? '<span>Cancelled</span>' : ''}</div><button type="button" class="text-btn" data-calendar-edit-transport="${E(record.id)}">Edit</button></li>`;
         }
         const accommodation = entry.record;
-        return `<li class="journey-timeline-item journey-accommodation"><div class="journey-timeline-date">${E(dateRangeText(accommodation.checkIn, accommodation.checkOut))}<small>${E(durationText(accommodation.checkIn, accommodation.checkOut))}</small></div><div class="journey-timeline-symbol">⌂</div><div class="journey-timeline-copy"><strong>${E(accommodation.propertyName)}</strong><span>${E(HVAddress.address(accommodation.place) || HVAddress.text(accommodation.location))}</span><small>${E([accommodation.checkInTime, accommodation.checkOutTime, accommodation.timeZone].filter(Boolean).join(' · '))}</small>${accommodation.notes ? `<p>${E(accommodation.notes)}</p>` : ''}</div><button type="button" class="text-btn" data-calendar-edit-accommodation="${E(accommodation.id)}">Edit</button></li>`;
+        return `<li class="journey-timeline-item journey-accommodation"><div class="journey-timeline-date">${E(accommodationDateText(accommodation))}<small>${HVJourney.validDate(accommodation.checkIn)&&HVJourney.validDate(accommodation.checkOut)?E(plural(Math.max(0,diffDays(accommodation.checkIn,accommodation.checkOut)),'night')):'Dates incomplete'}</small></div><div class="journey-timeline-symbol">⌂</div><div class="journey-timeline-copy"><strong>${E(accommodation.propertyName)}</strong><span>${E(HVAddress.address(accommodation.place) || HVAddress.text(accommodation.location))}</span><small>${E([accommodation.checkInTime, accommodation.checkOutTime, accommodation.timeZone].filter(Boolean).join(' · '))}</small>${accommodation.notes ? `<p>${E(accommodation.notes)}</p>` : ''}</div><button type="button" class="text-btn" data-calendar-edit-accommodation="${E(accommodation.id)}">Edit</button></li>`;
       })
       .join('') ||
     '<li class="journey-timeline-empty">This journey has no stops or transport yet.</li>'
@@ -173,8 +166,13 @@ function renderJourneyDetail() {
   host.classList.toggle('date-range-complete', !!calendarSelectionEnd);
   const groups = window.HVCalendar?._groups || buildJourneys();
   const group = groups.find((item) => item.key === selectedJourneyKey);
+  host.hidden = !selectedDate && !group;
+  if (host.hidden) {
+    host.replaceChildren();
+    return;
+  }
   if (!group) {
-    host.innerHTML = selectedDate ? dayInsight(selectedDate, groups) : monthInsight(groups);
+    host.innerHTML = dayInsight(selectedDate, groups);
     if (selectedDate) {
       const start = calendarSelectionStart || selectedDate,
         end = calendarSelectionEnd || start;
@@ -192,5 +190,5 @@ function renderJourneyDetail() {
     group.trip?.notes,
     ...group.stays.map((stay) => stay.notes).filter(Boolean),
   ].filter(Boolean);
-  host.innerHTML = `<article class="calendar-detail-card"><header class="calendar-detail-head"><div><p class="eyebrow">${E(phaseLabel(group.phase))}</p><h2>${E(!group.trip && !group.stays.length && group.transports.length === 1 ? (group.transports[0].type === 'flight' ? 'Flight details' : 'Transport details') : group.title)}</h2><p>${E(dateRangeText(group.start, group.end))} · ${E(durationText(group.start, group.end))}</p></div>${statusBadge(group)}</header><div class="calendar-detail-countries">${[...new Map(group.stays.filter((s) => s.countryCode !== 'SEA').map((s) => [s.domesticDestination || s.countryCode, s])).values()].map((s) => `<span>${flagHtml(s.domesticDestination || s.countryCode, 'flag-img flag-sm')}${E(s.countryName || countryByCode(s.countryCode)?.name || s.countryCode)}${window.HVVisaNotices?.detailLink(s) || ''}</span>`).join('') || (group.stays.some((s) => s.countryCode === 'SEA' && s.status !== 'cancelled') ? '<span class="calendar-sea-label">≈ At sea</span>' : '')}</div><div class="calendar-detail-stats"><div><strong>${group.stays.length}</strong><span>stops</span></div><div><strong>${travelDays}</strong><span>travel day${travelDays === 1 ? '' : 's'}</span></div><div><strong>${atLocationDayCount(group)}</strong><span>at-location day${atLocationDayCount(group) === 1 ? '' : 's'}</span></div></div><div class="calendar-detail-actions"><button type="button" class="secondary compact" data-journey-map="${E(group.key)}">Journey Map</button>${group.trip ? `<button type="button" class="secondary compact" data-calendar-edit-trip="${E(group.trip.id)}">Edit trip</button><button type="button" class="secondary compact" data-calendar-add-transport="${E(group.trip.id)}">Add transport</button><button type="button" class="secondary compact" data-calendar-add-accommodation="${E(group.trip.id)}">Add accommodation</button>` : group.stays[0] ? `<button type="button" class="secondary compact" data-calendar-edit-stay="${E(group.stays[0].id)}">Edit stay</button>` : `<button type="button" class="secondary compact" data-calendar-edit-transport="${E(group.transports[0]?.id || '')}">Edit journey</button>`}</div><section class="calendar-detail-route"><div class="calendar-detail-section-head"><p class="eyebrow">JOURNEY ORDER</p><span>${locations.length ? E(locations.join(' · ')) : group.transports.length ? 'Transport-only journey' : 'Accommodation'}</span></div><ol class="journey-timeline">${detailTimeline(group)}</ol></section>${tripNotes.length ? `<section class="calendar-detail-notes"><p class="eyebrow">NOTES</p>${tripNotes.map((note) => `<p>${E(note)}</p>`).join('')}</section>` : ''}${schengenSummary(group)}<div class="calendar-detail-links"><a href="#/visa">Check entry rules</a><a href="#/schengen">Review Schengen</a></div></article>`;
+  host.innerHTML = `<article class="calendar-detail-card"><button class="calendar-date-close text-btn" type="button" data-calendar-close-date aria-label="Close journey details">Close ×</button><header class="calendar-detail-head"><div><p class="eyebrow">${E(phaseLabel(group.phase))}</p><h2>${E(!group.trip && !group.stays.length && group.transports.length === 1 ? (group.transports[0].type === 'flight' ? 'Flight details' : 'Transport details') : group.title)}</h2><p>${E(dateRangeText(group.start, group.end))} · ${E(durationText(group.start, group.end))}</p></div>${statusBadge(group)}</header><div class="calendar-detail-countries">${[...new Map(group.stays.filter((s) => s.countryCode !== 'SEA').map((s) => [s.domesticDestination || s.countryCode, s])).values()].map((s) => `<span>${flagHtml(s.domesticDestination || s.countryCode, 'flag-img flag-sm')}${E(s.countryName || countryByCode(s.countryCode)?.name || s.countryCode)}${window.HVVisaNotices?.detailLink(s) || ''}</span>`).join('') || (group.stays.some((s) => s.countryCode === 'SEA' && s.status !== 'cancelled') ? '<span class="calendar-sea-label">≈ At sea</span>' : '')}</div><div class="calendar-detail-stats"><div><strong>${group.stays.length}</strong><span>stops</span></div><div><strong>${travelDays}</strong><span>travel day${travelDays === 1 ? '' : 's'}</span></div><div><strong>${atLocationDayCount(group)}</strong><span>at-location day${atLocationDayCount(group) === 1 ? '' : 's'}</span></div></div><div class="calendar-detail-actions"><button type="button" class="secondary compact" data-journey-map="${E(group.key)}">Journey Map</button>${group.trip ? `<button type="button" class="secondary compact" data-calendar-edit-trip="${E(group.trip.id)}">Edit trip</button><button type="button" class="secondary compact" data-calendar-add-transport="${E(group.trip.id)}">Add transport</button><button type="button" class="secondary compact" data-calendar-add-accommodation="${E(group.trip.id)}">Add accommodation</button>` : group.stays[0] ? `<button type="button" class="secondary compact" data-calendar-edit-stay="${E(group.stays[0].id)}">Edit stay</button>` : `<button type="button" class="secondary compact" data-calendar-edit-transport="${E(group.transports[0]?.id || '')}">Edit journey</button>`}</div><section class="calendar-detail-route"><div class="calendar-detail-section-head"><p class="eyebrow">JOURNEY ORDER</p><span>${locations.length ? E(locations.join(' · ')) : group.transports.length ? 'Transport-only journey' : 'Accommodation'}</span></div><ol class="journey-timeline">${detailTimeline(group)}</ol></section>${tripNotes.length ? `<section class="calendar-detail-notes"><p class="eyebrow">NOTES</p>${tripNotes.map((note) => `<p>${E(note)}</p>`).join('')}</section>` : ''}${schengenSummary(group)}<div class="calendar-detail-links"><a href="#/visa">Check entry rules</a><a href="#/schengen">Review Schengen</a></div></article>`;
 }

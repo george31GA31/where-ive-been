@@ -413,6 +413,7 @@ function renderDashboard() {
       .sort((a, b) => b.start.localeCompare(a.start))
       .slice(0, 3),
   ]);
+  window.HVCalendar?.renderHomeOverview?.();
 }
 function renderMiniCalendar() {
   let c = startOfMonth(new Date()),

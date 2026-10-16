@@ -9,14 +9,14 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css?v=offline-20261006" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
-  <link rel="stylesheet" href="voyages.css?v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005&transport=20261008&daily=20261014" />
+  <link rel="stylesheet" href="voyages.css?calendar=20261016&v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005&transport=20261008&daily=20261014" />
   <link rel="stylesheet" href="travel-tools.css?v=trackers-20261006&platform=herald-complete-20261005&tools=currency-road-20261005" />
   <link rel="stylesheet" href="currency-road-tools.css?v=currency-road-20261005&refinements=map-planner-20261006" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?v=map-city-20261004&refinements=map-planner-20261006&daily=20261014" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?calendar=20261016&v=map-city-20261004&refinements=map-planner-20261006&daily=20261014" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
 <link rel="stylesheet" href="transport-dashboard.css?v=transport-20261008">
-  <link rel="stylesheet" href="herald-ui.css?v=20261015">
+  <link rel="stylesheet" href="herald-ui.css?calendar=20261016&v=20261015">
 </head>
 <body data-current-view="dashboard">
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -89,9 +89,11 @@
             <div class="panel-head"><div><p class="eyebrow">THIS MONTH</p><h2 id="miniCalendarTitle">Calendar</h2></div><button class="text-btn" data-go-view="calendar">Open calendar →</button></div>
             <div id="miniCalendar" class="mini-calendar"></div>
           </article>
-          <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">RECENT</p><h2>Latest stays</h2></div><button class="text-btn" data-go-view="stays">See all →</button></div>
+          <article class="panel home-travel-panel">
+            <div class="panel-head"><div><p class="eyebrow">YOUR TRAVEL</p><h2>Recent and upcoming stays</h2></div><button class="text-btn" data-go-view="stays">See all →</button></div>
+            <div id="homeMonthSummary" class="home-month-summary"></div>
             <div id="recentStays" class="stay-list empty-state">No stays added yet.</div>
+            <details id="homeUpcomingTravel" class="home-upcoming-travel"><summary>Coming up</summary><div id="homeUpcomingTravelItems"></div></details>
           </article>
         </div>
 
@@ -133,30 +135,26 @@
       <section id="calendarView" class="view" aria-label="Trip calendar">
         <div class="calendar-experience">
           <header class="calendar-hero">
-            <div>
-              <p class="eyebrow">JOURNEY CALENDAR</p>
-              <h2>Every part of a trip, <em>made clear.</em></h2>
-              <p>Follow countries, places, stays and travel days in one clear view.</p>
-            </div>
-            <div class="calendar-hero-actions"><button class="primary calendar-plan-button" id="calendarPlanTripBtn" type="button">Add trip <span aria-hidden="true">→</span></button></div>
+            <p class="eyebrow">JOURNEY CALENDAR</p>
+            <p>Countries, transport and stays, day by day.</p>
           </header>
 
           <div class="calendar-layout">
-            <article class="panel calendar-panel calendar-month-panel">
+            <article class="panel calendar-panel calendar-month-panel" data-calendar-view="month">
               <div class="calendar-toolbar">
                 <div class="calendar-toolbar-primary">
                   <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
                   <button class="secondary compact" id="todayBtn">Today</button>
                 </div>
-                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar layers"><button type="button" data-calendar-layer="countries" aria-pressed="true">Countries</button><button type="button" data-calendar-layer="transport" aria-pressed="true">Transport</button><button type="button" data-calendar-layer="accommodation" aria-pressed="true">Accommodation</button></div><button class="secondary compact" id="clearCalendarSelectionBtn" disabled>Clear selection</button></div>
+                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar layers"><button type="button" data-calendar-layer="countries" aria-pressed="true">Countries</button><button type="button" data-calendar-layer="transport" aria-pressed="true">Transport</button><button type="button" data-calendar-layer="accommodation" aria-pressed="true">Accommodation</button></div><button class="secondary compact" id="clearCalendarSelectionBtn" hidden disabled>Clear selection</button></div>
               </div>
               <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
               <div id="calendar" class="calendar" aria-live="polite"></div>
               <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-country" aria-hidden="true"></i> Country stay</span><span class="calendar-key"><img class="calendar-key-transport" src="assets/transport/flight.png" alt=""> Transport</span><span class="calendar-key"><i class="calendar-key-accommodation" aria-hidden="true">⌂</i> Accommodation</span><span class="calendar-key"><i class="calendar-key-home" aria-hidden="true">⌂</i> Home</span><span class="calendar-key calendar-schengen-key"><b aria-hidden="true"></b> Schengen</span><p>Select an entry to view or edit it. Select a date or range to add travel.</p></footer>
             </article>
-
-            <aside id="calendarJourneyDetail" class="calendar-journey-detail" aria-live="polite"></aside>
           </div>
+
+          <aside id="calendarJourneyDetail" class="calendar-journey-detail" aria-label="Selected travel details" aria-live="polite" hidden></aside>
 
           <div id="calendarTransportLibrary" class="calendar-transport-library"></div>
         </div>
@@ -334,7 +332,7 @@
   <script src="account-client.js?v=rollback-20261001-1&performance=20261007&offline=20261006&cleanup=20261007"></script>
   <script src="account-size.js?v=save-parity-20261014&daily=20261014"></script>
   <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006&cleanup=20261007&daily=20261014"></script>
-  <script src="app.js?trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008&daily=20261014"></script>
+  <script src="app.js?calendar=20261016&trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008&daily=20261014"></script>
 <script src="trip-planning-config.js?v=20261015"></script>
 <script src="trip-planning.js?v=20261015"></script>
 </body>

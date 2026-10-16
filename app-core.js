@@ -1222,6 +1222,7 @@ function renderDashboard() {
       .sort((a, b) => b.start.localeCompare(a.start))
       .slice(0, 3),
   ]);
+  window.HVCalendar?.renderHomeOverview?.();
 }
 function renderMiniCalendar() {
   let c = startOfMonth(new Date()),
@@ -1339,7 +1340,7 @@ function updateCalendarSelectionUI() {
     info.innerHTML =
       '<strong>Select dates to add travel</strong><span>Choose the first date, then the last.</span>';
     btn.disabled = true;
-    btn.hidden = false;
+    btn.hidden = true;
     return;
   }
   btn.disabled = false;

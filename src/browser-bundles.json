@@ -25,6 +25,7 @@
     "scope": "closure",
     "files": [
       "src/calendar/groups.js",
+      "src/calendar/home.js",
       "src/calendar/month.js",
       "src/calendar/details.js",
       "src/calendar/planner.js",
