@@ -29,6 +29,7 @@
       "src/calendar/month.js",
       "src/calendar/details.js",
       "src/calendar/planner.js",
+      "src/calendar/search.js",
       "src/calendar/events.js"
     ]
   }

@@ -23,6 +23,20 @@ let dateAction = '';
 let planner = null;
 let plannerDialog = null;
 let journeyCache;
+let selectedEntry = null;
+let rangeSelecting = false;
+let detailReturnFocus = null;
+let calendarFilters = {};
+
+const calendarKinds = [
+  ['countries', 'Countries', 'country', '▏'],
+  ['accommodation', 'Accommodation', 'accommodation', '⌂'],
+  ['transport', 'Transport', 'transport', '↗'],
+  ['notes', 'Notes', 'note', '✎'],
+  ['locations', 'Locations', 'location', '◎'],
+];
+const entryAttributes = (kind, id, date = '') =>
+  `data-calendar-entry="${kind}" data-calendar-entry-id="${E(id)}" data-calendar-context-date="${E(date)}" aria-haspopup="dialog"`;
 
 const today = () => isoDate(new Date());
 const localDate = (value) => String(value || '').slice(0, 10);
@@ -41,7 +55,10 @@ const visibleLayers = () => ({
   countries: true,
   transport: true,
   accommodation: true,
+  notes: true,
+  locations: true,
   ...state.visualLayers?.calendar,
+  ...calendarFilters,
 });
 
 function hash(value) {

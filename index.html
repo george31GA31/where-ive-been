@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="voyages.css?calendar=20261016&v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005&transport=20261008&daily=20261014" />
   <link rel="stylesheet" href="travel-tools.css?v=trackers-20261006&platform=herald-complete-20261005&tools=currency-road-20261005" />
   <link rel="stylesheet" href="currency-road-tools.css?v=currency-road-20261005&refinements=map-planner-20261006" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?calendar=20261016&v=map-city-20261004&refinements=map-planner-20261006&daily=20261014" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?interactive=20261017&calendar=20261017&v=map-city-20261004&refinements=map-planner-20261006&daily=20261014" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
 <link rel="stylesheet" href="transport-dashboard.css?v=transport-20261008">
@@ -134,10 +134,7 @@
       <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">My account &amp; sync</a></article></section>
       <section id="calendarView" class="view" aria-label="Trip calendar">
         <div class="calendar-experience">
-          <header class="calendar-hero">
-            <p class="eyebrow">JOURNEY CALENDAR</p>
-            <p>Countries, transport and stays, day by day.</p>
-          </header>
+
 
           <div class="calendar-layout">
             <article class="panel calendar-panel calendar-month-panel" data-calendar-view="month">
@@ -146,11 +143,11 @@
                   <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
                   <button class="secondary compact" id="todayBtn">Today</button>
                 </div>
-                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar layers"><button type="button" data-calendar-layer="countries" aria-pressed="true">Countries</button><button type="button" data-calendar-layer="transport" aria-pressed="true">Transport</button><button type="button" data-calendar-layer="accommodation" aria-pressed="true">Accommodation</button></div><button class="secondary compact" id="clearCalendarSelectionBtn" hidden disabled>Clear selection</button></div>
+                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar categories"></div><button type="button" class="text-btn" data-calendar-select-range aria-pressed="false">Select range</button><button type="button" class="text-btn" data-calendar-search-toggle aria-expanded="false" aria-controls="calendarSearchPanel">Search</button><button class="secondary compact" id="clearCalendarSelectionBtn" hidden disabled>Clear selection</button></div>
               </div>
-              <div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
+              <section id="calendarSearchPanel" class="calendar-search-panel" hidden><label for="calendarSearchInput">Find in your travel history</label><input id="calendarSearchInput" type="search" placeholder="Country, hotel, flight, note or location…" autocomplete="off" aria-controls="calendarSearchResults"><div id="calendarSearchResults" role="region" aria-label="Travel history matches" aria-live="polite"></div></section><div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
               <div id="calendar" class="calendar" aria-live="polite"></div>
-              <footer class="calendar-footnote"><span class="calendar-key"><i class="calendar-key-country" aria-hidden="true"></i> Country stay</span><span class="calendar-key"><img class="calendar-key-transport" src="assets/transport/flight.png" alt=""> Transport</span><span class="calendar-key"><i class="calendar-key-accommodation" aria-hidden="true">⌂</i> Accommodation</span><span class="calendar-key"><i class="calendar-key-home" aria-hidden="true">⌂</i> Home</span><span class="calendar-key calendar-schengen-key"><b aria-hidden="true"></b> Schengen</span><p>Select an entry to view or edit it. Select a date or range to add travel.</p></footer>
+              <footer class="calendar-footnote"><span class="calendar-key calendar-schengen-key"><b aria-hidden="true"></b> Blue country edge: Schengen</span><span class="calendar-key"><i class="calendar-key-home" aria-hidden="true">⌂</i> Home</span><p>Use the categories above to show or hide entries. Shift-click a category to focus.</p></footer>
             </article>
           </div>
 

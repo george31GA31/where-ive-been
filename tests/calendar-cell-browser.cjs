@@ -51,16 +51,16 @@ let browser;
   assert.deepEqual(await two.locator('button').evaluateAll(ns=>ns.map(n=>n.getAttribute('aria-label'))),['Slovenia · Schengen Area','Spain · Schengen Area']);
   assert.ok(await day('07').locator('[data-calendar-day-detail]').count(),'Dense days advertise access to every entry');
   for(let count=3;count<=9;count++){
-   const cell=day(String(count+20));assert.equal(await cell.locator('[data-calendar-edit-country]').count(),Math.min(4,count));
+   const cell=day(String(count+20));assert.equal(await cell.locator('[data-calendar-edit-country]').count(),Math.min(2,count));
    await cell.locator('[data-calendar-day-detail]').click();
    const text=await page.locator('#calendarJourneyDetail').innerText();
    for(const record of seed.stays.filter(s=>s.id.startsWith('flags-'+count+'-')))assert.ok(text.includes(record.countryName),'Day details retain '+record.countryName);
    await page.locator('[data-calendar-close-date]').click();
   }
   const button=day('06').locator('[data-calendar-edit-country=arrive]');
-  width<=390?await button.tap():await button.click();await page.locator('#stayDialog[open]').waitFor();assert.equal(await page.locator('#countryInput').inputValue(),'Spain');await page.locator('#closeDialog').click();
+  width<=390?await button.tap():await button.click();await page.locator('#calendarJourneyDetail [data-calendar-edit-stay=arrive]').click();await page.locator('#stayDialog[open]').waitFor();assert.equal(await page.locator('#countryInput').inputValue(),'Spain');await page.locator('#closeDialog').click();await page.locator('[data-calendar-close-date]').click();
   assert.deepEqual(await day('20').locator('[data-calendar-edit-country]').evaluateAll(ns=>ns.map(n=>n.getAttribute('aria-label'))),['Bosnia and Herzegovina','Micronesia'],'Full country names remain accessible');
-  const showDay=async date=>{await day(date).locator('.day-number').click();await day(date).locator('.day-number').click();};
+  const showDay=async date=>{await day(date).locator('.day-number').click();};
   for(const [date,ids]of [['07',['grand','iveagh']],['10',['solo']],['12',['solo']],['14',['old','new']]]){
     await showDay(date);const detail=await page.locator('#calendarJourneyDetail').innerText();
     for(const id of ids)assert.ok(detail.includes(seed.accommodations.find(a=>a.id===id).propertyName),'All boundary-day hotels remain in details');
@@ -70,8 +70,8 @@ let browser;
   await page.locator('dialog[open]').waitFor();assert.equal(await page.locator('dialog[open] [name=propertyName]').inputValue(),'Iveagh Garden Hotel');await page.locator('dialog[open] [data-accommodation-close]').first().click();
   if(await page.locator('[data-calendar-close-date]').count())await page.locator('[data-calendar-close-date]').click();
   assert.equal(await day('07').locator('.calendar-day-transport').count(),2);assert.match(await day('07').locator('[data-calendar-edit-transport=reference-flight]').getAttribute('aria-label'),/ALC.*ALG/);
-  await day('07').locator('[data-calendar-edit-transport=reference-flight]').click();await page.locator('#transportForm').waitFor();assert.equal(await page.locator('#transportForm [name=bookingReference]').inputValue(),'KEEP-FLIGHT');await page.locator('[data-close-transport]').first().click();
-  await day('10').locator('.day-number').click();await day('12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);await page.locator('[data-calendar-close-date]').click();
+  await day('07').locator('[data-calendar-edit-transport=reference-flight]').click();await page.locator('#calendarJourneyDetail [data-calendar-edit-transport=reference-flight]').click();await page.locator('#transportForm').waitFor();assert.equal(await page.locator('#transportForm [name=bookingReference]').inputValue(),'KEEP-FLIGHT');await page.locator('[data-close-transport]').first().click();await page.locator('[data-calendar-close-date]').click();
+  await page.locator('[data-calendar-select-range]').click();await day('10').locator('.day-number').click();await day('12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);await page.locator('[data-calendar-close-date]').click();
   await day('07').locator('.day-number').focus();await page.keyboard.press('Enter');assert.match(await page.locator('#calendarJourneyDetail').innerText(),/Ireland/);assert.match(await page.locator('#calendarJourneyDetail').innerText(),/United Kingdom/);await page.locator('[data-calendar-close-date]').click();
   assert.equal(await page.evaluate(snapshot),initial,'Rendering, focus, selection and cancelled edits preserve records');assert.equal(await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2')),stored,'No stored payload was rewritten');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Calendar adds no horizontal scrolling');assert.deepEqual(errors,[]);
   await page.close();console.log(`Calendar cells verified at ${width}px in ${theme} theme.`);

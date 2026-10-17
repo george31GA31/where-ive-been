@@ -99,6 +99,54 @@ async function saveDateEntry(event) {
 
 function captureCalendarAction(event) {
   const target = event.target;
+  if(target.closest('#prevMonth,#nextMonth,#todayBtn,button[data-calendar-view]'))HVCalendar.clearSelection(false);
+  const entry = target.closest('[data-calendar-entry]');
+  if (entry) {
+    event.preventDefault();
+    event.stopPropagation();
+    if(entry.dataset.calendarSearchResultDate){
+      const date=entry.dataset.calendarSearchResultDate;
+      if($('calendar').hidden)q('button[data-calendar-view=month]')?.click();
+      calendarCursor=new Date(date.slice(0,7)+'-01T00:00:00Z');
+      selectedDate=date;calendarSelectionStart=date;calendarSelectionEnd=null;rangeSelecting=false;
+      renderMonth();
+    }
+    openCalendarEntry(entry.dataset.calendarEntry,entry.dataset.calendarEntryId,entry.dataset.calendarContextDate);
+    return;
+  }
+  if(target.closest('[data-calendar-search-toggle]')){
+    event.preventDefault();event.stopPropagation();
+    const panel=$('calendarSearchPanel'),button=target.closest('[data-calendar-search-toggle]');
+    panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));
+    if(!panel.hidden){renderCalendarSearch();$('calendarSearchInput')?.focus();}return;
+  }
+  const linkedNote = target.closest('[data-calendar-related-note]');
+  if (linkedNote) {
+    event.preventDefault();event.stopPropagation();
+    const row=HVCalendarDetails.record(linkedNote.dataset.calendarRelatedNote,linkedNote.dataset.calendarRelatedId);
+    if(row)HVTravelTools.openNote(null,{date:linkedNote.dataset.calendarRelatedDate,tripId:row.tripId||null,relatedType:linkedNote.dataset.calendarRelatedNote,relatedId:row.id});
+    return;
+  }
+  const back = target.closest('[data-calendar-back-day],[data-calendar-day-nav]');
+  if (back) {
+    event.preventDefault();event.stopPropagation();
+    const date=back.dataset.calendarBackDay||back.dataset.calendarDayNav;
+    if(back.hasAttribute('data-calendar-back-day') && selectedDate){selectedEntry=null;renderJourneyDetail();focusCalendarDetail();}
+    else {calendarCursor=new Date(date.slice(0,7)+'-01T00:00:00Z');selectDate(date);}
+    return;
+  }
+  if (target.closest('[data-calendar-select-range]')) {
+    event.preventDefault();event.stopPropagation();
+    const next=!rangeSelecting;
+    HVCalendar.clearSelection();rangeSelecting=next;renderMonth();
+    q('#calendar .day-number')?.focus({preventScroll:true});
+    return;
+  }
+  if(target.closest('[data-calendar-show-all]')){
+    event.preventDefault();event.stopPropagation();
+    calendarFilters=Object.fromEntries(calendarKinds.map(([key])=>[key,true]));renderMonth();
+    q('[data-calendar-layer]')?.focus({preventScroll:true});return;
+  }
   const home = target.closest('[data-home-calendar-month],[data-home-journey]');
   if (home) {
     event.preventDefault();
@@ -139,14 +187,7 @@ function captureCalendarAction(event) {
   if (target.closest('[data-calendar-close-date]')) {
     event.preventDefault();
     event.stopPropagation();
-    const returnDate = selectedDate || calendarSelectionStart;
-    calendarSelectionStart = null;
-    calendarSelectionEnd = null;
-    selectedDate = '';
-    selectedJourneyKey = '';
-    dateAction = '';
-    renderMonth();
-    (q(`[data-calendar-date-select="${CSS.escape(returnDate || '')}"]`) || $('calendarMonthJump'))?.focus();
+    HVCalendar.clearSelection();
     return;
   }
   if (target.closest('#clearCalendarSelectionBtn')) {
@@ -178,11 +219,11 @@ function captureCalendarAction(event) {
   if (date) {
     event.preventDefault();
     event.stopPropagation();
-    selectDate(date.dataset.calendarDateSelect);
+    selectDate(date.dataset.calendarDateSelect,event.shiftKey);
     return;
   }
   const noteDate=target.closest('[data-calendar-notes-date]');
-  if(noteDate){event.preventDefault();event.stopPropagation();selectedDate=noteDate.dataset.calendarNotesDate;calendarSelectionStart=selectedDate;calendarSelectionEnd=null;selectedJourneyKey='';dateAction='';renderMonth();return;}
+  if(noteDate){event.preventDefault();event.stopPropagation();selectDate(noteDate.dataset.calendarNotesDate);return;}
   const noteAction=target.closest('[data-calendar-date-action="note"]');
   if(noteAction){event.preventDefault();event.stopPropagation();window.HVTravelTools?.openNote(null,{date:calendarSelectionStart||selectedDate,tripId:null,rangeEnd:calendarSelectionEnd});return;}
   const action = target.closest('[data-calendar-date-action]');
@@ -218,15 +259,11 @@ function captureCalendarAction(event) {
     q('#calendarJourneyDetail input')?.focus();
     return;
   }
-  const more = target.closest('[data-calendar-day-detail],[data-calendar-lodging-detail]');
+  const more = target.closest('[data-calendar-day-detail],[data-calendar-lodging-detail],[data-calendar-countries-detail]');
   if (more) {
     event.preventDefault();
     event.stopPropagation();
-    selectedJourneyKey = '';
-    selectedDate = more.dataset.calendarDayDetail || more.dataset.calendarLodgingDetail;
-    calendarSelectionStart=selectedDate;calendarSelectionEnd=null;dateAction='';
-    renderMonth();
-    const detail=$('calendarJourneyDetail');detail?.setAttribute('tabindex','-1');detail?.focus({preventScroll:true});detail?.scrollIntoView({block:'nearest',behavior:'smooth'});
+    selectDate(more.dataset.calendarDayDetail || more.dataset.calendarLodgingDetail || more.dataset.calendarCountriesDetail);
     return;
   }
   const open = target.closest('[data-calendar-open-journey]');
@@ -291,13 +328,12 @@ function captureCalendarAction(event) {
   const layer = target.closest('[data-calendar-layer]');
   if (layer) {
     event.preventDefault();
-    state.visualLayers ||= {};
-    state.visualLayers.calendar ||= {};
+    event.stopPropagation();
     const key = layer.dataset.calendarLayer;
-    state.visualLayers.calendar[key] = !visibleLayers()[key];
-    layer.setAttribute('aria-pressed', String(state.visualLayers.calendar[key]));
-    persist();
+    if(event.shiftKey)calendarFilters=Object.fromEntries(calendarKinds.map(([kind])=>[kind,kind===key]));
+    else calendarFilters[key]=!visibleLayers()[key];
     renderMonth();
+    q(`[data-calendar-layer="${key}"]`)?.focus({preventScroll:true});
   }
 }
 
@@ -316,16 +352,27 @@ function boot() {
     ),
   );
   window.HVCalendar = {
-    clearSelection() {
+    clearSelection(render = true) {
       const returnDate = selectedDate || calendarSelectionStart;
+      const returnEntry = selectedEntry;
       const restoreFocus = $('calendarJourneyDetail')?.contains(document.activeElement);
       calendarSelectionStart = null;
       calendarSelectionEnd = null;
       selectedDate = '';
       selectedJourneyKey = '';
       dateAction = '';
-      renderMonth();
-      if (restoreFocus) (q(`[data-calendar-date-select="${CSS.escape(returnDate || '')}"]`) || $('calendarMonthJump'))?.focus();
+      selectedEntry = null;
+      rangeSelecting = false;
+      if(render)renderMonth();
+      else {
+        const host=$('calendarJourneyDetail');if(host){host.hidden=true;host.replaceChildren();}
+        window.HVCalendarDetails?.hide();
+        qa('#calendar .selection-range,#calendar .selection-start,#calendar .selection-end').forEach(day=>{day.classList.remove('selection-range','selection-start','selection-end');q('.day-number',day)?.setAttribute('aria-pressed','false');});
+      }
+      if (render && restoreFocus) {
+        const entry=returnEntry&&q(`#calendar [data-calendar-entry="${returnEntry.kind}"][data-calendar-entry-id="${CSS.escape(returnEntry.id)}"]`);
+        (detailReturnFocus?.isConnected?detailReturnFocus:entry||q(`[data-calendar-date-select="${CSS.escape(returnDate || '')}"]`)||$('calendarMonthJump'))?.focus({preventScroll:true});
+      }
     },
     ready: true,
     renderMonth,
@@ -333,6 +380,8 @@ function boot() {
     openAccommodationDialog,
     journeyGroups: buildJourneys,
     renderHomeOverview,
+    openEntry: openCalendarEntry,
+    selectDate,
   };
   calendar.dataset.journeyCalendar = 'true';
   moveLegacyTransportTools();
@@ -341,6 +390,21 @@ function boot() {
   window.addEventListener('hv-airports-ready',()=>{journeyCache=undefined;});
   document.addEventListener('click', captureCalendarAction, true);
   document.addEventListener('submit', saveDateEntry, true);
+  $('calendarSearchInput')?.addEventListener('input',renderCalendarSearch);
+  document.addEventListener('change',event=>{if(event.target.matches('#calendarMonthJump,#calendarYearJump'))HVCalendar.clearSelection(false);},true);
+  calendar.addEventListener('click', event => {
+    if(event.target.closest('button,a,input,select,textarea'))return;
+    const day=event.target.closest('.calendar-day');
+    if(day)selectDate(day.dataset.calendarDate,event.shiftKey);
+  });
+  calendar.addEventListener('keydown',event=>{
+    const button=event.target.closest('[data-calendar-date-select]');if(!button)return;
+    const move={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[event.key];
+    if(!move)return;
+    event.preventDefault();const date=HVCalendarData.next(button.dataset.calendarDateSelect,move);
+    if(!q(`[data-calendar-date-select="${date}"]`,calendar)){calendarCursor=new Date(date.slice(0,7)+'-01T00:00:00Z');renderMonth();}
+    q(`[data-calendar-date-select="${date}"]`,calendar)?.focus({preventScroll:true});
+  });
   document.addEventListener('click', (event) => {
     if (
       (calendarSelectionStart || selectedDate) &&
@@ -351,6 +415,9 @@ function boot() {
       HVCalendar.clearSelection();
   });
   document.addEventListener('keydown', (event) => {
+    if(event.key==='Escape'&&event.target.closest('#calendarSearchPanel')){
+      $('calendarSearchPanel').hidden=true;const button=q('[data-calendar-search-toggle]');button?.setAttribute('aria-expanded','false');button?.focus({preventScroll:true});return;
+    }
     if (event.key === 'Escape' && !document.querySelector('dialog[open]'))
       HVCalendar.clearSelection();
   });
@@ -363,7 +430,10 @@ function boot() {
     calendarSelectionStart = start < end ? start : end;
     calendarSelectionEnd = start < end ? end : start;
     selectedDate = calendarSelectionStart;
+    selectedEntry = null;
     renderMonth();
+    const rangeEditor=q('.calendar-range-editor',$('calendarJourneyDetail'));if(rangeEditor)rangeEditor.open=true;
+    q(event.target.matches('[data-range-start]')?'[data-range-start]':'[data-range-end]',$('calendarJourneyDetail'))?.focus({preventScroll:true});
   });
   renderMonth();
   renderHomeOverview();
