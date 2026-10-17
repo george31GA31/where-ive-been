@@ -131,7 +131,12 @@ function captureCalendarAction(event) {
   if (back) {
     event.preventDefault();event.stopPropagation();
     const date=back.dataset.calendarBackDay||back.dataset.calendarDayNav;
-    if(back.hasAttribute('data-calendar-back-day') && selectedDate){selectedEntry=null;renderJourneyDetail();focusCalendarDetail();}
+    if(back.hasAttribute('data-calendar-back-day') && selectedDate){
+      const previous=selectedEntry;selectedEntry=null;renderJourneyDetail();
+      $('calendarJourneyDetail').scrollTop=dayExplorerScroll;
+      const row=previous&&q(`#calendarJourneyDetail [data-calendar-entry="${previous.kind}"][data-calendar-entry-id="${CSS.escape(previous.id)}"]`);
+      (row||q('[data-calendar-detail-heading]',$('calendarJourneyDetail')))?.focus({preventScroll:true});
+    }
     else {calendarCursor=new Date(date.slice(0,7)+'-01T00:00:00Z');selectDate(date);}
     return;
   }

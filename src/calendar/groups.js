@@ -26,6 +26,7 @@ let journeyCache;
 let selectedEntry = null;
 let rangeSelecting = false;
 let detailReturnFocus = null;
+let dayExplorerScroll = 0;
 let calendarFilters = {};
 
 const calendarKinds = [

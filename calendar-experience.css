@@ -964,7 +964,6 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   margin:0;
 }
 #calendarView .calendar-country-section { position:relative;min-width:0; }
-#calendarView .calendar-country-split .calendar-journey-chip { border-left-width:1px; }
 #calendarView .calendar-journey-chip {
   position:relative;
   display:flex;
@@ -1084,7 +1083,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 }
 @media(max-width:1199px) {
   #calendarView .calendar-country-split .country-name-full { display:none; }
-  #calendarView .calendar-country-split .country-name-compact { display:block;font-size:10px; }
+  #calendarView .calendar-country-split .country-name-compact { display:block;font-size:11px; }
 }
 @media(max-width:700px) {
   #calendarView .calendar { --cell-padding:3px;--country-row-size:22px;--country-slot:calc(min(1,var(--calendar-country-rows))*22px + var(--calendar-country-more)*12px);--transport-slot:calc(var(--calendar-transport-rows)*20px);--lodging-slot:calc(var(--calendar-has-lodging)*26px); }

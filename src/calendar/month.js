@@ -95,7 +95,10 @@ function renderLodgingLane(segments,date) {
 
 function focusCalendarDetail() {
   const host = $('calendarJourneyDetail');
-  if (host && !host.hidden) (q('[data-calendar-detail-heading]',host)||host).focus({preventScroll:true});
+  if (host && !host.hidden) {
+    host.scrollTop=0;
+    (q('[data-calendar-detail-heading]',host)||host).focus({preventScroll:true});
+  }
 }
 
 function selectDate(date, extend = false) {
@@ -126,7 +129,10 @@ function selectDate(date, extend = false) {
 
 function openCalendarEntry(kind,id,date) {
   if (!window.HVCalendarDetails?.record(kind,id)) return;
-  if (!selectedEntry) detailReturnFocus = document.activeElement;
+  if (!selectedEntry) {
+    detailReturnFocus = document.activeElement;
+    dayExplorerScroll = $('calendarJourneyDetail').scrollTop;
+  }
   selectedEntry = {kind,id,date:date||selectedDate||today()};
   selectedJourneyKey = '';
   window.HVCalendarDetails.hide();

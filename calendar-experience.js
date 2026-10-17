@@ -31,6 +31,7 @@ let journeyCache;
 let selectedEntry = null;
 let rangeSelecting = false;
 let detailReturnFocus = null;
+let dayExplorerScroll = 0;
 let calendarFilters = {};
 
 const calendarKinds = [
@@ -400,7 +401,10 @@ function renderLodgingLane(segments,date) {
 
 function focusCalendarDetail() {
   const host = $('calendarJourneyDetail');
-  if (host && !host.hidden) (q('[data-calendar-detail-heading]',host)||host).focus({preventScroll:true});
+  if (host && !host.hidden) {
+    host.scrollTop=0;
+    (q('[data-calendar-detail-heading]',host)||host).focus({preventScroll:true});
+  }
 }
 
 function selectDate(date, extend = false) {
@@ -431,7 +435,10 @@ function selectDate(date, extend = false) {
 
 function openCalendarEntry(kind,id,date) {
   if (!window.HVCalendarDetails?.record(kind,id)) return;
-  if (!selectedEntry) detailReturnFocus = document.activeElement;
+  if (!selectedEntry) {
+    detailReturnFocus = document.activeElement;
+    dayExplorerScroll = $('calendarJourneyDetail').scrollTop;
+  }
   selectedEntry = {kind,id,date:date||selectedDate||today()};
   selectedJourneyKey = '';
   window.HVCalendarDetails.hide();
@@ -1497,7 +1504,12 @@ function captureCalendarAction(event) {
   if (back) {
     event.preventDefault();event.stopPropagation();
     const date=back.dataset.calendarBackDay||back.dataset.calendarDayNav;
-    if(back.hasAttribute('data-calendar-back-day') && selectedDate){selectedEntry=null;renderJourneyDetail();focusCalendarDetail();}
+    if(back.hasAttribute('data-calendar-back-day') && selectedDate){
+      const previous=selectedEntry;selectedEntry=null;renderJourneyDetail();
+      $('calendarJourneyDetail').scrollTop=dayExplorerScroll;
+      const row=previous&&q(`#calendarJourneyDetail [data-calendar-entry="${previous.kind}"][data-calendar-entry-id="${CSS.escape(previous.id)}"]`);
+      (row||q('[data-calendar-detail-heading]',$('calendarJourneyDetail')))?.focus({preventScroll:true});
+    }
     else {calendarCursor=new Date(date.slice(0,7)+'-01T00:00:00Z');selectDate(date);}
     return;
   }
