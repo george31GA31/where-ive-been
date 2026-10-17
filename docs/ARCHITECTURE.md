@@ -50,7 +50,8 @@ offline manifests. Their feature ownership is listed here.
 | Trips and stays | `src/core/stays.js`, `trip-experience.js`, `journey-model.js` | Country date entries, trip editors, phase/scoping calculations |
 | People and home history | `src/core/people.js`, `home-choice.js`, `journeys.js` | Traveller passports, residences, home-country choices |
 | Calendar grouping | `src/calendar/groups.js` | Read-only trip/stay/transport groups and day membership |
-| Calendar display | `src/calendar/month.js`, `src/calendar/details.js`, `calendar-layout-model.js`, `calendar-details.js` | Full-width month cells, shared content slots, chronological accommodation, selected dates and expandable details |
+| Calendar display | `src/calendar/month.js`, `src/calendar/details.js`, `calendar-layout-model.js`, `calendar-details.js` | Full-width month cells, fixed country/accommodation/transport lanes, chronological accommodation, and lazy previews / Day Explorer sheets |
+| Calendar search | `src/calendar/search.js` | Bounded, read-only search of dated travel history with jumps to the relevant month and shared entry details |
 | Calendar editing | `src/calendar/planner.js`, `src/calendar/events.js`, `accommodation-times.js` | Trip planner, validation, date actions and event capture |
 | Atlas and country counts | `src/core/atlas.js`, `map-enhancements.js`, `atlas-model.js`, `country-count-model.js` | World geometry, read-only grouping, count preferences and map colours |
 | Manual visits and TCC | `country-visit-model.js`, `country-trackers.js`, `data/tcc-destinations.js` | Manual country dates/precision; independent TCC destination IDs |
