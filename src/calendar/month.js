@@ -144,12 +144,12 @@ function selectDate(date) {
 
 function pickCalendarDate(date, extend = false) {
   if(!HVJourney.validDate(date))return;
-  if(!rangeMode && !extend)return selectDate(date);
+  if(!rangeMode && !extend && !rangeSelecting)return selectDate(date);
   detailReturnFocus = document.activeElement;
   selectedEntry = null;
   selectedJourneyKey = '';
   dateAction = '';
-  if (!rangeSelecting || !calendarSelectionStart || calendarSelectionEnd) {
+  if (!calendarSelectionStart || calendarSelectionEnd || (!rangeSelecting && !extend)) {
     calendarSelectionStart = date;
     calendarSelectionEnd = null;
     selectedDate = '';

@@ -25,6 +25,7 @@ Calendar-specific note collection, record migration, account change or new depen
   `Select range` toggles back to the existing one-click Day Explorer behaviour.
   `Explore day` remains available independently. Date fields remain available in the
   explorer. Arrow keys move focus; Escape, Cancel and clicking outside clear selection.
+  Shift also extends a selected day or starts a range while one-click mode is active.
   Selecting dates never invokes a journey planner, including the legacy click adapter.
 - `Hover previews` defaults on. The checkbox stores only
   `visualLayers.calendar.hoverPreviews`, alongside existing display preferences.
