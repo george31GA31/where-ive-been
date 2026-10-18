@@ -1434,6 +1434,22 @@ html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--h
 }
 #calendarView .calendar-selection-info { position:relative;padding-right:72px; }
 #calendarView .calendar-selection-info [data-calendar-show-all] { position:absolute;right:12px;top:0;height:100%;min-height:30px;font-size:11px; }
+
+/* Range actions update in place, leaving the month available for the second date. */
+#calendarView .calendar-selection-info { display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px; }
+#calendarView .calendar-selection-info>.text-btn { min-height:30px;font-size:11px;padding:3px 5px; }
+#calendarView [data-calendar-select-range][aria-pressed=true] { background:var(--blue-soft);color:var(--hv-blue);border-radius:4px; }
+.calendar-hover-setting { display:inline-flex;align-items:center;gap:5px;min-height:32px;font:500 11px var(--hv-sans);color:var(--hv-muted);white-space:nowrap;cursor:pointer; }
+.calendar-hover-setting input { width:14px;height:14px;margin:0;accent-color:var(--hv-blue); }
+.calendar-explicit-plan { display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px; }
+.calendar-explicit-plan .text-btn { font-size:11px;min-height:30px; }
+@media(max-width:700px) {
+  #calendarView .calendar-toolbar { grid-template-columns:minmax(0,1fr) auto auto; }
+  #calendarView .calendar-hover-setting { grid-row:3;grid-column:2;justify-self:end;font-size:10px; }
+  #calendarView [data-calendar-search-toggle] { grid-row:3;grid-column:3; }
+  #calendarView .calendar-view-switch { grid-row:4;grid-column:1/-1;justify-self:end; }
+  #calendarView .calendar-selection-info { padding-right:58px; }
+}
 @media(max-width:700px) {
   #calendarView .calendar-view-switch button { white-space:nowrap; }
   #calendarView .calendar-toolbar .calendar-view-switch { min-width:140px; }

@@ -16,7 +16,7 @@ let browser;const reports=[];
     await context.route('**/*',route=>{if(route.request().url().startsWith(origin))return route.continue();return route.abort();});
     await page.addInitScript(({data,theme})=>{localStorage.setItem('whereIveBeen.theme.v1',theme);localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(data));},{data:calendarHistory(),theme});
     await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendar?.ready&&window.HVCalendarDetails&&!document.querySelector('.app-shell').inert);
-    await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();window.scrollTo(0,0);});
+    await page.locator('[data-calendar-select-range]').click();await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();window.scrollTo(0,0);});
     const unchanged=await page.evaluate(()=>JSON.stringify(state)),stored=await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2'));
     const cell=date=>page.locator('.calendar-day[data-calendar-date="'+date+'"]');
     const geometry=await page.evaluate(()=>({top:document.getElementById('calendar').getBoundingClientRect().top,width:document.getElementById('calendar').getBoundingClientRect().width,panel:document.querySelector('.calendar-layout').getBoundingClientRect().width,overflow:document.documentElement.scrollWidth-innerWidth,cellWidth:document.querySelector('.calendar-day').getBoundingClientRect().width,drawerHidden:document.getElementById('calendarJourneyDetail').hidden}));
@@ -24,7 +24,7 @@ let browser;const reports=[];
     if(!baseline){
       assert.ok(geometry.overflow<=1,'No horizontal overflow');assert.ok(geometry.panel-geometry.width<=2,'Month occupies the complete layout width');assert.ok(geometry.drawerHidden,'No default sidebar');assert.ok(geometry.top<(width>=1024?330:width>=650?390:430),'Calendar begins near the top');
       assert.equal(await page.locator('#calendarView').getByText('YOUR MONTH',{exact:true}).count(),0);
-      await page.locator('[data-calendar-select-range]').click();await cell('2026-10-10').locator('.day-number').click();await cell('2026-10-12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);assert.ok(await page.locator('#calendarJourneyDetail').isVisible());await page.locator('[data-calendar-close-date]').click();assert.ok(await page.locator('#calendarJourneyDetail').isHidden());
+      await page.locator('[data-calendar-select-range]').click();await cell('2026-10-10').locator('.day-number').click();await cell('2026-10-12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);assert.ok(await page.locator('#calendarJourneyDetail').isVisible());await page.locator('[data-calendar-close-date]').click();assert.ok(await page.locator('#calendarJourneyDetail').isHidden());await page.locator('[data-calendar-select-range]').click();
       await page.getByRole('button',{name:'Year overview',exact:true}).click();assert.equal(await page.locator('.atlas-month').count(),12);assert.ok(await page.locator('#calendar').isHidden(),'Year overview replaces the month grid');assert.ok(await page.locator('#calendarJourneyDetail').isHidden());await page.getByRole('button',{name:'Next year',exact:true}).click();assert.equal(await page.locator('#calendarYearJump').inputValue(),'2027');await page.getByRole('button',{name:'Month',exact:true}).click();await page.getByRole('button',{name:'Today',exact:true}).click();
     }
     if(!baseline&&!layoutOnly){

@@ -25,6 +25,7 @@ let plannerDialog = null;
 let journeyCache;
 let selectedEntry = null;
 let rangeSelecting = false;
+let rangeMode = true;
 let detailReturnFocus = null;
 let dayExplorerScroll = 0;
 let calendarFilters = {};
@@ -42,7 +43,8 @@ const entryAttributes = (kind, id, date = '') =>
 const today = () => isoDate(new Date());
 const localDate = (value) => String(value || '').slice(0, 10);
 const days = (start, end) => (start && end ? Math.max(1, diffDays(start, end) + 1) : 0);
-const dateText = (value) => (value ? fmt(value) : '—');
+const calendarDateFormat = new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+const dateText = (value) => (HVJourney.validDate(value) ? calendarDateFormat.format(parseDate(value)) : value ? 'Date not recorded' : '—');
 const dateRangeText = (start, end) =>
   !start
     ? 'Dates to be added'

@@ -5,7 +5,8 @@
   const collections = {country:'stays',accommodation:'accommodations',transport:'transports',note:'notes',location:'placeVisits'};
   const labels = {country:'Country visit',accommodation:'Accommodation',transport:'Transport',note:'Travel note',location:'Saved location'};
   const localToday = () => {const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
-  const dateText = value => HVJourney.validDate(String(value||'').slice(0,10)) ? new Date(value.slice(0,10)+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}) : 'Not recorded';
+  const dateFormat = new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+  const dateText = value => HVJourney.validDate(String(value||'').slice(0,10)) ? dateFormat.format(new Date(value.slice(0,10)+'T12:00:00Z')) : 'Not recorded';
   const countDays = (start,end) => HVJourney.validDate(start)&&HVJourney.validDate(end)&&end>=start ? Math.round((Date.parse(end)-Date.parse(start))/86400000) : null;
   const fact = (label,value) => value!==null && value!==undefined && value!=='' ? `<div><dt>${E(label)}</dt><dd>${E(value)}</dd></div>` : '';
   const notes = value => value ? `<div class="calendar-profile-notes">${window.HVTravelTools?.noteBody(value)||'<p>'+E(value)+'</p>'}</div>` : '';
@@ -15,6 +16,17 @@
       const out={};
       for (const [kind,key] of Object.entries(collections)) out[kind]=new Map(HVJourney.scoped(Array.isArray(state[key])?state[key]:[],state.activeProfileId).map(record => [record.id,record]));
       out.trip=new Map(HVJourney.scoped(state.trips||[],state.activeProfileId).map(trip => [trip.id,trip]));
+      out.byTrip=new Map();out.linkedNotes=new Map();
+      for(const kind of ['country','accommodation','transport','location'])for(const item of out[kind].values()){
+        if(!item.tripId)continue;
+        if(!out.byTrip.has(item.tripId))out.byTrip.set(item.tripId,[]);
+        out.byTrip.get(item.tripId).push({kind,item});
+      }
+      for(const item of out.note.values())if(item.relatedType&&item.relatedId){
+        const key=item.relatedType+':'+item.relatedId;
+        if(!out.linkedNotes.has(key))out.linkedNotes.set(key,[]);
+        out.linkedNotes.get(key).push(item);
+      }
       return out;
     });
   }
@@ -78,9 +90,9 @@
     const add=(type,item,label)=>{if(type===kind&&item.id===row.id)return;matches.push({type,item,label});};
     // Explicit note associations are authoritative. Trip/date neighbours are labelled separately.
     if(kind==='note'&&row.relatedType&&row.relatedId){const item=ids[row.relatedType]?.get(row.relatedId);if(item)add(row.relatedType,item,'Linked record');}
-    for(const item of ids.note.values())if(item.relatedType===kind&&item.relatedId===row.id)add('note',item,'Linked note');
-    if(row.tripId)for(const type of ['country','accommodation','transport','location'])for(const item of ids[type].values()){
-      if(item.status==='cancelled'||item.tripId!==row.tripId||!overlaps(type,item))continue;
+    for(const item of ids.linkedNotes.get(kind+':'+row.id)||[])add('note',item,'Linked note');
+    for(const {kind:type,item} of ids.byTrip.get(row.tripId)||[]){
+      if(item.status==='cancelled'||!overlaps(type,item))continue;
       if(kind==='country'&&item.place?.countryCode&&item.place.countryCode!==row.countryCode)continue;
       add(type,item,'Same trip, overlapping dates');
     }
@@ -90,7 +102,7 @@
   }
   function actions(kind,row,date) {
     const edit={country:`data-calendar-edit-stay="${E(row.id)}"`,accommodation:`data-calendar-edit-accommodation="${E(row.id)}"`,transport:`data-calendar-edit-transport="${E(row.id)}"`,note:`data-day-note-edit="${E(row.id)}"`,location:`data-place-edit="${E(row.id)}"`}[kind];
-    const group=HVCalendar.journeyGroups().find(group => (kind==='country'?group.stays:kind==='accommodation'?group.accommodations:kind==='transport'?group.transports:[]).some(r=>r.id===row.id)) || (row.tripId?HVCalendar.journeyGroups().find(g=>g.trip?.id===row.tripId):null);
+    const group=HVCalendar.groupForEntry(kind,row.id) || (row.tripId?HVCalendar.journeyGroups().find(g=>g.trip?.id===row.tripId):null);
     const noteAction=kind!=='note'?`<button type="button" class="text-btn" data-calendar-related-note="${kind}" data-calendar-related-id="${E(row.id)}" data-calendar-related-date="${E(date)}">+ Linked note</button>`:'';
     return `<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${kind==='country'?'visit':kind==='location'?'location':kind}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}</div>`;
   }
@@ -103,6 +115,7 @@
 
   let tip=null,active=null,openTimer,closeTimer;
   const selector='#calendar [data-calendar-entry]';
+  const hoverEnabled=()=>state.visualLayers?.calendar?.hoverPreviews!==false;
   function highlight(button) {
     const kind=button.dataset.calendarEntry,row=record(kind,button.dataset.calendarEntryId);if(!row)return;
     const [start,end]=range(kind,row,button.dataset.calendarContextDate);
@@ -136,15 +149,17 @@
     tip.addEventListener('mouseenter',()=>clearTimeout(closeTimer));tip.addEventListener('mouseleave',()=>{closeTimer=setTimeout(hide,180);});
   }
   document.addEventListener('mouseover',event=>{
+    if(!hoverEnabled())return;
     const button=event.target.closest(selector);if(!button)return;
     if(!matchMedia('(hover: hover)').matches)return;
-    clearTimeout(closeTimer);clearTimeout(openTimer);if(button!==active)openTimer=setTimeout(()=>show(button),120);
+    clearTimeout(closeTimer);clearTimeout(openTimer);if(button!==active)openTimer=setTimeout(()=>{if(hoverEnabled())show(button);},120);
   });
   document.addEventListener('mouseout',event=>{
+    if(!hoverEnabled())return;
     const button=event.target.closest(selector);if(!button||button.contains(event.relatedTarget))return;
     clearTimeout(openTimer);if(tip?.contains(event.relatedTarget))return;closeTimer=setTimeout(hide,180);
   });
-  document.addEventListener('focusin',event=>{const button=event.target.closest(selector);if(button)show(button);else if(!tip?.contains(event.target))hide();});
+  document.addEventListener('focusin',event=>{const button=event.target.closest(selector);if(button&&(hoverEnabled()||button.matches(':focus-visible')))show(button);else if(!tip?.contains(event.target))hide();});
   document.addEventListener('focusout',event=>{if(active?.contains(event.target)&&!tip?.contains(event.relatedTarget))closeTimer=setTimeout(hide,180);});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&tip){hide();event.stopImmediatePropagation();}},true);
   document.addEventListener('click',event=>{if(!tip?.contains(event.target))hide();});

@@ -23,7 +23,7 @@ let browser;const timings=[];
   await page.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
   await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
   await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendarDetails&&window.HVCalendar?.ready&&!document.querySelector('.app-shell').inert);
-  await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();scrollTo(0,0);});
+  await page.locator('[data-calendar-select-range]').click();await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();scrollTo(0,0);});
   const initial=await page.evaluate(()=>JSON.stringify(state)),stored=await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2'));
   const cell=date=>page.locator(`.calendar-day[data-calendar-date="2026-10-${date}"]`),drawer=page.locator('#calendarJourneyDetail');
   const close=async()=>{await drawer.locator('[data-calendar-close-date]').click();await page.mouse.move(0,0);await page.evaluate(()=>HVCalendarDetails.hide());};
@@ -61,7 +61,7 @@ let browser;const timings=[];
   }
   await page.locator('[data-calendar-layer=transport]').click();assert.equal(await page.locator('#calendar .calendar-day-transport').count(),0);await page.locator('[data-calendar-show-all]').click();assert.ok(await page.locator('#calendar .calendar-day-transport').count()>0);
   await page.locator('[data-calendar-layer=notes]').click({modifiers:['Shift']});assert.equal(await page.locator('#calendar .calendar-lodging').count(),0);assert.ok(await page.locator('#calendar .calendar-note-chip').count()>0);await page.locator('[data-calendar-show-all]').click();
-  await page.locator('[data-calendar-select-range]').click();await cell('10').locator('.day-number').click();await cell('12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);assert.match(await drawer.innerText(),/DATE RANGE/);await close();
+  await page.locator('[data-calendar-select-range]').click();await cell('10').locator('.day-number').click();await cell('12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);assert.match(await drawer.innerText(),/DATE RANGE/);await close();await page.locator('[data-calendar-select-range]').click();
   await page.locator('[data-calendar-search-toggle]').click();await page.locator('#calendarSearchInput').fill('old impossible match');assert.match(await page.locator('#calendarSearchResults').innerText(),/0 matches/);await page.locator('#calendarSearchInput').fill('Tunisia');await page.locator('[data-calendar-search-result-date="2021-05-01"]').click();assert.equal(await page.locator('#calendarYearJump').inputValue(),'2021');assert.match(await drawer.innerText(),/1 May 2021/);await close();await page.locator('[data-calendar-search-toggle]').click();
   await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
   assert.equal(await page.evaluate(()=>JSON.stringify(state)),initial,'Exploration, search, filters and cancelled edits preserve all state');assert.equal(await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2')),stored,'Presentation writes no account payload');

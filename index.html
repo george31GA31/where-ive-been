@@ -9,14 +9,14 @@
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css?v=offline-20261006" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
-  <link rel="stylesheet" href="voyages.css?calendar=20261016&v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005&transport=20261008&daily=20261014" />
+  <link rel="stylesheet" href="voyages.css?calendar=20261018&v=travel-tools-20261003&platform=herald-complete-20261005&tools=currency-road-20261005&transport=20261008&daily=20261014" />
   <link rel="stylesheet" href="travel-tools.css?v=trackers-20261006&platform=herald-complete-20261005&tools=currency-road-20261005" />
   <link rel="stylesheet" href="currency-road-tools.css?v=currency-road-20261005&refinements=map-planner-20261006" />
-  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?interactive=20261017&calendar=20261017&v=map-city-20261004&refinements=map-planner-20261006&daily=20261014" />
+  <link id="calendarExperienceStyles" rel="stylesheet" href="calendar-experience.css?interactive=20261018&calendar=20261018&v=map-city-20261004&refinements=map-planner-20261006&daily=20261014" />
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link id="journeyPresentationStyles" rel="stylesheet" href="journey-presentation.css?v=hotel-logo-60px-20261005">
 <link rel="stylesheet" href="transport-dashboard.css?v=transport-20261008">
-  <link rel="stylesheet" href="herald-ui.css?calendar=20261016&v=20261015">
+  <link rel="stylesheet" href="herald-ui.css?calendar=20261018&v=20261015">
 </head>
 <body data-current-view="dashboard">
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
@@ -143,9 +143,9 @@
                   <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
                   <button class="secondary compact" id="todayBtn">Today</button>
                 </div>
-                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar categories"></div><button type="button" class="text-btn" data-calendar-select-range aria-pressed="false">Select range</button><button type="button" class="text-btn" data-calendar-search-toggle aria-expanded="false" aria-controls="calendarSearchPanel">Search</button><button class="secondary compact" id="clearCalendarSelectionBtn" hidden disabled>Clear selection</button></div>
+                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar categories"></div><button type="button" class="text-btn" data-calendar-select-range aria-pressed="true" title="Choose first and last dates. Turn off to open a day with one click.">Select range</button><label class="calendar-hover-setting"><input type="checkbox" data-calendar-hover-previews checked> Hover previews</label><button type="button" class="text-btn" data-calendar-search-toggle aria-expanded="false" aria-controls="calendarSearchPanel">Search</button><button class="secondary compact" id="clearCalendarSelectionBtn" hidden disabled>Clear selection</button></div>
               </div>
-              <section id="calendarSearchPanel" class="calendar-search-panel" hidden><label for="calendarSearchInput">Find in your travel history</label><input id="calendarSearchInput" type="search" placeholder="Country, hotel, flight, note or location…" autocomplete="off" aria-controls="calendarSearchResults"><div id="calendarSearchResults" role="region" aria-label="Travel history matches" aria-live="polite"></div></section><div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Choose dates to plan a trip</strong><span>Select a first date, then the last. Click the same date twice for a day trip.</span></div>
+              <section id="calendarSearchPanel" class="calendar-search-panel" hidden><label for="calendarSearchInput">Find in your travel history</label><input id="calendarSearchInput" type="search" placeholder="Country, hotel, flight, note or location…" autocomplete="off" aria-controls="calendarSearchResults"><div id="calendarSearchResults" role="region" aria-label="Travel history matches" aria-live="polite"></div></section><div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Select dates to add travel</strong><span>Choose a first date, then the last.</span></div>
               <div id="calendar" class="calendar" aria-live="polite"></div>
               <footer class="calendar-footnote"><span class="calendar-key calendar-schengen-key"><b aria-hidden="true"></b> Blue country edge: Schengen</span><span class="calendar-key"><i class="calendar-key-home" aria-hidden="true">⌂</i> Home</span><p>Use the categories above to show or hide entries. Shift-click a category to focus.</p></footer>
             </article>
@@ -329,7 +329,7 @@
   <script src="account-client.js?v=rollback-20261001-1&performance=20261007&offline=20261006&cleanup=20261007"></script>
   <script src="account-size.js?v=save-parity-20261014&daily=20261014"></script>
   <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006&cleanup=20261007&daily=20261014"></script>
-  <script src="app.js?calendar=20261017&trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008&daily=20261014"></script>
+  <script src="app.js?calendar=20261018&trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008&daily=20261014"></script>
 <script src="trip-planning-config.js?v=20261015"></script>
 <script src="trip-planning.js?v=20261015"></script>
 </body>

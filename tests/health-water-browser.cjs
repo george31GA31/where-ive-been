@@ -19,7 +19,7 @@ let browser;
   await page.route('**/*',r=>{const url=r.request().url();if(url.startsWith(origin))return r.continue();if(url.includes('overpass-api.de/')){const query=new URL(url).searchParams.get('data');return r.fulfill({json:{elements:query.includes('10,-77.5')?[{members:[{geometry:[{lat:10,lon:-77.5},{lat:10.2,lon:-77.7},{lat:11,lon:-78}]}]}]:[]}});}return r.abort();});
   await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
   await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendar?.ready&&window.HVEntryHealth&&window.HVJourneyMap);
-  await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
+  await page.locator('[data-calendar-select-range]').click();await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
   await page.waitForFunction(()=>HVJourneys.airports().length>0);
   const before=await page.evaluate(snapshot),stored=await page.evaluate(()=>JSON.stringify({...state,transports:state.transports.map(({resolvedRoutes,...record})=>record)}));
   const day=date=>page.locator('.calendar-day[data-calendar-date="2026-10-'+date+'"]');

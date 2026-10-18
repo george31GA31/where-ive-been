@@ -35,7 +35,7 @@ let browser;
   await page.route('**/*',r=>r.request().url().startsWith(origin)?r.continue():r.abort());
   await page.addInitScript(({data,theme})=>{localStorage.setItem('whereIveBeen.theme.v1',theme);if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(data));},{data:seed,theme});
   await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendar?.ready&&window.HVCalendarDetails);
-  await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
+  await page.locator('[data-calendar-select-range]').click();await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
   await page.waitForFunction(()=>[...document.querySelectorAll('#calendar img')].every(i=>!i.getClientRects().length||i.getBoundingClientRect().top>=innerHeight||i.complete));
   const initial=await page.evaluate(snapshot),stored=await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2'));
   const day=date=>page.locator('.calendar-day[data-calendar-date="2026-10-'+date+'"]');
@@ -72,7 +72,7 @@ let browser;
   assert.equal(await day('07').locator('.calendar-day-transport').count(),2);assert.match(await day('07').locator('[data-calendar-edit-transport=reference-flight]').getAttribute('aria-label'),/ALC.*ALG/);
   await day('07').locator('[data-calendar-edit-transport=reference-flight]').click();await page.locator('#calendarJourneyDetail [data-calendar-edit-transport=reference-flight]').click();await page.locator('#transportForm').waitFor();assert.equal(await page.locator('#transportForm [name=bookingReference]').inputValue(),'KEEP-FLIGHT');await page.locator('[data-close-transport]').first().click();await page.locator('[data-calendar-close-date]').click();
   await page.locator('[data-calendar-select-range]').click();await day('10').locator('.day-number').click();await day('12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);await page.locator('[data-calendar-close-date]').click();
-  await day('07').locator('.day-number').focus();await page.keyboard.press('Enter');assert.match(await page.locator('#calendarJourneyDetail').innerText(),/Ireland/);assert.match(await page.locator('#calendarJourneyDetail').innerText(),/United Kingdom/);await page.locator('[data-calendar-close-date]').click();
+  await page.locator('[data-calendar-select-range]').click();await day('07').locator('.day-number').focus();await page.keyboard.press('Enter');assert.match(await page.locator('#calendarJourneyDetail').innerText(),/Ireland/);assert.match(await page.locator('#calendarJourneyDetail').innerText(),/United Kingdom/);await page.locator('[data-calendar-close-date]').click();
   assert.equal(await page.evaluate(snapshot),initial,'Rendering, focus, selection and cancelled edits preserve records');assert.equal(await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2')),stored,'No stored payload was rewritten');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Calendar adds no horizontal scrolling');assert.deepEqual(errors,[]);
   await page.close();console.log(`Calendar cells verified at ${width}px in ${theme} theme.`);
  }

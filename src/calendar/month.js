@@ -15,6 +15,38 @@ function renderCalendarLegend(layers) {
   if (reset) reset.hidden = calendarKinds.every(([key]) => layers[key] !== false);
 }
 
+// Selection changes touch only the existing date nodes, never rebuild record lanes.
+function updateDateSelection(renderDetail = true) {
+  const end = calendarSelectionEnd || calendarSelectionStart;
+  qa('#calendar .calendar-day').forEach(day => {
+    const date = day.dataset.calendarDate;
+    const selected = !!calendarSelectionStart && date >= calendarSelectionStart && date <= end;
+    day.classList.toggle('selection-range', selected);
+    day.classList.toggle('selection-start', date === calendarSelectionStart);
+    day.classList.toggle('selection-end', date === calendarSelectionEnd);
+    const button=q('.day-number', day);
+    button?.setAttribute('aria-pressed', String(selected));
+    button?.setAttribute('aria-label', `${rangeMode ? 'Select' : 'Explore'} ${dateText(date)}`);
+  });
+  const info = $('calendarSelectionInfo');
+  if (info) {
+    info.className = 'calendar-selection-info' + (calendarSelectionEnd ? ' complete' : calendarSelectionStart ? ' active' : '');
+    info.innerHTML = calendarSelectionEnd
+      ? `<strong>${E(dateRangeText(calendarSelectionStart,calendarSelectionEnd))}</strong><span>${durationText(calendarSelectionStart,calendarSelectionEnd)} selected · choose what to add.</span>`
+      : calendarSelectionStart && rangeSelecting
+        ? `<strong>${E(dateText(calendarSelectionStart))} selected</strong><span>Choose the last date, or the same date for one day.</span><button type="button" class="text-btn" data-calendar-explore-selected>Explore day</button>`
+        : `<strong>${rangeMode ? 'Select dates to add travel' : 'Your journey, day by day'}</strong><span>${rangeMode ? 'Choose a first date, then the last. Turn off Select range to open days with one click.' : 'Select a day to explore. Turn on Select range to add across dates.'}</span>`;
+    if(calendarSelectionStart)info.innerHTML += '<button type="button" class="text-btn" data-calendar-cancel-range>Cancel</button>';
+    if(calendarKinds.some(([key]) => visibleLayers()[key] === false))info.innerHTML += '<button type="button" class="text-btn" data-calendar-show-all>Show all</button>';
+  }
+  const clear = $('clearCalendarSelectionBtn');
+  if(clear){clear.hidden=true;clear.disabled=!calendarSelectionStart;}
+  q('[data-calendar-select-range]')?.setAttribute('aria-pressed', String(rangeMode));
+  const hover=q('[data-calendar-hover-previews]');
+  if(hover)hover.checked=state.visualLayers?.calendar?.hoverPreviews!==false;
+  if(renderDetail){window.HVCalendarDetails?.hide();renderJourneyDetail();}
+}
+
 function countryRow(countries, date) {
   if (!countries.length) return '';
   const visible = countries.slice(0, 2), extra = countries.length - visible.length;
@@ -76,12 +108,7 @@ function renderMonth() {
   }
   window.HVCalendarDetails?.hide();
   calendar.innerHTML = html;
-  if (typeof updateCalendarSelectionUI === 'function') updateCalendarSelectionUI();
-  const info = $('calendarSelectionInfo');
-  if (info) info.innerHTML = rangeSelecting ? `<strong>${calendarSelectionStart ? 'Choose the last day' : 'Choose the first day'}</strong><span>Select dates in the month. Escape cancels.</span>` : calendarSelectionEnd ? `<strong>${E(dateRangeText(calendarSelectionStart,calendarSelectionEnd))}</strong><span>Selected range · add travel from the explorer.</span>` : '<strong>Your journey, day by day</strong><span>Select a day to explore. Hover an entry for a preview.</span>';
-  if(info && calendarKinds.some(([key])=>layers[key]===false))info.innerHTML += '<button type="button" class="text-btn" data-calendar-show-all>Show all</button>';
-  q('[data-calendar-select-range]')?.setAttribute('aria-pressed',String(rangeSelecting));
-  renderJourneyDetail();
+  updateDateSelection();
   if (focusDate) calendar.querySelector(`[data-calendar-date-select="${CSS.escape(focusDate)}"]`)?.focus({preventScroll:true});
   window.dispatchEvent(new CustomEvent('hv-calendar-rendered'));
 }
@@ -101,29 +128,40 @@ function focusCalendarDetail() {
   }
 }
 
-function selectDate(date, extend = false) {
+function selectDate(date) {
+  if(!HVJourney.validDate(date))return;
   detailReturnFocus = document.activeElement;
   selectedEntry = null;
   selectedJourneyKey = '';
   dateAction = '';
-  if (rangeSelecting || extend) {
-    if (!calendarSelectionStart || calendarSelectionEnd) {
-      calendarSelectionStart = date;
-      calendarSelectionEnd = null;
-      selectedDate = '';
-    } else {
-      const first = calendarSelectionStart;
-      calendarSelectionStart = first < date ? first : date;
-      calendarSelectionEnd = first < date ? date : first;
-      selectedDate = calendarSelectionStart;
-      rangeSelecting = false;
-    }
-  } else {
-    selectedDate = date;
+  rangeSelecting = false;
+  selectedDate = date;
+  calendarSelectionStart = date;
+  calendarSelectionEnd = null;
+  updateDateSelection();
+  focusCalendarDetail();
+}
+
+function pickCalendarDate(date, extend = false) {
+  if(!HVJourney.validDate(date))return;
+  if(!rangeMode && !extend && !rangeSelecting)return selectDate(date);
+  detailReturnFocus = document.activeElement;
+  selectedEntry = null;
+  selectedJourneyKey = '';
+  dateAction = '';
+  if (!calendarSelectionStart || calendarSelectionEnd || (!rangeSelecting && !extend)) {
     calendarSelectionStart = date;
     calendarSelectionEnd = null;
+    selectedDate = '';
+    rangeSelecting = true;
+  } else {
+    const first = calendarSelectionStart;
+    calendarSelectionStart = first < date ? first : date;
+    calendarSelectionEnd = first < date ? date : first;
+    selectedDate = calendarSelectionStart;
+    rangeSelecting = false;
   }
-  renderMonth();
+  updateDateSelection();
   focusCalendarDetail();
 }
 
