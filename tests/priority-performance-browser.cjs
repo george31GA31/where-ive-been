@@ -28,9 +28,13 @@ let browser;const reports=[];
   for(const pass of [1,2])for(const view of ['calendar','stats','dashboard','countries'])metrics.push(await page.evaluate(async({view,pass})=>{const start=performance.now();switchView(view);const handler=performance.now()-start;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));return {view,pass,handlerMs:Math.round(handler),paintMs:Math.round(performance.now()-start)};},{view,pass}));
   for(const pass of [1,2])metrics.push(await page.evaluate(async pass=>{const start=performance.now();HVCountryTracker.open('tcc');const handler=performance.now()-start;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));const result={view:'tcc',pass,handlerMs:Math.round(handler),paintMs:Math.round(performance.now()-start)};document.querySelector('.country-tracker-dialog').close();return result;},pass));
   await page.evaluate(()=>{switchView('calendar');calendarCursor=new Date(Date.UTC(2018,0,1));renderCalendar();});
-  for(const action of ['day-details','next-month','choose-year','year-overview','next-year','tcc-search'])metrics.push(await page.evaluate(async action=>{
+  for(const action of ['day-details','open-entry','close-day','range-start','range-end','cancel-range','next-month','choose-year','year-overview','next-year','tcc-search'])metrics.push(await page.evaluate(async action=>{
    const start=performance.now();
-   if(action==='day-details')document.querySelector('[data-calendar-date-select="2018-01-01"]').click();
+   if(action==='day-details')document.querySelector('[data-calendar-day-detail="2018-01-01"]').click();
+   if(action==='open-entry')document.querySelector('#calendarJourneyDetail [data-calendar-entry=accommodation]').click();
+   if(action==='close-day'||action==='cancel-range')HVCalendar.clearSelection();
+   if(action==='range-start'){document.querySelector('[data-calendar-select-range][aria-pressed=false]')?.click();document.querySelector('[data-calendar-date-select="2018-01-08"]').click();}
+   if(action==='range-end')document.querySelector('[data-calendar-date-select="2018-01-14"]').click();
    if(action==='next-month')document.getElementById('nextMonth').click();
    if(action==='choose-year'){const input=document.getElementById('calendarYearJump');input.value='2019';input.dispatchEvent(new Event('change',{bubbles:true}));}
    if(action==='year-overview')document.querySelector('[data-calendar-view="year"]').click();

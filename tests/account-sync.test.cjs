@@ -4,6 +4,17 @@ const M = require('../account-model.js');
 const Sync = require('../account-sync.js');
 const Logos = require('../accommodation-logos.js');
 const state = () => ({version:2, stays:[{id:'s1',countryCode:'GB',start:'2026-01-01',end:'2026-01-02',notes:'one',profileId:'p1'}], profiles:[{id:'p1',name:'Me',citizenships:['GB'],enabledRules:['schengen']}], residences:[], activeProfileId:'p1', excludedCountryCodes:[]});
+test('Calendar hover preference merges with independent display settings and preserves travel records', () => {
+  const base={...state(),visualLayers:{calendar:{countries:true,accommodation:true},journeys:{transport:true}}};
+  const local=M.copy(base),remote=M.copy(base);
+  local.visualLayers.calendar.hoverPreviews=false;
+  remote.visualLayers.journeys.transport=false;
+  const result=M.merge(base,local,remote);
+  assert.deepEqual(result.conflicts,[]);
+  assert.deepEqual(result.data.visualLayers,{calendar:{countries:true,accommodation:true,hoverPreviews:false},journeys:{transport:false}});
+  assert.deepEqual(result.data.stays,base.stays);
+  assert.deepEqual(result.data.profiles,base.profiles);
+});
 class Storage {
   constructor() { this.items = new Map(); }
   get length() { return this.items.size; }

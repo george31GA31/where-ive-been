@@ -19,8 +19,18 @@ Calendar-specific note collection, record migration, account change or new depen
   organised as Countries, Accommodation, Transport, Notes, Locations. Desktop uses
   a non-modal floating drawer; mobile uses a bottom sheet. Existing native editors
   remain available, with their existing persistence and deletion safeguards.
-- `Select range` explicitly starts range selection. Date fields remain available in
-  the explorer. Arrow keys move focus between dates; Escape closes the active surface.
+- Date numbers and empty cell space default to two-click range selection. The first
+  click leaves the grid unobstructed; the second selects inclusive dates in either
+  direction and opens the add menu. Selecting the same date twice selects one day.
+  `Select range` toggles back to the existing one-click Day Explorer behaviour.
+  `Explore day` remains available independently. Date fields remain available in the
+  explorer. Arrow keys move focus; Escape, Cancel and clicking outside clear selection.
+  Selecting dates never invokes a journey planner, including the legacy click adapter.
+- `Hover previews` defaults on. The checkbox stores only
+  `visualLayers.calendar.hoverPreviews`, alongside existing display preferences.
+  Turning it off removes a current preview and pending timers. Mouse hover no longer
+  opens previews or highlights related records; keyboard focus and click/touch details
+  remain available. Category filters are still temporary.
 - The matching legend temporarily toggles categories. Shift-click isolates a category;
   Show all restores everything. These controls do not write a travel/account payload.
 - Search indexes scoped, dated records on demand. A result opens its actual month and
@@ -63,3 +73,23 @@ and preservation of pre-existing records, routes, identifiers and stored payload
 `npm run test:update`, `npm run check:build` and the vendor/country-import checks
 provide the existing broader release checks. Synthetic account fixtures and cloud
 responses exercise synchronization without accessing a real person's account.
+
+`tests/calendar-range-browser.cjs` adds real pointer/touch country creation for
+8–14 August, reverse ranges, cancellation, keyboard ranges, one-click day mode,
+preference persistence, hover suppression and restoration, and saved-data comparisons
+at 360, 390, 768, 1024 and 1440px in both themes. It also verifies that date selection
+and dismissal retain the original month DOM rather than rebuilding record lanes.
+
+## Responsiveness follow-up
+
+CPU sampling identified repeated month HTML construction, date-formatter creation and
+focus layout work during selection and dismissal. Selection now updates existing date
+classes, pressed states, the selection message and the detail surface only. The month
+is rebuilt when its records, month or category visibility change. The Calendar's two
+date formatters are reused, and detailed entry links use cached record/group membership
+and trip/note indexes instead of repeatedly scanning the complete history.
+
+Like-for-like synthetic browser measurements over 15 repetitions, with 8, 160 and 800
+records per main collection, reduced median single-day opening from 79–91ms to 6–7ms
+and dismissal from 39–48ms to about 2ms. These are controlled handler measurements,
+including the reset before opening, not field INP or a guarantee for every device.

@@ -1355,11 +1355,13 @@ function updateCalendarSelectionUI() {
   info.innerHTML = `<strong>${fmt(calendarSelectionStart)} to ${fmt(calendarSelectionEnd)}</strong><span>${plural(days, 'day')} selected.</span>`;
 }
 function clearCalendarSelection() {
+  if(window.HVCalendar?.clearSelection)return window.HVCalendar.clearSelection();
   calendarSelectionStart = null;
   calendarSelectionEnd = null;
   renderCalendar();
 }
 function handleCalendarDateClick(k) {
+  if(window.HVCalendar?.pickDate)return window.HVCalendar.pickDate(k);
   if (!calendarSelectionStart) {
     calendarSelectionStart = k;
     calendarSelectionEnd = null;
@@ -1381,15 +1383,6 @@ function handleCalendarDateClick(k) {
   calendarSelectionStart = a <= b ? a : b;
   calendarSelectionEnd = a <= b ? b : a;
   renderCalendar();
-  setTimeout(
-    () =>
-      openStayDialog(null, {
-        start: calendarSelectionStart,
-        end: calendarSelectionEnd,
-        source: 'calendar',
-      }),
-    0,
-  );
 }
 
 // Source: src/core/countries.js
