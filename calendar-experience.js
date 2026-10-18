@@ -49,7 +49,7 @@ const today = () => isoDate(new Date());
 const localDate = (value) => String(value || '').slice(0, 10);
 const days = (start, end) => (start && end ? Math.max(1, diffDays(start, end) + 1) : 0);
 const calendarDateFormat = new Intl.DateTimeFormat('en-GB', {day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-const dateText = (value) => (value ? calendarDateFormat.format(new Date(value+'T12:00:00Z')) : '—');
+const dateText = (value) => (HVJourney.validDate(value) ? calendarDateFormat.format(parseDate(value)) : value ? 'Date not recorded' : '—');
 const dateRangeText = (start, end) =>
   !start
     ? 'Dates to be added'

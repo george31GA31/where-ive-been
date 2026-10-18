@@ -24,10 +24,12 @@ let browser;
     page.on('pageerror', error => errors.push(error.message));
     await page.clock.install({time:new Date('2026-10-02T12:00:00Z')});
     await page.route('**/*', route => route.request().url().startsWith(origin) ? route.continue() : route.abort());
+    const seed=calendarHistory();
+    seed.accommodations.push({id:'legacy-invalid-date',profileId:'p',propertyName:'Legacy incomplete stay',checkIn:'2026-13-99',checkOut:'',notes:'Keep the original imported dates'});
     await page.addInitScript(({seed,theme}) => {
       if (!localStorage.getItem('whereIveBeen.data.v2')) localStorage.setItem('whereIveBeen.data.v2', JSON.stringify(seed));
       localStorage.setItem('whereIveBeen.theme.v1', theme);
-    }, {seed:calendarHistory(),theme});
+    }, {seed,theme});
     await page.goto(origin + '/#/calendar');
     await page.waitForFunction(() => window.HVCalendarDetails && window.HVCalendar?.ready && !document.querySelector('.app-shell').inert);
     await page.clock.runFor(500);
