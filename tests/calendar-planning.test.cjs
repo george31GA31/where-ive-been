@@ -78,3 +78,8 @@ test('concurrent date changes are resolved together rather than producing a back
   local.calendarPlans[0]=P.move(local.calendarPlans[0],40);remote.calendarPlans[0]=P.reschedule(remote.calendarPlans[0],'2026-11-29','2026-12-01');
   const merged=M.merge(baseData,local,remote,c=>c.local);assert.ok(merged.conflicts.some(c=>c.path.endsWith('.calendarTiming')));assert.equal(P.validate(merged.data.calendarPlans[0]),'');assert.deepEqual(merged.data.calendarPlans[0],local.calendarPlans[0]);
 });
+
+test('unrecognised planning categories cannot enter calendar projections',()=>{
+  const data=base();data.calendarPlans.push({id:'invalid',kind:'constructor',record:{id:'invalid-record',date:'2026-12-01'}});
+  assert.ok(P.validate(data.calendarPlans[0]));assert.deepEqual(P.visible(data),[]);
+});

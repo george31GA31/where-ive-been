@@ -21,14 +21,14 @@
     return [row.date,row.endDate || row.date];
   }
   function validate(plan) {
-    if (!plan || !collections[plan.kind] || !plan.record || typeof plan.id !== 'string' || !plan.id || typeof plan.record.id !== 'string' || !plan.record.id) return 'This plan is incomplete.';
+    if (!plan || !Object.hasOwn(collections,plan.kind) || !plan.record || typeof plan.id !== 'string' || !plan.id || typeof plan.record.id !== 'string' || !plan.record.id) return 'This plan is incomplete.';
     const [start,end] = range(plan.kind,plan.record);
     if (!J.validDate(start) || !J.validDate(end) || end < start) return 'Choose a valid start and end date.';
     const row = plan.record;
     if (plan.kind === 'country' && (!row.countryCode || !row.countryName)) return 'Choose a country from the list.';
     if (plan.kind === 'accommodation' && (!row.propertyName?.trim() || !row.location?.trim())) return 'Add the property and its location.';
     if (plan.kind === 'transport') {
-      if (!J.types[row.type] || !row.start?.name?.trim() || !row.end?.name?.trim()) return 'Add a transport type, departure and destination.';
+      if (!Object.hasOwn(J.types,row.type) || !row.start?.name?.trim() || !row.end?.name?.trim()) return 'Add a transport type, departure and destination.';
       if (!row.dateOnly && (!J.validLocal(row.startLocal) || !J.validLocal(row.endLocal))) return 'Add valid local departure and arrival times.';
       for (const leg of row.legs || []) {
         if (!J.validLocal(leg.startLocal) || !J.validLocal(leg.endLocal) || [leg.startLocal,leg.endLocal].some(value=>date(value)<start||date(value)>end)) return 'Keep all connecting legs within these dates, or edit the individual legs after confirming.';
