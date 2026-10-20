@@ -65,7 +65,7 @@
     return reschedule(plan,next(start,amount),next(end,amount));
   }
   function visible(data,profileId=data.activeProfileId) {
-    return J.scoped(Array.isArray(data.calendarPlans)?data.calendarPlans:[],profileId).filter(plan=>!validate(plan));
+    return (Array.isArray(data.calendarPlans)?data.calendarPlans:[]).filter(plan=>!validate(plan)&&J.scoped([plan.record],profileId).length>0);
   }
   function makeTentative(data,kind,id,planId) {
     const key=collections[kind], record=(data[key]||[]).find(row=>row.id===id);

@@ -83,3 +83,14 @@ test('unrecognised planning categories cannot enter calendar projections',()=>{
   const data=base();data.calendarPlans.push({id:'invalid',kind:'constructor',record:{id:'invalid-record',date:'2026-12-01'}});
   assert.ok(P.validate(data.calendarPlans[0]));assert.deepEqual(P.visible(data),[]);
 });
+
+test('tentative visibility follows the complete original traveller sharing settings',()=>{
+  const data=base(),plan=country();plan.record.profileIds=['secondary'];data.calendarPlans=[plan];
+  assert.equal(P.visible(data,'p').length,1);assert.equal(P.visible(data,'secondary').length,1);assert.equal(P.visible(data,'unrelated').length,0);assert.equal(P.visible(data,'all').length,1);
+});
+
+test('import remaps secondary traveller references inside tentative records',()=>{
+  const remote=base(),source=base(),shared={name:'Second traveller',citizenships:[],enabledRules:['schengen']};
+  remote.profiles.push({...shared,id:'account-secondary'});source.profiles.push({...shared,id:'secondary'});const plan=country();plan.record.profileIds=['secondary'];source.calendarPlans=[plan];
+  const imported=M.importData(remote,source).data;assert.deepEqual(imported.calendarPlans[0].record.profileIds,['account-secondary']);assert.equal(P.visible(imported,'account-secondary').length,1);
+});

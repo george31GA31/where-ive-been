@@ -146,6 +146,7 @@
         if (key === 'calendarPlans') {
           const remap = row => {
             if(row.profileId) row.profileId=profileIds.get(row.profileId)||row.profileId;
+            if(Array.isArray(row.profileIds))row.profileIds=row.profileIds.map(id=>profileIds.get(id)||id);
             if(row.tripId) row.tripId=tripIds.get(row.tripId)||row.tripId;
             if(row.relatedId) row.relatedId=({country:stayIds,transport:transportIds,accommodation:accommodationIds,location:locationIds}[row.relatedType]?.get(row.relatedId))||row.relatedId;
           };
