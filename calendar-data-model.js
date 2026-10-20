@@ -16,7 +16,7 @@
       const places=new D.Intervals(scope(data.placeVisits).filter(r=>r.category==='locations'&&r.status==='visited'&&!J.hiddenHomeRecord(data,r)),r=>r.date,r=>r.endDate||r.date);
         return {stays,hotels,transports,places};
       });
-      const notes=new Map();for(const note of scope(Array.isArray(data.notes)?data.notes:[])){if(!J.validDate(note.date)||note.date<start||note.date>end)continue;if(!notes.has(note.date))notes.set(note.date,[]);notes.get(note.date).push(note);}
+      const notes=new Map();for(const note of scope(Array.isArray(data.notes)?data.notes:[])){if(!J.validDate(note.date))continue;const last=J.validDate(note.endDate)&&note.endDate>=note.date?note.endDate:note.date;if(last<start||note.date>end)continue;for(let day=note.date<start?start:note.date;day<=last&&day<=end;day=next(day)){if(!notes.has(day))notes.set(day,[]);notes.get(day).push(note);}}
       const dates=new Map();
       for(let n=0;n<count;n++){
         const date=next(start,n),all=stays.overlap(date),travel=all.filter(r=>J.isTravelStay(data,r,date,r.profileId||profileId)),homes=all.filter(r=>!J.isDomesticHoliday(r)&&J.isHome(data,r.countryCode,date,r.profileId||profileId));
