@@ -1,7 +1,5 @@
 /* Tentative entries use the existing calendar lanes and neutral theme colours. */
 #calendarView {overflow-anchor:none}
-body #calendarFloatingDetail.calendar-floating-detail {pointer-events:none}
-.calendar-floating-detail :is(button,a) {pointer-events:auto}
 #calendar [data-calendar-plan-id],.calendar-explorer-row[data-calendar-plan-id] {
   position:relative;
   background:color-mix(in srgb,var(--text,#343840) 7%,var(--panel,#fff))!important;

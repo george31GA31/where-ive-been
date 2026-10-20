@@ -139,6 +139,7 @@
     tip.style.top=Math.max(gap,Math.min(innerHeight-rect.height-gap,top))+'px';
   }
   function show(button) {
+    if(document.getElementById('calendarJourneyDetail')?.hidden===false){hide();return;}
     if(!button||button===active||!button.isConnected||matchMedia('(max-width:700px)').matches)return;
     hide();
     const content=entry(button.dataset.calendarEntry,button.dataset.calendarEntryId,button.dataset.calendarContextDate);
