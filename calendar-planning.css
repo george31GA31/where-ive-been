@@ -1,0 +1,84 @@
+/* Tentative entries use the existing calendar lanes and neutral theme colours. */
+#calendarView {overflow-anchor:none}
+body #calendarFloatingDetail.calendar-floating-detail {pointer-events:none}
+.calendar-floating-detail :is(button,a) {pointer-events:auto}
+#calendar [data-calendar-plan-id],.calendar-explorer-row[data-calendar-plan-id] {
+  position:relative;
+  background:color-mix(in srgb,var(--text,#343840) 7%,var(--panel,#fff))!important;
+  color:var(--muted,#626976)!important;
+  border:1px dashed color-mix(in srgb,var(--text,#343840) 30%,transparent)!important;
+  box-shadow:none!important;
+  cursor:grab;
+  touch-action:none;
+}
+#calendar [data-calendar-plan-id] img {filter:grayscale(1);opacity:.65}
+#calendar [data-calendar-plan-id] .calendar-schengen {display:none}
+#calendar [data-calendar-plan-id]::before {background:transparent!important}
+.calendar-plan-mark {font-size:10px;opacity:.8;flex-shrink:0}
+.calendar-plan-handle {position:absolute;top:0;bottom:0;width:12px;z-index:3;cursor:ew-resize;touch-action:none}
+.calendar-plan-handle::after {content:'';position:absolute;top:25%;bottom:25%;width:2px;border-radius:2px;background:currentColor;opacity:.55}
+.calendar-plan-handle.plan-start {left:0}
+.calendar-plan-handle.plan-end {right:0}
+.calendar-plan-handle.plan-start::after {left:2px}
+.calendar-plan-handle.plan-end::after {right:2px}
+#calendar [data-calendar-plan-id]:has(.plan-start) {padding-left:12px}
+#calendar [data-calendar-plan-id]:has(.plan-end) {padding-right:12px}
+.calendar-plan-toggle small {font-variant-numeric:tabular-nums}
+.calendar-plan-dialog {max-width:620px;width:calc(100% - 24px);max-height:90dvh;padding:0}
+.calendar-plan-dialog .dialog-card {max-width:none;max-height:88dvh;overflow:auto;padding:24px;display:grid;gap:16px}
+.calendar-plan-dialog .field {min-width:0}
+.calendar-plan-dialog input,.calendar-plan-dialog textarea,.calendar-plan-dialog select {max-width:100%;width:100%;box-sizing:border-box}
+.calendar-plan-dialog .form-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.calendar-plan-head {display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.calendar-plan-head h2 {margin:4px 0 8px;overflow-wrap:anywhere}
+.calendar-plan-head p {margin:0}
+.calendar-plan-head .icon-btn {flex-shrink:0}
+.calendar-plan-actions,.calendar-plan-move {display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.calendar-plan-move {border-top:1px solid var(--border,#ddd);padding-top:16px}
+.calendar-plan-move>span {flex-basis:100%;font-size:13px;color:var(--muted,#626976)}
+.calendar-plan-notes {white-space:pre-wrap;overflow-wrap:anywhere}
+.calendar-plan-dialog .travel-search-results:empty {display:none}
+.calendar-plan-notice {pointer-events:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:1200;max-width:calc(100vw - 28px);width:max-content;display:flex;align-items:center;gap:16px;padding:12px 18px;border:1px solid var(--border,#ccc);border-radius:10px;background:var(--panel,#fff);color:var(--text,#333);box-shadow:0 6px 30px #0002;font-size:13px}
+.calendar-plan-notice[hidden] {display:none}
+.calendar-plan-notice.is-error {border-color:#b54d4d}
+.calendar-plan-notice button {pointer-events:auto;flex-shrink:0}
+.calendar-plan-drag-preview {pointer-events:none;position:fixed;z-index:3000;width:230px;padding:12px;border-radius:8px;background:var(--panel,#fff);color:var(--text,#333);box-shadow:0 4px 24px #0004;border:1px solid var(--border,#ccc);font-size:13px}
+.calendar-plan-drag-preview.is-error {border-color:#b54d4d}
+.calendar-plan-dragging,.calendar-plan-dragging * {cursor:grabbing!important;user-select:none!important}
+#calendar .calendar-plan-drop-range {background:color-mix(in srgb,var(--text,#343840) 10%,var(--panel,#fff))!important;outline:2px dashed var(--muted,#626976);outline-offset:-3px}
+.calendar-plan-range-row {padding:10px 12px;display:flex;align-items:center;gap:12px}
+.calendar-plan-range-row>button:first-child {flex:1;text-align:left;min-width:0}
+.calendar-plan-range-row strong,.calendar-plan-range-row small {display:block;overflow-wrap:anywhere}
+.calendar-plan-range-row small {color:var(--muted,#626976);font-size:12px;margin-top:4px}
+#calendarView .plan-control-short {display:none}
+@media(min-width:701px) and (max-width:1200px) {
+  body #calendarView .calendar-toolbar-actions {gap:5px}
+  body #calendarView .calendar-layer-switch button {padding:5px 4px;font-size:10px;gap:3px}
+  #calendarView .calendar-toolbar-actions .plan-control-wide {display:none}
+  #calendarView .calendar-toolbar-actions .plan-control-short {display:inline}
+}
+@media(min-width:701px) and (max-width:1500px) {
+  body #calendarView .calendar-toolbar {display:grid;grid-template-columns:minmax(0,1fr) auto}
+  body #calendarView .calendar-toolbar-primary {grid-column:1;grid-row:1}
+  body #calendarView .calendar-view-switch {grid-column:2;grid-row:1}
+  body #calendarView .calendar-toolbar-actions {grid-column:1/-1;grid-row:2}
+}
+@media(max-width:700px) {
+  body #calendarView .calendar-toolbar .calendar-view-switch {grid-row:4;grid-column:3;min-width:140px}
+  body #calendarView .calendar-toolbar-actions .calendar-plan-toggle {grid-row:4;grid-column:2;justify-self:end}
+  body #calendarView .calendar-toolbar-actions [data-add-tentative] {grid-row:4;grid-column:1;justify-self:start;font-size:10px;padding:5px 7px;min-height:30px}
+  #calendarView .plan-control-wide {display:none}
+  #calendarView .plan-control-short {display:inline}
+}
+@media(max-width:600px) {
+  #calendarView .calendar-toolbar-actions .calendar-plan-toggle {grid-row:4;grid-column:2;justify-self:end}
+  #calendarView [data-add-tentative] {grid-row:4;grid-column:1;justify-self:start}
+  .calendar-plan-dialog .dialog-card {padding:18px;gap:14px}
+  .calendar-plan-dialog button {min-height:44px}
+  .calendar-plan-notice {gap:8px;font-size:12px;padding:10px 12px}
+  .calendar-plan-notice>span {max-width:55vw}
+  .calendar-plan-mark {display:none}
+  .calendar-plan-handle {width:10px}
+  #calendar [data-calendar-plan-id]:has(.plan-start) {padding-left:8px}
+  #calendar [data-calendar-plan-id]:has(.plan-end) {padding-right:8px}
+}

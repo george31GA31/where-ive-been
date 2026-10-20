@@ -11,6 +11,7 @@
     'transports',
     'transportOperators',
     'accommodations',
+    'calendarPlans',
     'savedPlaces',
     'placeVisits',
     'checklists',

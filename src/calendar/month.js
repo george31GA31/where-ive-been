@@ -52,14 +52,14 @@ function countryRow(countries, date) {
   const visible = countries.slice(0, 2), extra = countries.length - visible.length;
   return `<div class="calendar-country-row ${countries.length > 1 ? 'calendar-country-split' : ''}" style="grid-template-columns:repeat(${visible.length},minmax(0,1fr))${extra ? ' 23px' : ''}">${visible.map(({record:s}) => {
     const schengen = SCHENGEN.has(s.countryCode);
-    return `<div class="calendar-country-section"><button type="button" class="calendar-journey-chip${schengen ? ' is-schengen' : ''}" data-calendar-edit-country="${E(s.id)}" ${entryAttributes('country',s.id,date)} aria-label="${E(s.countryName)}${schengen ? ' · Schengen Area' : ''}">${flagHtml(s.domesticDestination || s.countryCode,'calendar-chip-flag')}<span class="calendar-journey-copy"><strong class="country-name-full">${E(s.countryName)}</strong><strong class="country-name-compact" aria-hidden="true">${E(s.domesticDestination ? s.countryName.slice(0,3) : s.countryCode)}</strong></span>${schengen ? '<span class="calendar-schengen in" aria-hidden="true"></span>' : ''}</button>${window.HVVisaNotices?.indicator(s) || ''}</div>`;
+    return `<div class="calendar-country-section"><button type="button" class="calendar-journey-chip${schengen ? ' is-schengen' : ''}" data-calendar-edit-country="${E(s.id)}" ${entryAttributes('country',s.id,date)} aria-label="${E(s.countryName)}${schengen ? ' · Schengen Area' : ''}">${flagHtml(s.domesticDestination || s.countryCode,'calendar-chip-flag')}<span class="calendar-journey-copy"><strong class="country-name-full">${E(s.countryName)}</strong><strong class="country-name-compact" aria-hidden="true">${E(s.domesticDestination ? s.countryName.slice(0,3) : s.countryCode)}</strong></span>${schengen ? '<span class="calendar-schengen in" aria-hidden="true"></span>' : ''}${window.HVCalendarPlanning?.handles('country',s,date)||''}</button>${window.HVCalendarPlanning?.planFor('country',s.id) ? '' : window.HVVisaNotices?.indicator(s) || ''}</div>`;
   }).join('')}${extra ? `<button type="button" class="calendar-more-countries" data-calendar-countries-detail="${date}" aria-label="Explore all ${countries.length} countries on ${E(dateText(date))}"><span class="calendar-more-desktop">+${extra}</span><span class="calendar-more-mobile">+${countries.length-1}</span></button>` : ''}</div>`;
 }
 
 function calendarTransportChip(record, date) {
   const label = HVJourneys.transportLabel(record);
   const compact = record.type === 'flight' ? HVJourney.flightLegs(record).flatMap((leg,index) => index ? [HVJourney.airportLabel(leg.end,HVJourneys.airportFor)] : [HVJourney.airportLabel(leg.start,HVJourneys.airportFor),HVJourney.airportLabel(leg.end,HVJourneys.airportFor)]).filter(Boolean).join(' → ') : label;
-  return `<button type="button" class="calendar-day-transport" data-calendar-edit-transport="${E(record.id)}" ${entryAttributes('transport',record.id,date)} aria-label="${E(label)}"><span class="calendar-transport-cue" aria-hidden="true">${transportIcon(record.type)}</span><span class="calendar-route-label">${E(compact)}</span></button>`;
+  return `<button type="button" class="calendar-day-transport" data-calendar-edit-transport="${E(record.id)}" ${entryAttributes('transport',record.id,date)} aria-label="${E(label)}"><span class="calendar-transport-cue" aria-hidden="true">${transportIcon(record.type)}</span><span class="calendar-route-label">${E(compact)}</span>${window.HVCalendarPlanning?.handles('transport',record,date)||''}</button>`;
 }
 
 function renderMonth() {
@@ -73,7 +73,7 @@ function renderMonth() {
   const layers = visibleLayers(), current = today(), groups = buildJourneys();
   renderCalendarLegend(layers);
   window.HVCalendar._groups = groups;
-  const dateWindow = HVCalendarData.window(state,dayKey(start),42);
+  const dateWindow = (window.HVCalendarPlanning?.window(dayKey(start),42)||HVCalendarData.window(state,dayKey(start),42));
   $('calendarTitle').textContent = cursor.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'});
   if ($('calendarMonthJump')) $('calendarMonthJump').value = String(cursor.getUTCMonth());
   if ($('calendarYearJump')) $('calendarYearJump').value = String(cursor.getUTCFullYear());
@@ -95,8 +95,8 @@ function renderMonth() {
     const notes = layers.notes ? day.notes : [], places = layers.locations ? day.places : [];
     const selection = calendarSelectionStart && date >= calendarSelectionStart && date <= (calendarSelectionEnd||calendarSelectionStart);
     const lodging = renderLodgingLane(segments,date);
-    const noteChips = notes.slice(0,1).map(note => `<button type="button" class="calendar-note-chip" ${entryAttributes('note',note.id,date)}><span aria-hidden="true">✎</span><span>${E(note.title || note.body || 'Note')}</span></button>`).join('');
-    const placeChips = (notes.length ? [] : places.slice(0,1)).map(place => `<button type="button" class="calendar-place-chip" ${entryAttributes('location',place.id,date)}><span aria-hidden="true">◎</span><span>${E(HVAddress.field(place.place,'name') || 'Saved location')}</span></button>`).join('');
+    const noteChips = notes.slice(0,1).map(note => `<button type="button" class="calendar-note-chip" ${entryAttributes('note',note.id,date)}><span aria-hidden="true">✎</span><span>${E(note.title || note.body || 'Note')}</span>${window.HVCalendarPlanning?.handles('note',note,date)||''}</button>`).join('');
+    const placeChips = (notes.length ? [] : places.slice(0,1)).map(place => `<button type="button" class="calendar-place-chip" ${entryAttributes('location',place.id,date)}><span aria-hidden="true">◎</span><span>${E(HVAddress.field(place.place,'name') || 'Saved location')}</span>${window.HVCalendarPlanning?.handles('location',place,date)||''}</button>`).join('');
     const count = countries.length+segments.length+transports.length+notes.length+places.length;
     const hiddenCount = Math.max(0,countries.length-2)+Math.max(0,transports.length-2)+Math.max(0,notes.length-1)+Math.max(0,places.length-(notes.length?0:1));
     const status = day.status === 'home' ? `<button type="button" class="calendar-home-icon" data-calendar-home-select="${date}" aria-label="Home on ${E(dateText(date))}">⌂</button>` : '';
@@ -115,9 +115,14 @@ function renderMonth() {
 
 function renderLodgingLane(segments,date) {
   if (!segments.length) return '';
+  const tentative=segments.filter(({record})=>window.HVCalendarPlanning?.planFor('accommodation',record.id));
+  if(tentative.length&&segments.some(segment=>segment.complex)){
+    const confirmed=segments.filter(({record})=>!window.HVCalendarPlanning?.planFor('accommodation',record.id));
+    return renderLodgingLane(confirmed,date)+tentative.map(({record})=>`<button type="button" class="calendar-lodging-half occupied" ${entryAttributes('accommodation',record.id,date)}><small class="calendar-lodging-name">${E(record.propertyName)}</small>${window.HVCalendarPlanning.handles('accommodation',record,date)}</button>`).join('');
+  }
   const labels = {checkout:'Check-out',checkin:'Check-in',continuing:'Staying','same-day':'Same-day check-in and check-out',incomplete:'Dates incomplete'};
   if (segments.some(segment => segment.complex)) return `<button type="button" class="calendar-lodging-summary" data-calendar-lodging-detail="${date}" aria-label="${E(segments.map(({record,phase}) => `${record.propertyName || 'Accommodation'} · ${labels[phase]}`).join('; '))}. Explore accommodation"><span aria-hidden="true">⌂</span> ${segments.length === 1 && segments[0].phase === 'incomplete' ? 'Dates needed' : segments.length+' '+(segments.length===1 ? 'stay' : 'stays')} <span class="lodging-summary-detail">· explore</span></button>`;
-  return `<div class="calendar-lodging-row" role="group" aria-label="Accommodation on ${date}: ${E(segments.map(({record})=>[record.propertyName,HVAddress.text(record.location)].filter(Boolean).join(', ')).join('; '))}" style="grid-template-columns:repeat(2,minmax(0,1fr))">${[...segments].sort((a,b) => a.column-b.column).map(({record:a,phase,column,span}) => `<button type="button" class="calendar-lodging-half occupied ${phase === 'checkout' ? 'lodging-end' : phase === 'checkin' ? 'lodging-start' : 'lodging-continuing'}" style="grid-column:${column}/span ${span}" data-calendar-edit-accommodation="${E(a.id)}" ${entryAttributes('accommodation',a.id,date)} aria-label="${E(a.propertyName || 'Accommodation')} · ${labels[phase]}"><span class="${phase === 'checkout' || phase === 'checkin' ? 'calendar-lodging-state' : 'calendar-lodging-cue'}" aria-hidden="true">${phase === 'checkout' ? 'Out' : phase === 'checkin' ? 'In' : '⌂'}</span><small class="calendar-lodging-name">${E(a.propertyName || 'Accommodation')}</small></button>`).join('')}</div>`;
+  return `<div class="calendar-lodging-row" role="group" aria-label="Accommodation on ${date}: ${E(segments.map(({record})=>[record.propertyName,HVAddress.text(record.location)].filter(Boolean).join(', ')).join('; '))}" style="grid-template-columns:repeat(2,minmax(0,1fr))">${[...segments].sort((a,b) => a.column-b.column).map(({record:a,phase,column,span}) => `<button type="button" class="calendar-lodging-half occupied ${phase === 'checkout' ? 'lodging-end' : phase === 'checkin' ? 'lodging-start' : 'lodging-continuing'}" style="grid-column:${column}/span ${span}" data-calendar-edit-accommodation="${E(a.id)}" ${entryAttributes('accommodation',a.id,date)} aria-label="${E(a.propertyName || 'Accommodation')} · ${labels[phase]}"><span class="${phase === 'checkout' || phase === 'checkin' ? 'calendar-lodging-state' : 'calendar-lodging-cue'}" aria-hidden="true">${phase === 'checkout' ? 'Out' : phase === 'checkin' ? 'In' : '⌂'}</span><small class="calendar-lodging-name">${E(a.propertyName || 'Accommodation')}</small>${window.HVCalendarPlanning?.handles('accommodation',a,date)||''}</button>`).join('')}</div>`;
 }
 
 function focusCalendarDetail() {

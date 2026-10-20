@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const states=new WeakMap(),heavy=new Set(['resolvedRoutes','geometry','coordinates','polyline','src','artwork','logoDraft']);
-  const collections=['trips','stays','profiles','residences','transports','transportOperators','accommodations','savedPlaces','placeVisits','notes','checklists','budgets','expenses','roadTrips','currencyRates','currencyPreferences','manualCountryVisits','tccVisits','visaAcknowledgements','calendarNotes','visualLayers','excludedCountryCodes','countryCountExcludedCodes','countryCountIncludedExtraCodes'];
+  const collections=['trips','stays','profiles','residences','transports','transportOperators','accommodations','savedPlaces','placeVisits','notes','checklists','budgets','expenses','roadTrips','currencyRates','currencyPreferences','manualCountryVisits','tccVisits','visaAcknowledgements','calendarNotes','calendarPlans','visualLayers','excludedCountryCodes','countryCountExcludedCodes','countryCountIncludedExtraCodes'];
   function entry(data){let saved=states.get(data);if(!saved){saved={fields:new Map(),memo:new Map(),evaluating:0};states.set(data,saved);}return saved;}
   const fingerprint=value=>JSON.stringify(value,(key,item)=>heavy.has(key)?undefined:item);
   function observe(data,keys=collections){

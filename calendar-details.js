@@ -79,7 +79,7 @@
     }).join('')}<p class="calendar-section-hint">Times and dates are local to each stop.</p><dl class="calendar-profile-facts">${fact('Booking reference',row.bookingReference)}${fact('Seat',row.seat)}</dl>${tripLine(row)}${notes(row.notes)}</div>`;
   }
   function note(row) {
-    return heading('note',row.title||'Note',[dateText(row.date),row.category].filter(Boolean).join(' · '),'✎')+notes(row.body)+tripLine(row);
+    return heading('note',row.title||'Note',[row.endDate&&row.endDate!==row.date?dateText(row.date)+' to '+dateText(row.endDate):dateText(row.date),row.category].filter(Boolean).join(' · '),'✎')+notes(row.body)+tripLine(row);
   }
   function location(row) {
     return heading('location',HVAddress.field(row.place,'name')||'Saved location',row.place?.type||'Recorded place','◎')+`<dl class="calendar-profile-facts">${fact('From',dateText(row.date))}${row.endDate&&row.endDate!==row.date?fact('To',dateText(row.endDate)):''}${fact('Address',HVAddress.address(row.place))}${fact('Country',row.place?.countryName)}</dl>${tripLine(row)}${notes(row.notes)}`;
@@ -104,7 +104,7 @@
     const edit={country:`data-calendar-edit-stay="${E(row.id)}"`,accommodation:`data-calendar-edit-accommodation="${E(row.id)}"`,transport:`data-calendar-edit-transport="${E(row.id)}"`,note:`data-day-note-edit="${E(row.id)}"`,location:`data-place-edit="${E(row.id)}"`}[kind];
     const group=HVCalendar.groupForEntry(kind,row.id) || (row.tripId?HVCalendar.journeyGroups().find(g=>g.trip?.id===row.tripId):null);
     const noteAction=kind!=='note'?`<button type="button" class="text-btn" data-calendar-related-note="${kind}" data-calendar-related-id="${E(row.id)}" data-calendar-related-date="${E(date)}">+ Linked note</button>`:'';
-    return `<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${kind==='country'?'visit':kind==='location'?'location':kind}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}</div>`;
+    return `<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${kind==='country'?'visit':kind==='location'?'location':kind}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}<button type="button" class="text-btn" data-make-tentative="${kind}" data-record-id="${E(row.id)}">Make tentative</button></div>`;
   }
   function entry(kind,id,date,detailed=false) {
     const row=record(kind,id);if(!row)return '';

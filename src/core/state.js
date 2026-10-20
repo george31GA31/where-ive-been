@@ -24,6 +24,7 @@ function defaultState() {
     transports: [],
     transportOperators: [],
     accommodations: [],
+    calendarPlans: [],
     notes: [],
     checklists: [],
     budgets: [],
@@ -73,6 +74,7 @@ function normalizeState(v) {
     'manualCountryVisits',
     'tccVisits',
     'transportOperators',
+    'calendarPlans',
   ])
     v[k] = Array.isArray(v[k]) ? v[k] : [];
   v.savedPlaces = Array.isArray(v.savedPlaces) ? v.savedPlaces : [];

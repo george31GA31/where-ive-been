@@ -38,7 +38,7 @@ const calendarKinds = [
   ['locations', 'Locations', 'location', '◎'],
 ];
 const entryAttributes = (kind, id, date = '') =>
-  `data-calendar-entry="${kind}" data-calendar-entry-id="${E(id)}" data-calendar-context-date="${E(date)}" aria-haspopup="dialog"`;
+  `data-calendar-entry="${kind}" data-calendar-entry-id="${E(id)}" data-calendar-context-date="${E(date)}" aria-haspopup="dialog" ${window.HVCalendarPlanning?.attributes(kind,id,date)||''}`;
 
 const today = () => isoDate(new Date());
 const localDate = (value) => String(value || '').slice(0, 10);
