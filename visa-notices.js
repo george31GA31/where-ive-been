@@ -8,7 +8,7 @@
    const acknowledged=(state.visaAcknowledgements||[]).some(a=>(a.id===id||((a.profileId||null)===(profile?.id||null)&&a.passport===passport&&a.destination===stay.countryCode&&(stay.tripId?a.tripId===stay.tripId:a.stayId===stay.id)))&&a.fingerprint===fingerprint);
    return {profile,trip,codes,passport,options,rule,detail,own,id,fingerprint,acknowledged,needs:!own&&(!passport||!rule||['warn','bad','neutral'].includes(detail.tone)||rule.health?.assessment==='required')};
  }
- function indicator(s){const i=info(s);return i.needs&&!i.acknowledged?`<button type="button" class="calendar-visa-notice" data-visa-notice="${E(s.id)}" aria-label="${i.passport&&i.rule?'Review visa information':'Check passport and entry requirements'}" title="Entry requirements">!</button>`:'';}
+ function indicator(s){const i=info(s),label=!i.passport?'Confirm passport':!i.rule||i.rule.verified===false?'Check current guidance':'Review entry guidance';return i.needs&&!i.acknowledged?`<button type="button" class="calendar-visa-notice" data-visa-notice="${E(s.id)}" aria-label="${E(label+' for '+(s.countryName||s.countryCode))}" title="${E(label)}">${!i.passport?'?':'!'}</button>`:'';}
  const detailLink=s=>`<button type="button" class="text-btn" data-visa-notice="${E(s.id)}">Entry requirements</button>`;
  function open(id){
    const s=state.stays.find(r=>r.id===id);if(!s)return;const d=document.createElement('dialog');d.className='dialog entry-dialog';d.setAttribute('aria-label','Entry requirements');document.body.append(d);

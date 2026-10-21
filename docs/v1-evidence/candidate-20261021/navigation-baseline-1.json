@@ -1,0 +1,86 @@
+{
+  "root": "/workspace/scratch/446523bda38a/herald-baseline",
+  "reports": [
+    {
+      "view": "tools",
+      "pass": 1,
+      "handlerMs": 30,
+      "paintMs": 33,
+      "calendars": 0,
+      "maps": 0
+    },
+    {
+      "view": "calendar",
+      "pass": 1,
+      "handlerMs": 66,
+      "paintMs": 73,
+      "calendars": 1,
+      "maps": 0
+    },
+    {
+      "view": "journeys",
+      "pass": 1,
+      "handlerMs": 1162,
+      "paintMs": 1267,
+      "calendars": 0,
+      "maps": 1
+    },
+    {
+      "view": "map",
+      "pass": 1,
+      "handlerMs": 62,
+      "paintMs": 608,
+      "calendars": 0,
+      "maps": 0
+    },
+    {
+      "view": "stats",
+      "pass": 1,
+      "handlerMs": 109,
+      "paintMs": 124,
+      "calendars": 0,
+      "maps": 0
+    },
+    {
+      "view": "tools",
+      "pass": 2,
+      "handlerMs": 5,
+      "paintMs": 10,
+      "calendars": 0,
+      "maps": 0
+    },
+    {
+      "view": "calendar",
+      "pass": 2,
+      "handlerMs": 28,
+      "paintMs": 32,
+      "calendars": 0,
+      "maps": 0
+    },
+    {
+      "view": "journeys",
+      "pass": 2,
+      "handlerMs": 221,
+      "paintMs": 287,
+      "calendars": 0,
+      "maps": 0
+    },
+    {
+      "view": "map",
+      "pass": 2,
+      "handlerMs": 71,
+      "paintMs": 76,
+      "calendars": 0,
+      "maps": 0
+    },
+    {
+      "view": "stats",
+      "pass": 2,
+      "handlerMs": 57,
+      "paintMs": 93,
+      "calendars": 0,
+      "maps": 0
+    }
+  ],
+  "errors": []
+}

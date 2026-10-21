@@ -1,0 +1,206 @@
+[
+  {
+    "root": "/workspace/scratch/446523bda38a/herald-voyages",
+    "reports": [
+      {
+        "view": "tools",
+        "pass": 1,
+        "handlerMs": 18,
+        "paintMs": 20,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "calendar",
+        "pass": 1,
+        "handlerMs": 45,
+        "paintMs": 48,
+        "calendars": 1,
+        "maps": 0
+      },
+      {
+        "view": "journeys",
+        "pass": 1,
+        "handlerMs": 656,
+        "paintMs": 727,
+        "calendars": 0,
+        "maps": 1
+      },
+      {
+        "view": "map",
+        "pass": 1,
+        "handlerMs": 59,
+        "paintMs": 700,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "stats",
+        "pass": 1,
+        "handlerMs": 137,
+        "paintMs": 156,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "transport",
+        "pass": 1,
+        "handlerMs": 116,
+        "paintMs": 125,
+        "calendars": 0,
+        "maps": 1
+      },
+      {
+        "view": "tools",
+        "pass": 2,
+        "handlerMs": 9,
+        "paintMs": 12,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "calendar",
+        "pass": 2,
+        "handlerMs": 20,
+        "paintMs": 30,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "journeys",
+        "pass": 2,
+        "handlerMs": 43,
+        "paintMs": 67,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "map",
+        "pass": 2,
+        "handlerMs": 16,
+        "paintMs": 21,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "stats",
+        "pass": 2,
+        "handlerMs": 24,
+        "paintMs": 33,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "transport",
+        "pass": 2,
+        "handlerMs": 24,
+        "paintMs": 37,
+        "calendars": 0,
+        "maps": 0
+      }
+    ],
+    "errors": []
+  },
+  {
+    "root": "/workspace/scratch/446523bda38a/herald-voyages",
+    "reports": [
+      {
+        "view": "tools",
+        "pass": 1,
+        "handlerMs": 24,
+        "paintMs": 26,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "calendar",
+        "pass": 1,
+        "handlerMs": 77,
+        "paintMs": 81,
+        "calendars": 1,
+        "maps": 0
+      },
+      {
+        "view": "journeys",
+        "pass": 1,
+        "handlerMs": 676,
+        "paintMs": 764,
+        "calendars": 0,
+        "maps": 1
+      },
+      {
+        "view": "map",
+        "pass": 1,
+        "handlerMs": 76,
+        "paintMs": 594,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "stats",
+        "pass": 1,
+        "handlerMs": 94,
+        "paintMs": 101,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "transport",
+        "pass": 1,
+        "handlerMs": 149,
+        "paintMs": 172,
+        "calendars": 0,
+        "maps": 1
+      },
+      {
+        "view": "tools",
+        "pass": 2,
+        "handlerMs": 5,
+        "paintMs": 13,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "calendar",
+        "pass": 2,
+        "handlerMs": 17,
+        "paintMs": 23,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "journeys",
+        "pass": 2,
+        "handlerMs": 49,
+        "paintMs": 78,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "map",
+        "pass": 2,
+        "handlerMs": 17,
+        "paintMs": 22,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "stats",
+        "pass": 2,
+        "handlerMs": 8,
+        "paintMs": 21,
+        "calendars": 0,
+        "maps": 0
+      },
+      {
+        "view": "transport",
+        "pass": 2,
+        "handlerMs": 26,
+        "paintMs": 43,
+        "calendars": 0,
+        "maps": 0
+      }
+    ],
+    "errors": []
+  }
+]

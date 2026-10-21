@@ -53,9 +53,9 @@
   }
   function country(row,date) {
     const end=row.end||localToday(),days=countDays(row.start,end),current=localToday();
-    const phase=row.start>current ? 'Upcoming visit' : !row.end||row.end>=current ? 'Ongoing visit' : 'Past visit';
+    const phase=row.status==='cancelled' ? 'Cancelled visit' : row.start>current ? 'Upcoming visit' : !row.end||row.end>=current ? 'Ongoing visit' : 'Past visit';
     return heading('country',row.countryName||row.countryCode,phase,flagHtml(row.domesticDestination||row.countryCode,'calendar-profile-flag'))+
-      `<dl class="calendar-profile-facts">${fact('Entered',dateText(row.start))}${fact(row.end?'Leaving / left':'Through today',dateText(end))}${fact('Visit length',days===null?null:(days+1)+' '+(days===0?'day':'days'))}${fact('City or area',row.location)}${fact('Selected day',dateText(date))}${fact('Status',row.status==='planned'?'Planned record':row.status==='cancelled'?'Cancelled':null)}</dl>${SCHENGEN.has(row.countryCode)?`<p class="calendar-profile-rule">Schengen Area${row.schengenExempt?' · this record is marked exempt':''} <a href="#/schengen">Open existing calculator →</a></p>`:''}${window.HVVisaNotices?.detailLink(row)||''}${tripLine(row)}${notes(row.notes)}`;
+      `<dl class="calendar-profile-facts">${fact(row.status==='cancelled'?'Scheduled arrival':row.start>current?'Arriving':'Entered',dateText(row.start))}${fact(!row.end?'Through today':row.status==='cancelled'?'Scheduled departure':row.end<current?'Left':'Leaving',dateText(end))}${fact('Visit length',days===null?null:(days+1)+' '+(days===0?'day':'days'))}${fact('City or area',row.location)}${fact('Selected day',dateText(date))}${fact('Status',row.status==='planned'?'Planned record':row.status==='cancelled'?'Cancelled':null)}</dl>${SCHENGEN.has(row.countryCode)?`<p class="calendar-profile-rule">Schengen Area${row.schengenExempt?' · this record is marked exempt':''} <a href="#/schengen">Open existing calculator →</a></p>`:''}${window.HVVisaNotices?.detailLink(row)||''}${tripLine(row)}${notes(row.notes)}`;
   }
   // Existing trip and map consumers retain their established compact transport view.
   function legs(t){return t.type==='flight'?HVJourney.flightLegs(t):HVJourney.groundLegs(t);}
@@ -103,8 +103,9 @@
   function actions(kind,row,date) {
     const edit={country:`data-calendar-edit-stay="${E(row.id)}"`,accommodation:`data-calendar-edit-accommodation="${E(row.id)}"`,transport:`data-calendar-edit-transport="${E(row.id)}"`,note:`data-day-note-edit="${E(row.id)}"`,location:`data-place-edit="${E(row.id)}"`}[kind];
     const group=HVCalendar.groupForEntry(kind,row.id) || (row.tripId?HVCalendar.journeyGroups().find(g=>g.trip?.id===row.tripId):null);
+    const suggestion=group?.trip&&!row.tripId?`<p class="calendar-section-hint">Suggested trip: ${E(group.trip.name)} (dates match). This record has no trip link.</p>`:'';
     const noteAction=kind!=='note'?`<button type="button" class="text-btn" data-calendar-related-note="${kind}" data-calendar-related-id="${E(row.id)}" data-calendar-related-date="${E(date)}">+ Linked note</button>`:'';
-    return `<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${kind==='country'?'visit':kind==='location'?'location':kind}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}<button type="button" class="text-btn" data-make-tentative="${kind}" data-record-id="${E(row.id)}">Make tentative</button></div>`;
+    return `${suggestion}<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${kind==='country'?'visit':kind==='location'?'location':kind}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}<button type="button" class="text-btn" data-make-tentative="${kind}" data-record-id="${E(row.id)}">Make tentative</button></div>`;
   }
   function entry(kind,id,date,detailed=false) {
     const row=record(kind,id);if(!row)return '';

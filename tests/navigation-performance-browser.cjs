@@ -43,6 +43,7 @@ let browser;
     }, {view,pass});
     reports.push(report);
   }
+  const output=process.env.HV_NAV_OUTPUT||path.join(__dirname,'../test-results/navigation-performance.json');fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,JSON.stringify({root,reports,errors},null,2));
   if (!process.env.HV_NAV_BASELINE) {
     assert.deepEqual(errors, []);
     assert.equal(reports.filter(r => r.view === 'journeys').reduce((n,r) => n+r.maps,0), 1, 'The global map is mounted once across repeat visits');
@@ -51,11 +52,12 @@ let browser;
     assert.equal(reports.find(r => r.view === 'calendar' && r.pass === 2).calendars, 0, 'An unchanged calendar is reused');
     await page.evaluate(()=>{state.transports.findLast(t=>t.type==='flight').flightNumber='Navigation saved edit';persist();switchView('tools');switchView('transport');});
     assert.match(await page.locator('[data-transport-list]').innerText(),/Navigation saved edit/,'A saved edit invalidates cached pages');
+    await page.evaluate(()=>switchView('journeys'));const lastCard=page.locator('.journey-library-card').last(),lastEdit=lastCard.locator('button').last();assert.ok(await page.locator('[data-library-entry]').count()>=240,'Offscreen catalogue records remain present');await lastEdit.scrollIntoViewIfNeeded();await lastEdit.focus();assert.equal(await lastEdit.evaluate(n=>document.activeElement===n),true,'An offscreen record remains keyboard reachable');assert.ok(await lastEdit.isVisible());const scroll=await page.evaluate(()=>scrollY);assert.ok(scroll>1000);await page.evaluate(()=>{switchView('tools');switchView('journeys');});assert.ok(Math.abs(await page.evaluate(()=>scrollY)-scroll)<2,'Returning to the catalogue restores its saved scroll position');
     assert.deepEqual(await page.evaluate(() => state.transports.map(t => t.resolvedRoutes)), data.transports.map(t => t.resolvedRoutes));
     const many={...data,trips:[],stays:[],accommodations:[],savedPlaces:[],transports:Array.from({length:1200},(_,i)=>{const record=structuredClone(data.transports[0]),date=new Date(Date.UTC(2020,0,1+i%365)).toISOString().slice(0,10);return {...record,id:'many-'+i,tripId:null,flightNumber:'HV '+i,startLocal:date+'T08:00',endLocal:date+'T09:00',start:{...record.start,timezone:'Europe/Paris'},end:{...record.end,timezone:'Europe/Paris'}};})};
     const large=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce',serviceWorkers:'block'});
     await large.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
-    await large.addInitScript(many=>{localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(many));window.visibleRoutes=[];let api;Object.defineProperty(window,'HVJourneyMap',{configurable:true,get:()=>api,set:value=>{api=value;const mount=value.mountGlobal;value.mountGlobal=function(host,rows,...args){visibleRoutes.push(rows.length);return mount.call(this,host,rows,...args);};}});},many);
+    await large.addInitScript(many=>{localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(many));window.visibleRoutes=[];let api;Object.defineProperty(window,'HVJourneyMap',{configurable:true,get:()=>api,set:value=>{api=value;const mount=value.mountGlobal;value.mountGlobal=function(host,rows,...args){visibleRoutes.push(rows.length);return mount.call(this,host,rows,...args);};}});},many);
     await large.goto(origin+'/#/my-flights');await large.waitForFunction(()=>window.HVTransportDashboard?.surface()&&!document.querySelector('.app-shell').inert);
     assert.equal(await large.locator('[data-transport-select]').count(),40,'Large histories render one page of rows');assert.ok(await large.evaluate(()=>visibleRoutes.length&&visibleRoutes.every(count=>count===40)),'Initial maps only mount the visible routes');
     await large.locator('[data-transport-page="1"]').click();assert.equal(await large.locator('[data-transport-select]').count(),40);assert.match(await large.locator('[data-transport-pagination]').innerText(),/41–80 of 1200/);assert.ok(await large.evaluate(()=>visibleRoutes.length>=2&&visibleRoutes.every(count=>count===40)));

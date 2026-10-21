@@ -319,7 +319,7 @@ function handleDelegatedClick(e) {
   let day = e.target.closest('[data-calendar-date]');
   if (day) handleCalendarDateClick(day.dataset.calendarDate);
 }
-function switchView(v, { render = true } = {}) {
+function switchView(v, { render = true, scroll = true } = {}) {
   document.querySelectorAll('.view').forEach((x) => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((x) => x.classList.remove('active'));
   $(`${v}View`).classList.add('active');
@@ -343,7 +343,7 @@ function switchView(v, { render = true } = {}) {
   if (render && v === 'rules') renderVisaChecker();
   if (render && v === 'stays') renderStayLists();
   if (render && v === 'profiles') renderProfiles();
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
 }
 function renderAll() {
   const view = document.body.dataset.currentView || 'dashboard';
@@ -405,10 +405,6 @@ function renderDashboard() {
   els.dashboardGaps.innerHTML = `<details class="home-history-check"><summary>Trips update automatically <span class="status-badge good">ON</span></summary><p>Planned trips and transport become completed the day after their final date. Edit or cancel anything before then.</p>${gaps.length ? `<div class="home-gap-list">${gaps.map((g) => gapCard(g, true)).join('')}</div>` : '<p>No gaps in your completed travel history.</p>'}</details>`;
   renderStayList(els.recentStays, [
     ...profileStays
-      .filter((s) => s.status === 'planned' && s.start > today)
-      .sort((a, b) => a.start.localeCompare(b.start))
-      .slice(0, 3),
-    ...profileStays
       .filter((s) => s.status === 'actual' && s.start <= today)
       .sort((a, b) => b.start.localeCompare(a.start))
       .slice(0, 3),
@@ -433,7 +429,7 @@ function renderMiniCalendar() {
     let d = addDays(start, i),
       k = dayKey(d),
       has = list.some((s) => s.start <= k && (s.end || today) >= k);
-    h += `<div class="mini-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'muted'} ${k === today ? 'today' : ''} ${has ? 'has-stay' : ''}">${d.getUTCDate()}</div>`;
+    h += `<button type="button" data-home-calendar-date="${k}" aria-label="Open ${k}" class="mini-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'muted'} ${k === today ? 'today' : ''} ${has ? 'has-stay' : ''}">${d.getUTCDate()}</button>`;
   }
   els.miniCalendar.innerHTML = h;
 }

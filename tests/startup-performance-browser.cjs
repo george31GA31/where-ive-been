@@ -41,7 +41,7 @@ async function fixture(origin,data,width=1440,theme='light',failure=false){
     }
     return route.abort();
   });
-  await page.addInitScript(({auth,id,theme})=>{
+  await page.addInitScript(({auth,id,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');
     localStorage.setItem('whereIveBeen.auth.v1',JSON.stringify(auth));localStorage.setItem('whereIveBeen.localOwner.v1',id);localStorage.setItem('whereIveBeen.importNoticed.'+id,'yes');localStorage.setItem('whereIveBeen.theme.v1',theme);
     window.startupMetrics={longTasks:[],routeReads:0,logoElements:0};
     new PerformanceObserver(list=>startupMetrics.longTasks.push(...list.getEntries().map(e=>({start:e.startTime,duration:e.duration})))).observe({type:'longtask',buffered:true});
@@ -78,7 +78,7 @@ const settled=page=>page.waitForFunction(()=>[...document.querySelectorAll('[dat
     await context.close();console.log('Large account, exact logo pooling, preserved routes, quiet idle and lazy Home passed: '+count+' records');
   }
   const guestData=largeAccount(160,350),guest=await fixture(origin,guestData,390,'light');
-  await guest.page.addInitScript(data=>{localStorage.removeItem('whereIveBeen.auth.v1');localStorage.removeItem('whereIveBeen.localOwner.v1');localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(data));},guestData);
+  await guest.page.addInitScript(data=>{localStorage.setItem('herald.calendar.view.v1','month');localStorage.removeItem('whereIveBeen.auth.v1');localStorage.removeItem('whereIveBeen.localOwner.v1');localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(data));},guestData);
   await guest.page.goto(origin+'/');await guest.page.waitForFunction(()=>state.stays.length===160&&!document.querySelector('.app-shell').inert);
   assert.equal(guest.reads,0);assert.equal(await guest.page.locator('img.herald-hotel-logo').count(),0);assert.equal(await guest.page.evaluate(()=>startupMetrics.routeReads),0);
   assert.deepEqual(await guest.page.evaluate(()=>JSON.parse(localStorage.getItem('whereIveBeen.data.v2'))),guestData,'Guest startup preserves its original storage');assert.deepEqual(guest.errors,[]);await guest.context.close();

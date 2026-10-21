@@ -1,0 +1,32 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),{harness}=require('./helpers/candidate-browser.cjs'),{candidateHistory}=require('./fixtures/v1-candidate.cjs');
+const baseline=!!process.env.HV_LAYOUT_BASELINE,out=path.resolve(__dirname,'../test-results/v1-candidate/'+(baseline?'before':'after'));fs.mkdirSync(out,{recursive:true});
+async function capture(page,options){await page.evaluate(()=>Promise.all([...document.images].map(async img=>{img.loading='eager';try{await img.decode();}catch{}})));await page.screenshot(options);}
+(async()=>{const h=await harness(),metrics=[];try{
+ for(const [width,height] of [[1440,900],[1280,800],[1024,768],[768,1024],[390,844],[360,800]])for(const theme of ['light','dark']){
+  const page=await h.page(candidateHistory(),{width,height,theme,touch:width<500});
+  await page.evaluate(()=>{calendarCursor=new Date('2026-11-01T00:00:00Z');renderCalendar();});
+  const stateBefore=await page.evaluate(()=>JSON.stringify(state));
+  if(!baseline&&width<500){assert.ok(await page.locator('#calendarAgenda').isVisible());assert.match(await page.locator('#calendarAgenda').innerText(),/No travel recorded/);await page.locator('[data-agenda-start]').fill('2026-11-17');await page.locator('[data-agenda-end]').fill('2026-11-17');await page.locator('[data-agenda-select]').click();await page.locator('[data-calendar-close-date]').click();assert.match(await page.locator('#calendarAgenda').innerText(),/Guesthouse Albergo Alberga|Hotel Atlantis/);assert.match(await page.locator('#calendarAgenda').innerText(),/10:30.*12:45/);await capture(page,{path:path.join(out,`agenda-${width}-${theme}.png`),fullPage:true});await page.evaluate(()=>{calendarCursor=new Date('2026-11-01T00:00:00Z');});await page.locator('button[data-calendar-view=month]').click();}
+  if(!baseline&&width<500){await page.locator('button[data-calendar-view=agenda]').click();const country=page.locator('#calendarAgenda .type-country').first(),name=country.locator('.calendar-explorer-entry strong'),reminder=country.locator('.calendar-row-reminder');const box=await name.boundingBox(),action=await reminder.boundingBox();assert.ok(box.width>150&&box.height<45,'Agenda country name remains readable in at most two lines');assert.ok(action.y>=box.y+box.height,'Entry reminder has its own row');await capture(page,{path:path.join(out,`agenda-${width}-${theme}.png`),fullPage:true});await page.locator('button[data-calendar-view=month]').click();}
+  const gridHeight=await page.locator('#calendar').evaluate(n=>n.getBoundingClientRect().height);metrics.push({width,height,theme,gridHeight});
+  await capture(page,{path:path.join(out,`calendar-${width}-${theme}.png`),fullPage:true});
+  if(!baseline){
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No page overflow');
+   if(width>=768){const border=page.locator('[data-calendar-date="2026-11-12"]');const names=await border.locator('.country-name-full').allTextContents();assert.deepEqual(names,['Suriname','French Guiana']);const sections=await border.locator('.calendar-country-section').evaluateAll(ns=>ns.map(n=>n.getBoundingClientRect().toJSON()));assert.ok(sections[1].y>sections[0].y||sections[0].width>90,'Border names have readable space');
+    const rows=await page.locator('#calendar .calendar-day').evaluateAll(ns=>ns.map(n=>({y:n.getBoundingClientRect().top,offset:n.querySelector('.calendar-lodging')?.getBoundingClientRect().top-n.getBoundingClientRect().top})).filter(n=>Number.isFinite(n.offset)));const offsets=new Map();for(const row of rows){if(offsets.has(row.y))assert.ok(Math.abs(offsets.get(row.y)-row.offset)<1,'Accommodation aligns per week');offsets.set(row.y,row.offset);}
+    const original=await page.locator('#calendar').evaluate(n=>n.getBoundingClientRect().height);await border.locator('[data-calendar-entry=country]').first().hover();await page.clock.runFor(200);assert.equal(await page.locator('#calendar').evaluate(n=>n.getBoundingClientRect().height),original,'Hover does not move layout');
+   }
+   const reminders=await page.locator('#calendar [data-visa-notice="suriname"]').count();assert.equal(reminders,1,'One overview cue per visit');
+   if(width<500){await page.locator('.calendar-filter-menu>summary').click();assert.equal(await page.locator('.calendar-filter-options [data-calendar-layer]').count(),5);assert.ok(await page.locator('[data-calendar-layer=locations]').isVisible());}
+   assert.equal(await page.evaluate(()=>JSON.stringify(state)),stateBefore,'Read-only layouts preserve every payload field');
+   await page.evaluate(()=>HVTrips.show('south'));await page.locator('[data-trip-tab=itinerary]').click();assert.equal(await page.locator('[data-trip-day]').count(),16);assert.equal(await page.locator('[data-trip-day-body] .trip-day-record').count(),0,'Daily details are lazy');await page.locator('[data-trip-day="9"]>summary').click();assert.match(await page.locator('[data-trip-day="9"]').innerText(),/Hotel Atlantis|Guesthouse Albergo/);assert.match(await page.locator('[data-trip-day="9"]').innerText(),/Meet the guide/);await capture(page,{path:path.join(out,`trip-${width}-${theme}.png`)});await page.keyboard.press('Escape');
+   await page.evaluate(()=>switchView('dashboard'));await capture(page,{path:path.join(out,`home-${width}-${theme}.png`),fullPage:true});
+   const finalState=await page.evaluate(()=>JSON.stringify(state));assert.equal(finalState,stateBefore,'Trip itinerary and Home also preserve the complete payload');
+   if(width===1440&&theme==='light'){const data=JSON.parse(stateBefore),digest=value=>crypto.createHash('sha256').update(value).digest('hex');fs.writeFileSync(path.join(out,'preservation.json'),JSON.stringify({fictional:true,beforeSha256:digest(stateBefore),afterSha256:digest(finalState),collections:Object.fromEntries(Object.entries(data).filter(([,value])=>Array.isArray(value)).map(([key,value])=>[key,{count:value.length,ids:value.map(row=>row.id??null)}])),settings:Object.fromEntries(Object.entries(data).filter(([,value])=>!Array.isArray(value)))},null,2));}
+   assert.deepEqual(page.errors,[]);
+  }
+  await page.context().close();console.log(`${width}/${theme}: ${Math.round(gridHeight)}px month, preservation and itinerary checked.`);
+ }
+ fs.writeFileSync(path.join(out,'metrics.json'),JSON.stringify(metrics,null,2));
+}finally{await h.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

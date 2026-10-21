@@ -1,7 +1,33 @@
 function plannerStatusFrom(prefill) {
   if (prefill.status) return prefill.status;
-  const start = prefill.start || today();
-  return start > today() || prefill.source === 'plan' ? 'planned' : 'actual';
+  return (prefill.end || prefill.start || today()) < today() ? 'actual' : 'planned';
+}
+
+// Form drafts live only in this browser tab, isolated by account and active traveller.
+const pausedPlanners = new Map();
+let plannerOwner = '', plannerState = null, plannerRendering = false;
+function plannerDraftKey() {
+  return 'herald.tripDraft.v1.' + (window.WIBAuth?.cachedSession()?.user?.id || 'guest') + '.' + state.activeProfileId;
+}
+function meaningfulPlanner(value) {
+  return !!(value?.name || value?.notes || value?.stops?.some(s => s.countryName || s.location) || value?.transports?.length || value?.accommodations?.length);
+}
+function keepPlannerDraft() {
+  if (!planner || plannerOwner !== plannerDraftKey() || state !== plannerState || !meaningfulPlanner(planner)) return;
+  pausedPlanners.set(plannerOwner, JSON.parse(JSON.stringify(planner)));
+  if (pausedPlanners.size > 8) pausedPlanners.delete(pausedPlanners.keys().next().value);
+  try {
+    const text = JSON.stringify(planner, (key, value) => key === 'logoDraft' || (typeof value === 'string' && value.startsWith('data:image/')) ? undefined : value);
+    if (text.length > 250000) throw new Error('Draft too large');
+    sessionStorage.setItem(plannerOwner, text);
+  } catch { plannerError('Draft retained in this tab. Session recovery is unavailable; keep this tab open.'); }
+}
+function clearPlannerDraft() {
+  pausedPlanners.delete(plannerOwner);
+  try { sessionStorage.removeItem(plannerOwner); } catch {}
+}
+function plannerDatePhase() {
+  return planner.start > today() ? 'Upcoming' : planner.end < today() ? 'Past' : 'Ongoing';
 }
 
 function blankStop(start, end, countryName = '') {
@@ -28,13 +54,29 @@ function ensurePlannerDialog() {
   plannerDialog.id = 'tripPlannerDialog';
   plannerDialog.className = 'dialog trip-planner-dialog';
   plannerDialog.addEventListener('close', () => {
-    if (!plannerDialog.open) planner = null;
+    if (!plannerDialog.open) { readPlannerStep(); keepPlannerDraft(); planner = null; }
   });
   document.body.append(plannerDialog);
   return plannerDialog;
 }
 
 function openTripPlanner(prefill = {}) {
+  if (plannerDialog?.open && planner && plannerOwner === plannerDraftKey()) return;
+  plannerOwner = plannerDraftKey();
+  plannerState = state;
+  let saved = pausedPlanners.get(plannerOwner);
+  try { saved ||= JSON.parse(sessionStorage.getItem(plannerOwner)); } catch {}
+  if (meaningfulPlanner(saved) && !prefill.fresh) {
+    planner = null;
+    const dialog = ensurePlannerDialog();
+    dialog.innerHTML = `<div class="dialog-card"><h2>Resume your trip?</h2><p>${E(saved.name || 'Unfinished trip')} · Step ${Number(saved.step) || 1} of 5</p><p class="helper">Drafts last for this browser tab's session and belong to the current account and traveller. Unsaved image uploads stay in memory only.</p><div class="dialog-actions"><button class="primary" data-planner-resume>Resume draft</button><button class="secondary" data-planner-new>Discard & start new</button><button class="text-btn" data-planner-pause>Close</button></div></div>`;
+    q('[data-planner-resume]', dialog).onclick = () => { planner = JSON.parse(JSON.stringify(saved)); renderPlanner(); };
+    q('[data-planner-new]', dialog).onclick = () => { clearPlannerDraft(); openTripPlanner({...prefill, fresh:true}); };
+    q('[data-planner-pause]', dialog).onclick = () => dialog.close();
+    if (!dialog.open) dialog.showModal();
+    return;
+  }
+  if (prefill.fresh) clearPlannerDraft();
   const start = prefill.start || today();
   const end = prefill.end || start;
   planner = {
@@ -42,6 +84,7 @@ function openTripPlanner(prefill = {}) {
     start,
     end,
     status: plannerStatusFrom(prefill),
+    statusTouched: !!prefill.status,
     profileId: prefill.profileId || state.activeProfileId || '',
     source: prefill.source || '',
     name: prefill.tripName || '',
@@ -61,7 +104,7 @@ function plannerError(message = '') {
 }
 
 function readPlannerStep() {
-  if (!planner || !plannerDialog) return;
+  if (!planner || !plannerDialog || plannerRendering) return;
   const form = q('form', plannerDialog);
   if (!form) return;
   if (planner.step === 1) {
@@ -69,7 +112,8 @@ function readPlannerStep() {
       previousEnd = planner.end;
     planner.start = form.elements.start.value;
     planner.end = form.elements.end.value;
-    planner.status = form.elements.status.value;
+    planner.status = planner.statusTouched ? form.elements.status.value : plannerStatusFrom({start:planner.start,end:planner.end});
+    form.elements.status.value = planner.status;
     planner.profileId = form.elements.profileId.value;
     planner.stops.forEach((stop) => {
       if (stop.start === previousStart) stop.start = planner.start;
@@ -239,7 +283,7 @@ function accommodationRow(accommodation, index) {
 }
 
 function reviewMarkup() {
-  return `<div class="planner-review"><section><p class="eyebrow">JOURNEY</p><h3>${E(planner.name)}</h3><p>${E(dateRangeText(planner.start, planner.end))} · ${E(durationText(planner.start, planner.end))} · ${E(planner.status === 'planned' ? 'Planned' : 'Completed')}</p>${planner.notes ? `<p>${E(planner.notes)}</p>` : ''}</section><section><p class="eyebrow">STOPS IN ORDER</p>${planner.stops.map((stop, index) => `<div class="planner-review-row"><span>${index + 1}</span><strong>${E(stop.location || stop.countryName)}</strong><small>${E(stop.countryName)} · ${E(dateRangeText(stop.start, stop.end))}</small></div>`).join('')}</section><section><p class="eyebrow">TRANSPORT</p>${planner.transports.length ? planner.transports.map((transport) => `<div class="planner-review-row"><span>${transportIcon(transport.type)}</span><strong>${E(transport.startName)} → ${E(transport.endName)}</strong><small>${E(window.HVJourney.types[transport.type] || transport.type)} · ${E(transport.startLocal.replace('T', ' '))}</small></div>`).join('') : '<p>No transport added. You can add it later from the trip details.</p>'}</section><section><p class="eyebrow">ACCOMMODATION</p>${
+  return `<div class="planner-review"><section><p class="eyebrow">JOURNEY</p><h3>${E(planner.name)}</h3><p>${E(dateRangeText(planner.start, planner.end))} · ${E(durationText(planner.start, planner.end))} · ${plannerDatePhase()} · ${planner.status === 'planned' ? 'Planned' : 'Recorded as completed'}</p>${planner.status === 'actual' && planner.end >= today() ? '<p role="status">These dates have not finished. You explicitly chose Completed; check this before saving.</p>' : ''}${planner.status==='planned'&&planner.end<today()?'<p role="status">These dates have finished. Past planned trips automatically become completed; resolve this before saving.</p><button type="button" class="secondary" data-planner-past-complete>Use Completed</button>':''}${planner.notes ? `<p>${E(planner.notes)}</p>` : ''}</section><section><p class="eyebrow">STOPS IN ORDER</p>${planner.stops.map((stop, index) => `<div class="planner-review-row"><span>${index + 1}</span><strong>${E(stop.location || stop.countryName)}</strong><small>${E(stop.countryName)} · ${E(dateRangeText(stop.start, stop.end))}</small></div>`).join('')}</section><section><p class="eyebrow">TRANSPORT</p>${planner.transports.length ? planner.transports.map((transport) => `<div class="planner-review-row"><span>${transportIcon(transport.type)}</span><strong>${E(transport.startName)} → ${E(transport.endName)}</strong><small>${E(window.HVJourney.types[transport.type] || transport.type)} · ${E(transport.startLocal.replace('T', ' '))}</small></div>`).join('') : '<p>No transport added. You can add it later from the trip details.</p>'}</section><section><p class="eyebrow">ACCOMMODATION</p>${
     planner.accommodations.filter((item) => item.propertyName).length
       ? planner.accommodations
           .filter((item) => item.propertyName)
@@ -270,8 +314,20 @@ function plannerNav() {
 
 function renderPlanner() {
   const dialog = ensurePlannerDialog();
-  dialog.innerHTML = `<form method="dialog" class="dialog-card trip-planner-card"><header class="trip-planner-head"><div><p class="eyebrow">PLAN A JOURNEY</p><h2>Build one complete trip</h2></div><button type="button" class="icon-btn" data-planner-cancel aria-label="Close">×</button></header><ol class="planner-progress" aria-label="Trip planning progress">${['Dates', 'Stops', 'Transport', 'Stay', 'Review'].map((label, index) => `<li class="${planner.step === index + 1 ? 'current' : planner.step > index + 1 ? 'complete' : ''}"><span>${index + 1}</span>${label}</li>`).join('')}</ol><div class="trip-planner-body">${plannerStepMarkup()}</div><p class="form-error" data-planner-error role="alert"></p>${plannerNav()}</form>`;
-  const form = q('form', dialog);
+  plannerRendering = true;
+  try { dialog.innerHTML = `<form method="dialog" class="dialog-card trip-planner-card"><header class="trip-planner-head"><div><p class="eyebrow">PLAN A TRIP</p><h2>Build one complete trip</h2></div><button type="button" class="icon-btn" data-planner-cancel aria-label="Close">×</button></header><ol class="planner-progress" aria-label="Trip planning progress">${['Dates', 'Stops', 'Transport', 'Stay', 'Review'].map((label, index) => `<li class="${planner.step === index + 1 ? 'current' : planner.step > index + 1 ? 'complete' : ''}"><span>${index + 1}</span>${label}</li>`).join('')}</ol><div class="trip-planner-body">${plannerStepMarkup()}</div><p class="form-error" data-planner-error role="alert"></p>${plannerNav()}</form>`; } finally { plannerRendering = false; }
+  const form = q('form', dialog), draft = planner, step = planner.step;
+  q('[data-planner-past-complete]',form)?.addEventListener('click',()=>{planner.status='actual';planner.statusTouched=true;renderPlanner();});
+  form.addEventListener('input', event => {
+    if(plannerRendering||planner!==draft||planner.step!==step||!form.isConnected)return;
+    if (event.target.name === 'status') planner.statusTouched = true;
+    readPlannerStep(); keepPlannerDraft();
+  });
+  form.addEventListener('change', event => {
+    if(plannerRendering||planner!==draft||planner.step!==step||!form.isConnected)return;
+    if (event.target.name === 'status') planner.statusTouched = true;
+    readPlannerStep(); keepPlannerDraft();
+  });
   qa('[data-planner-accommodation]', form).forEach((row, index) => {
     row._logoEditor = HVAccommodationLogos.bindEditor(row, planner.accommodations[index], (src) => {
       planner.accommodations[index].logoDraft = src;
@@ -423,9 +479,14 @@ function renderPlanner() {
     }
     savePlanner();
   };
+  keepPlannerDraft();
 }
 
 async function savePlanner() {
+  if(planner.status==='planned'&&planner.end<today()){plannerError('These dates have finished. Choose Use Completed above or correct the dates before saving.');return;}
+  if (plannerOwner !== plannerDraftKey() || state !== plannerState) {
+    plannerError('Your account or traveller changed. Reopen this trip.'); return;
+  }
   const data = state,
     activeProfileId = state.activeProfileId;
   for (const stop of planner.stops) {
@@ -534,6 +595,8 @@ async function savePlanner() {
     selectedJourneyKey = tripKey(trip.id);
     selectedDate = '';
     const returnToBudget=planner.source==='budget';
+    clearPlannerDraft();
+    planner = null;
     plannerDialog.close();
     renderAll();
     if(returnToBudget)window.HVTravelTools?.openTrip(trip.id,'budget');
@@ -546,8 +609,7 @@ async function savePlanner() {
 
 function openCalendarStay(id) {
   openStayDialog(id);
-  const picker = $('stayTripSelect');
-  if (picker) picker.closest('label').hidden = true;
+
 }
 
 function openAccommodationDialog(tripId, accommodationId = '') {
@@ -672,3 +734,11 @@ function moveLegacyTransportTools() {
   if (transportSection && add)
     transportSection.querySelector('summary')?.insertAdjacentElement('afterend', add);
 }
+
+function guardPlannerOwner(){
+  if(plannerDialog?.open && plannerOwner!==plannerDraftKey()){
+    planner=null;plannerDialog.close();
+  }
+}
+window.addEventListener('hv-data-changed',guardPlannerOwner);
+window.addEventListener('hv-account-state',guardPlannerOwner);

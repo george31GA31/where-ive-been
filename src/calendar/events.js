@@ -2,10 +2,14 @@ async function saveDateEntry(event) {
   const form = event.target;
   if (!['calendarQuickCountry', 'calendarQuickAccommodation'].includes(form.id)) return;
   event.preventDefault();
+  if (form.dataset.saving === 'true') return;
+  const data = state, profileId = state.activeProfileId,
+    accountId = window.WIBAuth?.cachedSession()?.user?.id || 'guest';
+  let addedRecord, collection;
   const error = q('[role="alert"]', form),
     start = form.elements.start?.value || calendarSelectionStart || selectedDate,
     end = form.elements.end?.value || calendarSelectionEnd || start;
-  const tripId = window.HVJourney.tripForDates(state, start, end);
+  const tripId = form.elements.tripId?.value || null;
   const trip = (state.trips || []).find((t) => t.id === tripId);
   if (!window.HVJourney.validDate(start) || !window.HVJourney.validDate(end) || end < start) {
     error.textContent = 'Select valid dates first.';
@@ -17,7 +21,7 @@ async function saveDateEntry(event) {
       error.textContent = 'Choose a country from the list.';
       return;
     }
-    if (tripId && !trip) {
+    if (tripId && !HVJourney.scoped(state.trips || [], profileId).some(row => row.id === tripId)) {
       error.textContent = 'Choose a valid trip.';
       return;
     }
@@ -37,12 +41,21 @@ async function saveDateEntry(event) {
         'This stay overlaps an existing entry. Edit that stay to change its dates.';
       return;
     }
-    const travelKind = await HVHome.choose(country, start, state.activeProfileId);
+    form.dataset.saving = 'true';
+    let travelKind;
+    try { travelKind = await HVHome.choose(country, start, profileId); }
+    finally { form.dataset.saving = 'false'; }
     if (travelKind === 'cancel') return;
-    const owner = state.activeProfileId;
+    if (state !== data || state.activeProfileId !== profileId ||
+      (window.WIBAuth?.cachedSession()?.user?.id || 'guest') !== accountId) {
+      error.textContent = 'Your account or traveller changed. Reopen this form.';
+      return;
+    }
+    const owner = profileId;
     state.stays ||= [];
-    state.stays.push({
-      id: uid(),
+    collection = 'stays';
+    addedRecord = {
+      id: form.dataset.draftId ||= uid(),
       tripId,
       countryCode: country.code,
       countryName: country.name,
@@ -57,7 +70,7 @@ async function saveDateEntry(event) {
       status: end < today() ? 'actual' : 'planned',
       profileId: owner,
       tripOrder: (state.stays || []).filter((s) => s.tripId === tripId).length,
-    });
+    };
   } else {
     const propertyName = form.elements.propertyName.value.trim(),
       location = form.elements.location.value.trim();
@@ -79,8 +92,9 @@ async function saveDateEntry(event) {
       return;
     }
     state.accommodations ||= [];
-    state.accommodations.push({
-      id: uid(),
+    collection = 'accommodations';
+    addedRecord = {
+      id: form.dataset.draftId ||= uid(),
       tripId,
       profileId: state.activeProfileId,
       propertyName,
@@ -88,24 +102,55 @@ async function saveDateEntry(event) {
       checkIn: start,
       checkOut: end,
       notes: '',
-    });
+    };
   }
-  updatePassedPlannedTrips();
-  persist();
+  form.dataset.saving = 'true';
+  data[collection].push(addedRecord);
+  try {
+    if (persist() === false) throw new Error('Save was not accepted.');
+  } catch {
+    // Roll back this operation only; unrelated edits and the populated form survive.
+    const index = data[collection].indexOf(addedRecord);
+    if (index >= 0) data[collection].splice(index, 1);
+    form.dataset.saving = 'false';
+    error.textContent = 'This entry could not be saved. Your details are still here. Keep this page open and retry.';
+    return;
+  }
   dateAction = '';
   renderAll();
   window.HVJourneys?.render();
 }
 
+function addTravel(kind, context = {}) {
+  const start = context.start || today(), end = context.end || start;
+  const tripId = HVJourney.scoped(state.trips || [], state.activeProfileId).some(t => t.id === context.tripId) ? context.tripId : null;
+  if (kind === 'trip') return openTripPlanner({source:'plan', ...context});
+  if (kind === 'country') return openStayDialog(null, {standalone:true, start, end, status:end < today() ? 'actual' : 'planned', ...context, tripId});
+  if (kind === 'transport') return window.HVJourneys?.openTransport(null, {startLocal:start+'T12:00', endLocal:end+'T12:00', ...context, tripId});
+  if (kind === 'note') return window.HVTravelTools?.openNote(null, {date:start, rangeEnd:end, ...context, tripId});
+  if (kind === 'accommodation' || kind === 'location') return window.HVPlaces?.open({date:start, end, ...context, tripId, accommodation:kind === 'accommodation'});
+}
+function openAddTravel(context = {}) {
+  const dialog = document.createElement('dialog'), opener = document.activeElement;
+  let chosenKind='';
+  dialog.className = 'dialog small-dialog'; dialog.setAttribute('aria-label','Add travel');
+  dialog.innerHTML = `<div class="dialog-card"><div class="dialog-head"><h2>Add travel</h2><button type="button" class="text-btn" data-close>Add later ×</button></div><p class="helper">A trip is an optional way to group your travel. Each record can stand alone.</p><div class="add-travel-choices">${[['country','Country visit'],['accommodation','Accommodation'],['transport','Transport'],['note','Note'],['location','Location'],['trip','Complete trip']].map(([kind,label])=>`<button type="button" class="secondary" data-add-kind="${kind}">${label}</button>`).join('')}</div></div>`;
+  document.body.append(dialog); dialog.onclose = () => {dialog.remove();opener?.focus?.();if(chosenKind)addTravel(chosenKind,context);};
+  dialog.onclick = event => {const button = event.target.closest('[data-add-kind],[data-close]'); if (!button) return; chosenKind=button.dataset.addKind||'';dialog.close();};
+  dialog.showModal();
+}
+window.HVTravelActions = {add:addTravel, open:openAddTravel, plan:context=>openTripPlanner({source:'plan', ...context})};
+
 function captureCalendarAction(event) {
   const target = event.target;
+  const miniDate=target.closest('[data-home-calendar-date]');if(miniDate){event.preventDefault();event.stopPropagation();switchView('calendar');calendarCursor=new Date(miniDate.dataset.homeCalendarDate.slice(0,7)+'-01T00:00:00Z');renderMonth();selectDate(miniDate.dataset.homeCalendarDate);return;}
   if(target.closest('[data-calendar-cancel-range]')){
     event.preventDefault();event.stopPropagation();HVCalendar.clearSelection();return;
   }
   if(target.closest('[data-calendar-explore-selected]')){
     event.preventDefault();event.stopPropagation();selectDate(calendarSelectionStart);return;
   }
-  if(target.closest('#prevMonth,#nextMonth,#todayBtn,button[data-calendar-view]'))HVCalendar.clearSelection(false);
+  if(target.closest('#prevMonth,#nextMonth,#todayBtn'))HVCalendar.clearSelection(false);
   const entry = target.closest('[data-calendar-entry]');
   if (entry) {
     event.preventDefault();
@@ -126,6 +171,15 @@ function captureCalendarAction(event) {
     panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));
     if(!panel.hidden){renderCalendarSearch();$('calendarSearchInput')?.focus();}return;
   }
+  if (target.closest('[data-agenda-select]')) {
+    event.preventDefault();event.stopPropagation();
+    const start=$('calendarAgenda').querySelector('[data-agenda-start]').value, end=$('calendarAgenda').querySelector('[data-agenda-end]').value;
+    if (!HVJourney.validDate(start)||!HVJourney.validDate(end)) return;
+    calendarSelectionStart=start<end?start:end; calendarSelectionEnd=start<end?end:start; selectedDate=calendarSelectionStart; rangeSelecting=false; selectedEntry=null;
+    updateDateSelection();renderAgenda();focusCalendarDetail();return;
+  }
+  const addKind=target.closest('[data-add-travel-kind]');
+  if(addKind){event.preventDefault();event.stopPropagation();addKind.closest('details').open=false;addTravel(addKind.dataset.addTravelKind,{start:calendarSelectionStart||selectedDate||today(),end:calendarSelectionEnd||calendarSelectionStart||selectedDate||today()});return;}
   const linkedNote = target.closest('[data-calendar-related-note]');
   if (linkedNote) {
     event.preventDefault();event.stopPropagation();
@@ -248,18 +302,11 @@ function captureCalendarAction(event) {
     event.stopPropagation();
     const kind = action.dataset.calendarDateAction;
     if (kind === 'transport') {
-      window.HVJourneys?.openTransport(null, {
-        startLocal: `${calendarSelectionStart || selectedDate}T12:00`,
-        endLocal: `${calendarSelectionEnd || calendarSelectionStart || selectedDate}T12:00`,
-      });
+      addTravel('transport', {start:calendarSelectionStart || selectedDate, end:calendarSelectionEnd || calendarSelectionStart || selectedDate});
       return;
     }
     if (kind === 'accommodation') {
-      window.HVPlaces?.open({
-        date: calendarSelectionStart || selectedDate,
-        end: calendarSelectionEnd || calendarSelectionStart || selectedDate,
-        accommodation: true,
-      });
+      addTravel('accommodation', {start:calendarSelectionStart || selectedDate, end:calendarSelectionEnd || calendarSelectionStart || selectedDate});
       return;
     }
     if (kind === 'location') {
@@ -392,6 +439,8 @@ function boot() {
     },
     ready: true,
     renderMonth,
+    renderAgenda,
+    projectDays:projectCalendarDays,
     openTripPlanner,
     openAccommodationDialog,
     journeyGroups: buildJourneys,
@@ -406,8 +455,16 @@ function boot() {
     },
   };
   calendar.dataset.journeyCalendar = 'true';
+  const closeDisplayMenus=target=>{qa('.calendar-toolbar details[open]').forEach(menu=>{if(menu.classList.contains('calendar-filter-menu')&&!matchMedia('(max-width:700px)').matches)return;if(!menu.contains(target))menu.open=false;});};
+  document.addEventListener('pointerdown',event=>closeDisplayMenus(event.target));
+  document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=event.target.closest('.calendar-toolbar details[open]');if(menu){menu.open=false;q('summary',menu)?.focus();event.preventDefault();event.stopImmediatePropagation();}},true);
+  const fitMenu=menu=>{if(!menu.open)return;const panel=q('.calendar-display-options,.calendar-add-options',menu);if(!panel)return;panel.style.transform='';const box=panel.getBoundingClientRect(),shift=box.left<12?12-box.left:box.right>innerWidth-12?innerWidth-12-box.right:0;panel.style.transform=`translateX(${shift}px)`;};
+  qa('.calendar-toolbar details',$('calendarView')).forEach(menu=>menu.addEventListener('toggle',()=>fitMenu(menu)));
+  window.addEventListener('resize',()=>qa('.calendar-toolbar details[open]').forEach(fitMenu));
+  const filters=q('.calendar-filter-menu',$('calendarView')), narrow=matchMedia('(max-width:700px)');
+  if(filters){filters.open=!narrow.matches;narrow.addEventListener('change',()=>{filters.open=!narrow.matches;renderMonth();});}
   moveLegacyTransportTools();
-  $('addStayBtn').onclick = () => openTripPlanner({ source: 'manual' });
+  $('addStayBtn').onclick = () => openAddTravel();
   $('addStayFromListBtn').onclick = () => openTripPlanner({ source: 'manual' });
   window.addEventListener('hv-airports-ready',()=>{journeyCache=undefined;});
   document.addEventListener('click', captureCalendarAction, true);
@@ -431,7 +488,7 @@ function boot() {
     if (
       (calendarSelectionStart || selectedDate) &&
       !event.target.closest(
-        'dialog,#calendar,#calendarJourneyDetail,#calendarSelectionInfo,.calendar-toolbar,#calendarSearchPanel,.calendar-floating-detail',
+        'dialog,#calendar,#calendarJourneyDetail,#calendarSelectionInfo,.calendar-toolbar,#calendarAgenda,#calendarSearchPanel,.calendar-floating-detail',
       )
     )
       HVCalendar.clearSelection();

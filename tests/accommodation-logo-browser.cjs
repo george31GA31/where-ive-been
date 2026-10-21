@@ -39,12 +39,12 @@ let browser;
       if(r.request().resourceType()==='image')return r.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSe8AAAAASUVORK5CYII=','base64')});
       return r.fulfill({contentType:r.request().resourceType()==='script'?'text/javascript':'application/json',body:r.request().resourceType()==='script'?'':'{}'});
     });
-    await page.addInitScript(({seed,theme,owned})=>{
+    await page.addInitScript(({seed,theme,owned})=>{localStorage.setItem('herald.calendar.view.v1','month');
       if(!localStorage.getItem('logo-test-seeded')){
         localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.guest.v1',JSON.stringify(seed));localStorage.setItem('whereIveBeen.stays.v1','[]');localStorage.setItem('logo-test-seeded','yes');
         if(owned)localStorage.setItem('whereIveBeen.localOwner.v1','another-account');
       }
-      localStorage.setItem('whereIveBeen.theme.v1',theme);
+      localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);
     },{seed,theme,owned});
     async function openHotel(){
       await page.waitForSelector('#globalJourneyMap .marker-accommodation');await page.evaluate(()=>HVJourneyUI.activeMap().setView([22.57,59.52],14,{animate:false}));

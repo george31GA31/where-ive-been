@@ -1,3 +1,9 @@
+function quickTripControl(start, end) {
+  const trips = HVJourney.scoped(state.trips || [], state.activeProfileId).filter(t => t.status !== 'cancelled');
+  const matches = trips.filter(t => t.start && t.end && t.start <= start && t.end >= end);
+  return `<label class="field"><span>Trip <em>optional</em></span><select name="tripId"><option value="">No trip</option>${trips.map(t => `<option value="${E(t.id)}">${E(t.name)}</option>`).join('')}</select></label>${matches.length ? `<p class="helper">Date matches: ${matches.map(t => E(t.name)).join(', ')}. Choose a trip above to link this visit.</p>` : ''}`;
+}
+
 function accommodationDateText(record) {
   if (record.checkIn && record.checkOut) return dateRangeText(record.checkIn,record.checkOut);
   if (record.checkIn) return `Check-in ${dateText(record.checkIn)} · check-out not recorded`;
@@ -47,7 +53,9 @@ function calendarEntryRow(kind,record,start,end) {
     subtitle=HVAddress.address(record.place)||record.notes||dateRangeText(record.date,record.endDate||record.date);
     icon='◎';edit=`data-place-edit="${E(record.id)}"`;
   }
-  return `<article class="calendar-explorer-row type-${kind}"><button type="button" class="calendar-explorer-entry" ${entryAttributes(kind,record.id,start)}><span class="calendar-explorer-symbol" aria-hidden="true">${icon}</span><span><strong>${E(title)}</strong>${badge ? `<span class="calendar-entry-phase">${E(badge)}</span>` : ''}${subtitle ? `<small>${E(subtitle)}</small>` : ''}</span><span aria-hidden="true">›</span></button><button type="button" class="text-btn calendar-row-edit" ${edit} aria-label="Edit ${E(title)}">Edit</button></article>`;
+  const notice=kind==='country'&&!tentative?window.HVVisaNotices?.info(record):null;
+  const reminder=notice?.needs&&!notice.acknowledged?`<button type="button" class="text-btn calendar-row-reminder" data-visa-notice="${E(record.id)}">${!notice.passport?'Confirm passport · entry requirements':notice.rule?.verified===false?'Check current guidance · entry requirements':'Review entry requirements'}</button>`:'';
+  return `<article class="calendar-explorer-row type-${kind}"><button type="button" class="calendar-explorer-entry" ${entryAttributes(kind,record.id,start)}><span class="calendar-explorer-symbol" aria-hidden="true">${icon}</span><span><strong>${E(title)}</strong>${badge ? `<span class="calendar-entry-phase">${E(badge)}</span>` : ''}${subtitle ? `<small>${E(subtitle)}</small>` : ''}</span><span aria-hidden="true">›</span></button><button type="button" class="text-btn calendar-row-edit" ${edit} aria-label="Edit ${E(title)}">Edit</button>${reminder}</article>`;
 }
 
 function dayInsight(date) {
@@ -60,10 +68,10 @@ function dayInsight(date) {
   const heading=start===end ? new Date(start+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}) : dateRangeText(start,end);
   const countryNames=[...new Set(records.country.map(s => s.countryName))].filter(Boolean).join(' · ');
   const sections=calendarKinds.map(([,label,kind,icon]) => records[kind].length ? `<section class="calendar-explorer-section"><h3><span aria-hidden="true">${kind==='transport' ? transportIcon('flight') : icon}</span>${label}<small>${records[kind].length}</small></h3>${kind==='accommodation' && records.accommodation.length>1 ? '<p class="calendar-section-hint">Check-outs first, then ongoing stays and check-ins. Overlapping reservations are kept separately.</p>' : ''}${records[kind].map(record => calendarEntryRow(kind,record,start,end)).join('')}</section>` : '').join('');
-  const action=dateAction==='country' ? `<form id="calendarQuickCountry" class="calendar-quick-form"><label class="field"><span>Country</span><input type="text" name="country" list="countryList" required autocomplete="off" placeholder="Search a country"></label><div class="form-grid calendar-range-fields"><label class="field"><span>Start date</span><input type="date" name="start" value="${E(start)}" required></label><label class="field"><span>End date</span><input type="date" name="end" value="${E(end)}" required></label></div><label class="field"><span>City or area <em>optional</em></span><input type="text" name="location" maxlength="160"></label><button class="primary" type="submit">Save country stay</button><p class="form-error" role="alert"></p></form>` : '';
+  const action=dateAction==='country' ? `<form id="calendarQuickCountry" class="calendar-quick-form"><label class="field"><span>Country</span><input type="text" name="country" list="countryList" required autocomplete="off" placeholder="Search a country"></label><div class="form-grid calendar-range-fields"><label class="field"><span>Start date</span><input type="date" name="start" value="${E(start)}" required></label><label class="field"><span>End date</span><input type="date" name="end" value="${E(end)}" required></label></div><label class="field"><span>City or area <em>optional</em></span><input type="text" name="location" maxlength="160"></label>${quickTripControl(start,end)}<button class="primary" type="submit">Save country visit</button><p class="form-error" role="alert"></p></form>` : '';
   return `<div class="calendar-date-panel"><header class="calendar-explorer-head"><div><p class="eyebrow">DAY EXPLORER${start!==end ? ' · DATE RANGE' : ''}</p><h2 data-calendar-detail-heading tabindex="-1">${E(heading)}</h2>${countryNames ? `<p class="calendar-explorer-country">${E(countryNames)}</p>` : ''}<p class="calendar-section-hint">${count} ${count===1 ? 'entry' : 'entries'} recorded${calendarKinds.some(([key]) => visibleLayers()[key]===false) ? ' · showing all categories here' : ''}</p></div><button type="button" class="icon-btn" data-calendar-close-date aria-label="Close Day Explorer">×</button></header>
     <div class="calendar-explorer-tools">${start===end ? `<button type="button" class="text-btn" data-calendar-day-nav="${HVCalendarData.next(start,-1)}" aria-label="Previous day">←</button><button type="button" class="text-btn" data-calendar-day-nav="${HVCalendarData.next(start)}" aria-label="Next day">→</button>` : ''}<details class="calendar-range-editor"><summary>Change dates</summary><div class="form-grid calendar-range-fields"><label class="field"><span>From</span><input type="date" data-range-start value="${E(start)}"></label><label class="field"><span>To</span><input type="date" data-range-end value="${E(end)}"></label></div></details></div>
-    <details class="calendar-add-menu"${dateAction || calendarSelectionEnd ? ' open' : ''}><summary>+ Add to ${start===end ? 'this day' : 'these dates'}</summary><div class="calendar-date-actions"><button type="button" data-calendar-date-action="country">▏ Add country</button><button type="button" data-calendar-date-action="accommodation">⌂ Add accommodation</button><button type="button" data-calendar-date-action="transport">↗ Add transport</button><button type="button" data-calendar-date-action="note">✎ Add note</button><button type="button" data-calendar-date-action="location">◎ Add location</button><button type="button" data-add-tentative>○ Add tentative plan</button><button type="button" data-calendar-cancel-range>Cancel selection</button></div><div class="calendar-explicit-plan"><button type="button" class="text-btn" data-create-range-trip data-start="${E(start)}" data-end="${E(end)}">Create trip from records</button><button type="button" class="text-btn" data-calendar-plan>Plan a Journey →</button></div></details>${action}
+    <details class="calendar-add-menu"${dateAction || calendarSelectionEnd ? ' open' : ''}><summary>+ Add to ${start===end ? 'this day' : 'these dates'}</summary><div class="calendar-date-actions"><button type="button" data-calendar-date-action="country">▏ Add country</button><button type="button" data-calendar-date-action="accommodation">⌂ Add accommodation</button><button type="button" data-calendar-date-action="transport">↗ Add transport</button><button type="button" data-calendar-date-action="note">✎ Add note</button><button type="button" data-calendar-date-action="location">◎ Add location</button><button type="button" data-add-tentative>○ Add tentative plan</button><button type="button" data-calendar-cancel-range>Cancel selection</button></div><div class="calendar-explicit-plan"><button type="button" class="text-btn" data-create-range-trip data-start="${E(start)}" data-end="${E(end)}">Create trip from records</button><button type="button" class="text-btn" data-calendar-plan>Plan a trip →</button></div></details>${action}
     <div class="calendar-explorer-sections">${sections||'<div class="calendar-explorer-empty"><span aria-hidden="true">✧</span><strong>A day waiting to be recorded</strong><p>Add a country, a stay, a journey or a small memory.</p></div>'}</div></div>`;
 }
 
@@ -191,15 +199,6 @@ function renderJourneyDetail() {
   }
   if (!group) {
     host.innerHTML = dayInsight(selectedDate, groups);
-    if (selectedDate) {
-      const start = calendarSelectionStart || selectedDate,
-        end = calendarSelectionEnd || start;
-      const matching = groups.filter((g) => g.trip && g.start <= end && g.end >= start);
-      if (matching.length === 1) {
-        const select = q('.calendar-quick-form [name="tripId"]', host);
-        if (select) select.value = matching[0].trip.id;
-      }
-    }
     return;
   }
   const travelDays = transportDaySet(group).size;

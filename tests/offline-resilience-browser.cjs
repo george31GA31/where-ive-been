@@ -23,7 +23,7 @@ let browser;
  if(url.includes('/rest/v1/travel_tracker_data')){reads++;return r.fulfill({json:[{payload:cloud,revision}]});}
  if(url.includes('/rpc/save_travel_account')){cloud=r.request().postDataJSON().p_payload;revision++;writes++;return r.fulfill({json:[{revision}]});}
  }return r.abort();});
- await page.addInitScript(({auth,theme})=>{if(!localStorage.getItem('whereIveBeen.auth.v1'))localStorage.setItem('whereIveBeen.auth.v1',JSON.stringify(auth));localStorage.setItem('whereIveBeen.theme.v1',theme);},{auth:session(),theme});
+ await page.addInitScript(({auth,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');if(!localStorage.getItem('whereIveBeen.auth.v1'))localStorage.setItem('whereIveBeen.auth.v1',JSON.stringify(auth));localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);},{auth:session(),theme});
  console.log('Loading offline fixture '+width);await page.goto(origin+'/');await page.waitForFunction(()=>state.stays.length===1&&!document.querySelector('.app-shell').inert);
  console.log('Account loaded; waiting for offline shell');await page.waitForFunction(()=>!!navigator.serviceWorker.controller,null,{timeout:120000});
  await page.evaluate(()=>switchView('calendar'));const before=await page.evaluate(()=>JSON.stringify(state.stays));

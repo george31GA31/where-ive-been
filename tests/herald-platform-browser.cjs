@@ -15,7 +15,7 @@ const refresh=async page=>{await page.bringToFront();await page.evaluate(()=>doc
 const noOverflow=async page=>assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No horizontal page overflow');
 async function session(origin,width,theme){
  const context=await browser.newContext({viewport:{width,height:1000},hasTouch:width<500,reducedMotion:'reduce'});contexts.push(context);const page=await context.newPage(),control={page,offline:false,routeCalls:0,errors:[]};page.on('pageerror',e=>control.errors.push(e.message));
- await context.addInitScript(theme=>localStorage.setItem('whereIveBeen.theme.v1',theme),theme);
+ await context.addInitScript(theme=>{localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);},theme);
  await context.route('**/*',async r=>{
   const url=r.request().url();if(url.startsWith(origin))return r.continue();
   if(url.includes('.supabase.co/')){
