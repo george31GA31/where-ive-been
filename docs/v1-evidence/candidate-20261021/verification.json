@@ -1,0 +1,65 @@
+{
+  "implementationCommit": "3b46c75c100f1f85d28a4e025859fbc09cec9253",
+  "baseCommit": "86059274d2e3e34535472a1e4c636695442010bc",
+  "evidence": "isolated fictional local data and intercepted account APIs",
+  "unit": {
+    "files": 39,
+    "passed": 287,
+    "failed": 0
+  },
+  "ordinaryBrowserRunners": {
+    "passed": 27,
+    "failed": 0,
+    "note": "full set passed, then affected suites refreshed after final fixes"
+  },
+  "newCandidateRunners": {
+    "passed": 8,
+    "failed": 0
+  },
+  "v1ViewportThemePageStates": 300,
+  "buildConsistency": "passed",
+  "dom": "passed",
+  "syntaxFiles": 185,
+  "vendorIntegrity": "passed",
+  "pythonCountryImportTests": 3,
+  "npmAuditVulnerabilities": 0,
+  "previousVersionOfflineUpgrade": "passed",
+  "largeStartupAndRecovery": "passed",
+  "finalNavigationRuns": "2 passed at original budgets, including offscreen keyboard access and scroll restoration",
+  "priorityPerformanceFinalRuns": {
+    "passed": 2,
+    "failed": 1,
+    "medianBudgets": "passed",
+    "outliers": [
+      {
+        "records": 160,
+        "view": "tcc",
+        "pass": 2,
+        "handlerMs": 177
+      },
+      {
+        "records": 800,
+        "view": "tcc",
+        "pass": 2,
+        "handlerMs": 701
+      }
+    ],
+    "note": "No thresholds were raised. Original baseline also had intermittent warm-budget failures. Retain as a responsiveness verification limit."
+  },
+  "manualDeviceGaps": [
+    "physical on-screen keyboard",
+    "native text-only zoom",
+    "comprehensive WCAG review"
+  ],
+  "deployedAccountGates": "unverified; only read-only structural metadata checked",
+  "ownerAccountBackup": false,
+  "published": false,
+  "runtimeSha256": {
+    "app-core.js": "d055ca30376b68ad26eb4116edf3b63b781cd2a51d1fe2c31235992eb65f3c9d",
+    "calendar-experience.js": "148e2f24175908481f4af6eaad2c02401f26ce7c45d2f84802b8c2bd6156d3a2",
+    "calendar-experience.css": "50704704d2e52672737f8e31fb606fbc6babcc355125982d90f9979e58751386",
+    "herald-ui.css": "96ca0f3a4d41069719dc57f9ae81ead3c260b0a7178892b3ec1f271ad4732f6a",
+    "voyages.js": "ac570ebac00222eec760edfc8fb98912c2854ad2820ac8bc44fc33ecb81ceb0f",
+    "sw.js": "fb1f08d09fe43c3f269b919680a6b1a2eec6301e4548a76de3e5eb9306841993"
+  }
+}

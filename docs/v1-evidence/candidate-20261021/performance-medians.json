@@ -1,0 +1,77 @@
+[
+  {
+    "countPerPrincipalCollection": 8,
+    "baseline": {
+      "runs": 3,
+      "coldCalendarHandlerMs": 128,
+      "coldCalendarTwoFrameMs": 133,
+      "warmCalendarHandlerMs": 20,
+      "warmCalendarTwoFrameMs": 26,
+      "rangeStartHandlerMs": 2,
+      "rangeEndHandlerMs": 8,
+      "cachedReadyMs": 680,
+      "maxWarmOrdinaryHandlerMedianMs": 33
+    },
+    "candidate": {
+      "runs": 3,
+      "coldCalendarHandlerMs": 68,
+      "coldCalendarTwoFrameMs": 73,
+      "warmCalendarHandlerMs": 52,
+      "warmCalendarTwoFrameMs": 71,
+      "rangeStartHandlerMs": 1,
+      "rangeEndHandlerMs": 18,
+      "cachedReadyMs": 588,
+      "maxWarmOrdinaryHandlerMedianMs": 52
+    }
+  },
+  {
+    "countPerPrincipalCollection": 160,
+    "baseline": {
+      "runs": 3,
+      "coldCalendarHandlerMs": 66,
+      "coldCalendarTwoFrameMs": 75,
+      "warmCalendarHandlerMs": 36,
+      "warmCalendarTwoFrameMs": 47,
+      "rangeStartHandlerMs": 1,
+      "rangeEndHandlerMs": 13,
+      "cachedReadyMs": 1116,
+      "maxWarmOrdinaryHandlerMedianMs": 36
+    },
+    "candidate": {
+      "runs": 3,
+      "coldCalendarHandlerMs": 65,
+      "coldCalendarTwoFrameMs": 75,
+      "warmCalendarHandlerMs": 29,
+      "warmCalendarTwoFrameMs": 39,
+      "rangeStartHandlerMs": 1,
+      "rangeEndHandlerMs": 10,
+      "cachedReadyMs": 923,
+      "maxWarmOrdinaryHandlerMedianMs": 37
+    }
+  },
+  {
+    "countPerPrincipalCollection": 800,
+    "baseline": {
+      "runs": 3,
+      "coldCalendarHandlerMs": 159,
+      "coldCalendarTwoFrameMs": 169,
+      "warmCalendarHandlerMs": 33,
+      "warmCalendarTwoFrameMs": 80,
+      "rangeStartHandlerMs": 2,
+      "rangeEndHandlerMs": 20,
+      "cachedReadyMs": 1392,
+      "maxWarmOrdinaryHandlerMedianMs": 35
+    },
+    "candidate": {
+      "runs": 3,
+      "coldCalendarHandlerMs": 168,
+      "coldCalendarTwoFrameMs": 179,
+      "warmCalendarHandlerMs": 36,
+      "warmCalendarTwoFrameMs": 54,
+      "rangeStartHandlerMs": 3,
+      "rangeEndHandlerMs": 20,
+      "cachedReadyMs": 1197,
+      "maxWarmOrdinaryHandlerMedianMs": 36
+    }
+  }
+]

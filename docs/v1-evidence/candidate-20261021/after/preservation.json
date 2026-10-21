@@ -1,0 +1,214 @@
+{
+  "fictional": true,
+  "beforeSha256": "d45f0d8ff03d332ba28cc2b97c9f596c967dd88ea04bd2b4777a2159ac7f93de",
+  "afterSha256": "d45f0d8ff03d332ba28cc2b97c9f596c967dd88ea04bd2b4777a2159ac7f93de",
+  "collections": {
+    "profiles": {
+      "count": 2,
+      "ids": [
+        "p",
+        "p2"
+      ]
+    },
+    "stays": {
+      "count": 19,
+      "ids": [
+        "stay-0",
+        "stay-1",
+        "stay-2",
+        "stay-3",
+        "stay-4",
+        "stay-5",
+        "stay-6",
+        "stay-7",
+        "algeria",
+        "tunisia",
+        "malta",
+        "many-0",
+        "many-1",
+        "many-2",
+        "many-3",
+        "many-4",
+        "suriname",
+        "guiana",
+        "guyana"
+      ]
+    },
+    "residences": {
+      "count": 0,
+      "ids": []
+    },
+    "trips": {
+      "count": 12,
+      "ids": [
+        "trip-0",
+        "trip-1",
+        "trip-2",
+        "trip-3",
+        "trip-4",
+        "trip-5",
+        "trip-6",
+        "trip-7",
+        "africa",
+        "malta",
+        "cancelled-trip",
+        "south"
+      ]
+    },
+    "accommodations": {
+      "count": 23,
+      "ids": [
+        "hotel-0",
+        "hotel-1",
+        "hotel-2",
+        "hotel-3",
+        "hotel-4",
+        "hotel-5",
+        "hotel-6",
+        "hotel-7",
+        "previous",
+        "first",
+        "second",
+        "house",
+        "next-month",
+        "overlap-a",
+        "overlap-b",
+        "day-room",
+        "consecutive-a",
+        "consecutive-b",
+        "cancelled",
+        "other-profile",
+        "jungle",
+        "atlantis",
+        "alberga"
+      ]
+    },
+    "transports": {
+      "count": 14,
+      "ids": [
+        "transport-0",
+        "transport-1",
+        "transport-2",
+        "transport-3",
+        "transport-4",
+        "transport-5",
+        "transport-6",
+        "transport-7",
+        "alg-tun",
+        "busy-flight",
+        "busy-train",
+        "busy-bus",
+        "standalone-flight",
+        "guianas-flight"
+      ]
+    },
+    "notes": {
+      "count": 3,
+      "ids": [
+        "note",
+        "important-date",
+        "south-note"
+      ]
+    },
+    "checklists": {
+      "count": 2,
+      "ids": [
+        "checklist",
+        "south-packing"
+      ]
+    },
+    "budgets": {
+      "count": 1,
+      "ids": [
+        "budget"
+      ]
+    },
+    "expenses": {
+      "count": 1,
+      "ids": [
+        "expense"
+      ]
+    },
+    "roadTrips": {
+      "count": 0,
+      "ids": []
+    },
+    "savedPlaces": {
+      "count": 8,
+      "ids": [
+        "saved-0",
+        "saved-1",
+        "saved-2",
+        "saved-3",
+        "saved-4",
+        "saved-5",
+        "saved-6",
+        "saved-7"
+      ]
+    },
+    "placeVisits": {
+      "count": 1,
+      "ids": [
+        "saved-location"
+      ]
+    },
+    "manualCountryVisits": {
+      "count": 1,
+      "ids": [
+        "manual-country:p:TN"
+      ]
+    },
+    "tccVisits": {
+      "count": 1,
+      "ids": [
+        "tcc-visit:p:tcc-algeria"
+      ]
+    },
+    "currencyRates": {
+      "count": 0,
+      "ids": []
+    },
+    "currencyPreferences": {
+      "count": 0,
+      "ids": []
+    },
+    "transportOperators": {
+      "count": 0,
+      "ids": []
+    },
+    "calendarPlans": {
+      "count": 0,
+      "ids": []
+    },
+    "visaAcknowledgements": {
+      "count": 0,
+      "ids": []
+    },
+    "excludedCountryCodes": {
+      "count": 0,
+      "ids": []
+    },
+    "countryCountExcludedCodes": {
+      "count": 0,
+      "ids": []
+    },
+    "countryCountIncludedExtraCodes": {
+      "count": 0,
+      "ids": []
+    }
+  },
+  "settings": {
+    "version": 2,
+    "activeProfileId": "p",
+    "visualLayers": {
+      "calendar": {
+        "countries": true,
+        "transport": true,
+        "accommodation": true
+      }
+    },
+    "privateFixtureMarker": {
+      "unknown": "round trip"
+    }
+  }
+}

@@ -1,0 +1,137 @@
+[
+  {
+    "file": "tests/calendar-cell-browser.cjs",
+    "code": 0,
+    "seconds": 66
+  },
+  {
+    "file": "tests/health-water-browser.cjs",
+    "code": 0,
+    "seconds": 47
+  },
+  {
+    "file": "tests/city-autofill-browser.cjs",
+    "code": 0,
+    "seconds": 29
+  },
+  {
+    "file": "tests/journey-presentation-browser.cjs",
+    "code": 0,
+    "seconds": 62
+  },
+  {
+    "file": "tests/accommodation-logo-browser.cjs",
+    "code": 0,
+    "seconds": 45
+  },
+  {
+    "file": "tests/account-quota-browser.cjs",
+    "code": 0,
+    "seconds": 22
+  },
+  {
+    "file": "tests/offline-resilience-browser.cjs",
+    "code": 0,
+    "seconds": 21
+  },
+  {
+    "file": "tests/network-routing-browser.cjs",
+    "code": 0,
+    "seconds": 170
+  },
+  {
+    "file": "tests/country-trackers-browser.cjs",
+    "code": 0,
+    "seconds": 108
+  },
+  {
+    "file": "tests/transport-dashboard-browser.cjs",
+    "code": 0,
+    "seconds": 58
+  },
+  {
+    "file": "tests/route-pause-browser.cjs",
+    "code": 0,
+    "seconds": 4
+  },
+  {
+    "file": "tests/offline-shell-delivery-browser.cjs",
+    "code": 0,
+    "seconds": 3
+  },
+  {
+    "file": "tests/calendar-chronology-browser.cjs",
+    "code": 0,
+    "seconds": 72
+  },
+  {
+    "file": "tests/v1-release-browser.cjs",
+    "code": 0,
+    "seconds": 84
+  },
+  {
+    "file": "tests/refinements-browser.cjs",
+    "code": 0,
+    "seconds": 31
+  },
+  {
+    "file": "tests/herald-platform-browser.cjs",
+    "code": 0,
+    "seconds": 26
+  },
+  {
+    "file": "tests/map-planner-calendar-browser.cjs",
+    "code": 0,
+    "seconds": 41
+  },
+  {
+    "file": "tests/calendar-interactive-browser.cjs",
+    "code": 0,
+    "seconds": 56
+  },
+  {
+    "file": "tests/calendar-range-browser.cjs",
+    "code": 0,
+    "seconds": 93
+  },
+  {
+    "file": "tests/calendar-planning-browser.cjs",
+    "code": 0,
+    "seconds": 123
+  },
+  {
+    "file": "tests/master-browser.cjs",
+    "code": 0,
+    "seconds": 39
+  },
+  {
+    "file": "tests/entry-map-browser.cjs",
+    "code": 0,
+    "seconds": 97
+  },
+  {
+    "file": "tests/entry-requirements-browser.cjs",
+    "code": 0,
+    "seconds": 89
+  },
+  {
+    "file": "tests/travel-tools-browser.cjs",
+    "code": 0,
+    "seconds": 53
+  },
+  {
+    "file": "tests/daily-plans-browser.cjs",
+    "code": 0,
+    "seconds": 10
+  },
+  {
+    "file": "tests/currency-road-browser.cjs",
+    "code": 0,
+    "seconds": 88
+  },
+  {
+    "file": "tests/browser-smoke.cjs",
+    "code": 0,
+    "seconds": 87
+  }
+]

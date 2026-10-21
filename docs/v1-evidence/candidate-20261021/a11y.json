@@ -1,0 +1,134 @@
+[
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "light",
+    "contrast": [
+      {
+        "label": "Open trip",
+        "ratio": 8.519420343085745
+      },
+      {
+        "label": "Plan another trip",
+        "ratio": 14.631280836102729
+      }
+    ],
+    "fieldRole": {
+      "font": "\"Avenir Next\", \"Segoe UI\", Arial, sans-serif",
+      "minHeight": "44px",
+      "radius": "7px",
+      "padding": "10px 12px"
+    },
+    "overflow": 0
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "theme": "light",
+    "contrast": [
+      {
+        "label": "Open trip",
+        "ratio": 8.519420343085745
+      },
+      {
+        "label": "Plan another trip",
+        "ratio": 14.631280836102729
+      }
+    ],
+    "fieldRole": {
+      "font": "\"Avenir Next\", \"Segoe UI\", Arial, sans-serif",
+      "minHeight": "44px",
+      "radius": "7px",
+      "padding": "10px 12px"
+    },
+    "overflow": 0
+  },
+  {
+    "width": 720,
+    "height": 450,
+    "theme": "light",
+    "contrast": [
+      {
+        "label": "Open trip",
+        "ratio": 8.519420343085745
+      },
+      {
+        "label": "Plan another trip",
+        "ratio": 14.631280836102729
+      }
+    ],
+    "fieldRole": {
+      "font": "\"Avenir Next\", \"Segoe UI\", Arial, sans-serif",
+      "minHeight": "44px",
+      "radius": "7px",
+      "padding": "10px 12px"
+    },
+    "overflow": 0
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "theme": "dark",
+    "contrast": [
+      {
+        "label": "Open trip",
+        "ratio": 7.0443395978160845
+      },
+      {
+        "label": "Plan another trip",
+        "ratio": 12.976479722041823
+      }
+    ],
+    "fieldRole": {
+      "font": "\"Avenir Next\", \"Segoe UI\", Arial, sans-serif",
+      "minHeight": "44px",
+      "radius": "7px",
+      "padding": "10px 12px"
+    },
+    "overflow": 0
+  },
+  {
+    "width": 844,
+    "height": 390,
+    "theme": "dark",
+    "contrast": [
+      {
+        "label": "Open trip",
+        "ratio": 7.0443395978160845
+      },
+      {
+        "label": "Plan another trip",
+        "ratio": 12.976479722041823
+      }
+    ],
+    "fieldRole": {
+      "font": "\"Avenir Next\", \"Segoe UI\", Arial, sans-serif",
+      "minHeight": "44px",
+      "radius": "7px",
+      "padding": "10px 12px"
+    },
+    "overflow": 0
+  },
+  {
+    "width": 720,
+    "height": 450,
+    "theme": "dark",
+    "contrast": [
+      {
+        "label": "Open trip",
+        "ratio": 7.0443395978160845
+      },
+      {
+        "label": "Plan another trip",
+        "ratio": 12.976479722041823
+      }
+    ],
+    "fieldRole": {
+      "font": "\"Avenir Next\", \"Segoe UI\", Arial, sans-serif",
+      "minHeight": "44px",
+      "radius": "7px",
+      "padding": "10px 12px"
+    },
+    "overflow": 0
+  }
+]

@@ -1,0 +1,41 @@
+[
+  {
+    "count": 160,
+    "points": 350,
+    "width": 390,
+    "theme": "dark",
+    "payloadBytes": 3042387,
+    "readyMs": 1961,
+    "maxTaskMs": 174,
+    "logoAssets": 84,
+    "cacheBytes": 2731623,
+    "usedJSHeapBytes": 27127628,
+    "idleJSHeapBytes": 33045844
+  },
+  {
+    "count": 450,
+    "points": 700,
+    "width": 768,
+    "theme": "light",
+    "payloadBytes": 14657385,
+    "readyMs": 3621,
+    "maxTaskMs": 658,
+    "logoAssets": 229,
+    "cacheBytes": 13753410,
+    "usedJSHeapBytes": 117660876,
+    "idleJSHeapBytes": 161654284
+  },
+  {
+    "count": 700,
+    "points": 1100,
+    "width": 1440,
+    "theme": "dark",
+    "payloadBytes": 33642389,
+    "readyMs": 6312,
+    "maxTaskMs": 1487,
+    "logoAssets": 354,
+    "cacheBytes": 32227039,
+    "usedJSHeapBytes": 334336448,
+    "idleJSHeapBytes": 433338132
+  }
+]
