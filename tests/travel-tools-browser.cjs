@@ -49,24 +49,24 @@ let browser;
       // No remote account, booking or research calls in this guest fixture.
       return r.fulfill({ status: 200, contentType: r.request().resourceType() === 'script' ? 'text/javascript' : 'application/json', body: r.request().resourceType() === 'script' ? '' : '{}' });
     });
-    await page.addInitScript(({ seed, theme }) => {
+    await page.addInitScript(({ seed, theme }) => {localStorage.setItem('herald.calendar.view.v1','month');
       if (!localStorage.getItem('whereIveBeen.data.v2')) {
         localStorage.setItem('whereIveBeen.data.v2', JSON.stringify(seed));
         localStorage.setItem('whereIveBeen.guest.v1', JSON.stringify({ ...seed, notes: 'Keep separate guest backup' }));
         localStorage.setItem('whereIveBeen.stays.v1', JSON.stringify(seed.stays));
       }
-      localStorage.setItem('whereIveBeen.theme.v1', theme);
+      localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1', theme);
     }, { seed, theme });
     await page.goto(origin + '/#/plan-a-trip');
     await page.waitForFunction(() => window.HVPages && window.HVCalendar?.ready && document.body.dataset.currentView === 'planner');
     const before = await page.evaluate(snapshot), stored = await page.evaluate(storage);
-    const nav = view => ({async click(){if(await page.locator('.header-menu-toggle').isVisible())await page.locator('.header-menu-toggle').click();const group=['calendar','stays','transport','journeys'].includes(view)?'trips':['tools','notes','budget','currency','roadTrip','stayPlanner','rules','schengen'].includes(view)?'tools':view==='planner'?'plan':'atlas';const summary=page.locator('summary[data-workspace="'+group+'"]');if(await summary.count())await summary.click();await page.locator('.sidebar [data-nav-view="'+view+'"]').click();}});
+    const nav = view => ({async click(){if(await page.locator('.header-menu-toggle').isVisible())await page.locator('.header-menu-toggle').click();const group=['calendar','stays','transport','journeys'].includes(view)?'trips':['tools','planner','notes','budget','currency','roadTrip','stayPlanner','rules','schengen'].includes(view)?'tools':view==='planner'?'tools':'atlas';const summary=page.locator('summary[data-workspace="'+group+'"]');if(await summary.count())await summary.click();await page.locator('.sidebar [data-nav-view="'+view+'"]').click();}});
     const fits = async () => {
       assert.equal(await page.locator('main > .view').count(), 1, 'Only the current page is mounted');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'No horizontal page overflow');
     };
-    assert.equal(await page.locator('#pageTitle').innerText(), 'Personal trip planning');
-    assert.equal(await page.locator('.workspace-nav.active').innerText(), 'Trip planning');
+    assert.equal(await page.locator('#pageTitle').innerText(), 'Personal itinerary service');
+    assert.equal(await page.locator('.workspace-nav.active').innerText(), 'Travel Tools');
     assert.equal(await page.locator('#addStayBtn').isVisible(), false);
     assert.ok(await page.locator('#itineraryRequestForm').count(),'The personal service has its own brief/review journey');
     assert.match(await page.locator('.planning-activation').innerText(),/not open for sending/);
@@ -132,7 +132,7 @@ let browser;
     await fits();
     await nav('planner').click();
     assert.ok(page.url().endsWith('#/plan-a-trip'), 'Plan navigation opens the service rather than the old tool');
-    await page.locator('#plannerView a[href="#/travel-tools"]').click();
+    await page.locator('#plannerView .planning-intro a[href="#/travel-tools"]').click();
     assert.equal(await page.evaluate(snapshot), before, 'Navigation and calculations preserve the complete loaded state');
     assert.deepEqual(await page.evaluate(storage), stored, 'Browsing never rewrites guest, legacy or current records');
 

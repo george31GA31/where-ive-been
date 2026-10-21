@@ -26,9 +26,9 @@ let browser;
     await page.route('**/*', route => route.request().url().startsWith(origin) ? route.continue() : route.abort());
     const seed=calendarHistory();
     seed.accommodations.push({id:'legacy-invalid-date',profileId:'p',propertyName:'Legacy incomplete stay',checkIn:'2026-13-99',checkOut:'',notes:'Keep the original imported dates'});
-    await page.addInitScript(({seed,theme}) => {
+    await page.addInitScript(({seed,theme}) => {localStorage.setItem('herald.calendar.view.v1','month');
       if (!localStorage.getItem('whereIveBeen.data.v2')) localStorage.setItem('whereIveBeen.data.v2', JSON.stringify(seed));
-      localStorage.setItem('whereIveBeen.theme.v1', theme);
+      localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1', theme);
     }, {seed,theme});
     await page.goto(origin + '/#/calendar');
     await page.waitForFunction(() => window.HVCalendarDetails && window.HVCalendar?.ready && !document.querySelector('.app-shell').inert);
@@ -75,7 +75,7 @@ let browser;
     assert.equal(await page.locator('#calendarQuickCountry [name=end]').inputValue(), '2026-08-21');
     await drawer.locator('[data-calendar-cancel-range]').click();await unchangedGrid();
     // Empty cell space used to bubble into the legacy journey-planner handler.
-    for(const date of ['22','23'])await page.locator(`.calendar-day[data-calendar-date="2026-08-${date}"]`).click({position:{x:8,y:70}});
+    for(const date of ['22','23'])await page.locator(`.calendar-day[data-calendar-date="2026-08-${date}"]`).click({position:{x:8,y:Math.min(70,(await page.locator(`.calendar-day[data-calendar-date="2026-08-${date}"]`).boundingBox()).height-5)}});
     await page.clock.runFor(50);
     assert.equal(await page.locator('#calendar .selection-range').count(),2);
     assert.equal(await page.locator('dialog[open]').count(),0,'Background date clicks do not reach the old planner');
@@ -98,11 +98,13 @@ let browser;
     assert.equal(await page.locator('#calendarMonthJump').inputValue(),'8','Day navigation across months updates the month grid');await close();
 
     const hover = page.locator('[data-calendar-hover-previews]');
+    const setHover=async value=>{if(!await hover.isVisible())await page.locator('.calendar-display-menu>summary').click();await hover.setChecked(value);if(await page.locator('.calendar-display-menu').evaluate(n=>n.open))await page.locator('.calendar-display-menu>summary').click();};
     assert.ok(await hover.isChecked(),'Hover previews default on');
-    await hover.uncheck();
+    await setHover(false);
     const expected = await page.evaluate(() => JSON.stringify(state));
     assert.equal(await page.evaluate(() => state.visualLayers.calendar.hoverPreviews),false);
     await page.reload();await page.waitForFunction(() => window.HVCalendarDetails && window.HVCalendar?.ready);
+    await page.locator('button[data-calendar-view=month]').click();
     assert.equal(await hover.isChecked(),false,'The preference survives reload');
     await page.evaluate(() => {calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
     const entry = kind => page.locator(`#calendar [data-calendar-entry=${kind}]`).first();
@@ -112,7 +114,7 @@ let browser;
         assert.equal(await page.locator('#calendarFloatingDetail').count(),0,'Hover off suppresses the '+kind+' preview');
         assert.equal(await page.locator('#calendar .calendar-linked-date,#calendar .calendar-linked-entry').count(),0);
       }
-      await page.locator('#calendarMonthJump').focus();await entry('country').focus();
+      await page.keyboard.press('Tab');await page.locator('#calendarMonthJump').focus();await entry('country').focus();
       assert.ok(await page.locator('#calendarFloatingDetail').isVisible(),'Keyboard focus still opens a preview');
       await page.keyboard.press('Escape');
     }
@@ -122,9 +124,9 @@ let browser;
     }
     await page.locator('[data-calendar-day-detail="2026-10-15"]').click();assert.match(await drawer.innerText(),/DAY EXPLORER/);await close();
     assert.equal(await page.evaluate(() => JSON.stringify(state)),expected,'All data stays intact while exploring with hover off');
-    await hover.check();
+    await setHover(true);
     assert.equal(await page.evaluate(() => JSON.stringify({...state,visualLayers:{...state.visualLayers,calendar:{...state.visualLayers.calendar,hoverPreviews:false}}})),expected,'Only the hover preference changes');
-    if(width>=768){await entry('accommodation').hover();await page.clock.runFor(160);assert.ok(await page.locator('#calendarFloatingDetail').isVisible(),'Hover can be restored');await hover.uncheck();assert.equal(await page.locator('#calendarFloatingDetail').count(),0);}
+    if(width>=768){await entry('accommodation').hover();await page.clock.runFor(160);assert.ok(await page.locator('#calendarFloatingDetail').isVisible(),'Hover can be restored');await setHover(false);assert.equal(await page.locator('#calendarFloatingDetail').count(),0);}
     await page.screenshot({path:path.join(out,`calendar-${width}-${theme}.png`)});
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1),'No page overflow');
     assert.deepEqual(errors,[]);

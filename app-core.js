@@ -1130,7 +1130,7 @@ function handleDelegatedClick(e) {
   let day = e.target.closest('[data-calendar-date]');
   if (day) handleCalendarDateClick(day.dataset.calendarDate);
 }
-function switchView(v, { render = true } = {}) {
+function switchView(v, { render = true, scroll = true } = {}) {
   document.querySelectorAll('.view').forEach((x) => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach((x) => x.classList.remove('active'));
   $(`${v}View`).classList.add('active');
@@ -1154,7 +1154,7 @@ function switchView(v, { render = true } = {}) {
   if (render && v === 'rules') renderVisaChecker();
   if (render && v === 'stays') renderStayLists();
   if (render && v === 'profiles') renderProfiles();
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  if (scroll) window.scrollTo({ top: 0, behavior: 'instant' });
 }
 function renderAll() {
   const view = document.body.dataset.currentView || 'dashboard';
@@ -1216,10 +1216,6 @@ function renderDashboard() {
   els.dashboardGaps.innerHTML = `<details class="home-history-check"><summary>Trips update automatically <span class="status-badge good">ON</span></summary><p>Planned trips and transport become completed the day after their final date. Edit or cancel anything before then.</p>${gaps.length ? `<div class="home-gap-list">${gaps.map((g) => gapCard(g, true)).join('')}</div>` : '<p>No gaps in your completed travel history.</p>'}</details>`;
   renderStayList(els.recentStays, [
     ...profileStays
-      .filter((s) => s.status === 'planned' && s.start > today)
-      .sort((a, b) => a.start.localeCompare(b.start))
-      .slice(0, 3),
-    ...profileStays
       .filter((s) => s.status === 'actual' && s.start <= today)
       .sort((a, b) => b.start.localeCompare(a.start))
       .slice(0, 3),
@@ -1244,7 +1240,7 @@ function renderMiniCalendar() {
     let d = addDays(start, i),
       k = dayKey(d),
       has = list.some((s) => s.start <= k && (s.end || today) >= k);
-    h += `<div class="mini-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'muted'} ${k === today ? 'today' : ''} ${has ? 'has-stay' : ''}">${d.getUTCDate()}</div>`;
+    h += `<button type="button" data-home-calendar-date="${k}" aria-label="Open ${k}" class="mini-day ${d.getUTCMonth() === c.getUTCMonth() ? '' : 'muted'} ${k === today ? 'today' : ''} ${has ? 'has-stay' : ''}">${d.getUTCDate()}</button>`;
   }
   els.miniCalendar.innerHTML = h;
 }
@@ -1672,7 +1668,7 @@ function renderStayLists() {
           )
           .join('')}</div></article>`;
       })
-      .join('') || `<p class="empty-state">${groups.size?'No trips match your filters.':'No trips yet. Build a trip or add individual travel records to begin.'}</p>`;
+      .join('') || `<p class="empty-state">${groups.size?'No trips match your filters.':'No trips yet. Plan a trip or add individual travel records to begin.'}</p>`;
   const gaps = findGaps();
   els.gapList.className = gaps.length ? 'gap-list' : 'gap-list empty-state';
   els.gapList.innerHTML = gaps.length
@@ -1708,7 +1704,7 @@ function addDateRange(start = isoDate(new Date()), end = start) {
   els.dateRanges.appendChild(row);
 }
 function openStayDialog(id = null, prefill = {}) {
-  if (!id && window.HVCalendar?.openTripPlanner) return window.HVCalendar.openTripPlanner(prefill);
+  if (!id && !prefill.standalone && window.HVCalendar?.openTripPlanner) return window.HVCalendar.openTripPlanner(prefill);
   stayDialogContext = prefill.source || 'manual';
   els.stayForm.reset();
   els.dateRanges.innerHTML = '';
@@ -1718,7 +1714,8 @@ function openStayDialog(id = null, prefill = {}) {
   let s = id ? state.stays.find((x) => x.id === id) : null,
     trip = s?.tripId ? state.trips.find((t) => t.id === s.tripId) : null,
     isPlan = !id && stayDialogContext === 'plan';
-  els.dialogTitle.textContent = id ? 'Edit trip stop' : isPlan ? 'Plan a trip' : 'Add a trip';
+  els.dialogTitle.textContent = id ? 'Edit country visit' : 'Add country visit';
+  delete els.stayForm.dataset.draftIds;
   if ($('stayDialogIntro'))
     $('stayDialogIntro').textContent = id
       ? 'Change the dates, status or details for this stop.'
@@ -1726,17 +1723,18 @@ function openStayDialog(id = null, prefill = {}) {
         ? 'Add the first stop and dates. You can keep the rest of the journey together below.'
         : 'Start with where you went and when. You can add the extra details if you need them.';
   if ($('saveStayBtn'))
-    $('saveStayBtn').textContent = id ? 'Save changes' : isPlan ? 'Save planned trip' : 'Save trip';
+    $('saveStayBtn').textContent = id ? 'Save changes' : 'Save country visit';
   const more = els.stayDialog.querySelector('.trip-form-more');
   if (more) more.open = !!(id || trip || prefill.tripName);
   const picker = $('stayTripSelect');
   picker.closest('label').hidden = false;
   picker.innerHTML =
-    '<option value="">Keep as its own trip</option><option value="new">Create a new trip</option>' +
+    '<option value="">No trip</option><option value="new">Create a new trip</option>' +
     HVJourney.scoped(state.trips, s?.profileId || state.activeProfileId)
       .map((t) => `<option value="${esc(t.id)}">${esc(t.name)}</option>`)
       .join('');
-  picker.value = trip?.id || (prefill.tripName ? 'new' : '');
+  picker.value = trip?.id || prefill.tripId || (prefill.tripName ? 'new' : '');
+  more?.before(picker.closest('label'));
   picker.onchange = () => {
     $('newTripNameField').hidden = picker.value !== 'new';
     els.tripNameInput.required = picker.value === 'new';
@@ -1763,6 +1761,7 @@ function updateStayCountry() {
 }
 async function saveStay(e) {
   e.preventDefault();
+  const data = state, owner = state.activeProfileId;
   let c = countryByName(els.countryInput.value);
   if (!c) {
     els.formError.textContent = 'Choose a country from the list.';
@@ -1789,6 +1788,8 @@ async function saveStay(e) {
     state.stays.find((s) => s.id === els.stayId.value),
   );
   if (travelKind === 'cancel') return;
+  if (state !== data || state.activeProfileId !== owner) { els.formError.textContent='Your account or traveller changed. Reopen this visit.'; return; }
+  const previousStays = state.stays.slice(), previousTrips = state.trips.slice();
   let tripName = els.tripNameInput.value.trim(),
     profileId = els.stayProfile.value || null,
     selection = $('stayTripSelect').value,
@@ -1828,14 +1829,18 @@ async function saveStay(e) {
     let ix = state.stays.findIndex((s) => s.id === id);
     state.stays[ix] = { ...state.stays[ix], ...base, ...rows[0] };
     rows.slice(1).forEach((r) => state.stays.push({ id: uid(), ...base, ...r }));
-  } else rows.forEach((r) => state.stays.push({ id: uid(), ...base, ...r }));
-  updatePassedPlannedTrips();
+  } else {
+    const ids = JSON.parse(els.stayForm.dataset.draftIds || '[]');
+    rows.forEach((r, i) => {ids[i] ||= uid(); state.stays.push({id:ids[i], ...base, ...r});});
+    els.stayForm.dataset.draftIds = JSON.stringify(ids);
+  }
+  try { if (persist() === false) throw new Error('Save rejected'); }
+  catch { state.stays = previousStays; state.trips = previousTrips; els.formError.textContent='This visit could not be saved. Keep this form open and retry.'; return; }
   if (stayDialogContext === 'calendar') {
     calendarSelectionStart = null;
     calendarSelectionEnd = null;
   }
   stayDialogContext = 'manual';
-  persist();
   els.stayDialog.close();
   renderAll();
 }
@@ -2248,7 +2253,8 @@ async function addPlannerTrip() {
     domesticHoliday: travelKind === 'trip',
     start: t.start,
     end: t.end,
-    notes: 'Added from trip planner',
+    notes: '',
+    createdBy: 'stay-planner',
     schengenExempt: false,
     status: 'planned',
     profileId: t.profileId,

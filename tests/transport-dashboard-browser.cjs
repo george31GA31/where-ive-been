@@ -34,14 +34,14 @@ async function fixture(origin,width,height,theme,signed=false){
     if(/overpass|routed-|\/api\/0.6\//.test(url))routeRequests++;
     return route.abort();
   });
-  await page.addInitScript(({seed,theme,signed,auth,id})=>{localStorage.setItem('whereIveBeen.theme.v1',theme);if(signed){localStorage.setItem('whereIveBeen.auth.v1',JSON.stringify(auth));localStorage.setItem('whereIveBeen.localOwner.v1',id);localStorage.setItem('whereIveBeen.importNoticed.'+id,'yes');}else if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));},{seed,theme,signed,auth:session(),id});
+  await page.addInitScript(({seed,theme,signed,auth,id})=>{localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);if(signed){localStorage.setItem('whereIveBeen.auth.v1',JSON.stringify(auth));localStorage.setItem('whereIveBeen.localOwner.v1',id);localStorage.setItem('whereIveBeen.importNoticed.'+id,'yes');}else if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));},{seed,theme,signed,auth:session(),id});
   await page.goto(origin+'/#/my-flights');
   await page.waitForFunction(()=>window.HVTransportDashboard&&HVTransportDashboard.surface()&&!document.querySelector('.app-shell').inert);
   if(signed)await saved(page);
   return {page,context};
 }
 async function saved(page){await page.waitForFunction(()=>[...document.querySelectorAll('[data-sync-status]')].some(el=>el.textContent==='Saved to account'),null,{timeout:10000});}
-async function switchMode(page,mode){await page.locator('[data-mode-toggle]').click();await page.locator(`[data-transport-mode=${mode}]`).click();}
+async function switchMode(page,mode){await page.locator('[data-transport-mode-select]').selectOption(mode);}
 async function upload(page,type){
   await page.evaluate(type=>HVJourneys.openTransport(type+'-upcoming'),type);
   const selector=type==='flight'?'.flight-legs .operator-logo-editor input[type=file]':'[data-ground-operator-logo] input[type=file]';
@@ -67,8 +67,8 @@ async function createWithLogo(page,type){
   for(const [width,height]of (process.env.HV_TRANSPORT_SIGNED_ONLY?[]:[[320,700],[390,844],[844,390],[768,1024],[1024,768],[1440,1000]]))for(const theme of ['light','dark']){
     const {page,context}=await fixture(origin,width,height,theme);
     for(const [type,title]of [['flight','My Flights'],['train','My Trains'],['boat','My Ferries'],['bus','My Buses'],['car','My Cars']]){
-      if(type!=='flight')await switchMode(page,type);
-      assert.equal(await page.locator('[data-mode-title]').innerText(),title);
+      await switchMode(page,type);
+      assert.equal(await page.locator('[data-transport-mode-select]').inputValue(),type);assert.equal(await page.locator('#pageTitle').innerText(),'Transport');
       assert.equal(await page.locator('[data-transport-select]').count(),1);
       await page.locator('[data-transport-period=previous]').click();assert.equal(await page.locator('[data-transport-select]').count(),1);assert.match(await page.locator('[data-transport-list]').innerText(),/2025|Oct/);
       await page.locator('[data-transport-period=upcoming]').click();
@@ -100,7 +100,7 @@ async function createWithLogo(page,type){
     await page.locator('[data-journey-fullscreen]').click();await page.keyboard.press('Escape');assert.equal(await page.locator('.journey-fullscreen').count(),0);
     await context.close();scenes++;
   }
-  const phone=await fixture(origin,390,844,'dark',true);
+  const phone=await fixture(origin,390,844,'dark',true);await switchMode(phone.page,'flight');
   for(const type of ['flight','train','boat','bus','car']){await upload(phone.page,type);await saved(phone.page);}
   assert.equal(cloud.transportOperators.length,5);assert.equal(JSON.stringify(cloud.transports).includes('data:image'),false);assert.deepEqual(cloud.notes,seed.notes);
   const oldLogos=cloud.transportOperators.map(row=>row.operatorLogo.src);
@@ -112,7 +112,7 @@ async function createWithLogo(page,type){
   await phone.context.setOffline(true);await upload(phone.page,'bus');await phone.page.waitForFunction(()=>[...document.querySelectorAll('[data-sync-status]')].some(el=>el.textContent.includes('changes waiting to sync')));
   const offlineLogo=await phone.page.evaluate(()=>HVOperators.logo(state,'bus','FlixBus'));await phone.page.reload();await phone.page.waitForFunction(()=>window.HVTransportDashboard?.surface()&&!document.querySelector('.app-shell').inert);assert.equal(await phone.page.evaluate(()=>HVOperators.logo(state,'bus','FlixBus')),offlineLogo,'Offline artwork survives restart');
   await phone.context.setOffline(false);await saved(phone.page);assert.equal(cloud.transportOperators.find(row=>row.mode==='bus').operatorLogo.src,offlineLogo);
-  const computer=await fixture(origin,1440,1000,'light',true);
+  const computer=await fixture(origin,1440,1000,'light',true);await switchMode(computer.page,'flight');
   assert.equal(await computer.page.locator('[data-transport-list] .operator-logo').count(),2);
   await computer.page.evaluate(()=>HVJourneys.openTransport(null,{type:'flight'}));
   await computer.page.locator('[data-leg-field=airline]').fill('Air Algerie');

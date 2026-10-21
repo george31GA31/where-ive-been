@@ -30,7 +30,7 @@ let browser;
       if(r.request().resourceType()==='image')return r.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSe8AAAAASUVORK5CYII=','base64')});
       return r.fulfill({contentType:r.request().resourceType()==='script'?'text/javascript':'application/json',body:r.request().resourceType()==='script'?'':'{}'});
     });
-    await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('whereIveBeen.data.v2')){localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.guest.v1',JSON.stringify({...seed,backup:'keep'}));localStorage.setItem('whereIveBeen.stays.v1','[]');}localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
+    await page.addInitScript(({seed,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');if(!localStorage.getItem('whereIveBeen.data.v2')){localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.guest.v1',JSON.stringify({...seed,backup:'keep'}));localStorage.setItem('whereIveBeen.stays.v1','[]');}localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
     await page.goto(origin+'/#/journey-map');await page.waitForSelector('.marker-accommodation');
     await page.evaluate(()=>HVJourneyUI.activeMap().setView([43.26,76.95],14,{animate:false}));
     const before=await page.evaluate(snapshot),stored=await page.evaluate(storage),editor=page.locator('.place-search-dialog[open]'),journey=page.locator('#transportDialog[open]');

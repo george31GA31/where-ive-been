@@ -123,10 +123,11 @@
     return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:'',endLocal:i===points.length-2?record.endLocal:'',flightNumber:points.length===2?record.flightNumber||'':'',airline:points.length===2?record.airline||null:null}));
   }
   const airportLabel=(p,lookup=()=>null)=>p?.manualAirport?(p.iata||p.icao||p.name||''):p?.iata||(p?.name?.trim()?lookup(p.name)?.iata:'')||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
+  const airportCity=p=>p?.displayCity||({STN:'London Stansted',GHA:'Ghardaïa'}[String(p?.iata||'').toUpperCase()])||p?.city||p?.area||p?.name||'';
   function airportDetails(p,lookup=()=>null){
     if(!p)return '';const key=p.iata||p.icao||p.name||'';if(!key.trim())return '';const found=lookup(key)||{},a={...found,...p,name:p.manualAirport||p.personal?p.name:found.name||p.name};
     const country=a.countryName||((regionNames&&(a.countryCode||a.countryCodes?.[0]))?regionNames.of(a.countryCode||a.countryCodes[0]):'');
-    return roman([...new Set([a.name,a.city||a.area,country].filter(Boolean))].join(', '))+(a.iata||a.icao?' ('+[a.iata,a.icao].filter(Boolean).join(' / ')+')':'');
+    return roman([...new Set([p.displayName||a.name,airportCity(a),country].filter(Boolean))].join(', '))+(a.iata||a.icao?' ('+[a.iata,a.icao].filter(Boolean).join(' / ')+')':'');
   }
   function transportLabel(record,lookup=()=>null) {
     if(record.type!=='flight')return [record.start,...(record.via||[]),record.end].map(p=>roman(p?.name||'')).join(' → ');
@@ -225,6 +226,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={isElapsedStay,syncAccommodationStay,removeAccommodationStay,airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#006768',bus:'#076800',boat:'#001B68',car:'#680000',train:'#685600',walk:'#535353',other:'#5C004C'}[type]||'#5C004C')};
+  const api={airportCity,isElapsedStay,syncAccommodationStay,removeAccommodationStay,airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#006768',bus:'#076800',boat:'#001B68',car:'#680000',train:'#685600',walk:'#535353',other:'#5C004C'}[type]||'#5C004C')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -1,0 +1,22 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{harness}=require('./helpers/candidate-browser.cjs'),{candidateHistory}=require('./fixtures/v1-candidate.cjs');
+const out=path.resolve(__dirname,'../test-results/v1-candidate');
+(async()=>{const h=await harness();try{
+ const seed=candidateHistory();seed.savedPlaces.push({id:'restaurant',profileId:'p',place:{id:'custom:restaurant',name:'Fictional Riverside Restaurant',address:'17 Riverside Walk',lat:35.1,lon:10.2,type:'Restaurant'}});
+ for(const width of [1440,390]){
+  const p=await h.page(seed,{width,height:width===390?844:900,touch:width<500});await p.evaluate(()=>switchView('dashboard'));
+  const positions=await p.evaluate(()=>({hero:document.querySelector('#atlasOverview').getBoundingClientRect().top,memory:document.querySelector('#travelMemoryPanel').getBoundingClientRect().top,mini:document.querySelector('#miniCalendar').closest('.panel').getBoundingClientRect().height}));assert.ok(positions.hero<400&&positions.hero<positions.memory);assert.ok(positions.mini>=220&&positions.mini<=285,`Mini calendar ${positions.mini}px`);
+  await p.screenshot({path:path.join(out,`practical-home-${width}.png`),fullPage:true});
+  const before=await p.evaluate(()=>JSON.stringify(state));await p.evaluate(()=>switchView('places'));assert.match(await p.locator('#personalPlaces').innerText(),/Fictional Riverside Restaurant/);await p.locator('[data-places-view=want]').click();assert.doesNotMatch(await p.locator('#personalPlaces').innerText(),/Fictional Riverside Restaurant/);await p.locator('[data-places-view=locations]').click();assert.match(await p.locator('#personalPlaces').innerText(),/Roman theatre/);assert.equal(await p.evaluate(()=>JSON.stringify(state)),before);
+  if(width===1440){
+   await p.evaluate(()=>HVTravelTools.openTrip('south','budget'));await p.locator('[data-import-source="0"]').click();const id=await p.evaluate(()=>state.expenses.find(e=>e.sourceId==='jungle').id);await p.evaluate(()=>{state.accommodations.find(a=>a.id==='jungle').price.amount=125;persist();HVTravelTools.renderBudgetTool();});await p.locator(`[data-source-keep="${id}"]`).click();assert.equal(await p.evaluate(id=>state.expenses.find(e=>e.id===id).planned,id),100);assert.match(await p.locator(`[data-expense="${id}"]`).innerText(),/Estimate kept intentionally/);
+   await p.locator(`[data-source-update="${id}"]`).click();assert.equal(await p.evaluate(id=>state.expenses.find(e=>e.id===id).planned,id),125);
+   await p.evaluate(id=>{Object.assign(state.expenses.find(e=>e.id===id),{actual:90,paidAmount:20,paymentStatus:'Part paid',unknown:{preserved:true}});state.accommodations.find(a=>a.id==='jungle').price={amount:175,currency:'USD'};persist();HVTravelTools.renderBudgetTool();},id);await p.locator(`[data-source-update="${id}"]`).click();const item=await p.evaluate(id=>state.expenses.find(e=>e.id===id),id);assert.equal(item.plannedCurrency,'USD');assert.equal(item.actual,90);assert.equal(item.paidAmount,20);assert.equal(item.currency,'GBP');assert.deepEqual(item.unknown,{preserved:true});
+   await p.reload();await p.waitForFunction(()=>window.HVCalendar?.ready);await p.evaluate(()=>HVTravelTools.openTrip('south','budget'));assert.equal(await p.evaluate(id=>state.expenses.filter(e=>e.id===id).length,id),1);assert.equal(await p.evaluate(id=>state.expenses.find(e=>e.id===id).plannedCurrency,id),'USD');
+   await p.evaluate(()=>{state.accommodations=state.accommodations.filter(a=>a.id!=='jungle');persist();HVTravelTools.renderBudgetTool();});assert.match(await p.locator(`[data-expense="${id}"]`).innerText(),/Source removed/);await p.locator(`[data-source-keep="${id}"]`).click();assert.equal(await p.evaluate(id=>state.expenses.find(e=>e.id===id).actual,id),90);await p.screenshot({path:path.join(out,'budget-source.png'),fullPage:true});
+  }
+  assert.deepEqual(p.errors,[]);await p.context().close();
+ }
+ const empty=await h.page({version:2,activeProfileId:'empty',profiles:[{id:'empty',name:'New traveller'}],stays:[],trips:[],transports:[],accommodations:[]},{width:390,height:844});await empty.evaluate(()=>switchView('dashboard'));assert.ok(await empty.locator('.home-hero [data-plan-trip]').isVisible());assert.ok(await empty.locator('.daily-dashboard-row').isHidden());await empty.context().close();
+ console.log('Phase 4: practical Home and compact month, source-preserving Places, booking keep/update/currency/remove and reload passed.');
+}finally{await h.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

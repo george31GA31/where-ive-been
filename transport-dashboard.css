@@ -1,5 +1,5 @@
 /* Transport follows Herald's shared colours, typography and endpoint icons. */
-.transport-dashboard { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); min-height:660px; border:1px solid var(--line); border-radius:24px; overflow:clip; background:var(--panel); }
+.transport-dashboard { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr); min-height:660px; border:1px solid var(--line); border-radius:var(--ui-radius); overflow:clip; background:var(--panel); }
 .transport-map-pane { position:relative; isolation:isolate; min-width:0; background:var(--blue-soft); }
 .transport-map { height:100%; min-height:660px; }
 .transport-map .leaflet-bottom { bottom:36px; }

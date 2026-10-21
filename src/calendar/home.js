@@ -14,7 +14,7 @@ function renderHomeOverview() {
     group.transports.some(eligible) || group.accommodations.some(eligible)
   ));
   const month = new Date(start + 'T00:00:00Z').toLocaleDateString('en-GB', {month:'long',year:'numeric',timeZone:'UTC'});
-  summary.innerHTML = `<button type="button" class="text-btn" data-home-calendar-month="${start}" aria-label="Open ${E(month)} calendar"><strong>${E(month)}</strong><span>${touching.length} ${touching.length === 1 ? 'journey' : 'journeys'} this month <span aria-hidden="true">↗</span></span></button>`;
+  summary.innerHTML = `<button type="button" class="text-btn" data-home-calendar-month="${start}" aria-label="Open ${E(month)} calendar"><span class="sr-only">${E(month)} · </span><span>${touching.length} ${touching.length === 1 ? 'journey' : 'journeys'} this month </span></button>`;
 
   const journeys = groups.filter(group => group.phase === 'upcoming' && (group.trip || group.stays.length));
   const transports = groups.flatMap(group => group.transports).filter(record => eligible(record) && localDate(record.startLocal) >= upcomingStart)
@@ -34,7 +34,7 @@ function renderHomeOverview() {
   upcomingHost.innerHTML = items.map(item=>item.html).join('') + `<button type="button" class="text-btn home-all-dates" data-home-calendar-month="${start}">All dates in the calendar →</button>`;
   const details = $('homeUpcomingTravel'), count = journeys.length + transports.length + accommodation.length + notes.length;
   details.hidden = !count;
-  q('summary', details).textContent = 'Coming up';
+  q('summary', details).textContent = 'All upcoming';
 }
 
 function startOfNextMonth(start) {

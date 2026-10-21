@@ -7,8 +7,8 @@
   const pageSize=40,periods=new Map();
   const svg=path=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
   const icons={search:svg('M16 16l5 5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0'),filter:svg('M3 6h18M3 12h18M3 18h18M8 3v6M16 9v6M9 15v6'),share:svg('M12 16V3m-4 4 4-4 4 4M7 10H5v11h14V10h-2'),chevron:svg('m6 9 6 6 6-6'),fit:svg('M8 3H3v5M16 3h5v5M8 21H3v-5M21 16v5h-5')};
-  let mode='flight',search='',year='',operator='',country='',page=0,selected='',source,sourceStamp,all=[],surface,mapStamp,detail,minuteTimer,lastRender;
-  try{mode=D.mode(sessionStorage.getItem('herald.transport.mode.v1'))||'flight';}catch{}
+  let mode='all',search='',year='',operator='',country='',page=0,selected='',source,sourceStamp,all=[],surface,mapStamp,detail,minuteTimer,lastRender;
+  try{mode=D.mode(sessionStorage.getItem('herald.transport.mode.v1'))||'all';}catch{}
   function records() {
     const stamp=[state,window.HVPages?.revisionFor?.('transport'),state.activeProfileId];
     if(!sourceStamp||!stamp.every((value,i)=>value===sourceStamp[i])) {
@@ -22,10 +22,10 @@
     return all;
   }
   function currentPeriod() {
-    if(!periods.has(mode))periods.set(mode,records().some(row=>row.type===mode&&D.period(row)==='upcoming')?'upcoming':'previous');
+    if(!periods.has(mode))periods.set(mode,records().some(row=>(mode==='all'||row.type===mode)&&D.period(row)==='upcoming')?'upcoming':'previous');
     return periods.get(mode);
   }
-  const city=p=>HVAddress.text(p?.city||p?.area||p?.name||'Place to add');
+  const city=p=>HVAddress.text(p?.displayCity||(p?.iata||p?.icao?HVJourney.airportCity(p):p?.city||p?.area||p?.name)||'Place to add');
   const routeTitle=row=>city(row.leg.start)+' to '+city(row.leg.end);
   const time=value=>/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value||'')?value.slice(11,16):'';
   function timetable(row) {
@@ -42,7 +42,7 @@
     const cancelled=row.record.status==='cancelled';
     return `<li><button type="button" class="transport-row ${selected===row.key?'is-selected':''} ${!previous&&index===0?'transport-row-next':''}" data-transport-select="${E(row.key)}" aria-label="${E(routeTitle(row)+', '+HVJourneyUI.date(row.start))}" aria-pressed="${selected===row.key}">
       <span class="transport-countdown"><strong>${E(leading.value)}</strong><small>${E(leading.unit)}</small></span>
-      <span class="transport-row-body">${!previous&&index===0?'<small class="transport-next-label">NEXT JOURNEY</small>':''}<span class="transport-service"><span class="transport-identity">${O.image(state,row.type,provider,row.leg.operatorId||row.record.operatorId)||HVTransportIcons.html(row.type)}<span>${E([name,service].filter(Boolean).join(' · ')||row.record.vehicle||row.record.name||D.modes[mode].singular)}</span></span><time datetime="${E(row.start)}">${E(HVJourneyUI.date(row.start,{weekday:'short',year:undefined}))}</time></span>
+      <span class="transport-row-body">${!previous&&index===0?'<small class="transport-next-label">NEXT JOURNEY</small>':''}<span class="transport-service"><span class="transport-identity">${O.image(state,row.type,provider,row.leg.operatorId||row.record.operatorId)||HVTransportIcons.html(row.type)}<span>${E([name,service].filter(Boolean).join(' · ')||row.record.vehicle||row.record.name||(D.modes[mode]||{singular:'journey'}).singular)}</span></span><time datetime="${E(row.start)}">${E(HVJourneyUI.date(row.start,{weekday:'short',year:undefined}))}</time></span>
       <strong class="transport-cities">${E(routeTitle(row))}</strong><span class="transport-times">${timetable(row)}</span>${cancelled?'<small class="transport-cancelled">Cancelled</small>':''}</span>
     </button></li>`;
   }
@@ -53,8 +53,8 @@
     if(source&&source!==state){surface?.remove();surface=null;mapStamp=null;periods.clear();selected='';detail?.close();sourceStamp=null;}
     if(document.body.dataset.currentView!=='transport')return;
     const host=get('transportDashboard');if(!host)return;
-    get('pageTitle').textContent=D.modes[mode].title;
-    document.title=D.modes[mode].title+' — Herald Voyages';
+    get('pageTitle').textContent='Transport';
+    document.title='Transport — Herald Voyages';
     clearTimeout(minuteTimer);minuteTimer=setTimeout(()=>{if(document.body.dataset.currentView==='transport')render();},60000);
     const renderStamp=[state,window.HVPages?.revisionFor?.('transport'),state.activeProfileId,mode,currentPeriod(),search,year,operator,country,page,Math.floor(Date.now()/60000)];
     if(surface&&lastRender&&renderStamp.every((value,index)=>value===lastRender[index])){surface.resize();return;}
@@ -62,10 +62,10 @@
     page=Math.min(page,Math.max(0,Math.ceil(rows.length/pageSize)-1));
     const visible=rows.slice(page*pageSize,(page+1)*pageSize);
     if(!visible.some(row=>row.key===selected))selected=visible[0]?.key||'';
-    host.querySelector('[data-mode-title]').textContent=D.modes[mode].title;
+    host.querySelector('[data-mode-title]').textContent=(D.modes[mode]||{title:'All transport'}).title;host.querySelector('[data-transport-mode-select]').value=mode;
     host.querySelectorAll('[data-transport-mode]').forEach(button=>{button.setAttribute('aria-checked',String(button.dataset.transportMode===mode));});
     host.querySelectorAll('[data-transport-period]').forEach(button=>button.setAttribute('aria-selected',String(button.dataset.transportPeriod===currentPeriod())));
-    const own=records().filter(row=>row.type===mode),years=[...new Set(own.flatMap(row=>[row.start,row.end].map(date=>date.slice(0,4))).filter(Boolean))].sort().reverse();
+    const own=records().filter(row=>mode==='all'||row.type===mode),years=[...new Set(own.flatMap(row=>[row.start,row.end].map(date=>date.slice(0,4))).filter(Boolean))].sort().reverse();
     const operators=[...new Set(own.map(row=>D.providerName(D.provider(row))).filter(Boolean))].sort();
     const countries=[...new Set(own.flatMap(row=>[row.leg.start,row.leg.end].map(p=>p?.countryCode||p?.countryCodes?.[0])).filter(Boolean))].sort((a,b)=>(countryByCode(a)?.name||a).localeCompare(countryByCode(b)?.name||b));
     for(const [key,values,title]of [['year',years,'All years'],['operator',operators,'All operators'],['country',countries,'All countries']]) {
@@ -74,7 +74,7 @@
     }
     host.querySelector('[data-transport-list]').innerHTML=visible.map(item).join('');
     const empty=host.querySelector('[data-transport-empty]');empty.hidden=!!rows.length;
-    empty.innerHTML=`<h3>${search||year||operator||country?'No matching journeys':`No ${currentPeriod()==='upcoming'?'upcoming ':''}${D.modes[mode].plural}${own.length?'':' yet'}.`}</h3><p>${own.length?'Try Previous or Upcoming, or clear the filters.':`${D.modes[mode].plural.charAt(0).toUpperCase()+D.modes[mode].plural.slice(1)} you add to Herald Voyages will automatically appear here.`}</p><button type="button" class="primary" data-dashboard-add>Add ${D.modes[mode].singular}</button>`;
+    empty.innerHTML=`<h3>${search||year||operator||country?'No matching journeys':`No ${currentPeriod()==='upcoming'?'upcoming ':''}${(D.modes[mode]||{plural:'journeys'}).plural}${own.length?'':' yet'}.`}</h3><p>${own.length?'Try Previous or Upcoming, or clear the filters.':`${(D.modes[mode]||{plural:'journeys'}).plural.charAt(0).toUpperCase()+(D.modes[mode]||{plural:'journeys'}).plural.slice(1)} you add to Herald Voyages will automatically appear here.`}</p><button type="button" class="primary" data-dashboard-add>Add ${(D.modes[mode]||{singular:'journey'}).singular}</button>`;
     const pagination=host.querySelector('[data-transport-pagination]');pagination.hidden=rows.length<=pageSize;
     pagination.querySelector('span').textContent=`${page*pageSize+1}–${Math.min((page+1)*pageSize,rows.length)} of ${rows.length}`;
     pagination.querySelector('[data-transport-page="-1"]').disabled=page===0;pagination.querySelector('[data-transport-page="1"]').disabled=(page+1)*pageSize>=rows.length;
@@ -106,13 +106,14 @@
     const host=get('transportDashboard');if(!host)return;
     host.className='transport-dashboard';
     host.innerHTML=`<div class="transport-map-pane"><div class="transport-map" data-transport-map role="region" aria-label="Transport routes"></div><div class="transport-map-controls"><button type="button" class="map-expand-button" data-transport-fit aria-label="Fit these journeys" title="Fit these journeys">${icons.fit}</button></div><p class="transport-map-status" data-transport-map-status role="status"></p></div>
-      <section class="transport-panel"><header class="transport-heading"><div class="transport-mode-control"><button type="button" class="transport-mode-title" data-mode-toggle aria-haspopup="menu" aria-expanded="false"><span data-mode-title>My Flights</span>${icons.chevron}</button><div class="transport-mode-menu" data-mode-menu role="menu" aria-label="Transport type" hidden>${Object.entries(D.modes).map(([key,value])=>`<button type="button" role="menuitemradio" data-transport-mode="${key}" aria-checked="${key===mode}">${HVTransportIcons.html(key)}<span>${value.title}</span><span class="transport-mode-check" aria-hidden="true">✓</span></button>`).join('')}</div></div>
+      <section class="transport-panel"><header class="transport-heading"><div class="transport-mode-control"><button type="button" class="transport-mode-title" data-mode-toggle aria-haspopup="menu" aria-expanded="false"><span data-mode-title>All transport</span>${icons.chevron}</button><div class="transport-mode-menu" data-mode-menu role="menu" aria-label="Transport type" hidden>${Object.entries(D.modes).map(([key,value])=>`<button type="button" role="menuitemradio" data-transport-mode="${key}" aria-checked="${key===mode}">${HVTransportIcons.html(key)}<span>${value.title}</span><span class="transport-mode-check" aria-hidden="true">✓</span></button>`).join('')}</div></div>
       <div class="transport-heading-actions"><button type="button" class="transport-icon-button" data-search-toggle aria-label="Search journeys" aria-expanded="false">${icons.search}</button><button type="button" class="transport-icon-button" data-filter-toggle aria-label="Filter journeys" aria-expanded="false">${icons.filter}</button><button type="button" class="transport-icon-button" data-transport-share aria-label="Share selected journey">${icons.share}</button></div></header>
-      <p class="transport-scope-hint helper">Flights, trains, ferries, buses and cars · choose a mode above.</p><div class="transport-search" data-search-panel hidden><label class="field"><span>Search journeys</span><input type="search" data-transport-search placeholder="Operator, service, place or code"></label></div>
+      <label class="field transport-mode-field"><span>Transport mode</span><select data-transport-mode-select><option value="all">All transport</option>${Object.entries(D.modes).map(([key,value])=>`<option value="${key}">${value.title.replace('My ', '')}</option>`).join('')}</select></label><div class="transport-search" data-search-panel hidden><label class="field"><span>Search journeys</span><input type="search" data-transport-search placeholder="Operator, service, place or code"></label></div>
       <div class="transport-filters" data-filter-panel hidden><label class="field"><span>Year</span><select data-transport-filter="year"></select></label><label class="field"><span>Operator</span><select data-transport-filter="operator"></select></label><label class="field"><span>Country</span><select data-transport-filter="country"></select></label><button type="button" class="text-btn" data-clear-transport-filters>Clear filters</button></div>
       <div class="transport-tabs" role="tablist" aria-label="Journey dates"><button type="button" role="tab" data-transport-period="upcoming" aria-selected="true">Upcoming</button><button type="button" role="tab" data-transport-period="previous" aria-selected="false">Previous</button><button type="button" class="text-btn" data-dashboard-add aria-label="Add journey">+ Add</button></div>
       <div class="transport-list-scroll"><ul class="transport-list" data-transport-list></ul><div class="transport-empty" data-transport-empty></div></div>
       <div class="transport-pagination" data-transport-pagination hidden><button type="button" class="text-btn" data-transport-page="-1">Previous page</button><span></span><button type="button" class="text-btn" data-transport-page="1">Next page</button></div><p class="transport-dashboard-message helper" data-dashboard-message role="status"></p></section>`;
+    host.querySelector('[data-transport-mode-select]').onchange=event=>{mode=event.target.value;try{sessionStorage.setItem('herald.transport.mode.v1',mode);}catch{}search=year=operator=country='';host.querySelector('[data-transport-search]').value='';page=0;selected='';render();};
     host.querySelector('[data-transport-search]').oninput=event=>{search=event.target.value;page=0;render();};
     for(const field of host.querySelectorAll('[data-transport-filter]'))field.onchange=()=>{({year,operator,country}=Object.fromEntries([...host.querySelectorAll('[data-transport-filter]')].map(input=>[input.dataset.transportFilter,input.value])));page=0;render();};
     const menu=host.querySelector('[data-mode-menu]'),toggle=host.querySelector('[data-mode-toggle]');
@@ -124,7 +125,7 @@
       if(button.dataset.transportPeriod){periods.set(mode,button.dataset.transportPeriod);page=0;selected='';render();return;}
       if(button.dataset.transportPage){page+=Number(button.dataset.transportPage);render();host.querySelector('.transport-list-scroll').scrollTop=0;return;}
       if(button.dataset.transportSelect){selected=button.dataset.transportSelect;highlight();const row=records().find(row=>row.key===selected);if(row)openDetails(row);return;}
-      if(button.hasAttribute('data-dashboard-add')){HVJourneys.openTransport(null,{type:mode,status:currentPeriod()==='upcoming'?'planned':'actual'});return;}
+      if(button.hasAttribute('data-dashboard-add')){HVJourneys.openTransport(null,{type:mode==='all'?'flight':mode,status:currentPeriod()==='upcoming'?'planned':'actual'});return;}
       if(button.hasAttribute('data-transport-fit')){surface?.fit();return;}
       if(button.hasAttribute('data-transport-share')){share();return;}
       if(button.hasAttribute('data-clear-transport-filters')){search=year=operator=country='';host.querySelector('[data-transport-search]').value='';page=0;render();return;}
@@ -140,6 +141,6 @@
     window.addEventListener('hv-route',()=>{if(document.body.dataset.currentView!=='transport'){clearTimeout(minuteTimer);closeMenu();}else render();});
     window.addEventListener('hv-airports-ready',()=>{sourceStamp=null;lastRender=null;render();});window.addEventListener('hv-data-changed',()=>{sourceStamp=null;lastRender=null;render();});render();
   }
-  window.HVTransportDashboard={render,surface:()=>surface,records,title:()=>D.modes[mode].title};
+  window.HVTransportDashboard={render,surface:()=>surface,records,title:()=>'Transport'};
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot();
 })();

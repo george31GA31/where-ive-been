@@ -278,7 +278,7 @@ function renderHomeOverview() {
     group.transports.some(eligible) || group.accommodations.some(eligible)
   ));
   const month = new Date(start + 'T00:00:00Z').toLocaleDateString('en-GB', {month:'long',year:'numeric',timeZone:'UTC'});
-  summary.innerHTML = `<button type="button" class="text-btn" data-home-calendar-month="${start}" aria-label="Open ${E(month)} calendar"><strong>${E(month)}</strong><span>${touching.length} ${touching.length === 1 ? 'journey' : 'journeys'} this month <span aria-hidden="true">↗</span></span></button>`;
+  summary.innerHTML = `<button type="button" class="text-btn" data-home-calendar-month="${start}" aria-label="Open ${E(month)} calendar"><span class="sr-only">${E(month)} · </span><span>${touching.length} ${touching.length === 1 ? 'journey' : 'journeys'} this month </span></button>`;
 
   const journeys = groups.filter(group => group.phase === 'upcoming' && (group.trip || group.stays.length));
   const transports = groups.flatMap(group => group.transports).filter(record => eligible(record) && localDate(record.startLocal) >= upcomingStart)
@@ -298,7 +298,7 @@ function renderHomeOverview() {
   upcomingHost.innerHTML = items.map(item=>item.html).join('') + `<button type="button" class="text-btn home-all-dates" data-home-calendar-month="${start}">All dates in the calendar →</button>`;
   const details = $('homeUpcomingTravel'), count = journeys.length + transports.length + accommodation.length + notes.length;
   details.hidden = !count;
-  q('summary', details).textContent = 'Coming up';
+  q('summary', details).textContent = 'All upcoming';
 }
 
 function startOfNextMonth(start) {
@@ -320,7 +320,7 @@ function renderCalendarLegend(layers) {
   if (!host) return;
   host.innerHTML = calendarKinds.map(([key, label, , icon]) => `<button type="button" data-calendar-layer="${key}" aria-pressed="${layers[key] !== false}" title="Show or hide ${label.toLowerCase()}. Shift-click to show only this category."><span class="calendar-type-symbol type-${key}" aria-hidden="true">${key === 'transport' ? transportIcon('flight') : icon}</span>${label}</button>`).join('');
   const reset = q('[data-calendar-show-all]');
-  if (reset) reset.hidden = calendarKinds.every(([key]) => layers[key] !== false);
+  if (reset) {const inactive=calendarKinds.every(([key])=>layers[key]!==false);reset.hidden=false;reset.classList.toggle('calendar-reset-inactive',inactive);reset.disabled=inactive;reset.setAttribute('aria-hidden',String(inactive));}
 }
 
 // Selection changes touch only the existing date nodes, never rebuild record lanes.
@@ -345,7 +345,7 @@ function updateDateSelection(renderDetail = true) {
         ? `<strong>${E(dateText(calendarSelectionStart))} selected</strong><span>Choose the last date, or the same date for one day.</span><button type="button" class="text-btn" data-calendar-explore-selected>Explore day</button>`
         : `<strong>${rangeMode ? 'Select dates to add travel' : 'Your journey, day by day'}</strong><span>${rangeMode ? 'Choose a first date, then the last. Turn off Select range to open days with one click.' : 'Select a day to explore. Turn on Select range to add across dates.'}</span>`;
     if(calendarSelectionStart)info.innerHTML += '<button type="button" class="text-btn" data-calendar-cancel-range>Cancel</button>';
-    if(calendarKinds.some(([key]) => visibleLayers()[key] === false))info.innerHTML += '<button type="button" class="text-btn" data-calendar-show-all>Show all</button>';
+
   }
   const clear = $('clearCalendarSelectionBtn');
   if(clear){clear.hidden=true;clear.disabled=!calendarSelectionStart;}
@@ -355,12 +355,12 @@ function updateDateSelection(renderDetail = true) {
   if(renderDetail){window.HVCalendarDetails?.hide();renderJourneyDetail();}
 }
 
-function countryRow(countries, date) {
+function countryRow(countries, date, stacked = false) {
   if (!countries.length) return '';
   const visible = countries.slice(0, 2), extra = countries.length - visible.length;
-  return `<div class="calendar-country-row ${countries.length > 1 ? 'calendar-country-split' : ''}" style="grid-template-columns:repeat(${visible.length},minmax(0,1fr))${extra ? ' 23px' : ''}">${visible.map(({record:s}) => {
+  return `<div class="calendar-country-row ${stacked ? 'calendar-country-stacked' : countries.length > 1 ? 'calendar-country-split' : ''}" style="--calendar-country-columns:${stacked ? (extra ? 'minmax(0,1fr) 24px' : 'minmax(0,1fr)') : `repeat(${visible.length},minmax(0,1fr))${extra ? ' 23px' : ''}`} ">${visible.map(({record:s}) => {
     const schengen = SCHENGEN.has(s.countryCode);
-    return `<div class="calendar-country-section"><button type="button" class="calendar-journey-chip${schengen ? ' is-schengen' : ''}" data-calendar-edit-country="${E(s.id)}" ${entryAttributes('country',s.id,date)} aria-label="${E(s.countryName)}${schengen ? ' · Schengen Area' : ''}">${flagHtml(s.domesticDestination || s.countryCode,'calendar-chip-flag')}<span class="calendar-journey-copy"><strong class="country-name-full">${E(s.countryName)}</strong><strong class="country-name-compact" aria-hidden="true">${E(s.domesticDestination ? s.countryName.slice(0,3) : s.countryCode)}</strong></span>${schengen ? '<span class="calendar-schengen in" aria-hidden="true"></span>' : ''}${window.HVCalendarPlanning?.handles('country',s,date)||''}</button>${window.HVCalendarPlanning?.planFor('country',s.id) ? '' : window.HVVisaNotices?.indicator(s) || ''}</div>`;
+    return `<div class="calendar-country-section"><button type="button" class="calendar-journey-chip${schengen ? ' is-schengen' : ''}" data-calendar-edit-country="${E(s.id)}" ${entryAttributes('country',s.id,date)} aria-label="${E(s.countryName)}${schengen ? ' · Schengen Area' : ''}">${flagHtml(s.domesticDestination || s.countryCode,'calendar-chip-flag')}<span class="calendar-journey-copy"><strong class="country-name-full">${E(s.countryName)}</strong><strong class="country-name-compact" aria-hidden="true">${E(s.domesticDestination ? s.countryName.slice(0,3) : s.countryCode)}</strong></span>${schengen ? '<span class="calendar-schengen in" aria-hidden="true"></span>' : ''}${window.HVCalendarPlanning?.handles('country',s,date)||''}</button>${window.HVCalendarPlanning?.planFor('country',s.id) ? '' : (date === (s.start < calendarWindowStart ? calendarWindowStart : s.start) ? window.HVVisaNotices?.indicator(s) : '') || ''}</div>`;
   }).join('')}${extra ? `<button type="button" class="calendar-more-countries" data-calendar-countries-detail="${date}" aria-label="Explore all ${countries.length} countries on ${E(dateText(date))}"><span class="calendar-more-desktop">+${extra}</span><span class="calendar-more-mobile">+${countries.length-1}</span></button>` : ''}</div>`;
 }
 
@@ -369,6 +369,8 @@ function calendarTransportChip(record, date) {
   const compact = record.type === 'flight' ? HVJourney.flightLegs(record).flatMap((leg,index) => index ? [HVJourney.airportLabel(leg.end,HVJourneys.airportFor)] : [HVJourney.airportLabel(leg.start,HVJourneys.airportFor),HVJourney.airportLabel(leg.end,HVJourneys.airportFor)]).filter(Boolean).join(' → ') : label;
   return `<button type="button" class="calendar-day-transport" data-calendar-edit-transport="${E(record.id)}" ${entryAttributes('transport',record.id,date)} aria-label="${E(label)}"><span class="calendar-transport-cue" aria-hidden="true">${transportIcon(record.type)}</span><span class="calendar-route-label">${E(compact)}</span>${window.HVCalendarPlanning?.handles('transport',record,date)||''}</button>`;
 }
+
+let calendarWindowStart = '';
 
 function renderMonth() {
   if (document.body.dataset.currentView && document.body.dataset.currentView !== 'calendar') return;
@@ -386,15 +388,21 @@ function renderMonth() {
   if ($('calendarMonthJump')) $('calendarMonthJump').value = String(cursor.getUTCMonth());
   if ($('calendarYearJump')) $('calendarYearJump').value = String(cursor.getUTCFullYear());
 
+  calendarWindowStart = dayKey(start);
+  const cellWidth = Math.max(30, calendar.clientWidth / 7 - 20);
+  const countryStack = (countries,date) => countries.length > 1 && countries.slice(0,2).reduce((sum, {record}) => sum + String(record.countryName || record.countryCode).length * 6.6 + 30 + (record.start===date?26:0), 0) + (countries.length > 2 ? 24 : 4) > cellWidth;
   const monthDays = [...dateWindow.values()].map(day => ({
     day,
     segments:HVCalendarLayout.lodging(layers.accommodation ? day.accommodations : [],day.date),
     countries:HVCalendarLayout.countries(layers.countries ? day.stays : [],day.transports,day.date),
   }));
-  // Every day uses the same lanes, independent of the number of entries on that day.
-  calendar.style.setProperty('--calendar-country-rows',Number(layers.countries && monthDays.some(item => item.countries.length)));
-  calendar.style.setProperty('--calendar-has-lodging',Number(layers.accommodation && monthDays.some(item => item.segments.length)));
-  calendar.style.setProperty('--calendar-transport-rows',layers.transport ? Math.min(2,Math.max(0,...monthDays.map(item => item.day.transports.length))) : 0);
+  // Reserve lanes within each week. Quiet weeks do not inherit a busy month's space.
+  const weekStyles = [];
+  for (let offset = 0; offset < monthDays.length; offset += 7) {
+    const week = monthDays.slice(offset, offset + 7);
+    const lodgingLines = week.some(item=>item.segments.some(segment=>segment.span===1 && String(segment.record.propertyName||'').length>24)) ? 3 : 2;
+    weekStyles.push(`--calendar-lodging-size:${lodgingLines===3?70:56}px;--calendar-lodging-lines:${lodgingLines};--calendar-country-rows:${Math.max(0,...week.map(item=>item.countries.length ? countryStack(item.countries,item.day.date) ? 2 : 1 : 0))};--calendar-has-lodging:${Number(week.some(item=>item.segments.length))};--calendar-transport-rows:${layers.transport ? Math.min(2,Math.max(0,...week.map(item=>item.day.transports.length))) : 0};--calendar-secondary-rows:${Number(week.some(item=>(layers.notes && item.day.notes.length)||(layers.locations && item.day.places.length)))};`);
+  }
   calendar.classList.toggle('calendar-has-countries',layers.countries && monthDays.some(item => item.countries.length));
   let html = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(day => `<div class="calendar-weekday">${day}</div>`).join('');
   for (let index=0; index<monthDays.length; index++) {
@@ -406,18 +414,19 @@ function renderMonth() {
     const noteChips = notes.slice(0,1).map(note => `<button type="button" class="calendar-note-chip" ${entryAttributes('note',note.id,date)}><span aria-hidden="true">✎</span><span>${E(note.title || note.body || 'Note')}</span>${window.HVCalendarPlanning?.handles('note',note,date)||''}</button>`).join('');
     const placeChips = (notes.length ? [] : places.slice(0,1)).map(place => `<button type="button" class="calendar-place-chip" ${entryAttributes('location',place.id,date)}><span aria-hidden="true">◎</span><span>${E(HVAddress.field(place.place,'name') || 'Saved location')}</span>${window.HVCalendarPlanning?.handles('location',place,date)||''}</button>`).join('');
     const count = countries.length+segments.length+transports.length+notes.length+places.length;
-    const hiddenCount = Math.max(0,countries.length-2)+Math.max(0,transports.length-2)+Math.max(0,notes.length-1)+Math.max(0,places.length-(notes.length?0:1));
+    const hiddenCount = (segments.some(segment=>segment.complex) ? Math.max(0,segments.length-1) : 0)+Math.max(0,countries.length-2)+Math.max(0,transports.length-2)+Math.max(0,notes.length-1)+Math.max(0,places.length-(notes.length?0:1));
     const status = day.status === 'home' ? `<button type="button" class="calendar-home-icon" data-calendar-home-select="${date}" aria-label="Home on ${E(dateText(date))}">⌂</button>` : '';
-    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start,index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selection ? 'selection-range' : ''} ${date === calendarSelectionStart ? 'selection-start' : ''} ${date === calendarSelectionEnd ? 'selection-end' : ''}" data-calendar-date="${date}" data-home-status="${day.status}" role="group" aria-label="${E(dateText(date))}">
+    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start,index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selection ? 'selection-range' : ''} ${date === calendarSelectionStart ? 'selection-start' : ''} ${date === calendarSelectionEnd ? 'selection-end' : ''}" style="${weekStyles[Math.floor(index/7)]}" data-calendar-date="${date}" data-home-status="${day.status}" role="group" aria-label="${E(dateText(date))}">
       <div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${date}" aria-label="Explore ${E(dateText(date))}" aria-pressed="${!!selection}">${addDays(start,index).getUTCDate()}</button><div class="calendar-day-status">${status}${notes.length ? `<button type="button" class="calendar-note-indicator" data-calendar-notes-date="${date}" aria-label="${notes.length} notes on ${E(dateText(date))}">✎</button>` : ''}${date === current ? '<span>Today</span>' : ''}</div></div>
-      <div class="calendar-journeys"><div class="calendar-countries">${countryRow(countries,date)}${layers.countries && day.sea.length && !countries.length ? '<span class="calendar-sea-mark">≈ At sea</span>' : ''}</div>${lodging ? `<div class="calendar-lodging">${lodging}</div>` : '<div class="calendar-lodging-space" aria-hidden="true"></div>'}<div class="calendar-transports">${transports.slice(0,2).map(record => calendarTransportChip(record,date)).join('')}</div></div>
+      <div class="calendar-journeys"><div class="calendar-countries">${countryRow(countries,date,countryStack(countries,date))}${layers.countries && day.sea.length && !countries.length ? '<span class="calendar-sea-mark">≈ At sea</span>' : ''}</div>${lodging ? `<div class="calendar-lodging">${lodging}</div>` : '<div class="calendar-lodging-space" aria-hidden="true"></div>'}<div class="calendar-transports">${transports.slice(0,2).map(record => calendarTransportChip(record,date)).join('')}</div></div>
       <div class="calendar-secondary-entries">${noteChips}${placeChips}</div>
-      ${count ? `<button type="button" class="calendar-day-detail-link" data-calendar-day-detail="${date}" aria-controls="calendarJourneyDetail" aria-label="Explore all ${count} entries for ${E(dateText(date))}"><span class="calendar-detail-desktop">${hiddenCount ? '+'+hiddenCount+' more' : 'Explore day'}</span><span class="calendar-detail-mobile">${count} ${count===1 ? 'entry' : 'entries'}</span><span aria-hidden="true">↗</span></button>` : ''}</div>`;
+      ${count ? `<button type="button" class="calendar-day-detail-link" data-calendar-day-detail="${date}" aria-controls="calendarJourneyDetail" aria-label="Explore all ${count} entries for ${E(dateText(date))}"><span class="calendar-detail-desktop">${hiddenCount ? '+'+hiddenCount : ''}</span><span class="calendar-detail-mobile">${count} ${count===1 ? 'entry' : 'entries'}</span><span aria-hidden="true">↗</span></button>` : ''}</div>`;
   }
   window.HVCalendarDetails?.hide();
   calendar.innerHTML = html;
   updateDateSelection();
   if (focusDate) calendar.querySelector(`[data-calendar-date-select="${CSS.escape(focusDate)}"]`)?.focus({preventScroll:true});
+  renderAgenda();
   window.dispatchEvent(new CustomEvent('hv-calendar-rendered'));
 }
 
@@ -500,7 +509,30 @@ function selectJourney(key, date = '') {
   focusCalendarDetail();
 }
 
+function projectCalendarDays(start, count, tripId = null) {
+  const projection = tripId ? HVCalendarData.window(state,start,count) : window.HVCalendarPlanning?.window(start,count) || HVCalendarData.window(state,start,count);
+  return [...projection.values()].map(day => tripId ? {...day,stays:day.stays.filter(r=>r.tripId===tripId),accommodations:day.accommodations.filter(r=>r.tripId===tripId),transports:day.transports.filter(r=>r.tripId===tripId),notes:day.notes.filter(r=>r.tripId===tripId),places:day.places.filter(r=>r.tripId===tripId)} : day);
+}
+let agendaAnchorDate = '';
+function renderAgenda() {
+  const host = $('calendarAgenda'); if (!host || host.hidden) return;
+  const current = today(), first = dayKey(calendarCursor), layers = visibleLayers();
+  if(selectedDate)agendaAnchorDate=selectedDate;else if(agendaAnchorDate.slice(0,7)!==first.slice(0,7))agendaAnchorDate=first.slice(0,7)===current.slice(0,7)?current:first;
+  const start=agendaAnchorDate;
+  const sections = [['countries','country','stays'],['accommodation','accommodation','accommodations'],['transport','transport','transports'],['notes','note','notes'],['locations','location','places']];
+  host.innerHTML = `<div class="calendar-agenda-dates"><label class="field"><span>From</span><input type="date" data-agenda-start value="${E(start)}"></label><label class="field"><span>To</span><input type="date" data-agenda-end value="${E(calendarSelectionEnd||start)}"></label><button type="button" class="secondary" data-agenda-select>Select dates</button></div>` + projectCalendarDays(start,7).map(day => {
+    const content = sections.filter(([layer])=>layers[layer]!==false).map(([,kind,key]) => day[key].map(row=>calendarEntryRow(kind,row,day.date,day.date)).join('')).join('');
+    return `<section class="calendar-agenda-day" data-agenda-date="${day.date}"><header><h3>${E(new Date(day.date+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}))}</h3><button type="button" class="text-btn" data-calendar-day-nav="${day.date}">Open day / add travel</button></header>${content || '<p class="helper">No travel recorded for this day.</p>'}</section>`;
+  }).join('');
+}
+
 // Source: src/calendar/details.js
+function quickTripControl(start, end) {
+  const trips = HVJourney.scoped(state.trips || [], state.activeProfileId).filter(t => t.status !== 'cancelled');
+  const matches = trips.filter(t => t.start && t.end && t.start <= start && t.end >= end);
+  return `<label class="field"><span>Trip <em>optional</em></span><select name="tripId"><option value="">No trip</option>${trips.map(t => `<option value="${E(t.id)}">${E(t.name)}</option>`).join('')}</select></label>${matches.length ? `<p class="helper">Date matches: ${matches.map(t => E(t.name)).join(', ')}. Choose a trip above to link this visit.</p>` : ''}`;
+}
+
 function accommodationDateText(record) {
   if (record.checkIn && record.checkOut) return dateRangeText(record.checkIn,record.checkOut);
   if (record.checkIn) return `Check-in ${dateText(record.checkIn)} · check-out not recorded`;
@@ -550,7 +582,9 @@ function calendarEntryRow(kind,record,start,end) {
     subtitle=HVAddress.address(record.place)||record.notes||dateRangeText(record.date,record.endDate||record.date);
     icon='◎';edit=`data-place-edit="${E(record.id)}"`;
   }
-  return `<article class="calendar-explorer-row type-${kind}"><button type="button" class="calendar-explorer-entry" ${entryAttributes(kind,record.id,start)}><span class="calendar-explorer-symbol" aria-hidden="true">${icon}</span><span><strong>${E(title)}</strong>${badge ? `<span class="calendar-entry-phase">${E(badge)}</span>` : ''}${subtitle ? `<small>${E(subtitle)}</small>` : ''}</span><span aria-hidden="true">›</span></button><button type="button" class="text-btn calendar-row-edit" ${edit} aria-label="Edit ${E(title)}">Edit</button></article>`;
+  const notice=kind==='country'&&!tentative?window.HVVisaNotices?.info(record):null;
+  const reminder=notice?.needs&&!notice.acknowledged?`<button type="button" class="text-btn calendar-row-reminder" data-visa-notice="${E(record.id)}">${!notice.passport?'Confirm passport · entry requirements':notice.rule?.verified===false?'Check current guidance · entry requirements':'Review entry requirements'}</button>`:'';
+  return `<article class="calendar-explorer-row type-${kind}"><button type="button" class="calendar-explorer-entry" ${entryAttributes(kind,record.id,start)}><span class="calendar-explorer-symbol" aria-hidden="true">${icon}</span><span><strong>${E(title)}</strong>${badge ? `<span class="calendar-entry-phase">${E(badge)}</span>` : ''}${subtitle ? `<small>${E(subtitle)}</small>` : ''}</span><span aria-hidden="true">›</span></button><button type="button" class="text-btn calendar-row-edit" ${edit} aria-label="Edit ${E(title)}">Edit</button>${reminder}</article>`;
 }
 
 function dayInsight(date) {
@@ -563,10 +597,10 @@ function dayInsight(date) {
   const heading=start===end ? new Date(start+'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}) : dateRangeText(start,end);
   const countryNames=[...new Set(records.country.map(s => s.countryName))].filter(Boolean).join(' · ');
   const sections=calendarKinds.map(([,label,kind,icon]) => records[kind].length ? `<section class="calendar-explorer-section"><h3><span aria-hidden="true">${kind==='transport' ? transportIcon('flight') : icon}</span>${label}<small>${records[kind].length}</small></h3>${kind==='accommodation' && records.accommodation.length>1 ? '<p class="calendar-section-hint">Check-outs first, then ongoing stays and check-ins. Overlapping reservations are kept separately.</p>' : ''}${records[kind].map(record => calendarEntryRow(kind,record,start,end)).join('')}</section>` : '').join('');
-  const action=dateAction==='country' ? `<form id="calendarQuickCountry" class="calendar-quick-form"><label class="field"><span>Country</span><input type="text" name="country" list="countryList" required autocomplete="off" placeholder="Search a country"></label><div class="form-grid calendar-range-fields"><label class="field"><span>Start date</span><input type="date" name="start" value="${E(start)}" required></label><label class="field"><span>End date</span><input type="date" name="end" value="${E(end)}" required></label></div><label class="field"><span>City or area <em>optional</em></span><input type="text" name="location" maxlength="160"></label><button class="primary" type="submit">Save country stay</button><p class="form-error" role="alert"></p></form>` : '';
+  const action=dateAction==='country' ? `<form id="calendarQuickCountry" class="calendar-quick-form"><label class="field"><span>Country</span><input type="text" name="country" list="countryList" required autocomplete="off" placeholder="Search a country"></label><div class="form-grid calendar-range-fields"><label class="field"><span>Start date</span><input type="date" name="start" value="${E(start)}" required></label><label class="field"><span>End date</span><input type="date" name="end" value="${E(end)}" required></label></div><label class="field"><span>City or area <em>optional</em></span><input type="text" name="location" maxlength="160"></label>${quickTripControl(start,end)}<button class="primary" type="submit">Save country visit</button><p class="form-error" role="alert"></p></form>` : '';
   return `<div class="calendar-date-panel"><header class="calendar-explorer-head"><div><p class="eyebrow">DAY EXPLORER${start!==end ? ' · DATE RANGE' : ''}</p><h2 data-calendar-detail-heading tabindex="-1">${E(heading)}</h2>${countryNames ? `<p class="calendar-explorer-country">${E(countryNames)}</p>` : ''}<p class="calendar-section-hint">${count} ${count===1 ? 'entry' : 'entries'} recorded${calendarKinds.some(([key]) => visibleLayers()[key]===false) ? ' · showing all categories here' : ''}</p></div><button type="button" class="icon-btn" data-calendar-close-date aria-label="Close Day Explorer">×</button></header>
     <div class="calendar-explorer-tools">${start===end ? `<button type="button" class="text-btn" data-calendar-day-nav="${HVCalendarData.next(start,-1)}" aria-label="Previous day">←</button><button type="button" class="text-btn" data-calendar-day-nav="${HVCalendarData.next(start)}" aria-label="Next day">→</button>` : ''}<details class="calendar-range-editor"><summary>Change dates</summary><div class="form-grid calendar-range-fields"><label class="field"><span>From</span><input type="date" data-range-start value="${E(start)}"></label><label class="field"><span>To</span><input type="date" data-range-end value="${E(end)}"></label></div></details></div>
-    <details class="calendar-add-menu"${dateAction || calendarSelectionEnd ? ' open' : ''}><summary>+ Add to ${start===end ? 'this day' : 'these dates'}</summary><div class="calendar-date-actions"><button type="button" data-calendar-date-action="country">▏ Add country</button><button type="button" data-calendar-date-action="accommodation">⌂ Add accommodation</button><button type="button" data-calendar-date-action="transport">↗ Add transport</button><button type="button" data-calendar-date-action="note">✎ Add note</button><button type="button" data-calendar-date-action="location">◎ Add location</button><button type="button" data-add-tentative>○ Add tentative plan</button><button type="button" data-calendar-cancel-range>Cancel selection</button></div><div class="calendar-explicit-plan"><button type="button" class="text-btn" data-create-range-trip data-start="${E(start)}" data-end="${E(end)}">Create trip from records</button><button type="button" class="text-btn" data-calendar-plan>Plan a Journey →</button></div></details>${action}
+    <details class="calendar-add-menu"${dateAction || calendarSelectionEnd ? ' open' : ''}><summary>+ Add to ${start===end ? 'this day' : 'these dates'}</summary><div class="calendar-date-actions"><button type="button" data-calendar-date-action="country">▏ Add country</button><button type="button" data-calendar-date-action="accommodation">⌂ Add accommodation</button><button type="button" data-calendar-date-action="transport">↗ Add transport</button><button type="button" data-calendar-date-action="note">✎ Add note</button><button type="button" data-calendar-date-action="location">◎ Add location</button><button type="button" data-add-tentative>○ Add tentative plan</button><button type="button" data-calendar-cancel-range>Cancel selection</button></div><div class="calendar-explicit-plan"><button type="button" class="text-btn" data-create-range-trip data-start="${E(start)}" data-end="${E(end)}">Create trip from records</button><button type="button" class="text-btn" data-calendar-plan>Plan a trip →</button></div></details>${action}
     <div class="calendar-explorer-sections">${sections||'<div class="calendar-explorer-empty"><span aria-hidden="true">✧</span><strong>A day waiting to be recorded</strong><p>Add a country, a stay, a journey or a small memory.</p></div>'}</div></div>`;
 }
 
@@ -694,15 +728,6 @@ function renderJourneyDetail() {
   }
   if (!group) {
     host.innerHTML = dayInsight(selectedDate, groups);
-    if (selectedDate) {
-      const start = calendarSelectionStart || selectedDate,
-        end = calendarSelectionEnd || start;
-      const matching = groups.filter((g) => g.trip && g.start <= end && g.end >= start);
-      if (matching.length === 1) {
-        const select = q('.calendar-quick-form [name="tripId"]', host);
-        if (select) select.value = matching[0].trip.id;
-      }
-    }
     return;
   }
   const travelDays = transportDaySet(group).size;
@@ -717,8 +742,34 @@ function renderJourneyDetail() {
 // Source: src/calendar/planner.js
 function plannerStatusFrom(prefill) {
   if (prefill.status) return prefill.status;
-  const start = prefill.start || today();
-  return start > today() || prefill.source === 'plan' ? 'planned' : 'actual';
+  return (prefill.end || prefill.start || today()) < today() ? 'actual' : 'planned';
+}
+
+// Form drafts live only in this browser tab, isolated by account and active traveller.
+const pausedPlanners = new Map();
+let plannerOwner = '', plannerState = null, plannerRendering = false;
+function plannerDraftKey() {
+  return 'herald.tripDraft.v1.' + (window.WIBAuth?.cachedSession()?.user?.id || 'guest') + '.' + state.activeProfileId;
+}
+function meaningfulPlanner(value) {
+  return !!(value?.name || value?.notes || value?.stops?.some(s => s.countryName || s.location) || value?.transports?.length || value?.accommodations?.length);
+}
+function keepPlannerDraft() {
+  if (!planner || plannerOwner !== plannerDraftKey() || state !== plannerState || !meaningfulPlanner(planner)) return;
+  pausedPlanners.set(plannerOwner, JSON.parse(JSON.stringify(planner)));
+  if (pausedPlanners.size > 8) pausedPlanners.delete(pausedPlanners.keys().next().value);
+  try {
+    const text = JSON.stringify(planner, (key, value) => key === 'logoDraft' || (typeof value === 'string' && value.startsWith('data:image/')) ? undefined : value);
+    if (text.length > 250000) throw new Error('Draft too large');
+    sessionStorage.setItem(plannerOwner, text);
+  } catch { plannerError('Draft retained in this tab. Session recovery is unavailable; keep this tab open.'); }
+}
+function clearPlannerDraft() {
+  pausedPlanners.delete(plannerOwner);
+  try { sessionStorage.removeItem(plannerOwner); } catch {}
+}
+function plannerDatePhase() {
+  return planner.start > today() ? 'Upcoming' : planner.end < today() ? 'Past' : 'Ongoing';
 }
 
 function blankStop(start, end, countryName = '') {
@@ -745,13 +796,29 @@ function ensurePlannerDialog() {
   plannerDialog.id = 'tripPlannerDialog';
   plannerDialog.className = 'dialog trip-planner-dialog';
   plannerDialog.addEventListener('close', () => {
-    if (!plannerDialog.open) planner = null;
+    if (!plannerDialog.open) { readPlannerStep(); keepPlannerDraft(); planner = null; }
   });
   document.body.append(plannerDialog);
   return plannerDialog;
 }
 
 function openTripPlanner(prefill = {}) {
+  if (plannerDialog?.open && planner && plannerOwner === plannerDraftKey()) return;
+  plannerOwner = plannerDraftKey();
+  plannerState = state;
+  let saved = pausedPlanners.get(plannerOwner);
+  try { saved ||= JSON.parse(sessionStorage.getItem(plannerOwner)); } catch {}
+  if (meaningfulPlanner(saved) && !prefill.fresh) {
+    planner = null;
+    const dialog = ensurePlannerDialog();
+    dialog.innerHTML = `<div class="dialog-card"><h2>Resume your trip?</h2><p>${E(saved.name || 'Unfinished trip')} · Step ${Number(saved.step) || 1} of 5</p><p class="helper">Drafts last for this browser tab's session and belong to the current account and traveller. Unsaved image uploads stay in memory only.</p><div class="dialog-actions"><button class="primary" data-planner-resume>Resume draft</button><button class="secondary" data-planner-new>Discard & start new</button><button class="text-btn" data-planner-pause>Close</button></div></div>`;
+    q('[data-planner-resume]', dialog).onclick = () => { planner = JSON.parse(JSON.stringify(saved)); renderPlanner(); };
+    q('[data-planner-new]', dialog).onclick = () => { clearPlannerDraft(); openTripPlanner({...prefill, fresh:true}); };
+    q('[data-planner-pause]', dialog).onclick = () => dialog.close();
+    if (!dialog.open) dialog.showModal();
+    return;
+  }
+  if (prefill.fresh) clearPlannerDraft();
   const start = prefill.start || today();
   const end = prefill.end || start;
   planner = {
@@ -759,6 +826,7 @@ function openTripPlanner(prefill = {}) {
     start,
     end,
     status: plannerStatusFrom(prefill),
+    statusTouched: !!prefill.status,
     profileId: prefill.profileId || state.activeProfileId || '',
     source: prefill.source || '',
     name: prefill.tripName || '',
@@ -778,7 +846,7 @@ function plannerError(message = '') {
 }
 
 function readPlannerStep() {
-  if (!planner || !plannerDialog) return;
+  if (!planner || !plannerDialog || plannerRendering) return;
   const form = q('form', plannerDialog);
   if (!form) return;
   if (planner.step === 1) {
@@ -786,7 +854,8 @@ function readPlannerStep() {
       previousEnd = planner.end;
     planner.start = form.elements.start.value;
     planner.end = form.elements.end.value;
-    planner.status = form.elements.status.value;
+    planner.status = planner.statusTouched ? form.elements.status.value : plannerStatusFrom({start:planner.start,end:planner.end});
+    form.elements.status.value = planner.status;
     planner.profileId = form.elements.profileId.value;
     planner.stops.forEach((stop) => {
       if (stop.start === previousStart) stop.start = planner.start;
@@ -956,7 +1025,7 @@ function accommodationRow(accommodation, index) {
 }
 
 function reviewMarkup() {
-  return `<div class="planner-review"><section><p class="eyebrow">JOURNEY</p><h3>${E(planner.name)}</h3><p>${E(dateRangeText(planner.start, planner.end))} · ${E(durationText(planner.start, planner.end))} · ${E(planner.status === 'planned' ? 'Planned' : 'Completed')}</p>${planner.notes ? `<p>${E(planner.notes)}</p>` : ''}</section><section><p class="eyebrow">STOPS IN ORDER</p>${planner.stops.map((stop, index) => `<div class="planner-review-row"><span>${index + 1}</span><strong>${E(stop.location || stop.countryName)}</strong><small>${E(stop.countryName)} · ${E(dateRangeText(stop.start, stop.end))}</small></div>`).join('')}</section><section><p class="eyebrow">TRANSPORT</p>${planner.transports.length ? planner.transports.map((transport) => `<div class="planner-review-row"><span>${transportIcon(transport.type)}</span><strong>${E(transport.startName)} → ${E(transport.endName)}</strong><small>${E(window.HVJourney.types[transport.type] || transport.type)} · ${E(transport.startLocal.replace('T', ' '))}</small></div>`).join('') : '<p>No transport added. You can add it later from the trip details.</p>'}</section><section><p class="eyebrow">ACCOMMODATION</p>${
+  return `<div class="planner-review"><section><p class="eyebrow">JOURNEY</p><h3>${E(planner.name)}</h3><p>${E(dateRangeText(planner.start, planner.end))} · ${E(durationText(planner.start, planner.end))} · ${plannerDatePhase()} · ${planner.status === 'planned' ? 'Planned' : 'Recorded as completed'}</p>${planner.status === 'actual' && planner.end >= today() ? '<p role="status">These dates have not finished. You explicitly chose Completed; check this before saving.</p>' : ''}${planner.status==='planned'&&planner.end<today()?'<p role="status">These dates have finished. Past planned trips automatically become completed; resolve this before saving.</p><button type="button" class="secondary" data-planner-past-complete>Use Completed</button>':''}${planner.notes ? `<p>${E(planner.notes)}</p>` : ''}</section><section><p class="eyebrow">STOPS IN ORDER</p>${planner.stops.map((stop, index) => `<div class="planner-review-row"><span>${index + 1}</span><strong>${E(stop.location || stop.countryName)}</strong><small>${E(stop.countryName)} · ${E(dateRangeText(stop.start, stop.end))}</small></div>`).join('')}</section><section><p class="eyebrow">TRANSPORT</p>${planner.transports.length ? planner.transports.map((transport) => `<div class="planner-review-row"><span>${transportIcon(transport.type)}</span><strong>${E(transport.startName)} → ${E(transport.endName)}</strong><small>${E(window.HVJourney.types[transport.type] || transport.type)} · ${E(transport.startLocal.replace('T', ' '))}</small></div>`).join('') : '<p>No transport added. You can add it later from the trip details.</p>'}</section><section><p class="eyebrow">ACCOMMODATION</p>${
     planner.accommodations.filter((item) => item.propertyName).length
       ? planner.accommodations
           .filter((item) => item.propertyName)
@@ -987,8 +1056,20 @@ function plannerNav() {
 
 function renderPlanner() {
   const dialog = ensurePlannerDialog();
-  dialog.innerHTML = `<form method="dialog" class="dialog-card trip-planner-card"><header class="trip-planner-head"><div><p class="eyebrow">PLAN A JOURNEY</p><h2>Build one complete trip</h2></div><button type="button" class="icon-btn" data-planner-cancel aria-label="Close">×</button></header><ol class="planner-progress" aria-label="Trip planning progress">${['Dates', 'Stops', 'Transport', 'Stay', 'Review'].map((label, index) => `<li class="${planner.step === index + 1 ? 'current' : planner.step > index + 1 ? 'complete' : ''}"><span>${index + 1}</span>${label}</li>`).join('')}</ol><div class="trip-planner-body">${plannerStepMarkup()}</div><p class="form-error" data-planner-error role="alert"></p>${plannerNav()}</form>`;
-  const form = q('form', dialog);
+  plannerRendering = true;
+  try { dialog.innerHTML = `<form method="dialog" class="dialog-card trip-planner-card"><header class="trip-planner-head"><div><p class="eyebrow">PLAN A TRIP</p><h2>Build one complete trip</h2></div><button type="button" class="icon-btn" data-planner-cancel aria-label="Close">×</button></header><ol class="planner-progress" aria-label="Trip planning progress">${['Dates', 'Stops', 'Transport', 'Stay', 'Review'].map((label, index) => `<li class="${planner.step === index + 1 ? 'current' : planner.step > index + 1 ? 'complete' : ''}"><span>${index + 1}</span>${label}</li>`).join('')}</ol><div class="trip-planner-body">${plannerStepMarkup()}</div><p class="form-error" data-planner-error role="alert"></p>${plannerNav()}</form>`; } finally { plannerRendering = false; }
+  const form = q('form', dialog), draft = planner, step = planner.step;
+  q('[data-planner-past-complete]',form)?.addEventListener('click',()=>{planner.status='actual';planner.statusTouched=true;renderPlanner();});
+  form.addEventListener('input', event => {
+    if(plannerRendering||planner!==draft||planner.step!==step||!form.isConnected)return;
+    if (event.target.name === 'status') planner.statusTouched = true;
+    readPlannerStep(); keepPlannerDraft();
+  });
+  form.addEventListener('change', event => {
+    if(plannerRendering||planner!==draft||planner.step!==step||!form.isConnected)return;
+    if (event.target.name === 'status') planner.statusTouched = true;
+    readPlannerStep(); keepPlannerDraft();
+  });
   qa('[data-planner-accommodation]', form).forEach((row, index) => {
     row._logoEditor = HVAccommodationLogos.bindEditor(row, planner.accommodations[index], (src) => {
       planner.accommodations[index].logoDraft = src;
@@ -1140,9 +1221,14 @@ function renderPlanner() {
     }
     savePlanner();
   };
+  keepPlannerDraft();
 }
 
 async function savePlanner() {
+  if(planner.status==='planned'&&planner.end<today()){plannerError('These dates have finished. Choose Use Completed above or correct the dates before saving.');return;}
+  if (plannerOwner !== plannerDraftKey() || state !== plannerState) {
+    plannerError('Your account or traveller changed. Reopen this trip.'); return;
+  }
   const data = state,
     activeProfileId = state.activeProfileId;
   for (const stop of planner.stops) {
@@ -1251,6 +1337,8 @@ async function savePlanner() {
     selectedJourneyKey = tripKey(trip.id);
     selectedDate = '';
     const returnToBudget=planner.source==='budget';
+    clearPlannerDraft();
+    planner = null;
     plannerDialog.close();
     renderAll();
     if(returnToBudget)window.HVTravelTools?.openTrip(trip.id,'budget');
@@ -1263,8 +1351,7 @@ async function savePlanner() {
 
 function openCalendarStay(id) {
   openStayDialog(id);
-  const picker = $('stayTripSelect');
-  if (picker) picker.closest('label').hidden = true;
+
 }
 
 function openAccommodationDialog(tripId, accommodationId = '') {
@@ -1390,6 +1477,14 @@ function moveLegacyTransportTools() {
     transportSection.querySelector('summary')?.insertAdjacentElement('afterend', add);
 }
 
+function guardPlannerOwner(){
+  if(plannerDialog?.open && plannerOwner!==plannerDraftKey()){
+    planner=null;plannerDialog.close();
+  }
+}
+window.addEventListener('hv-data-changed',guardPlannerOwner);
+window.addEventListener('hv-account-state',guardPlannerOwner);
+
 // Source: src/calendar/search.js
 /* A bounded search index; navigating results uses the same dates and record drawers. */
 function calendarSearchRows() {
@@ -1423,10 +1518,14 @@ async function saveDateEntry(event) {
   const form = event.target;
   if (!['calendarQuickCountry', 'calendarQuickAccommodation'].includes(form.id)) return;
   event.preventDefault();
+  if (form.dataset.saving === 'true') return;
+  const data = state, profileId = state.activeProfileId,
+    accountId = window.WIBAuth?.cachedSession()?.user?.id || 'guest';
+  let addedRecord, collection;
   const error = q('[role="alert"]', form),
     start = form.elements.start?.value || calendarSelectionStart || selectedDate,
     end = form.elements.end?.value || calendarSelectionEnd || start;
-  const tripId = window.HVJourney.tripForDates(state, start, end);
+  const tripId = form.elements.tripId?.value || null;
   const trip = (state.trips || []).find((t) => t.id === tripId);
   if (!window.HVJourney.validDate(start) || !window.HVJourney.validDate(end) || end < start) {
     error.textContent = 'Select valid dates first.';
@@ -1438,7 +1537,7 @@ async function saveDateEntry(event) {
       error.textContent = 'Choose a country from the list.';
       return;
     }
-    if (tripId && !trip) {
+    if (tripId && !HVJourney.scoped(state.trips || [], profileId).some(row => row.id === tripId)) {
       error.textContent = 'Choose a valid trip.';
       return;
     }
@@ -1458,12 +1557,21 @@ async function saveDateEntry(event) {
         'This stay overlaps an existing entry. Edit that stay to change its dates.';
       return;
     }
-    const travelKind = await HVHome.choose(country, start, state.activeProfileId);
+    form.dataset.saving = 'true';
+    let travelKind;
+    try { travelKind = await HVHome.choose(country, start, profileId); }
+    finally { form.dataset.saving = 'false'; }
     if (travelKind === 'cancel') return;
-    const owner = state.activeProfileId;
+    if (state !== data || state.activeProfileId !== profileId ||
+      (window.WIBAuth?.cachedSession()?.user?.id || 'guest') !== accountId) {
+      error.textContent = 'Your account or traveller changed. Reopen this form.';
+      return;
+    }
+    const owner = profileId;
     state.stays ||= [];
-    state.stays.push({
-      id: uid(),
+    collection = 'stays';
+    addedRecord = {
+      id: form.dataset.draftId ||= uid(),
       tripId,
       countryCode: country.code,
       countryName: country.name,
@@ -1478,7 +1586,7 @@ async function saveDateEntry(event) {
       status: end < today() ? 'actual' : 'planned',
       profileId: owner,
       tripOrder: (state.stays || []).filter((s) => s.tripId === tripId).length,
-    });
+    };
   } else {
     const propertyName = form.elements.propertyName.value.trim(),
       location = form.elements.location.value.trim();
@@ -1500,8 +1608,9 @@ async function saveDateEntry(event) {
       return;
     }
     state.accommodations ||= [];
-    state.accommodations.push({
-      id: uid(),
+    collection = 'accommodations';
+    addedRecord = {
+      id: form.dataset.draftId ||= uid(),
       tripId,
       profileId: state.activeProfileId,
       propertyName,
@@ -1509,24 +1618,55 @@ async function saveDateEntry(event) {
       checkIn: start,
       checkOut: end,
       notes: '',
-    });
+    };
   }
-  updatePassedPlannedTrips();
-  persist();
+  form.dataset.saving = 'true';
+  data[collection].push(addedRecord);
+  try {
+    if (persist() === false) throw new Error('Save was not accepted.');
+  } catch {
+    // Roll back this operation only; unrelated edits and the populated form survive.
+    const index = data[collection].indexOf(addedRecord);
+    if (index >= 0) data[collection].splice(index, 1);
+    form.dataset.saving = 'false';
+    error.textContent = 'This entry could not be saved. Your details are still here. Keep this page open and retry.';
+    return;
+  }
   dateAction = '';
   renderAll();
   window.HVJourneys?.render();
 }
 
+function addTravel(kind, context = {}) {
+  const start = context.start || today(), end = context.end || start;
+  const tripId = HVJourney.scoped(state.trips || [], state.activeProfileId).some(t => t.id === context.tripId) ? context.tripId : null;
+  if (kind === 'trip') return openTripPlanner({source:'plan', ...context});
+  if (kind === 'country') return openStayDialog(null, {standalone:true, start, end, status:end < today() ? 'actual' : 'planned', ...context, tripId});
+  if (kind === 'transport') return window.HVJourneys?.openTransport(null, {startLocal:start+'T12:00', endLocal:end+'T12:00', ...context, tripId});
+  if (kind === 'note') return window.HVTravelTools?.openNote(null, {date:start, rangeEnd:end, ...context, tripId});
+  if (kind === 'accommodation' || kind === 'location') return window.HVPlaces?.open({date:start, end, ...context, tripId, accommodation:kind === 'accommodation'});
+}
+function openAddTravel(context = {}) {
+  const dialog = document.createElement('dialog'), opener = document.activeElement;
+  let chosenKind='';
+  dialog.className = 'dialog small-dialog'; dialog.setAttribute('aria-label','Add travel');
+  dialog.innerHTML = `<div class="dialog-card"><div class="dialog-head"><h2>Add travel</h2><button type="button" class="text-btn" data-close>Add later ×</button></div><p class="helper">A trip is an optional way to group your travel. Each record can stand alone.</p><div class="add-travel-choices">${[['country','Country visit'],['accommodation','Accommodation'],['transport','Transport'],['note','Note'],['location','Location'],['trip','Complete trip']].map(([kind,label])=>`<button type="button" class="secondary" data-add-kind="${kind}">${label}</button>`).join('')}</div></div>`;
+  document.body.append(dialog); dialog.onclose = () => {dialog.remove();opener?.focus?.();if(chosenKind)addTravel(chosenKind,context);};
+  dialog.onclick = event => {const button = event.target.closest('[data-add-kind],[data-close]'); if (!button) return; chosenKind=button.dataset.addKind||'';dialog.close();};
+  dialog.showModal();
+}
+window.HVTravelActions = {add:addTravel, open:openAddTravel, plan:context=>openTripPlanner({source:'plan', ...context})};
+
 function captureCalendarAction(event) {
   const target = event.target;
+  const miniDate=target.closest('[data-home-calendar-date]');if(miniDate){event.preventDefault();event.stopPropagation();switchView('calendar');calendarCursor=new Date(miniDate.dataset.homeCalendarDate.slice(0,7)+'-01T00:00:00Z');renderMonth();selectDate(miniDate.dataset.homeCalendarDate);return;}
   if(target.closest('[data-calendar-cancel-range]')){
     event.preventDefault();event.stopPropagation();HVCalendar.clearSelection();return;
   }
   if(target.closest('[data-calendar-explore-selected]')){
     event.preventDefault();event.stopPropagation();selectDate(calendarSelectionStart);return;
   }
-  if(target.closest('#prevMonth,#nextMonth,#todayBtn,button[data-calendar-view]'))HVCalendar.clearSelection(false);
+  if(target.closest('#prevMonth,#nextMonth,#todayBtn'))HVCalendar.clearSelection(false);
   const entry = target.closest('[data-calendar-entry]');
   if (entry) {
     event.preventDefault();
@@ -1547,6 +1687,15 @@ function captureCalendarAction(event) {
     panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));
     if(!panel.hidden){renderCalendarSearch();$('calendarSearchInput')?.focus();}return;
   }
+  if (target.closest('[data-agenda-select]')) {
+    event.preventDefault();event.stopPropagation();
+    const start=$('calendarAgenda').querySelector('[data-agenda-start]').value, end=$('calendarAgenda').querySelector('[data-agenda-end]').value;
+    if (!HVJourney.validDate(start)||!HVJourney.validDate(end)) return;
+    calendarSelectionStart=start<end?start:end; calendarSelectionEnd=start<end?end:start; selectedDate=calendarSelectionStart; rangeSelecting=false; selectedEntry=null;
+    updateDateSelection();renderAgenda();focusCalendarDetail();return;
+  }
+  const addKind=target.closest('[data-add-travel-kind]');
+  if(addKind){event.preventDefault();event.stopPropagation();addKind.closest('details').open=false;addTravel(addKind.dataset.addTravelKind,{start:calendarSelectionStart||selectedDate||today(),end:calendarSelectionEnd||calendarSelectionStart||selectedDate||today()});return;}
   const linkedNote = target.closest('[data-calendar-related-note]');
   if (linkedNote) {
     event.preventDefault();event.stopPropagation();
@@ -1669,18 +1818,11 @@ function captureCalendarAction(event) {
     event.stopPropagation();
     const kind = action.dataset.calendarDateAction;
     if (kind === 'transport') {
-      window.HVJourneys?.openTransport(null, {
-        startLocal: `${calendarSelectionStart || selectedDate}T12:00`,
-        endLocal: `${calendarSelectionEnd || calendarSelectionStart || selectedDate}T12:00`,
-      });
+      addTravel('transport', {start:calendarSelectionStart || selectedDate, end:calendarSelectionEnd || calendarSelectionStart || selectedDate});
       return;
     }
     if (kind === 'accommodation') {
-      window.HVPlaces?.open({
-        date: calendarSelectionStart || selectedDate,
-        end: calendarSelectionEnd || calendarSelectionStart || selectedDate,
-        accommodation: true,
-      });
+      addTravel('accommodation', {start:calendarSelectionStart || selectedDate, end:calendarSelectionEnd || calendarSelectionStart || selectedDate});
       return;
     }
     if (kind === 'location') {
@@ -1813,6 +1955,8 @@ function boot() {
     },
     ready: true,
     renderMonth,
+    renderAgenda,
+    projectDays:projectCalendarDays,
     openTripPlanner,
     openAccommodationDialog,
     journeyGroups: buildJourneys,
@@ -1827,8 +1971,16 @@ function boot() {
     },
   };
   calendar.dataset.journeyCalendar = 'true';
+  const closeDisplayMenus=target=>{qa('.calendar-toolbar details[open]').forEach(menu=>{if(menu.classList.contains('calendar-filter-menu')&&!matchMedia('(max-width:700px)').matches)return;if(!menu.contains(target))menu.open=false;});};
+  document.addEventListener('pointerdown',event=>closeDisplayMenus(event.target));
+  document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=event.target.closest('.calendar-toolbar details[open]');if(menu){menu.open=false;q('summary',menu)?.focus();event.preventDefault();event.stopImmediatePropagation();}},true);
+  const fitMenu=menu=>{if(!menu.open)return;const panel=q('.calendar-display-options,.calendar-add-options',menu);if(!panel)return;panel.style.transform='';const box=panel.getBoundingClientRect(),shift=box.left<12?12-box.left:box.right>innerWidth-12?innerWidth-12-box.right:0;panel.style.transform=`translateX(${shift}px)`;};
+  qa('.calendar-toolbar details',$('calendarView')).forEach(menu=>menu.addEventListener('toggle',()=>fitMenu(menu)));
+  window.addEventListener('resize',()=>qa('.calendar-toolbar details[open]').forEach(fitMenu));
+  const filters=q('.calendar-filter-menu',$('calendarView')), narrow=matchMedia('(max-width:700px)');
+  if(filters){filters.open=!narrow.matches;narrow.addEventListener('change',()=>{filters.open=!narrow.matches;renderMonth();});}
   moveLegacyTransportTools();
-  $('addStayBtn').onclick = () => openTripPlanner({ source: 'manual' });
+  $('addStayBtn').onclick = () => openAddTravel();
   $('addStayFromListBtn').onclick = () => openTripPlanner({ source: 'manual' });
   window.addEventListener('hv-airports-ready',()=>{journeyCache=undefined;});
   document.addEventListener('click', captureCalendarAction, true);
@@ -1852,7 +2004,7 @@ function boot() {
     if (
       (calendarSelectionStart || selectedDate) &&
       !event.target.closest(
-        'dialog,#calendar,#calendarJourneyDetail,#calendarSelectionInfo,.calendar-toolbar,#calendarSearchPanel,.calendar-floating-detail',
+        'dialog,#calendar,#calendarJourneyDetail,#calendarSelectionInfo,.calendar-toolbar,#calendarAgenda,#calendarSearchPanel,.calendar-floating-detail',
       )
     )
       HVCalendar.clearSelection();

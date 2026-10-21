@@ -59,7 +59,7 @@
           <a class="text-btn" data-account-user href="profile/" hidden>Account</a>
           <button class="text-btn" data-account-logout type="button" hidden>Sign out</button>
         </nav>
-        <button class="primary" id="addStayBtn">Add trip</button>
+        <button class="primary" id="addStayBtn">+ Add travel</button>
       </header>
 
       <section id="dashboardView" class="view active" aria-label="Home">
@@ -75,7 +75,7 @@
         <div class="stats-grid">
           <article class="stat-card"><span class="stat-label">Countries visited</span><strong id="countriesLogged">0</strong><small>Completed visits through today</small><button type="button" id="editCountryCountBtn" class="country-count-edit-btn" aria-label="Choose which places count as countries">Edit</button></article>
           <article class="stat-card"><span class="stat-label">Travel days logged</span><strong id="daysLogged">0</strong><small>Unique days away from recorded homes</small></article>
-          <article class="stat-card"><span class="stat-label">Recorded trips</span><strong id="recordedTripCount">0</strong><small>Grouped trips and standalone stays</small></article>
+          <article class="stat-card"><span class="stat-label">Trips &amp; standalone stays</span><strong id="recordedTripCount">0</strong><small>Grouped trips and standalone stays</small></article>
           <article class="stat-card schengen-card">
             <div class="stat-row"><span class="stat-label">Schengen use</span><span id="schengenBadge" class="status-badge good">OK</span></div>
             <strong><span id="schengenUsed">0</span><span class="muted-number"> / 90</span></strong>
@@ -87,14 +87,12 @@
 
         <div class="two-col">
           <article class="panel">
-            <div class="panel-head"><div><p class="eyebrow">THIS MONTH</p><h2 id="miniCalendarTitle">Calendar</h2></div><button class="text-btn" data-go-view="calendar">Open calendar →</button></div>
+            <div class="panel-head"><div><p class="eyebrow">THIS MONTH</p><h2 id="miniCalendarTitle">Calendar</h2><div id="homeMonthSummary" class="home-month-summary"></div></div><button class="text-btn" data-go-view="calendar">Open calendar →</button></div>
             <div id="miniCalendar" class="mini-calendar"></div>
           </article>
           <article class="panel home-travel-panel">
-            <div class="panel-head"><div><p class="eyebrow">YOUR TRAVEL</p><h2>Recent and upcoming stays</h2></div><button class="text-btn" data-go-view="stays">See all →</button></div>
-            <div id="homeMonthSummary" class="home-month-summary"></div>
-            <div id="recentStays" class="stay-list empty-state">No stays added yet.</div>
-            <details id="homeUpcomingTravel" class="home-upcoming-travel"><summary>Coming up</summary><div id="homeUpcomingTravelItems"></div></details>
+            <div class="panel-head"><div><p class="eyebrow">YOUR TRAVEL</p><h2>Upcoming travel</h2></div><button class="text-btn" data-go-view="stays">See all →</button></div>
+            <details id="homeUpcomingTravel" class="home-upcoming-travel" open><summary>All upcoming</summary><div id="homeUpcomingTravelItems"></div></details><details class="home-recent-history"><summary>Recent history</summary><div id="recentStays" class="stay-list empty-state">No past stays recorded yet.</div></details>
           </article>
         </div>
 
@@ -131,7 +129,7 @@
       <section id="roadTripView" class="view" aria-label="Road Trip Planner"><div id="roadTripPlannerTool"></div></section>
       <section id="statsView" class="view" aria-label="Statistics"><div id="atlasStatistics"></div></section>
       <section id="homesView" class="view" aria-label="Lived In"></section>
-      <section id="placesView" class="view"><article class="panel"><h2>Visited places &amp; wish list</h2><p class="helper">Reference places you have visited or want to see. Country stays do not automatically imply attraction visits. Reusable addresses and dated map locations are managed separately in Journey Map.</p><p><a class="text-btn" href="#/journey-map">Open Journey Map</a> · <button class="text-btn" type="button" data-manage-places>Saved locations for journeys</button></p><div id="personalPlaces"></div></article></section>
+      <section id="placesView" class="view"><article class="panel"><div class="panel-head"><div><h2>Your places</h2><p class="helper">Find saved addresses, dated locations, places you visited and your wish list. Saving an address does not mark it visited.</p></div><button class="secondary" type="button" data-manage-places>Save or manage locations</button></div><p><a class="text-btn" href="#/countries">Browse reference places →</a> · <a class="text-btn" href="#/journey-map">Journey Map →</a></p><div id="personalPlaces"></div></article></section>
       <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">My account &amp; sync</a></article></section>
       <section id="calendarView" class="view" aria-label="Trip calendar">
         <div class="calendar-experience">
@@ -144,7 +142,7 @@
                   <div class="month-nav"><button class="icon-btn" id="prevMonth" aria-label="Previous month">←</button><h2 id="calendarTitle"></h2><button class="icon-btn" id="nextMonth" aria-label="Next month">→</button></div>
                   <button class="secondary compact" id="todayBtn">Today</button>
                 </div>
-                <div class="calendar-toolbar-actions"><div class="calendar-layer-switch" role="group" aria-label="Calendar categories"></div><button type="button" class="text-btn" data-calendar-select-range aria-pressed="true" title="Choose first and last dates. Turn off to open a day with one click.">Select range</button><label class="calendar-hover-setting"><input type="checkbox" data-calendar-hover-previews checked> Hover previews</label><button type="button" class="text-btn" data-calendar-search-toggle aria-expanded="false" aria-controls="calendarSearchPanel">Search</button><button class="secondary compact" id="clearCalendarSelectionBtn" hidden disabled>Clear selection</button></div>
+                <div class="calendar-toolbar-actions"><details class="calendar-filter-menu" open><summary>Filters</summary><div class="calendar-filter-options"><div class="calendar-layer-switch" role="group" aria-label="Calendar categories"></div><button type="button" class="text-btn" data-calendar-show-all hidden>Show all</button></div></details><button type="button" class="text-btn" data-calendar-select-range aria-pressed="true" title="Choose first and last dates. Turn off to open a day with one click.">Select range</button><button type="button" class="text-btn" data-calendar-search-toggle aria-expanded="false" aria-controls="calendarSearchPanel">Search</button><details class="calendar-add-toolbar"><summary>Add travel</summary><div class="calendar-add-options"><button type="button" class="secondary" data-add-travel-kind="country">Country visit</button><button type="button" class="secondary" data-add-travel-kind="accommodation">Accommodation</button><button type="button" class="secondary" data-add-travel-kind="transport">Transport</button><button type="button" class="secondary" data-add-travel-kind="note">Note</button><button type="button" class="secondary" data-add-travel-kind="location">Location</button><button type="button" class="secondary" data-add-tentative>Add tentative plan</button></div></details><details class="calendar-display-menu"><summary>Display</summary><div class="calendar-display-options"><label class="calendar-hover-setting"><input type="checkbox" data-calendar-hover-previews checked> Hover previews</label></div></details><button class="secondary compact" id="clearCalendarSelectionBtn" hidden disabled>Clear selection</button></div>
               </div>
               <section id="calendarSearchPanel" class="calendar-search-panel" hidden><label for="calendarSearchInput">Find in your travel history</label><input id="calendarSearchInput" type="search" placeholder="Country, hotel, flight, note or location…" autocomplete="off" aria-controls="calendarSearchResults"><div id="calendarSearchResults" role="region" aria-label="Travel history matches" aria-live="polite"></div></section><div id="calendarSelectionInfo" class="calendar-selection-info"><strong>Select dates to add travel</strong><span>Choose a first date, then the last.</span></div>
               <div id="calendar" class="calendar" aria-live="polite"></div>
@@ -241,7 +239,7 @@
 
       <section id="staysView" class="view">
         <div class="two-col stays-layout">
-          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">Add trip</button></div><div class="trip-filters"><label class="field"><span>Search trips or destinations</span><input id="tripSearch" type="search" placeholder="Country, trip name or notes"></label><label class="field"><span>Status</span><select id="tripStatusFilter"><option value="all">All statuses</option><option value="current">Current</option><option value="completed">Completed</option><option value="upcoming">Upcoming</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></label><label class="field"><span>Year</span><input id="tripYearFilter" type="number" min="1900" max="2200" placeholder="All years"></label></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
+          <article class="panel"><div class="panel-head"><div><p class="eyebrow">TRAVEL HISTORY</p><h2>All stays</h2></div><button class="secondary compact" id="addStayFromListBtn">Plan a trip</button></div><div class="trip-filters"><label class="field"><span>Search trips or destinations</span><input id="tripSearch" type="search" placeholder="Country, trip name or notes"></label><label class="field"><span>Status</span><select id="tripStatusFilter"><option value="all">All statuses</option><option value="current">Current</option><option value="completed">Completed</option><option value="upcoming">Upcoming</option><option value="planned">Planned</option><option value="cancelled">Cancelled</option></select></label><label class="field"><span>Year</span><input id="tripYearFilter" type="number" min="1900" max="2200" placeholder="All years"></label></div><div id="allStays" class="stay-list empty-state">No stays added yet.</div></article>
           <details class="panel journey-accordion"><summary>Check gaps in travel history</summary><div class="panel-head"><div><p class="eyebrow">GAP DETECTOR</p><h2>Dates with no country / location</h2></div></div><p class="panel-copy">When there is a hole between two recorded stays, you can fill the whole missing range in one click.</p><div id="gapList" class="gap-list empty-state">No gaps detected.</div></details>
         </div>
       </section>

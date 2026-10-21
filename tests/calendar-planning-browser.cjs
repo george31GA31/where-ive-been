@@ -19,12 +19,12 @@ let browser;
     const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
     const seed={version:2,activeProfileId:'p',profiles:[{id:'p',name:'Me',citizenships:['GB'],enabledRules:['schengen']}],trips:[],stays:[{id:'existing',countryCode:'TN',countryName:'Tunisia',start:'2026-10-01',end:'2026-10-03',status:'actual',profileId:'p',notes:'Keep me'}],transports:[],accommodations:[],notes:[],placeVisits:[],residences:[],savedPlaces:[]};
-    await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
+    await page.addInitScript(({seed,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
     await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendarPlanning&&window.HVCalendarDetails&&window.HVCalendar?.ready&&!document.querySelector('.app-shell').inert);
     await page.evaluate(()=>{calendarCursor=new Date('2026-12-01T00:00:00Z');renderCalendar();});
     await page.evaluate(()=>HVJourneys.loadAirports());
     const preserved=await page.evaluate(()=>JSON.stringify({stays:state.stays,transports:state.transports,accommodations:state.accommodations,notes:state.notes,placeVisits:state.placeVisits,profiles:state.profiles}));
-    await page.locator('.calendar-toolbar-actions [data-add-tentative]').click();
+    if(!await page.locator('.calendar-toolbar-actions [data-add-tentative]').isVisible())await page.locator('.calendar-add-toolbar>summary').click();await page.locator('.calendar-toolbar-actions [data-add-tentative]').click();
     const form=page.locator('#calendarPlanForm');await form.locator('[name=country]').fill('Costa Rica');await form.locator('[name=start]').fill('2026-11-29');await form.locator('[name=end]').fill('2026-12-07');await form.locator('[name=notes]').fill('Flexible dates');await form.locator('[type=submit]').click();
     const id=await page.evaluate(()=>state.calendarPlans[0].id),recordId=await page.evaluate(()=>state.calendarPlans[0].record.id);
     const chip=date=>page.locator(`#calendar [data-calendar-date="${date}"] [data-calendar-plan-id="${id}"]`);
@@ -49,7 +49,7 @@ let browser;
     await drag(chip('2026-12-06'),'2026-12-09',{escape:true});assert.deepEqual(await dates(),['2026-12-05','2026-12-13']);
     if(width<=768){await drag(chip('2026-12-06'),'2026-12-07',{touch:true});assert.deepEqual(await dates(),['2026-12-06','2026-12-14']);await page.locator('#calendarPlanNotice [data-plan-undo]').click();}
     await page.locator('[data-show-tentative]').uncheck();assert.equal(await page.locator('#calendar [data-calendar-plan-id]').count(),0);await page.locator('[data-show-tentative]').check();
-    await chip('2026-12-06').click();assert.ok(await page.locator('#calendarPlanDialog').isVisible());await page.locator('[data-plan-edit]').click();
+    await chip('2026-12-06').click();assert.ok(await page.locator('#calendarPlanDialog').isVisible());await page.locator('#calendarPlanDialog [data-plan-edit]').click();
     await form.locator('[name=end]').fill('2026-12-15');await form.locator('[type=submit]').click();assert.deepEqual(await dates(),['2026-12-05','2026-12-15']);
     await page.reload();await page.waitForFunction(()=>window.HVCalendarPlanning&&window.HVCalendarDetails&&window.HVCalendar?.ready&&!document.querySelector('.app-shell').inert);assert.deepEqual(await dates(),['2026-12-05','2026-12-15']);
     await page.evaluate(()=>{calendarCursor=new Date('2026-12-01T00:00:00Z');renderCalendar();});
@@ -65,7 +65,7 @@ let browser;
     await page.locator('[data-plan-close]').click();
     if(theme==='light'&&[1440,390].includes(width)){
       for(const spec of [{kind:'accommodation'},{kind:'transport',type:'flight'},{kind:'transport',type:'bus'},{kind:'transport',type:'train'},{kind:'transport',type:'boat'},{kind:'note'},{kind:'location'}]){
-        await page.locator('.calendar-toolbar-actions [data-add-tentative]').click();await form.locator('[name=kind]').selectOption(spec.kind);
+        if(!await page.locator('.calendar-toolbar-actions [data-add-tentative]').isVisible())await page.locator('.calendar-add-toolbar>summary').click();await page.locator('.calendar-toolbar-actions [data-add-tentative]').click();await form.locator('[name=kind]').selectOption(spec.kind);
         if(spec.kind==='accommodation'){await form.locator('[name=propertyName]').fill('Flexible lodge');await form.locator('[name=location]').fill('San José');}
         if(spec.kind==='transport'){await form.locator('[name=type]').selectOption(spec.type);await form.locator('[name=from]').fill('San José');await form.locator('[name=to]').fill('Panama City');}
         if(spec.kind==='note')await form.locator('[name=title]').fill('Book a tour');

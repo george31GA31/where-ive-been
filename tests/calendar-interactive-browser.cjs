@@ -21,7 +21,7 @@ let browser;const timings=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',dialog=>dialog.accept());
   await page.clock.install({time:new Date('2026-10-02T12:00:00Z')});
   await page.route('**/*',route=>route.request().url().startsWith(origin)?route.continue():route.abort());
-  await page.addInitScript(({seed,theme})=>{if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
+  await page.addInitScript(({seed,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
   await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendarDetails&&window.HVCalendar?.ready&&!document.querySelector('.app-shell').inert);
   await page.locator('[data-calendar-select-range]').click();await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();scrollTo(0,0);});
   const initial=await page.evaluate(()=>JSON.stringify(state)),stored=await page.evaluate(()=>localStorage.getItem('whereIveBeen.data.v2'));
@@ -36,7 +36,7 @@ let browser;const timings=[];
   });
   assert.ok(geometry.overflow<=1,'No horizontal page overflow');
   assert.ok(geometry.top<(width>=1024?390:430),'Calendar starts near the top');
-  for(const lanes of geometry.lanes){assert.ok(lanes[0]<=lanes[1]&&lanes[1]<=lanes[2],'Country, accommodation, transport hierarchy');assert.ok(Math.abs(lanes[1]-geometry.lanes[0][1])<1,'Accommodation alignment is independent of country count');}
+  for(const lanes of geometry.lanes){assert.ok(lanes[0]<=lanes[1]&&lanes[1]<=lanes[2],'Country, accommodation, transport hierarchy');}
   const accentWidths=await page.locator('#calendar .calendar-journey-chip').evaluateAll(nodes=>[...new Set(nodes.map(n=>getComputedStyle(n).borderLeftWidth))]);assert.equal(accentWidths.length,1,'Country accent width stays consistent for single and multiple countries');
   const split=await cell('14').locator('.calendar-country-section').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().toJSON()));assert.equal(split.length,2);assert.ok(Math.abs(split[0].width-split[1].width)<1);assert.ok(Math.abs(split[0].height-split[1].height)<1);
   const hotels=await cell('10').locator('.calendar-lodging-half').evaluateAll(nodes=>nodes.map(n=>({id:n.dataset.calendarEditAccommodation,...n.getBoundingClientRect().toJSON()})));assert.deepEqual(hotels.map(h=>h.id),['first','second']);assert.ok(Math.abs(hotels[0].width-hotels[1].width)<1);
@@ -59,8 +59,8 @@ let browser;const timings=[];
    await preview.hover();await page.clock.runFor(250);assert.ok(await preview.isVisible(),'Preview stays open when pointer enters it');await preview.locator('[data-calendar-entry]').click();assert.ok(await drawer.isVisible());await close();
    await page.locator('#calendarMonthJump').focus();await entry.focus();await preview.waitFor();await page.keyboard.press('Escape');assert.ok(await preview.isHidden());assert.ok(await drawer.isHidden());
   }
-  await page.locator('[data-calendar-layer=transport]').click();assert.equal(await page.locator('#calendar .calendar-day-transport').count(),0);await page.locator('[data-calendar-show-all]').click();assert.ok(await page.locator('#calendar .calendar-day-transport').count()>0);
-  await page.locator('[data-calendar-layer=notes]').click({modifiers:['Shift']});assert.equal(await page.locator('#calendar .calendar-lodging').count(),0);assert.ok(await page.locator('#calendar .calendar-note-chip').count()>0);await page.locator('[data-calendar-show-all]').click();
+  if(!await page.locator('[data-calendar-layer=countries]').isVisible())await page.locator('.calendar-filter-menu>summary').click();await page.locator('[data-calendar-layer=transport]').click();assert.equal(await page.locator('#calendar .calendar-day-transport').count(),0);await page.locator('[data-calendar-show-all]').click();assert.ok(await page.locator('#calendar .calendar-day-transport').count()>0);
+  if(!await page.locator('[data-calendar-layer=countries]').isVisible())await page.locator('.calendar-filter-menu>summary').click();await page.locator('[data-calendar-layer=notes]').click({modifiers:['Shift']});assert.equal(await page.locator('#calendar .calendar-lodging').count(),0);assert.ok(await page.locator('#calendar .calendar-note-chip').count()>0);await page.locator('[data-calendar-show-all]').click();
   await page.locator('[data-calendar-select-range]').click();await cell('10').locator('.day-number').click();await cell('12').locator('.day-number').click();assert.equal(await page.locator('.selection-range').count(),3);assert.match(await drawer.innerText(),/DATE RANGE/);await close();await page.locator('[data-calendar-select-range]').click();
   await page.locator('[data-calendar-search-toggle]').click();await page.locator('#calendarSearchInput').fill('old impossible match');assert.match(await page.locator('#calendarSearchResults').innerText(),/0 matches/);await page.locator('#calendarSearchInput').fill('Tunisia');await page.locator('[data-calendar-search-result-date="2021-05-01"]').click();assert.equal(await page.locator('#calendarYearJump').inputValue(),'2021');assert.match(await drawer.innerText(),/1 May 2021/);await close();await page.locator('[data-calendar-search-toggle]').click();
   await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});

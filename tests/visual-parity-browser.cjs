@@ -357,7 +357,7 @@ async function capture(pair, label, prepare) {
         await page.addInitScript(
           ({ fixture, theme }) => {
             localStorage.setItem('whereIveBeen.data.v2', JSON.stringify(fixture));
-            localStorage.setItem('whereIveBeen.theme.v1', theme);
+            localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1', theme);
           },
           { fixture, theme },
         );

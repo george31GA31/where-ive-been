@@ -143,7 +143,7 @@
   }
   function toolbar() {
     const host=get('calendarView')?.querySelector('.calendar-toolbar-actions');if(!host)return;
-    if(!host.querySelector('[data-add-tentative]'))host.insertAdjacentHTML('beforeend','<button type="button" class="secondary compact" data-add-tentative aria-label="Add tentative plan"><span class="plan-control-wide">+ Tentative plan</span><span class="plan-control-short">+ Tentative</span></button><label class="calendar-hover-setting calendar-plan-toggle"><input type="checkbox" data-show-tentative aria-label="Show tentative plans"><span class="plan-control-wide">Tentative plans</span><span class="plan-control-short">Plans</span> <small data-plan-count></small></label>');
+    if(!host.querySelector('[data-show-tentative]'))host.insertAdjacentHTML('beforeend','<label class="calendar-hover-setting calendar-plan-toggle"><input type="checkbox" data-show-tentative aria-label="Show tentative plans"><span>Tentative</span> <small data-plan-count></small></label>');
     host.querySelector('[data-show-tentative]').checked=shown();
     host.querySelector('[data-plan-count]').textContent=plans().rows.length||'';
   }

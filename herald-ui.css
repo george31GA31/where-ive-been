@@ -62,7 +62,7 @@ body[data-current-view=calendar] .topbar .topbar-actions{order:2}
 body[data-current-view=calendar] .topbar #addStayBtn{display:inline-flex}
 body[data-current-view=calendar] .page-location{margin-bottom:10px}
 /* Coordinated Home cards: display titles, readable rows, natural content height. */
-body .daily-dashboard-row{grid-template-columns:.9fr 1.05fr 1.05fr;gap:18px;align-items:start;margin:0 0 22px}
+body .daily-dashboard-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start;margin:0 0 22px}
 body :is(.travel-memory-panel,.daily-agenda-panel){padding:22px;min-height:190px;height:auto;align-self:start}
 body .travel-memory-panel{gap:12px;border-left:3px solid var(--hv-gold)}
 body .travel-memory-mark{width:30px;height:30px;flex:0 0 30px;font-size:17px}
@@ -239,3 +239,55 @@ body .home-upcoming-row strong{font-size:13px;font-weight:600;min-width:0;overfl
 body .home-upcoming-row small{font-size:11px;color:var(--hv-muted);align-self:center}
 body .home-all-dates{border:0;background:transparent;padding:12px 0 4px;font-size:12px}
 @media(max-width:650px){body .home-upcoming-row{grid-template-columns:minmax(0,1fr)}body .home-upcoming-row small{grid-column:1}}
+
+/* Shared creation choices and a labelled, normal-size transport filter. */
+body .add-travel-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+body .transport-mode-control{display:none}
+body .transport-mode-field{padding:0 24px 16px}
+
+body .trip-view-tabs{display:flex;gap:6px;border-bottom:1px solid var(--hv-line);margin:16px 0}
+body .trip-view-tabs button{min-height:44px;padding:10px 16px;background:none;border:0;border-bottom:3px solid transparent;color:var(--hv-ink);font:600 14px var(--hv-sans)}
+body .trip-view-tabs [aria-selected=true]{border-bottom-color:var(--hv-blue);color:var(--hv-blue)}
+body .trip-itinerary-day{border-bottom:1px solid var(--hv-line);padding:8px 0}
+body .trip-itinerary-day>summary{cursor:pointer;min-height:44px;overflow-wrap:anywhere}
+body .trip-itinerary-day>summary :is(span,small){display:block;color:var(--hv-muted);margin-top:4px}
+body .trip-day-record{display:grid;gap:4px;padding:12px 4px;border-top:1px solid var(--hv-line);overflow-wrap:anywhere}
+body .trip-day-record>span{font-size:12px;color:var(--hv-muted)}
+body .trip-day-record>small{font-size:13px;white-space:normal}
+body .trip-day-record>.text-btn{justify-self:start;min-height:36px}
+body .trip-records,body .trip-photos{margin:16px 0}
+
+/* Home leads with useful travel context; memories remain a quiet secondary feature. */
+body #dashboardView .home-hero{padding:22px 24px;margin:0 0 18px;min-height:0}
+body #dashboardView .daily-dashboard-row{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:18px}
+body #dashboardView .daily-agenda-panel{padding:18px;min-height:0}
+body #dashboardView .memory-secondary{padding:16px 20px;min-height:0;margin:18px 0}
+body #dashboardView .memory-secondary h2{margin-bottom:6px;font-size:20px}
+body #dashboardView .two-col{grid-template-columns:minmax(250px,330px) minmax(0,1fr);align-items:start;gap:18px}
+body #dashboardView .two-col>.panel:first-child{padding:16px}
+body #dashboardView .mini-calendar{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+body #dashboardView .mini-day{aspect-ratio:auto;height:24px;min-height:24px;border:0;font-size:12px;padding:1px;background:var(--hv-soft);color:var(--hv-ink)}
+body #dashboardView .mini-day.has-stay{background:var(--blue-soft);color:var(--hv-blue)}
+body #dashboardView .mini-weekday{height:16px;min-height:16px;font-size:10px}
+body #dashboardView .two-col>.panel:first-child .panel-head{margin-bottom:8px;align-items:start;gap:8px}
+body #dashboardView .two-col>.panel:first-child h2{font-size:21px;line-height:25px;margin:0}
+body #dashboardView .home-month-summary{margin:2px 0 0;padding:0;border:0}
+body #dashboardView .home-month-summary button{padding:0;min-height:24px;font-size:11px}
+body #dashboardView .home-month-summary .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+body #dashboardView .home-recent-history{margin-top:16px;border-top:1px solid var(--hv-line);padding-top:12px}
+body #dashboardView .home-recent-history>summary{cursor:pointer;min-height:32px;font-weight:600;color:var(--hv-muted)}
+body #dashboardView.home-empty .daily-dashboard-row{display:none}
+@media(max-width:700px){body #dashboardView .two-col{grid-template-columns:1fr}body #dashboardView .daily-dashboard-row{grid-template-columns:1fr}body #dashboardView .home-hero{padding:18px}body #dashboardView .two-col>.panel:first-child{max-width:340px;width:100%}}
+
+body .places-view-switch{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+body .places-view-switch [aria-pressed=true]{background:var(--blue-soft);border-color:var(--hv-blue)}
+body .budget-source-status{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px}
+body .budget-source-status>small{flex:1 0 100%;color:var(--hv-blue);font-size:12px;line-height:1.5}
+body .budget-source-status>.text-btn{min-height:32px;font-size:12px}
+
+body #dashboardView .two-col>.panel:first-child{padding:12px}
+body #dashboardView .two-col>.panel:first-child .panel-head>.text-btn{font-size:11px;line-height:16px;min-height:24px;padding:0;white-space:nowrap;align-self:start}
+body #dashboardView .home-month-summary button>span{white-space:nowrap}
+
+body #dashboardView .mini-calendar{gap:2px}
+body #dashboardView .mini-weekday{height:14px;min-height:14px}

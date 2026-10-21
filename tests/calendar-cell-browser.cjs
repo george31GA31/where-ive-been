@@ -33,7 +33,7 @@ let browser;
   const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<=390,reducedMotion:'reduce'}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));await page.clock.install({time:new Date('2026-10-02T12:00:00Z')});
   await page.route('**/*',r=>r.request().url().startsWith(origin)?r.continue():r.abort());
-  await page.addInitScript(({data,theme})=>{localStorage.setItem('whereIveBeen.theme.v1',theme);if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(data));},{data:seed,theme});
+  await page.addInitScript(({data,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(data));},{data:seed,theme});
   await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendar?.ready&&window.HVCalendarDetails);
   await page.locator('[data-calendar-select-range]').click();await page.evaluate(()=>{calendarCursor=new Date(Date.UTC(2026,9,1));renderCalendar();});
   await page.waitForFunction(()=>[...document.querySelectorAll('#calendar img')].every(i=>!i.getClientRects().length||i.getBoundingClientRect().top>=innerHeight||i.complete));

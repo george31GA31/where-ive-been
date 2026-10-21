@@ -39,9 +39,9 @@ let browser;
       if(r.request().resourceType()==='image')return r.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aSe8AAAAASUVORK5CYII=','base64')});
       return r.fulfill({status:200,contentType:r.request().resourceType()==='script'?'text/javascript':'application/json',body:r.request().resourceType()==='script'?'':'{}'});
     });
-    await page.addInitScript(({seed,theme})=>{
+    await page.addInitScript(({seed,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');
       if(!localStorage.getItem('whereIveBeen.data.v2')){localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('whereIveBeen.guest.v1',JSON.stringify({...seed,notes:'Keep separate guest backup'}));localStorage.setItem('whereIveBeen.stays.v1','[]');}
-      localStorage.setItem('whereIveBeen.theme.v1',theme);
+      localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);
     },{seed,theme});
     await page.goto(origin+'/#/journey-map');await page.waitForSelector('#globalJourneyMap .marker-accommodation');
     const before=await page.evaluate(snapshot),stored=await page.evaluate(storage);
