@@ -455,14 +455,16 @@ function boot() {
     },
   };
   calendar.dataset.journeyCalendar = 'true';
-  const closeDisplayMenus=target=>{qa('.calendar-toolbar details[open]').forEach(menu=>{if(menu.classList.contains('calendar-filter-menu')&&!matchMedia('(max-width:700px)').matches)return;if(!menu.contains(target))menu.open=false;});};
+  const inlineMenu=menu=>menu.matches('.calendar-filter-menu,.calendar-display-menu')&&!matchMedia('(max-width:700px)').matches;
+  const closeDisplayMenus=target=>{qa('.calendar-toolbar details[open]').forEach(menu=>{if(inlineMenu(menu))return;if(!menu.contains(target))menu.open=false;});};
   document.addEventListener('pointerdown',event=>closeDisplayMenus(event.target));
-  document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=event.target.closest('.calendar-toolbar details[open]');if(menu){menu.open=false;q('summary',menu)?.focus();event.preventDefault();event.stopImmediatePropagation();}},true);
-  const fitMenu=menu=>{if(!menu.open)return;const panel=q('.calendar-display-options,.calendar-add-options',menu);if(!panel)return;panel.style.transform='';const box=panel.getBoundingClientRect(),shift=box.left<12?12-box.left:box.right>innerWidth-12?innerWidth-12-box.right:0;panel.style.transform=`translateX(${shift}px)`;};
+  document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const menu=event.target.closest('.calendar-toolbar details[open]');if(menu&&!inlineMenu(menu)){menu.open=false;q('summary',menu)?.focus();event.preventDefault();event.stopImmediatePropagation();}},true);
+  const fitMenu=menu=>{if(!menu.open)return;const panel=q('.calendar-display-options,.calendar-add-options',menu);if(!panel)return;panel.style.transform='';if(inlineMenu(menu))return;const box=panel.getBoundingClientRect(),shift=box.left<12?12-box.left:box.right>innerWidth-12?innerWidth-12-box.right:0;panel.style.transform=`translateX(${shift}px)`;};
   qa('.calendar-toolbar details',$('calendarView')).forEach(menu=>menu.addEventListener('toggle',()=>fitMenu(menu)));
   window.addEventListener('resize',()=>qa('.calendar-toolbar details[open]').forEach(fitMenu));
-  const filters=q('.calendar-filter-menu',$('calendarView')), narrow=matchMedia('(max-width:700px)');
-  if(filters){filters.open=!narrow.matches;narrow.addEventListener('change',()=>{filters.open=!narrow.matches;renderMonth();});}
+  const inlineMenus=qa('.calendar-filter-menu,.calendar-display-menu',$('calendarView')), narrow=matchMedia('(max-width:700px)');
+  inlineMenus.forEach(menu=>{menu.open=!narrow.matches;});
+  narrow.addEventListener('change',()=>{inlineMenus.forEach(menu=>{menu.open=!narrow.matches;});renderMonth();});
   moveLegacyTransportTools();
   $('addStayBtn').onclick = () => openAddTravel();
   $('addStayFromListBtn').onclick = () => openTripPlanner({ source: 'manual' });

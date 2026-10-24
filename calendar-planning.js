@@ -142,7 +142,7 @@
     if(result.ok)open(plan.id);
   }
   function toolbar() {
-    const host=get('calendarView')?.querySelector('.calendar-toolbar-actions');if(!host)return;
+    const host=get('calendarView')?.querySelector('.calendar-toolbar-secondary');if(!host)return;
     if(!host.querySelector('[data-show-tentative]'))host.insertAdjacentHTML('beforeend','<label class="calendar-hover-setting calendar-plan-toggle"><input type="checkbox" data-show-tentative aria-label="Show tentative plans"><span>Tentative</span> <small data-plan-count></small></label>');
     host.querySelector('[data-show-tentative]').checked=shown();
     host.querySelector('[data-plan-count]').textContent=plans().rows.length||'';

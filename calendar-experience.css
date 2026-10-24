@@ -296,7 +296,7 @@
 #calendarView .calendar-day {
   position:relative;
   min-width:0;
-
+  min-height:136px;
   display:flex;
   flex-direction:column;
   padding:8px;
@@ -682,7 +682,7 @@
   .calendar-layout { gap:18px; }
   .calendar-journey-copy strong { font-size:9px; }
   .calendar-journey-copy small { display:none; }
-  .calendar-day {  }
+  .calendar-day { min-height:124px !important; }
   .journey-timeline-item { grid-template-columns:78px 21px minmax(0,1fr) auto; gap:6px; }
 }
 
@@ -709,7 +709,7 @@
   #calendarView .calendar-layer-switch { max-width:100%; }
   #calendarView .calendar-layer-switch button { flex:0 0 auto; min-height:28px; padding:5px 7px; font-size:10px; }
   #calendarView .calendar-weekday { padding:8px 2px; font-size:9px; letter-spacing:0; text-align:center; }
-  #calendarView .calendar-day {  padding:4px; }
+  #calendarView .calendar-day { min-height:88px !important; padding:4px; }
   .calendar-day-top { min-height:22px; margin-bottom:3px; }
   #calendarView .calendar-day .day-number { width:23px; min-width:23px; min-height:23px; font-size:11px; }
   .calendar-day-status span { display:none; }
@@ -872,9 +872,7 @@
 .journey-library-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .journey-library-filters { display:grid; grid-template-columns:minmax(140px,.7fr) minmax(180px,1fr) minmax(0,1.5fr); gap:14px; padding:18px; border:1px solid var(--hv-line); background:var(--hv-surface); border-radius:5px; }
 .journey-library-filters input,.journey-library-filters select { width:100%; min-width:0; box-sizing:border-box; min-height:44px; padding:10px; border:1px solid var(--hv-line); border-radius:4px; background:var(--hv-surface); color:var(--hv-ink); font:inherit; }
-.journey-library-card { padding:22px; margin:16px 0; border:1px solid var(--hv-line); border-radius:5px; background:var(--hv-surface); }
-/* Keep every record in the catalogue while deferring offscreen card layout. */
-.journey-library-card { content-visibility:auto; contain-intrinsic-size:auto 360px; }
+.journey-library-card { padding:22px; margin:16px 0; border:1px solid var(--hv-line); border-radius:5px; background:var(--hv-surface); content-visibility:auto; contain-intrinsic-size:auto 360px; }
 .journey-library-card header { display:flex; justify-content:space-between; gap:16px; align-items:center; }
 .journey-library-card h2 { font-family:var(--hv-serif); font-weight:400; margin:6px 0; overflow-wrap:anywhere; }
 .journey-library-card ul { list-style:none; margin:18px 0 0; padding:0; }
@@ -928,7 +926,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
   display:flex;
   flex-direction:column;
   height:auto;
-
+  min-height:calc(76px + var(--country-slot) + var(--transport-slot) + var(--lodging-slot));
   padding:var(--cell-padding);
   gap:0;
 }
@@ -1089,7 +1087,7 @@ body[data-current-view="journeys"] #addStayBtn { display:none; }
 }
 @media(max-width:700px) {
   #calendarView .calendar { --cell-padding:3px;--country-row-size:22px;--country-slot:calc(min(1,var(--calendar-country-rows))*22px + var(--calendar-country-more)*12px);--transport-slot:calc(var(--calendar-transport-rows)*20px);--lodging-slot:calc(var(--calendar-has-lodging)*26px); }
-  #calendarView .calendar-day { padding:var(--cell-padding); }
+  #calendarView .calendar-day { min-height:calc(64px + var(--country-slot) + var(--transport-slot) + var(--lodging-slot))!important;padding:var(--cell-padding); }
   #calendarView .calendar-day-top { min-height:26px;height:26px;margin-bottom:2px; }
   #calendarView .calendar-day .day-number { min-width:26px;min-height:26px;width:26px;height:26px;font-size:11px; }
   #calendarView .calendar-day-status>span { display:none; }
@@ -1253,7 +1251,7 @@ html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--h
 
 /* Interactive journey calendar: fixed lanes, one key, and lazy contextual surfaces. */
 #calendarView .calendar { --country-slot:calc(var(--calendar-country-rows)*24px);--calendar-country-more:0; }
-#calendarView .calendar-day {  }
+#calendarView .calendar-day { min-height:calc(112px + var(--country-slot) + var(--transport-slot) + var(--lodging-slot)); }
 #calendarView .calendar-country-row { height:24px;align-items:start; }
 #calendarView .calendar-country-section { min-width:0; }
 #calendarView .calendar-journey-chip { height:22px;min-height:22px;padding-block:1px; }
@@ -1382,7 +1380,7 @@ html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--h
 }
 @media(max-width:700px) {
   #calendarView .calendar { --country-slot:calc(var(--calendar-country-rows)*22px); }
-  #calendarView .calendar-day {  }
+  #calendarView .calendar-day { min-height:calc(100px + var(--country-slot) + var(--transport-slot) + var(--lodging-slot))!important; }
   #calendarView .calendar-country-row { height:22px; }
   #calendarView .calendar-journey-chip,#calendarView .calendar-country-split .calendar-journey-chip { height:20px;min-height:20px; }
   #calendarView .calendar-more-countries { height:20px;min-height:20px;font-size:8px; }
@@ -1421,7 +1419,7 @@ html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--h
   #calendarView .calendar-country-row:has(.calendar-more-countries) .calendar-more-countries::before { content:none; }
   #calendarView .calendar { --transport-slot:calc(min(1,var(--calendar-transport-rows))*20px); }
   #calendarView .calendar-day-transport:nth-child(n+2) { display:none; }
-  #calendarView .calendar-day {  }
+  #calendarView .calendar-day { min-height:calc(80px + var(--country-slot) + var(--transport-slot) + var(--lodging-slot))!important; }
   #calendarView .calendar-layer-switch { overflow-x:auto;flex-wrap:nowrap;justify-content:flex-start;width:100%; }
   #calendarView .calendar-layer-switch button { flex:0 0 auto; }
   #calendarView .calendar-toolbar { display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px; }
@@ -1464,29 +1462,16 @@ html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--h
   #calendarView .calendar-toolbar-actions { grid-column:1/-1;grid-row:2; }
 }
 
-/* Week-level lane budgets retain aligned chronology without empty month-wide space. */
-#calendarView .calendar-day{--country-slot:calc(var(--calendar-country-rows)*24px);--lodging-slot:calc(var(--calendar-has-lodging)*var(--calendar-lodging-size,56px));--transport-slot:calc(var(--calendar-transport-rows)*22px);position:relative;min-height:calc(64px + var(--country-slot) + var(--lodging-slot) + var(--transport-slot) + var(--calendar-secondary-rows)*32px)}
-#calendarView .calendar-secondary-entries{min-height:0;height:calc(var(--calendar-secondary-rows)*32px);margin-top:2px}
-#calendarView .calendar-lodging-row{height:var(--calendar-lodging-size,56px)}
-#calendarView .calendar-lodging-half{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:1px;padding:3px 5px}
-#calendarView .calendar-lodging-half small{font-size:11px;line-height:14px;-webkit-line-clamp:var(--calendar-lodging-lines,2);white-space:normal;overflow-wrap:anywhere}
-#calendarView .calendar-lodging-state,#calendarView .calendar-lodging-cue{font-size:10px;line-height:14px}
-#calendarView .calendar-lodging-summary{height:56px;white-space:normal;line-height:18px}
-#calendarView .calendar-country-stacked{height:48px;grid-template-rows:24px 24px;gap:0}
-#calendarView .calendar-country-stacked:has(.calendar-more-countries) .calendar-country-section:first-child{grid-column:1/-1}
-#calendarView .calendar-country-stacked .calendar-country-section:nth-child(2){display:block}
-#calendarView .calendar-country-stacked .calendar-more-countries{grid-row:2;grid-column:2}
-#calendarView .calendar-country-stacked .country-name-full{display:block;font-size:11px}
-#calendarView .calendar-country-stacked .country-name-compact{display:none}
-#calendarView .calendar-country-section:has(.calendar-visa-notice) .calendar-schengen.in{right:0;left:0}
-#calendarView .calendar-day-detail-link{min-height:24px;padding:0;gap:3px}
-#calendarView .calendar-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px}
-#calendarView .calendar-toolbar-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-#calendarView .calendar-layer-switch{flex-wrap:wrap;overflow:visible;width:auto}
+/* Restore the screenshot's Month design; keep the newer Agenda and editing controls. */
+#calendarView .calendar-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+#calendarView .calendar-toolbar-primary{flex:0 0 auto}
+#calendarView .calendar-toolbar-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto}
+#calendarView .calendar-toolbar-secondary{flex:1 0 100%;margin-left:0}
+#calendarView .calendar-toolbar-secondary .calendar-view-switch{margin-right:auto}
 .calendar-display-menu,.calendar-filter-menu,.calendar-add-toolbar{position:relative}
-.calendar-display-menu>summary,.calendar-filter-menu>summary,.calendar-add-toolbar>summary{min-height:36px;padding:8px 10px;cursor:pointer;font-size:13px;color:var(--hv-blue)}
+.calendar-display-menu>summary,.calendar-filter-menu>summary,.calendar-add-toolbar>summary{min-height:32px;padding:8px 5px;cursor:pointer;font-size:11px;color:var(--hv-blue)}
 .calendar-display-options,.calendar-filter-options,.calendar-add-options{position:absolute;z-index:15;right:0;top:100%;min-width:220px;max-width:calc(100vw - 40px);padding:12px;background:var(--hv-surface);border:1px solid var(--hv-line);border-radius:var(--ui-radius);box-shadow:0 8px 24px #10212b22}
-.calendar-display-options label{display:flex;align-items:center;gap:8px;min-height:44px}
+.calendar-display-options label{display:flex;align-items:center;gap:5px;min-height:32px}
 .calendar-add-options{display:grid;gap:8px}
 #calendarView .calendar-agenda-dates{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;padding:16px}
 .calendar-agenda-day{padding:16px;border-top:1px solid var(--hv-line)}
@@ -1494,63 +1479,42 @@ html[data-theme=dark] .entry-visa.bad > strong { color:color-mix(in srgb,var(--h
 .calendar-agenda-day h3{margin:0;font:600 16px/1.4 var(--hv-sans)}
 .calendar-agenda-day .calendar-explorer-row{max-width:100%}
 .calendar-agenda-day .calendar-explorer-entry strong{white-space:normal;overflow:visible;overflow-wrap:anywhere}
-@media(min-width:701px){.calendar-filter-menu>summary{display:none}.calendar-filter-options{display:block;position:static;padding:0;border:0;background:none;box-shadow:none}.calendar-filter-menu:not([open])>.calendar-filter-options{display:block}}
-@media(max-width:700px){
- #calendarView .calendar-day{--lodging-slot:calc(var(--calendar-has-lodging)*26px);--transport-slot:calc(min(1,var(--calendar-transport-rows))*20px);--country-slot:calc(min(1,var(--calendar-country-rows))*22px);min-height:calc(58px + var(--country-slot) + var(--lodging-slot) + var(--transport-slot) + var(--calendar-secondary-rows)*32px)}
- #calendarView .calendar-lodging-row{height:26px}
- #calendarView .calendar-lodging-half small{display:none}
- #calendarView .calendar-lodging-half{padding:2px;gap:0;justify-content:center;align-items:center}
- #calendarView .calendar-country-stacked{height:22px;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:22px}
- #calendarView .calendar-country-stacked .calendar-journey-copy{display:none}
- #calendarView .calendar-country-stacked .calendar-country-section{grid-column:auto}
- #calendarView .calendar-country-stacked .calendar-more-countries{grid-row:1}
- #calendarView .calendar-filter-menu .calendar-layer-switch{display:grid;grid-template-columns:1fr;overflow:visible;width:100%;min-width:180px}
- #calendarView .calendar-filter-menu button{text-align:left;justify-content:flex-start;min-height:44px}
- #calendarView .calendar-toolbar-primary{width:100%}
- #calendarView .calendar-agenda-dates{grid-template-columns:1fr 1fr;padding:12px}
- #calendarView .calendar-agenda-dates>button{grid-column:1/-1}
- .calendar-visa-notice{width:24px;height:24px}
- .calendar-agenda-day{padding:14px 12px}
-}
-@media(pointer:coarse){.calendar-agenda-day .text-btn{min-height:44px}.calendar-agenda-day .calendar-row-edit{min-width:44px}}
-
+.calendar-row-reminder{grid-column:1/-1;min-height:32px;justify-self:start;font-size:12px}
 @media(min-width:701px){
- #calendarView .calendar-day-detail-link{position:absolute;top:8px;right:6px;margin:0;height:26px;min-width:26px;max-width:calc(100% - 56px);justify-content:flex-end}
- #calendarView .calendar-day-status{margin-right:28px}
+ #calendarView :is(.calendar-filter-menu,.calendar-display-menu)>summary{display:none}
+ #calendarView :is(.calendar-filter-options,.calendar-display-options){display:block;position:static;min-width:0;max-width:none;padding:0;border:0;background:none;box-shadow:none}
+ #calendarView :is(.calendar-filter-menu,.calendar-display-menu):not([open])>:is(.calendar-filter-options,.calendar-display-options){display:block}
+ #calendarView .calendar-day-detail-link{position:static;width:100%;max-width:100%;min-height:24px;margin-top:auto}
 }
-
+@media(min-width:701px) and (max-width:1200px){
+ #calendarView .calendar-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto}
+ #calendarView .calendar-toolbar-primary{grid-column:1;grid-row:1}
+ #calendarView .calendar-toolbar-actions:not(.calendar-toolbar-secondary){grid-column:1;grid-row:2;width:auto;min-width:0}
+ #calendarView .calendar-toolbar-secondary{display:contents}
+ #calendarView .calendar-toolbar-secondary .calendar-view-switch{grid-column:2/4;grid-row:1;margin-right:0;justify-self:end}
+ #calendarView .calendar-toolbar-secondary .calendar-add-toolbar{grid-column:2;grid-row:2}
+ #calendarView .calendar-toolbar-secondary .calendar-plan-toggle{grid-column:3;grid-row:2}
+}
+@media(min-width:961px) and (max-width:1200px){
+ #calendarView .calendar-toolbar{grid-template-columns:minmax(0,1fr) auto auto auto}
+ #calendarView .calendar-toolbar-actions:not(.calendar-toolbar-secondary){grid-column:1/-1}
+ #calendarView .calendar-toolbar-secondary .calendar-view-switch{grid-column:2;grid-row:1}
+ #calendarView .calendar-toolbar-secondary .calendar-add-toolbar{grid-column:3;grid-row:1}
+ #calendarView .calendar-toolbar-secondary .calendar-plan-toggle{grid-column:4;grid-row:1}
+}
 @media(max-width:700px){
  #calendarView .calendar-toolbar{position:relative}
+ #calendarView .calendar-toolbar-primary{width:100%}
+ #calendarView .calendar-toolbar-actions{width:100%;margin-left:0;justify-content:flex-start}
+ #calendarView .calendar-toolbar-secondary .calendar-view-switch{flex:1 0 100%}
  #calendarView .calendar-toolbar :is(.calendar-filter-menu,.calendar-display-menu,.calendar-add-toolbar){position:static}
  #calendarView :is(.calendar-filter-options,.calendar-display-options,.calendar-add-options){left:8px;right:8px;top:100%;width:auto;min-width:0;max-width:none;max-height:calc(100dvh - 180px);overflow:auto}
-}
-
-@media(max-width:700px){
+ #calendarView .calendar-filter-menu .calendar-layer-switch{display:grid;grid-template-columns:1fr;overflow:visible;width:100%;min-width:180px}
+ #calendarView .calendar-filter-menu button{text-align:left;justify-content:flex-start;min-height:44px}
+ #calendarView .calendar-agenda-dates{grid-template-columns:1fr 1fr;padding:12px}
+ #calendarView .calendar-agenda-dates>button{grid-column:1/-1}
  #calendarView .calendar-countries .calendar-visa-notice{display:none}
  #calendarView .calendar-country-section:has(.calendar-visa-notice) .calendar-journey-chip{padding-right:2px}
+ .calendar-agenda-day{padding:14px 12px}
 }
-.calendar-row-reminder{grid-column:1/-1;min-height:32px;justify-self:start;font-size:12px}
-@media(pointer:coarse){.calendar-row-reminder{min-height:44px}}
-
-#calendarView .calendar-country-row{grid-template-columns:var(--calendar-country-columns)}
-@media(max-width:700px){
- #calendarView .calendar-country-stacked{grid-template-columns:repeat(2,minmax(0,1fr))}
- #calendarView .calendar-country-stacked:has(.calendar-more-countries){grid-template-columns:minmax(0,1fr) 18px}
- #calendarView .calendar-country-stacked:has(.calendar-more-countries) .calendar-country-section:first-child{grid-column:1}
- #calendarView .calendar-country-stacked:has(.calendar-more-countries) .calendar-country-section:nth-child(2){display:none}
-}
-
-@media(min-width:701px){
- #calendarView .calendar-day-detail-link{width:26px;max-width:26px}
- #calendarView .calendar-day-detail-link .calendar-detail-desktop{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-}
-.calendar-filter-options>[data-calendar-show-all]{min-height:32px;font-size:12px}
-
-#calendarView .calendar-toolbar,#calendarView .calendar-toolbar-actions{align-items:flex-start}
-
-.calendar-reset-inactive{visibility:hidden;pointer-events:none}
-@media(min-width:701px){
- #calendarView .calendar-filter-options{display:flex;align-items:flex-start;gap:4px}
- #calendarView .calendar-filter-menu:not([open])>.calendar-filter-options{display:flex}
- #calendarView .calendar-filter-options>[data-calendar-show-all]{flex:0 0 68px;white-space:nowrap}
-}
+@media(pointer:coarse){.calendar-agenda-day .text-btn,.calendar-row-reminder{min-height:44px}.calendar-agenda-day .calendar-row-edit{min-width:44px}}
