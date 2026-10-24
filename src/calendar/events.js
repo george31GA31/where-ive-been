@@ -396,9 +396,7 @@ function captureCalendarAction(event) {
     if(event.shiftKey)calendarFilters=Object.fromEntries(calendarKinds.map(([kind])=>[kind,kind===key]));
     else calendarFilters[key]=!visibleLayers()[key];
     renderMonth();
-    const menu=q('.calendar-filter-menu');
-    if(menu&&matchMedia('(max-width:700px)').matches){menu.open=false;q('summary',menu)?.focus({preventScroll:true});}
-    else q(`[data-calendar-layer="${key}"]`)?.focus({preventScroll:true});
+    q(`[data-calendar-layer="${key}"]`)?.focus({preventScroll:true});
   }
 }
 

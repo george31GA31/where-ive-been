@@ -7,7 +7,7 @@ Restore the earlier Month presentation requested in the supplied October/Novembe
 - The thin connected accommodation ribbon with compact inline Out/In cues.
 - Explicit “Explore day” links at the bottom of populated cells.
 - Month/Year controls below the main toolbar on wide screens; the hover preference is directly visible on desktop. Tablet and phone controls reflow without overlap.
-- Agenda, date-range selection, rich details, search, entry reminders and all tentative-plan operations remain available. Small-screen filter selection closes the popup and returns focus so the reset action remains reachable.
+- Agenda, date-range selection, rich details, search, entry reminders and all tentative-plan operations remain available. The filter reset stays inside the phone popup, so changing categories keeps its existing behaviour and focus.
 
 Save failure handling, recoverable trip drafts, optional membership, trip itineraries, Home, Places, budget reconciliation, airport display corrections, storage keys and the account/database code are unchanged.
 

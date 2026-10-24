@@ -27,6 +27,7 @@ function updateDateSelection(renderDetail = true) {
     button?.setAttribute('aria-label', `${rangeMode ? 'Select' : 'Explore'} ${dateText(date)}`);
   });
   const info = $('calendarSelectionInfo');
+  q('[data-calendar-show-all]',$('calendarView'))?.remove();
   if (info) {
     info.className = 'calendar-selection-info' + (calendarSelectionEnd ? ' complete' : calendarSelectionStart ? ' active' : '');
     info.innerHTML = calendarSelectionEnd
@@ -36,7 +37,8 @@ function updateDateSelection(renderDetail = true) {
         : `<strong>${rangeMode ? 'Select dates to add travel' : 'Your journey, day by day'}</strong><span>${rangeMode ? 'Choose a first date, then the last. Turn off Select range to open days with one click.' : 'Select a day to explore. Turn on Select range to add across dates.'}</span>`;
     if(calendarSelectionStart)info.innerHTML += '<button type="button" class="text-btn" data-calendar-cancel-range>Cancel</button>';
     if(calendarKinds.some(([key]) => visibleLayers()[key] === false))info.innerHTML += '<button type="button" class="text-btn" data-calendar-show-all>Show all</button>';
-
+    const reset=q('[data-calendar-show-all]',info);
+    if(reset&&matchMedia('(max-width:700px)').matches)q('.calendar-filter-options',$('calendarView'))?.append(reset);
   }
   const clear = $('clearCalendarSelectionBtn');
   if(clear){clear.hidden=true;clear.disabled=!calendarSelectionStart;}
