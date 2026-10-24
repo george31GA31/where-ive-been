@@ -98,7 +98,7 @@ let browser;
     assert.equal(await page.locator('#calendarMonthJump').inputValue(),'8','Day navigation across months updates the month grid');await close();
 
     const hover = page.locator('[data-calendar-hover-previews]');
-    const setHover=async value=>{if(!await hover.isVisible())await page.locator('.calendar-display-menu>summary').click();await hover.setChecked(value);if(await page.locator('.calendar-display-menu').evaluate(n=>n.open))await page.locator('.calendar-display-menu>summary').click();};
+    const setHover=async value=>{if(!await hover.isVisible())await page.locator('.calendar-display-menu>summary').click();await hover.setChecked(value);if(await page.locator('.calendar-display-menu').evaluate(n=>n.open)&&await page.locator('.calendar-display-menu>summary').isVisible())await page.locator('.calendar-display-menu>summary').click();};
     assert.ok(await hover.isChecked(),'Hover previews default on');
     await setHover(false);
     const expected = await page.evaluate(() => JSON.stringify(state));

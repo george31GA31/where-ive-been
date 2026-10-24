@@ -476,9 +476,9 @@
     dashboard.prepend(overview);
     const memory=$('travelMemoryPanel');q('.two-col',dashboard)?.after(memory);memory.classList.add('memory-secondary');
     const calendar=$('calendarView'),calendarPanel=q('.calendar-panel',calendar),yearTools=document.createElement('div');yearTools.className='atlas-calendar-switch';
-    yearTools.innerHTML='<div class="calendar-view-switch" role="group" aria-label="Calendar view"><button type="button" data-calendar-view="agenda" aria-pressed="false">Agenda</button><button type="button" data-calendar-view="month" aria-pressed="true">Month</button><button type="button" data-calendar-view="year" aria-pressed="false">Year overview</button></div><div id="atlasYear" class="atlas-year" hidden></div>';
+    yearTools.innerHTML='<div class="calendar-view-switch" role="group" aria-label="Calendar view"><button type="button" data-calendar-view="month" aria-pressed="true">Month</button><button type="button" data-calendar-view="year" aria-pressed="false">Year overview</button><button type="button" data-calendar-view="agenda" aria-pressed="false">Agenda</button></div><div id="atlasYear" class="atlas-year" hidden></div>';
     calendarPanel.before(yearTools);
-    const viewSwitch=q('.calendar-view-switch',yearTools);q('.calendar-toolbar',calendarPanel).append(viewSwitch);
+    const viewSwitch=q('.calendar-view-switch',yearTools);q('.calendar-toolbar-secondary',calendarPanel).prepend(viewSwitch);
     const agenda=document.createElement('div');agenda.id='calendarAgenda';agenda.hidden=true;calendarPanel.append(agenda);
     const showCalendarView=(view,remember=true)=>{if(remember)try{localStorage.setItem('herald.calendar.view.v1',view);}catch{}agenda.hidden=view!=='agenda';window.HVCalendar?.renderAgenda();$('prevMonth').setAttribute('aria-label',view==='year'?'Previous year':'Previous month');$('nextMonth').setAttribute('aria-label',view==='year'?'Next year':'Next month');$('calendar').hidden=view!=='month';calendarPanel.dataset.calendarView=view;$('atlasYear').hidden=view!=='year';qa('button[data-calendar-view]',calendar).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.calendarView===view)));renderAtlas();if(view==='month')window.HVCalendar?.renderMonth();};
     qa('button[data-calendar-view]',calendar).forEach(button=>button.onclick=()=>showCalendarView(button.dataset.calendarView));

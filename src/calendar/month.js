@@ -11,8 +11,6 @@ function renderCalendarLegend(layers) {
   const host = q('#calendarView .calendar-layer-switch');
   if (!host) return;
   host.innerHTML = calendarKinds.map(([key, label, , icon]) => `<button type="button" data-calendar-layer="${key}" aria-pressed="${layers[key] !== false}" title="Show or hide ${label.toLowerCase()}. Shift-click to show only this category."><span class="calendar-type-symbol type-${key}" aria-hidden="true">${key === 'transport' ? transportIcon('flight') : icon}</span>${label}</button>`).join('');
-  const reset = q('[data-calendar-show-all]');
-  if (reset) {const inactive=calendarKinds.every(([key])=>layers[key]!==false);reset.hidden=false;reset.classList.toggle('calendar-reset-inactive',inactive);reset.disabled=inactive;reset.setAttribute('aria-hidden',String(inactive));}
 }
 
 // Selection changes touch only the existing date nodes, never rebuild record lanes.
@@ -37,6 +35,7 @@ function updateDateSelection(renderDetail = true) {
         ? `<strong>${E(dateText(calendarSelectionStart))} selected</strong><span>Choose the last date, or the same date for one day.</span><button type="button" class="text-btn" data-calendar-explore-selected>Explore day</button>`
         : `<strong>${rangeMode ? 'Select dates to add travel' : 'Your journey, day by day'}</strong><span>${rangeMode ? 'Choose a first date, then the last. Turn off Select range to open days with one click.' : 'Select a day to explore. Turn on Select range to add across dates.'}</span>`;
     if(calendarSelectionStart)info.innerHTML += '<button type="button" class="text-btn" data-calendar-cancel-range>Cancel</button>';
+    if(calendarKinds.some(([key]) => visibleLayers()[key] === false))info.innerHTML += '<button type="button" class="text-btn" data-calendar-show-all>Show all</button>';
 
   }
   const clear = $('clearCalendarSelectionBtn');
@@ -47,10 +46,10 @@ function updateDateSelection(renderDetail = true) {
   if(renderDetail){window.HVCalendarDetails?.hide();renderJourneyDetail();}
 }
 
-function countryRow(countries, date, stacked = false) {
+function countryRow(countries, date) {
   if (!countries.length) return '';
   const visible = countries.slice(0, 2), extra = countries.length - visible.length;
-  return `<div class="calendar-country-row ${stacked ? 'calendar-country-stacked' : countries.length > 1 ? 'calendar-country-split' : ''}" style="--calendar-country-columns:${stacked ? (extra ? 'minmax(0,1fr) 24px' : 'minmax(0,1fr)') : `repeat(${visible.length},minmax(0,1fr))${extra ? ' 23px' : ''}`} ">${visible.map(({record:s}) => {
+  return `<div class="calendar-country-row ${countries.length > 1 ? 'calendar-country-split' : ''}" style="grid-template-columns:repeat(${visible.length},minmax(0,1fr))${extra ? ' 23px' : ''}">${visible.map(({record:s}) => {
     const schengen = SCHENGEN.has(s.countryCode);
     return `<div class="calendar-country-section"><button type="button" class="calendar-journey-chip${schengen ? ' is-schengen' : ''}" data-calendar-edit-country="${E(s.id)}" ${entryAttributes('country',s.id,date)} aria-label="${E(s.countryName)}${schengen ? ' · Schengen Area' : ''}">${flagHtml(s.domesticDestination || s.countryCode,'calendar-chip-flag')}<span class="calendar-journey-copy"><strong class="country-name-full">${E(s.countryName)}</strong><strong class="country-name-compact" aria-hidden="true">${E(s.domesticDestination ? s.countryName.slice(0,3) : s.countryCode)}</strong></span>${schengen ? '<span class="calendar-schengen in" aria-hidden="true"></span>' : ''}${window.HVCalendarPlanning?.handles('country',s,date)||''}</button>${window.HVCalendarPlanning?.planFor('country',s.id) ? '' : (date === (s.start < calendarWindowStart ? calendarWindowStart : s.start) ? window.HVVisaNotices?.indicator(s) : '') || ''}</div>`;
   }).join('')}${extra ? `<button type="button" class="calendar-more-countries" data-calendar-countries-detail="${date}" aria-label="Explore all ${countries.length} countries on ${E(dateText(date))}"><span class="calendar-more-desktop">+${extra}</span><span class="calendar-more-mobile">+${countries.length-1}</span></button>` : ''}</div>`;
@@ -81,20 +80,15 @@ function renderMonth() {
   if ($('calendarYearJump')) $('calendarYearJump').value = String(cursor.getUTCFullYear());
 
   calendarWindowStart = dayKey(start);
-  const cellWidth = Math.max(30, calendar.clientWidth / 7 - 20);
-  const countryStack = (countries,date) => countries.length > 1 && countries.slice(0,2).reduce((sum, {record}) => sum + String(record.countryName || record.countryCode).length * 6.6 + 30 + (record.start===date?26:0), 0) + (countries.length > 2 ? 24 : 4) > cellWidth;
   const monthDays = [...dateWindow.values()].map(day => ({
     day,
     segments:HVCalendarLayout.lodging(layers.accommodation ? day.accommodations : [],day.date),
     countries:HVCalendarLayout.countries(layers.countries ? day.stays : [],day.transports,day.date),
   }));
-  // Reserve lanes within each week. Quiet weeks do not inherit a busy month's space.
-  const weekStyles = [];
-  for (let offset = 0; offset < monthDays.length; offset += 7) {
-    const week = monthDays.slice(offset, offset + 7);
-    const lodgingLines = week.some(item=>item.segments.some(segment=>segment.span===1 && String(segment.record.propertyName||'').length>24)) ? 3 : 2;
-    weekStyles.push(`--calendar-lodging-size:${lodgingLines===3?70:56}px;--calendar-lodging-lines:${lodgingLines};--calendar-country-rows:${Math.max(0,...week.map(item=>item.countries.length ? countryStack(item.countries,item.day.date) ? 2 : 1 : 0))};--calendar-has-lodging:${Number(week.some(item=>item.segments.length))};--calendar-transport-rows:${layers.transport ? Math.min(2,Math.max(0,...week.map(item=>item.day.transports.length))) : 0};--calendar-secondary-rows:${Number(week.some(item=>(layers.notes && item.day.notes.length)||(layers.locations && item.day.places.length)))};`);
-  }
+  // The original Month design uses the same aligned lanes throughout the grid.
+  calendar.style.setProperty('--calendar-country-rows',Number(layers.countries && monthDays.some(item=>item.countries.length)));
+  calendar.style.setProperty('--calendar-has-lodging',Number(layers.accommodation && monthDays.some(item=>item.segments.length)));
+  calendar.style.setProperty('--calendar-transport-rows',layers.transport ? Math.min(2,Math.max(0,...monthDays.map(item=>item.day.transports.length))) : 0);
   calendar.classList.toggle('calendar-has-countries',layers.countries && monthDays.some(item => item.countries.length));
   let html = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(day => `<div class="calendar-weekday">${day}</div>`).join('');
   for (let index=0; index<monthDays.length; index++) {
@@ -108,11 +102,11 @@ function renderMonth() {
     const count = countries.length+segments.length+transports.length+notes.length+places.length;
     const hiddenCount = (segments.some(segment=>segment.complex) ? Math.max(0,segments.length-1) : 0)+Math.max(0,countries.length-2)+Math.max(0,transports.length-2)+Math.max(0,notes.length-1)+Math.max(0,places.length-(notes.length?0:1));
     const status = day.status === 'home' ? `<button type="button" class="calendar-home-icon" data-calendar-home-select="${date}" aria-label="Home on ${E(dateText(date))}">⌂</button>` : '';
-    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start,index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selection ? 'selection-range' : ''} ${date === calendarSelectionStart ? 'selection-start' : ''} ${date === calendarSelectionEnd ? 'selection-end' : ''}" style="${weekStyles[Math.floor(index/7)]}" data-calendar-date="${date}" data-home-status="${day.status}" role="group" aria-label="${E(dateText(date))}">
+    html += `<div class="calendar-day ${cursor.getUTCMonth() === addDays(start,index).getUTCMonth() ? '' : 'outside'} ${date === current ? 'today' : ''} ${selection ? 'selection-range' : ''} ${date === calendarSelectionStart ? 'selection-start' : ''} ${date === calendarSelectionEnd ? 'selection-end' : ''}" data-calendar-date="${date}" data-home-status="${day.status}" role="group" aria-label="${E(dateText(date))}">
       <div class="calendar-day-top"><button type="button" class="day-number" data-calendar-date-select="${date}" aria-label="Explore ${E(dateText(date))}" aria-pressed="${!!selection}">${addDays(start,index).getUTCDate()}</button><div class="calendar-day-status">${status}${notes.length ? `<button type="button" class="calendar-note-indicator" data-calendar-notes-date="${date}" aria-label="${notes.length} notes on ${E(dateText(date))}">✎</button>` : ''}${date === current ? '<span>Today</span>' : ''}</div></div>
-      <div class="calendar-journeys"><div class="calendar-countries">${countryRow(countries,date,countryStack(countries,date))}${layers.countries && day.sea.length && !countries.length ? '<span class="calendar-sea-mark">≈ At sea</span>' : ''}</div>${lodging ? `<div class="calendar-lodging">${lodging}</div>` : '<div class="calendar-lodging-space" aria-hidden="true"></div>'}<div class="calendar-transports">${transports.slice(0,2).map(record => calendarTransportChip(record,date)).join('')}</div></div>
+      <div class="calendar-journeys"><div class="calendar-countries">${countryRow(countries,date)}${layers.countries && day.sea.length && !countries.length ? '<span class="calendar-sea-mark">≈ At sea</span>' : ''}</div>${lodging ? `<div class="calendar-lodging">${lodging}</div>` : '<div class="calendar-lodging-space" aria-hidden="true"></div>'}<div class="calendar-transports">${transports.slice(0,2).map(record => calendarTransportChip(record,date)).join('')}</div></div>
       <div class="calendar-secondary-entries">${noteChips}${placeChips}</div>
-      ${count ? `<button type="button" class="calendar-day-detail-link" data-calendar-day-detail="${date}" aria-controls="calendarJourneyDetail" aria-label="Explore all ${count} entries for ${E(dateText(date))}"><span class="calendar-detail-desktop">${hiddenCount ? '+'+hiddenCount : ''}</span><span class="calendar-detail-mobile">${count} ${count===1 ? 'entry' : 'entries'}</span><span aria-hidden="true">↗</span></button>` : ''}</div>`;
+      ${count ? `<button type="button" class="calendar-day-detail-link" data-calendar-day-detail="${date}" aria-controls="calendarJourneyDetail" aria-label="Explore all ${count} entries for ${E(dateText(date))}"><span class="calendar-detail-desktop">${hiddenCount ? 'Explore day · +'+hiddenCount+' more' : 'Explore day'}</span><span class="calendar-detail-mobile">${count} ${count===1 ? 'entry' : 'entries'}</span><span aria-hidden="true">↗</span></button>` : ''}</div>`;
   }
   window.HVCalendarDetails?.hide();
   calendar.innerHTML = html;

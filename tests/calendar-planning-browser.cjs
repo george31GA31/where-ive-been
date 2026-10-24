@@ -36,7 +36,8 @@ let browser;
       if(touch){
         const session=await context.newCDPSession(page);await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[from]});await page.waitForTimeout(350);await session.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[to]});await page.waitForTimeout(70);await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await session.detach();
       }else{await page.mouse.move(from.x,from.y);await page.mouse.down();await page.mouse.move(to.x,to.y,{steps:8});if(escape){await page.keyboard.press('Escape');await page.waitForTimeout(10);}await page.mouse.up();}
-      await page.waitForTimeout(60);
+      // A separate click follows the production 80ms release-click guard.
+      await page.waitForTimeout(100);
     };
     // Both resize edges and whole-event movement cross the visible week boundary.
     await drag(chip('2026-12-07').locator('.plan-end'),'2026-12-10');assert.deepEqual(await dates(),['2026-11-29','2026-12-10']);
