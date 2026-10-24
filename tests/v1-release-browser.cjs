@@ -25,6 +25,8 @@ const views=['dashboard','calendar','stays','transport','journeys','map','planne
  browser=await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH||await binary.executablePath(),args:binary.args.filter(a=>a!=='--single-process'),headless:true});
  for(const [width,height]of [[1440,900],[1280,800],[1024,768],[768,1024],[390,844],[360,800]])for(const theme of ['light','dark']){
   const context=await browser.newContext({viewport:{width,height},hasTouch:width<500,reducedMotion:'reduce',serviceWorkers:'block'}),page=await context.newPage(),errors=[];
+  // Keep the October fixture's upcoming/current phases independent of the run date.
+  await page.clock.install({time:new Date('2026-10-21T12:00:00Z')});
   page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE ERROR',e.stack);});await context.route('**/*',r=>r.request().url().startsWith(origin)?r.continue():r.abort());
   await page.addInitScript(({theme,data})=>{localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(data));},{theme,data});
   await page.goto(origin);await page.waitForFunction(()=>window.HVPages&&window.HVCalendar&&!document.querySelector('.app-shell').inert);
