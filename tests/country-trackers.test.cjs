@@ -1,10 +1,11 @@
 'use strict';
-const {test}=require('node:test'),assert=require('node:assert/strict');
+const {test}=require('node:test'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const V=require('../country-visit-model'),M=require('../account-model'),T=require('../data/tcc-destinations'),J=require('../journey-model');
 const seed=()=>({activeProfileId:'p',profiles:[{id:'p',name:'Me',homeCountryCodes:[]}],trips:[],stays:[],residences:[],accommodations:[],transports:[],manualCountryVisits:[],tccVisits:[],countryCountExcludedCodes:[],countryCountIncludedExtraCodes:[],custom:{keep:'original'}});
 test('official TCC snapshot has every destination, independent identities and all 12 official regions',()=>{
  const destinations=T.regions.flatMap(r=>r.destinations);assert.equal(destinations.length,330);assert.equal(new Set(destinations.map(d=>d.id)).size,330);assert.equal(T.regions.length,12);
- assert.deepEqual(T.regions.map(r=>r.destinations.length),[40,6,7,14,31,14,68,7,55,21,15,52]);assert.equal(T.source,'https://travelerscenturyclub.org/countries-and-territories/');assert.equal(T.verified,'2026-10-06');
+ assert.deepEqual(T.regions.map(r=>r.destinations.length),[40,6,7,14,31,14,68,7,55,21,15,52]);assert.equal(T.source,'https://travelerscenturyclub.org/countries-and-territories/');assert.equal(T.verified,'2026-10-30');
+ assert.equal(crypto.createHash('sha256').update(JSON.stringify(T.regions.map(r=>[r.name,r.destinations.map(d=>d.name)]))).digest('hex'),'4a1c81b98f4e23742982d1c626fbd2d3f41b6bbf0d8d461eb77039fd3b1db85e');
  for(const name of ['England','Scotland','Wales','Ireland, Northern','Alaska','Hawaiian Islands','United States (Contiguous)','Sicily','Sardinia','Hong Kong','Macau','Zanzibar','French Guiana'])assert.ok(destinations.find(d=>d.name===name),name);
 });
 test('simultaneous new country and TCC assertions merge independently without altering history',()=>{

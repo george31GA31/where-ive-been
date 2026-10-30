@@ -1,9 +1,9 @@
-/* Official geographical list, verified 6 October 2026. Independent TCC identities. */
+/* Official geographical list, verified 30 October 2026. Independent TCC identities. */
 (function(root){
   const data = {
   "source": "https://travelerscenturyclub.org/countries-and-territories/",
   "published": "2022-01",
-  "verified": "2026-10-06",
+  "verified": "2026-10-30",
   "regions": [
     {
       "id": "tcc-region-pacific-ocean",
