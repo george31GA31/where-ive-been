@@ -78,7 +78,8 @@ function flagHtml(c, cls = 'flag-img') {
     return `<span class="${esc(cls)} special-location-icon" title="At Sea" aria-label="At Sea"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 9q3-4 6 0t6 0t8 0M2 16q3-4 6 0t6 0t8 0"/></svg></span>`;
   // Preserve the final markup formerly composed by app-fixes and
   // security-runtime. Domestic destination flags still belong to map-enhancements.
-  const name = countryByCode(code)?.name || code;
+  const name = countryByCode(code)?.name || window.HVTccDestinations?.regions
+    .flatMap(region => region.destinations).find(destination => destination.id.toUpperCase() === code)?.name || code;
   return `<img class="${esc(cls)}" src="${flagUrl(code)}" alt="${esc(name)} flag" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
 }
 function countryByName(n = '') {

@@ -65,3 +65,16 @@ test('every bundled flag thumbnail is a nonempty WebP, including Pakistan',()=>{
   assert.equal(bytes.toString('ascii',8,12),'WEBP',code+' WebP image');
  }
 });
+
+test('every TCC destination has local artwork and a readable accessible name',()=>{
+ const context=vm.createContext({window:{addEventListener(){}},localStorage:{getItem:()=>null},document:{addEventListener(){}}});
+ for(const file of ['data/tcc-destinations.js','assets/flag-manifest.js','assets/flag-thumbnails.js','app-core.js'])new vm.Script(fs.readFileSync(path.join(__dirname,'..',file),'utf8')).runInContext(context);
+ for(const destination of context.window.HVTccDestinations.regions.flatMap(region=>region.destinations)){
+  const code=destination.id.toUpperCase();
+  assert.ok(fs.existsSync(path.join(__dirname,'..',context.window.HVFlagAssets[code])),destination.name);
+  assert.ok(context.window.HVFlagThumbnails[code],destination.name+' thumbnail');
+  const html=vm.runInContext(`flagHtml(${JSON.stringify(destination.id)})`,context);
+  assert.match(html,/src="assets\/flags-display\/TCC-/);
+  assert.ok(!html.includes('alt="TCC-'),destination.name+' readable alternative text');
+ }
+});
