@@ -1,6 +1,6 @@
 {
   "reviewedOn": "2026-10-14",
-  "notes": "Runtime versions are unchanged. npm audit covers development dependencies; vendored artifacts require separate upstream advisory review. AnyAscii uses the existing joined classic-script wrapper.",
+  "notes": "Runtime versions are unchanged. npm audit covers development dependencies; vendored artifacts require separate upstream advisory review. AnyAscii uses the existing joined classic-script wrapper. Release text uses canonical LF bytes from 2026-11-04; Leaflet CSS checksum changes only for CRLF-to-LF normalization, without a runtime-version or CSS-content update.",
   "libraries": [
     {
       "name": "D3",
@@ -28,7 +28,7 @@
       "version": "1.9.4",
       "path": "vendor/leaflet/leaflet.css",
       "source": "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
-      "sha256": "a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6"
+      "sha256": "337bfca5cabd03b39815b2700febe2b3b7edf55921c59cd49f88ecb328212303"
     },
     {
       "name": "Supabase JS",

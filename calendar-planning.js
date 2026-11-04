@@ -94,6 +94,7 @@
     if(kind==='country') details=field('Country','country',r.countryName,'text','list="countryList" required autocomplete="off"')+field('City or area (optional)','location',r.location);
     if(kind==='accommodation') details=field('Property name','propertyName',r.propertyName,'text','required')+field('Location or address','location',r.location,'text','required autocomplete="off"')+'<div data-plan-results="location" class="travel-search-results"></div>'+field('Booking reference (optional)','bookingReference',r.bookingReference);
     if(kind==='transport') details=`<label class="field"><span>Transport</span><select name="type">${Object.entries(HVJourney.types).map(([key,label])=>`<option value="${key}"${key===(r.type||'flight')?' selected':''}>${E(label)}</option>`).join('')}</select></label>`+field('From','from',r.start?.name,'text','required autocomplete="off"')+'<div data-plan-results="from" class="travel-search-results"></div>'+field('To','to',r.end?.name,'text','required autocomplete="off"')+'<div data-plan-results="to" class="travel-search-results"></div><div class="form-grid">'+field('Departure time (local)','departure',r.startLocal?.slice(11,16)||'12:00','time','required')+field('Arrival time (local)','arrival',r.endLocal?.slice(11,16)||'12:00','time','required')+'</div>'+field('Booking reference (optional)','bookingReference',r.bookingReference)+(r.legs?.length>1?'<p class="helper">All connecting legs, airports and route information are retained. Moving the plan moves every leg by the same number of days.</p>':'');
+    if(kind==='transport')details+='<details><summary>Time zones & repeated hours</summary>'+['start','end'].map(side=>'<label class="field"><span>'+(side==='start'?'Departure':'Arrival')+' IANA time zone</span><input name="'+side+'Zone" value="'+E(HVJourney.endpointZone(r[side]))+'" placeholder="e.g. Europe/London"></label><label class="field"><span>If '+(side==='start'?'departure':'arrival')+' local time occurs twice</span><select name="'+side+'Disambiguation"><option value="">Choose only for a repeated hour</option><option value="earlier"'+(r[side+'Disambiguation']==='earlier'?' selected':'')+'>Earlier occurrence</option><option value="later"'+(r[side+'Disambiguation']==='later'?' selected':'')+'>Later occurrence</option></select></label>').join('')+'<p class="helper">Unknown zones stay unknown. Clock-change gaps cannot be saved.</p></details>';
     if(kind==='note')details=field('Title','title',r.title,'text','required');
     if(kind==='location')details=field('Location name','name',r.place?.name,'text','required autocomplete="off"')+'<div data-plan-results="name" class="travel-search-results"></div>';
     host.innerHTML=`<form id="calendarPlanForm" class="dialog-card"><header class="calendar-plan-head"><div><p class="eyebrow">TENTATIVE PLAN</p><h2 id="calendarPlanHeading">${existing?'Edit plan':'Add tentative plan'}</h2></div><button type="button" class="icon-btn" data-plan-close aria-label="Close plan">×</button></header>${chooser}${details}<div class="form-grid">${field(kind==='accommodation'?'Check-in date':'Start date','start',start,'date','required')}${field(kind==='accommodation'?'Check-out date':'End date','end',end,'date','required')}</div><label class="field"><span>${kind==='note'?'Note':'Notes (optional)'}</span><textarea name="notes" rows="3">${E(kind==='note'?r.body:r.notes)}</textarea></label><p class="helper">Saved automatically after you save this plan. Confirm it when you are ready to add it to your travel records.</p><p class="form-error" role="alert"></p><div class="calendar-plan-actions"><button class="primary" type="submit">Save tentative plan</button><button type="button" class="secondary" data-plan-close>Cancel</button></div></form>`;
@@ -103,7 +104,7 @@
       const input=form.elements[name],results=host.querySelector(`[data-plan-results="${name}"]`);
       if(!window.HVTravelSearch||!input||!results)return;
       chosen[name]=old;
-      bindings.push(HVTravelSearch.bind(input,results,{context:()=>context,onType:()=>{chosen[name]=null;},onSelect:place=>{chosen[name]=place;}}));
+      bindings.push(HVTravelSearch.bind(input,results,{context:()=>context,onType:()=>{chosen[name]=null;const side=name==='from'?'start':name==='to'?'end':null;if(side){form.elements[side+'Zone'].value='';form.elements[side+'Disambiguation'].value='';}},onSelect:place=>{chosen[name]=place;const side=name==='from'?'start':name==='to'?'end':null;if(side){form.elements[side+'Zone'].value=HVJourney.endpointZone(place);form.elements[side+'Disambiguation'].value='';}}}));
     };
     if(kind==='transport'){bind('from','transport',r.start);bind('to','transport',r.end);}
     if(kind==='location')bind('name','other',r.place);
@@ -112,7 +113,7 @@
       event.preventDefault();const f=form.elements,alert=form.querySelector('[role=alert]');
       try {
         const recordId=r.id||uid();let row={...r,id:recordId,profileId:r.profileId??(state.activeProfileId==='all'?null:state.activeProfileId)};
-        if(existing)row=P.reschedule(existing,f.start.value,f.end.value).record;
+        if(existing)row=P.reschedule(existing,f.start.value,f.end.value,{validateTimes:false}).record;
         if(kind==='country'){
           const country=countryByName(f.country.value);if(!country)throw Error('Choose a country from the list.');
           row={...row,countryCode:country.code,countryName:country.name,...HVJourney.domesticFields(country),location:f.location.value.trim(),start:f.start.value,end:f.end.value,schengenExempt:row.schengenExempt||false,status:row.status||(f.end.value<isoDate(new Date())?'actual':'planned')};
@@ -121,13 +122,18 @@
           const point=(name,old)=>chosen[name]||((f[name].value===old?.name)?old:{name:f[name].value.trim()});
           const departure=point('from',r.start),arrival=point('to',r.end),geometryChanged=JSON.stringify([r.type,r.start,r.end])!==JSON.stringify([f.type.value,departure,arrival]);
           row={...row,type:f.type.value,start:departure,end:arrival,startLocal:(existing?row.startLocal.slice(0,10):f.start.value)+'T'+f.departure.value,endLocal:(existing?row.endLocal.slice(0,10):f.end.value)+'T'+f.arrival.value,status:row.status||'planned',bookingReference:f.bookingReference.value.trim()};
-          if(row.legs?.length){row.legs[0].start=departure;row.legs[0].startLocal=row.startLocal;row.legs.at(-1).end=arrival;row.legs.at(-1).endLocal=row.endLocal;}
+          for(const side of ['start','end']){
+            row[side]={...row[side],[Object.hasOwn(row[side],'timezone')?'timezone':'timeZone']:f[side+'Zone'].value.trim()};
+            if(f[side+'Disambiguation'].value)row[side+'Disambiguation']=f[side+'Disambiguation'].value;else delete row[side+'Disambiguation'];
+          }
+          if(row.legs?.length){row.legs[0].start=row.start;row.legs.at(-1).end=row.end;for(const side of ['start','end']){const leg=side==='start'?row.legs[0]:row.legs.at(-1);if(row[side+'Disambiguation'])leg[side+'Disambiguation']=row[side+'Disambiguation'];else delete leg[side+'Disambiguation'];}
+          row.legs[0].startLocal=row.startLocal;row.legs.at(-1).end=row.end;row.legs.at(-1).endLocal=row.endLocal;}
           if(geometryChanged){delete row.resolvedRoutes;if(row.legs)for(const leg of row.legs)delete leg.resolvedRoutes;}
         }else if(kind==='note')row={...row,title:f.title.value.trim(),body:f.notes.value,date:f.start.value,endDate:f.end.value,category:row.category||'General'};
         else row={...row,place:chosen.name||((f.name.value===r.place?.name)?r.place:{name:f.name.value.trim()}),date:f.start.value,endDate:f.end.value,category:'locations',status:'visited',itemId:row.itemId||'manual:'+recordId};
         if(kind!=='note')row.notes=f.notes.value;
-        const plan={...existing,id:existing?.id||uid(),kind,profileId:row.profileId,record:row,companions:existing?P.reschedule(existing,f.start.value,f.end.value).companions||[]:[]};
-        const error=P.validate(plan);if(error)throw Error(error);
+        const plan={...existing,id:existing?.id||uid(),kind,profileId:row.profileId,record:row,companions:existing?P.reschedule(existing,f.start.value,f.end.value,{validateTimes:false}).companions||[]:[]};
+        const error=P.validate(plan,{times:true});if(error)throw Error(error);
         const result=change(()=>{state.calendarPlans=[...(state.calendarPlans||[]).filter(item=>item.id!==plan.id),plan];},'Tentative plan saved.');
         if(result.ok){close();get('calendar')?.querySelector(`[data-calendar-plan-id="${CSS.escape(plan.id)}"]`)?.focus({preventScroll:true});}
       }catch(error){alert.textContent=error.message;}

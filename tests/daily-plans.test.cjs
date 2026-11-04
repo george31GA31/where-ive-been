@@ -25,6 +25,13 @@ test('Calendar windows preserve inclusive transport, hotel and independent dated
  const days=C.window(data,'2026-10-14',3);assert.equal(days.get('2026-10-14').notes.length,1);assert.equal(days.get('2026-10-15').transports.length,1);assert.equal(days.get('2026-10-15').accommodations.length,1);assert.equal(days.get('2026-10-16').accommodations.length,0);
  data.notes[1].title='Unrelated note';assert.equal(C.window(data,'2026-10-14',3),days,'Undated note edits reuse Calendar data');data.notes[0].date='2026-10-15';assert.equal(C.window(data,'2026-10-14',3).get('2026-10-15').notes.length,1);
 });
+test('ranged notes share inclusive date-only projection without changing single-day, undated or private notes',()=>{
+ const data=seed();data.notes=[{id:'range',profileId:'p',date:'2026-11-29',endDate:'2026-12-07',title:'Field note'},{id:'single',profileId:'p',date:'2026-12-01',title:'Single day'},{id:'undated',profileId:'p',title:'Packing'},{id:'private',profileId:'other',date:'2026-12-01',endDate:'2026-12-03'}];
+ const before=JSON.stringify(data),days=C.window(data,'2026-11-28',11);
+ assert.equal([...days.values()].filter(day=>day.notes.some(note=>note.id==='range')).length,9);
+ assert.deepEqual(days.get('2026-12-01').notes.map(note=>note.id),['range','single']);assert.equal(days.get('2026-12-02').notes.some(note=>note.id==='single'),false);
+ assert.equal(JSON.stringify(data),before);data.notes[0].endDate='2026-12-01';assert.equal(C.window(data,'2026-12-02',1).get('2026-12-02').notes.length,0,'Changing only the end date invalidates the shared projection');
+});
 test('Calendar statuses match permanent-home, domestic-trip and mixed-day rules',()=>{
  const data=seed();data.stays=[stay('home','2026-10-01','2026-10-31',{countryCode:'GB',travelKind:'home'}),stay('holiday','2026-10-14','2026-10-15',{countryCode:'GB',travelKind:'trip'})];
  for(const [date,day]of C.window(data,'2026-10-12',6))assert.equal(day.status,J.dayStatus(data,date));assert.equal(C.window(data,'2026-10-12',1).get('2026-10-12').status,'home');assert.equal(C.window(data,'2026-10-14',1).get('2026-10-14').status,'mixed');

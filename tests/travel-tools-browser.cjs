@@ -79,13 +79,14 @@ let browser;
     assert.equal(await page.locator('#toolsView .workspace-tabs').count(), 0, 'The overview keeps one restrained tool grid');
     assert.equal(await page.locator('[data-coming-tool]').count(), 0);
     const columns=await page.locator('.travel-tool-links').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);
-    assert.equal(columns,width>1050?3:width>600?2:1,'Three desktop, two tablet and one mobile widget per row');
+    assert.equal(columns,width>800?2:1,'The motion tool index has two desktop columns and one narrow-screen column');
+    await page.waitForSelector('.travel-tool-link.motion-row');
     const widget=page.locator('.travel-tool-link').first();await page.keyboard.press('Tab');await widget.focus();
     assert.equal(await widget.evaluate(el=>getComputedStyle(el).outlineStyle),'solid','Keyboard focus is visible');
     assert.equal(await widget.evaluate(el=>getComputedStyle(el).cursor),'pointer');
     await widget.evaluate(el=>el.blur());await page.mouse.move(0,0);
-    const beforeHover=await widget.evaluate(el=>getComputedStyle(el).borderTopColor);await widget.hover();
-    if(width>390){await page.waitForTimeout(180);assert.notEqual(await widget.evaluate(el=>getComputedStyle(el).borderTopColor),beforeHover,'Hover changes the card border');}
+    const beforeHover=await widget.evaluate(el=>getComputedStyle(el,'::after').opacity);await widget.hover();
+    if(width>390){await page.waitForTimeout(180);assert.ok(Number(await widget.evaluate(el=>getComputedStyle(el,'::after').opacity))>Number(beforeHover),'Hover reveals the tool card’s pointer lighting');}
 
     await fits();
     await page.screenshot({ path: path.join(out, `tools-${width}-${theme}.png`), fullPage: true });

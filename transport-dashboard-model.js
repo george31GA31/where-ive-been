@@ -12,35 +12,23 @@
   const norm = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
   const mode = type => ({plane:'flight',air:'flight',rail:'train',ferry:'boat',ship:'boat',coach:'bus',taxi:'car',road:'car'}[norm(type)] || (modes[norm(type)] ? norm(type) : null));
   const zone = point => point?.timezone || point?.timeZone || '';
-  const formatters = new Map();
-  function parts(now, timeZone) {
-    const key = timeZone || '';
-    try {
-      if (!formatters.has(key)) formatters.set(key, new Intl.DateTimeFormat('en-GB', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23',...(timeZone ? {timeZone} : {})}));
-      return Object.fromEntries(formatters.get(key).formatToParts(new Date(now)).map(p => [p.type,p.value]));
-    } catch {return parts(now, '');}
+  // Date-only comparisons use a stable UTC reference when an endpoint zone is
+  // unavailable. They never imply an exact departure or arrival instant.
+  function dayAt(now, timeZone) {
+    const formatter=J.timeFormatter(timeZone)||J.timeFormatter('UTC');
+    const p=Object.fromEntries(formatter.formatToParts(new Date(now)).map(part=>[part.type,part.value]));
+    return `${p.year.padStart(4,'0')}-${p.month}-${p.day}`;
   }
-  function dayAt(now, timeZone) {const p=parts(now,timeZone);return `${p.year}-${p.month}-${p.day}`;}
-  function instant(local, timeZone) {
-    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(local || '')) return null;
-    if (/[zZ]$|[+-]\d{2}:\d{2}$/.test(local)) return Number.isFinite(Date.parse(local)) ? Date.parse(local) : null;
-    if (!timeZone) return Number.isFinite(Date.parse(local)) ? Date.parse(local) : null;
-    const nominal = Date.parse(local + 'Z');
-    if (!Number.isFinite(nominal)) return null;
-    let result = nominal;
-    for (let i=0;i<3;i++) {
-      const p = parts(result,timeZone);
-      const offset = Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute,+p.second) - result;
-      const next = nominal - offset;
-      if (result === next) break;
-      result = next;
-    }
-    return result;
+  function instant(local, timeZone, choice='') {
+    const result=J.resolveLocalTime(local,timeZone,choice);
+    return result.status==='known'?result.instant:null;
   }
   function period(row, now=Date.now()) {
     const value = row.leg.endLocal || row.leg.startLocal || row.record.endLocal || row.record.startLocal || '';
-    const end = row.record.dateOnly?null:instant(value, zone(row.leg.end) || zone(row.leg.start));
-    return end === null ? value.slice(0,10) && value.slice(0,10) < dayAt(now, zone(row.leg.end)) ? 'previous' : 'upcoming' : end < now ? 'previous' : 'upcoming';
+    const side=row.leg.endLocal?'end':row.leg.startLocal?'start':row.record.endLocal?'end':'start';
+    const endpoint=(row.leg[side+'Local']?row.leg:row.record),timeZone=zone(endpoint[side]);
+    const end = row.record.dateOnly?null:instant(value,timeZone,endpoint[side+'Disambiguation']);
+    return end === null ? value.slice(0,10) && value.slice(0,10) < dayAt(now,timeZone) ? 'previous' : 'upcoming' : end < now ? 'previous' : 'upcoming';
   }
   function rows(data) {
     const cancelledTrips = new Set((data.trips || []).filter(t => t.status === 'cancelled').map(t => t.id));
@@ -55,7 +43,7 @@
   function filter(all, options={}, now=Date.now()) {
     const term=norm(options.search),type=options.mode==='all'?'all':mode(options.mode)||'flight',selected=options.period||'upcoming';
     return all.filter(row => (type==='all'||row.type===type) && period(row,now)===selected && (!options.year || [row.start,row.end].some(d=>d.slice(0,4)===options.year)) && (!options.operator || norm(providerName(provider(row)))===norm(options.operator)) && (!options.country || [row.leg.start,row.leg.end].some(p=>(p?.countryCode||p?.countryCodes?.[0])===options.country)) && (!term || norm([providerName(provider(row)),row.leg.flightNumber,row.record.flightNumber,row.leg.serviceNumber,row.record.serviceNumber,row.record.name,row.record.vehicle,row.record.vessel,row.start,row.end,...[row.leg.start,row.leg.end].flatMap(p=>[p?.name,p?.city,p?.area,p?.countryName,p?.countryCode,p?.iata,p?.icao])].join(' ')).includes(term))).sort((a,b) => {
-      const left=instant(a.leg.startLocal,zone(a.leg.start)),right=instant(b.leg.startLocal,zone(b.leg.start));
+      const left=instant(a.leg.startLocal,zone(a.leg.start),a.leg.startDisambiguation),right=instant(b.leg.startLocal,zone(b.leg.start),b.leg.startDisambiguation);
       const byDate=left!==null&&right!==null?left-right:String(a.leg.startLocal||a.start).localeCompare(String(b.leg.startLocal||b.start));
       return (selected==='previous'?-byDate:byDate)||a.key.localeCompare(b.key);
     });
@@ -66,7 +54,9 @@
     const local=row.leg.startLocal||'',date=(local||row.start).slice(0,10),today=dayAt(now,zone(row.leg.start));
     if (!J.validDate(date)) return {value:'',unit:'Date to add'};
     const days=Math.round((Date.parse(date+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/86400000);
-    const start=row.record.dateOnly?null:instant(local,zone(row.leg.start)),remaining=start===null?null:start-now;
+    const resolved=J.resolveLocalTime(local,zone(row.leg.start),row.leg.startDisambiguation);
+    if(!row.record.dateOnly&&resolved.status!=='known')return {value:'',unit:resolved.status==='unknown'?(resolved.reason==='invalidZone'?'Time zone unrecognised':resolved.reason==='missingZone'?'Time zone not recorded':'Time not recorded'):resolved.status==='ambiguous'?'Repeated local time':'Check local time'};
+    const start=row.record.dateOnly?null:resolved.instant,remaining=start===null?null:start-now;
     if (days<=0) {
       if (remaining>0 && remaining<=6*3600000) {
         const minutes=Math.ceil(remaining/60000),hours=Math.ceil(remaining/3600000);

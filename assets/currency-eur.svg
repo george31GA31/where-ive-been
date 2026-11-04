@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 120" width="180" height="120">
+  <title>Euro currency symbol: European flag</title>
+  <path fill="#039" d="M0 0h180v120H0z"/>
+  <defs><path id="star" fill="#fc0" d="m0-5 1.176 3.382 3.579.073-2.853 2.163 1.037 3.427L0 2l-2.939 2.045 1.037-3.427-2.853-2.163 3.579-.073Z"/></defs>
+  <use href="#star" x="90" y="24"/><use href="#star" x="108" y="28.823"/>
+  <use href="#star" x="121.177" y="42"/><use href="#star" x="126" y="60"/>
+  <use href="#star" x="121.177" y="78"/><use href="#star" x="108" y="91.177"/>
+  <use href="#star" x="90" y="96"/><use href="#star" x="72" y="91.177"/>
+  <use href="#star" x="58.823" y="78"/><use href="#star" x="54" y="60"/>
+  <use href="#star" x="58.823" y="42"/><use href="#star" x="72" y="28.823"/>
+</svg>

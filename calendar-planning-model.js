@@ -20,7 +20,7 @@
     }
     return [row.date,row.endDate || row.date];
   }
-  function validate(plan) {
+  function validate(plan, {times=false}={}) {
     if (!plan || !Object.hasOwn(collections,plan.kind) || !plan.record || typeof plan.id !== 'string' || !plan.id || typeof plan.record.id !== 'string' || !plan.record.id) return 'This plan is incomplete.';
     const [start,end] = range(plan.kind,plan.record);
     if (!J.validDate(start) || !J.validDate(end) || end < start) return 'Choose a valid start and end date.';
@@ -30,7 +30,9 @@
     if (plan.kind === 'transport') {
       if (!Object.hasOwn(J.types,row.type) || !row.start?.name?.trim() || !row.end?.name?.trim()) return 'Add a transport type, departure and destination.';
       if (!row.dateOnly && (!J.validLocal(row.startLocal) || !J.validLocal(row.endLocal))) return 'Add valid local departure and arrival times.';
+      if(times&&!row.dateOnly){const error=J.validateTransport(row);if(error)return error;}
       for (const leg of row.legs || []) {
+        if(times){const error=J.validateTransportTimes(leg);if(error)return error;}
         if (!J.validLocal(leg.startLocal) || !J.validLocal(leg.endLocal) || [leg.startLocal,leg.endLocal].some(value=>date(value)<start||date(value)>end)) return 'Keep all connecting legs within these dates, or edit the individual legs after confirming.';
       }
     }
@@ -38,7 +40,7 @@
     if (plan.kind === 'location' && !row.place?.name?.trim()) return 'Add a location name.';
     return '';
   }
-  function reschedule(plan,start,end) {
+  function reschedule(plan,start,end,{validateTimes=true}={}) {
     const changed = {...plan,record:{...plan.record},companions:(plan.companions||[]).map(item=>({...item,record:{...item.record}}))}, row = changed.record, [oldStart,oldEnd] = range(plan.kind, row);
     if(row.legs)row.legs=row.legs.map(leg=>({...leg}));
     if(row.via)row.via=row.via.map(point=>({...point}));
@@ -57,7 +59,7 @@
     for (const companion of changed.companions || []) {
       if (companion.key==='stays') {companion.record.start=start;companion.record.end=end;}
     }
-    const error = validate(changed); if (error) throw Error(error);
+    const error = validate(changed,{times:validateTimes}); if (error) throw Error(error);
     return changed;
   }
   function move(plan, amount) {
@@ -83,7 +85,7 @@
   }
   function confirm(data,id) {
     const plan=(data.calendarPlans||[]).find(row=>row.id===id);
-    const error=validate(plan);if(error)throw Error(error);
+    const error=validate(plan,{times:true});if(error)throw Error(error);
     const key=collections[plan.kind];
     const additions=[{key,record:plan.record},...(plan.companions||[])];
     for(const item of additions) {

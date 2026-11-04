@@ -15,7 +15,7 @@ for (const bundle of bundles) {
       return `// Source: ${input.file}\nconst ${input.constant} = ${JSON.stringify(data)};\n`;
     }
     const file = input;
-    const source = fs.readFileSync(path.join(root, file), 'utf8').trimEnd();
+    const source = fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n').trimEnd();
     // Each fragment is valid JavaScript; concatenation preserves the original
     // shared scope, declaration hoisting and script order without a module rewrite.
     new vm.Script(source, {filename: file});
