@@ -4,6 +4,8 @@ const assert = require('node:assert/strict');
 const {chromium} = require('playwright'), binary = require('@sparticuz/chromium');
 const {largeAccount} = require('./fixtures/large-account.cjs');
 binary.setGraphicsMode = false;
+const settleFrames=page=>page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+const scrollSnapshot=page=>page.evaluate(()=>({top:scrollY,max:document.documentElement.scrollHeight-innerHeight,view:document.body.dataset.currentView}));
 const root = path.resolve(process.env.HV_NAV_ROOT || path.join(__dirname, '..'));
 const server = http.createServer((req, res) => {
   const file = path.resolve(root, '.' + new URL(req.url, 'http://localhost').pathname.replace(/\/$/, '/index.html'));
@@ -52,7 +54,19 @@ let browser;
     assert.equal(reports.find(r => r.view === 'calendar' && r.pass === 2).calendars, 0, 'An unchanged calendar is reused');
     await page.evaluate(()=>{state.transports.findLast(t=>t.type==='flight').flightNumber='Navigation saved edit';persist();switchView('tools');switchView('transport');});
     assert.match(await page.locator('[data-transport-list]').innerText(),/Navigation saved edit/,'A saved edit invalidates cached pages');
-    await page.evaluate(()=>switchView('journeys'));const lastCard=page.locator('.journey-library-card').last(),lastEdit=lastCard.locator('button').last();assert.ok(await page.locator('[data-library-entry]').count()>=240,'Offscreen catalogue records remain present');await lastEdit.scrollIntoViewIfNeeded();await lastEdit.focus();assert.equal(await lastEdit.evaluate(n=>document.activeElement===n),true,'An offscreen record remains keyboard reachable');assert.ok(await lastEdit.isVisible());const scroll=await page.evaluate(()=>scrollY);assert.ok(scroll>1000);await page.evaluate(()=>{switchView('tools');switchView('journeys');});assert.ok(Math.abs(await page.evaluate(()=>scrollY)-scroll)<2,'Returning to the catalogue restores its saved scroll position');
+    await page.evaluate(()=>switchView('journeys'));
+    const lastCard=page.locator('.journey-library-card').last(),lastEdit=lastCard.locator('button').last();
+    assert.ok(await page.locator('[data-library-entry]').count()>=240,'Offscreen catalogue records remain present');
+    await lastEdit.scrollIntoViewIfNeeded();await lastEdit.focus();
+    assert.equal(await lastEdit.evaluate(n=>document.activeElement===n),true,'An offscreen record remains keyboard reachable');assert.ok(await lastEdit.isVisible());
+    // Capture the settled viewport, after native focus and content-visibility layout.
+    await settleFrames(page);const savedScroll=await scrollSnapshot(page),scroll=savedScroll.top;assert.ok(scroll>1000);
+    const immediateScroll=await page.evaluate(()=>{switchView('tools');switchView('journeys');return{top:scrollY,max:document.documentElement.scrollHeight-innerHeight,view:document.body.dataset.currentView};});
+    await settleFrames(page);const settledScroll=await scrollSnapshot(page);
+    await page.waitForFunction(expected=>Math.abs(scrollY-expected)<2,scroll,{timeout:3000,polling:50}).catch(async()=>{
+      assert.fail('Returning to the catalogue restores its saved scroll position: '+JSON.stringify({expected:scroll,saved:savedScroll,immediate:immediateScroll,settled:settledScroll,final:await scrollSnapshot(page)}));
+    });
+    assert.ok(Math.abs(await page.evaluate(()=>scrollY)-scroll)<2,'Returning to the catalogue restores its saved scroll position');
     assert.deepEqual(await page.evaluate(() => state.transports.map(t => t.resolvedRoutes)), data.transports.map(t => t.resolvedRoutes));
     const many={...data,trips:[],stays:[],accommodations:[],savedPlaces:[],transports:Array.from({length:1200},(_,i)=>{const record=structuredClone(data.transports[0]),date=new Date(Date.UTC(2020,0,1+i%365)).toISOString().slice(0,10);return {...record,id:'many-'+i,tripId:null,flightNumber:'HV '+i,startLocal:date+'T08:00',endLocal:date+'T09:00',start:{...record.start,timezone:'Europe/Paris'},end:{...record.end,timezone:'Europe/Paris'}};})};
     const large=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce',serviceWorkers:'block'});

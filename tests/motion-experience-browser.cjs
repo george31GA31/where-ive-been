@@ -68,10 +68,17 @@ async function assertRecords(page,before,label){assert.equal(await page.evaluate
       assert.equal(await page.evaluate(()=>document.body.dataset.currentView),'dashboard');
       await assertRecords(page,before,'Pointer movement and drag preserve source and stored records');
       const progressBefore=await page.locator('.motion-scene').evaluate(el=>Number(el.dataset.scrollProgress||0));
-      await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));await tick(page,300);
+      // The no-preference theme enables CSS smooth scrolling. Native scroll and
+      // IntersectionObserver delivery are not advanced by the synthetic clock.
+      await page.evaluate(()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}));
+      await page.waitForFunction(()=>document.querySelector('.v1-geography')?.getBoundingClientRect().bottom < -80);
+      await page.waitForFunction(()=>document.querySelector('.v1-geography')?.dataset.motionState==='paused');
       assert.equal((await rotation(host)).state,'paused','Offscreen globe pauses');
+      await page.waitForFunction(before=>Number(document.querySelector('.motion-scene')?.dataset.scrollProgress||0)>before,progressBefore);
       assert.ok(await page.locator('.motion-scene').evaluate(el=>Number(el.dataset.scrollProgress||0))>progressBefore,'Scrolling advances the scene composition');
-      await page.evaluate(()=>window.scrollTo(0,0));await tick(page,300);
+      const paused=await rotation(host);await tick(page,500);assert.deepEqual(await rotation(host),paused,'An offscreen globe does not keep rotating');
+      await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
+      await page.waitForFunction(()=>{const globe=document.querySelector('.v1-geography'),box=globe?.getBoundingClientRect();return box&&box.bottom>0&&box.top<innerHeight&&globe.dataset.motionState!=='paused';});
       await page.evaluate(()=>switchView('settings'));await page.locator('#v1Motion').click();
       await page.evaluate(()=>switchView('dashboard'));await tick(page,200);
       assert.equal(await page.evaluate(()=>document.documentElement.dataset.experienceMotion),'off');
