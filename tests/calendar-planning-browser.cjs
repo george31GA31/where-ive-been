@@ -21,6 +21,9 @@ let browser;
     const seed={version:2,activeProfileId:'p',profiles:[{id:'p',name:'Me',citizenships:['GB'],enabledRules:['schengen']}],trips:[],stays:[{id:'existing',countryCode:'TN',countryName:'Tunisia',start:'2026-10-01',end:'2026-10-03',status:'actual',profileId:'p',notes:'Keep me'}],transports:[],accommodations:[],notes:[],placeVisits:[],residences:[],savedPlaces:[]};
     await page.addInitScript(({seed,theme})=>{localStorage.setItem('herald.calendar.view.v1','month');if(!localStorage.getItem('whereIveBeen.data.v2'))localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));localStorage.setItem('herald.calendar.view.v1','month');localStorage.setItem('whereIveBeen.theme.v1',theme);},{seed,theme});
     await page.goto(origin+'/#/calendar');await page.waitForFunction(()=>window.HVCalendarPlanning&&window.HVCalendarDetails&&window.HVCalendar?.ready&&!document.querySelector('.app-shell').inert);
+    assert.equal(await page.locator('.calendar-filter-menu').evaluate(el=>el.open),false,'Filters start closed at every width so they cannot cover Calendar entries');
+    assert.equal(await page.locator('.calendar-display-menu').evaluate(el=>el.open),false,'Display starts closed at every width');
+    await page.locator('.calendar-filter-menu>summary').click();assert.ok(await page.locator('[data-calendar-layer=transport]').isVisible());await page.locator('#pageTitle').click();assert.equal(await page.locator('.calendar-filter-menu').evaluate(el=>el.open),false,'Clicking outside dismisses the anchored Filters panel');
     await page.evaluate(()=>{calendarCursor=new Date('2026-12-01T00:00:00Z');renderCalendar();});
     await page.evaluate(()=>HVJourneys.loadAirports());
     const preserved=await page.evaluate(()=>JSON.stringify({stays:state.stays,transports:state.transports,accommodations:state.accommodations,notes:state.notes,placeVisits:state.placeVisits,profiles:state.profiles}));
@@ -89,4 +92,4 @@ let browser;
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No horizontal page overflow');assert.deepEqual(errors,[]);
     await context.close();console.log(`${width}px ${theme}: creation, both resize edges, cross-week/month movement, escape, undo, touch/editor alternatives, autosave/reload, duplication, deletion, confirmation and reversion passed.`);
   }
-})().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{await browser?.close();server.close();});
+})().catch(async error=>{console.error(error);const page=browser?.contexts().at(-1)?.pages()[0];if(page)await page.screenshot({path:path.join(out,'failure.png'),fullPage:true});process.exitCode=1;}).finally(async()=>{await browser?.close();server.close();});
