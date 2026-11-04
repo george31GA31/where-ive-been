@@ -97,6 +97,27 @@ let browser;
     await mode.click();await day('31').click();await drawer.locator('[data-calendar-day-nav="2026-09-01"]').click();
     assert.equal(await page.locator('#calendarMonthJump').inputValue(),'8','Day navigation across months updates the month grid');await close();
 
+    // A partial selection survives both toolbar navigation and year/month jumps.
+    if(await mode.getAttribute('aria-pressed')!=='true')await mode.click();
+    await page.evaluate(()=>{HVCalendar.clearSelection();calendarCursor=new Date('2026-11-01T00:00:00Z');renderCalendar();});
+    const beforeCrossMonth=await page.evaluate(()=>JSON.stringify(state));
+    await page.locator('[data-calendar-date-select="2026-11-29"]').click();
+    await page.locator('#nextMonth').click();await page.locator('#nextMonth').click();
+    assert.match(await page.locator('#calendarSelectionInfo').innerText(),/29 Nov 2026/,'The off-screen anchor remains visible');
+    await page.locator('[data-calendar-date-select="2027-01-03"]').click();
+    await drawer.locator('[data-calendar-date-action=country]').click();
+    assert.equal(await drawer.locator('[name=start]').inputValue(),'2026-11-29');assert.equal(await drawer.locator('[name=end]').inputValue(),'2027-01-03');
+    await drawer.locator('[data-calendar-cancel-range]').click();
+    await page.locator('[data-calendar-date-select="2027-01-03"]').focus();await page.keyboard.press('Enter');
+    await page.locator('#calendarYearJump').selectOption('2026');await page.locator('#calendarMonthJump').selectOption('10');
+    await page.locator('[data-calendar-date-select="2026-11-29"]').focus();await page.keyboard.press('Enter');
+    await drawer.locator('[data-calendar-date-action=country]').click();
+    assert.equal(await drawer.locator('[name=start]').inputValue(),'2026-11-29');assert.equal(await drawer.locator('[name=end]').inputValue(),'2027-01-03','Reverse keyboard selection across years normalises the inclusive range');
+    await drawer.locator('[data-calendar-cancel-range]').click();
+    await page.locator('[data-calendar-date-select="2026-11-29"]').click();await page.locator('#nextMonth').click();await page.locator('#calendarSelectionInfo [data-calendar-cancel-range]').click();
+    assert.doesNotMatch(await page.locator('#calendarSelectionInfo').innerText(),/29 Nov 2026 selected/);
+    assert.equal(await page.evaluate(()=>JSON.stringify(state)),beforeCrossMonth,'Navigation and cancellation never save travel');
+
     const hover = page.locator('[data-calendar-hover-previews]');
     const setHover=async value=>{if(!await hover.isVisible())await page.locator('.calendar-display-menu>summary').click();await hover.setChecked(value);if(await page.locator('.calendar-display-menu').evaluate(n=>n.open)&&await page.locator('.calendar-display-menu>summary').isVisible())await page.locator('.calendar-display-menu>summary').click();};
     assert.ok(await hover.isChecked(),'Hover previews default on');

@@ -120,7 +120,7 @@
   function flightLegs(record) {
     if(record.legs?.length)return record.legs.map(l=>({...l,start:{...l.start},end:{...l.end}}));
     const points=[record.start,...(record.via||[]),record.end];
-    return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:'',endLocal:i===points.length-2?record.endLocal:'',flightNumber:points.length===2?record.flightNumber||'':'',airline:points.length===2?record.airline||null:null}));
+    return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:'',endLocal:i===points.length-2?record.endLocal:'',...(i===0&&record.startDisambiguation?{startDisambiguation:record.startDisambiguation}:{}),...(i===points.length-2&&record.endDisambiguation?{endDisambiguation:record.endDisambiguation}:{}),flightNumber:points.length===2?record.flightNumber||'':'',airline:points.length===2?record.airline||null:null}));
   }
   const airportLabel=(p,lookup=()=>null)=>p?.manualAirport?(p.iata||p.icao||p.name||''):p?.iata||(p?.name?.trim()?lookup(p.name)?.iata:'')||String(p?.name||'').match(/\(([A-Z]{3})\)$/)?.[1]||p?.icao||p?.name||'';
   const airportCity=p=>p?.displayCity||({STN:'London Stansted',GHA:'Ghardaïa'}[String(p?.iata||'').toUpperCase()])||p?.city||p?.area||p?.name||'';
@@ -138,7 +138,7 @@
   function groundLegs(record){
     const points=[record.start,...(record.via||[]),record.end];
     if(record.dateOnly&&Array.isArray(record.roadLegDates))return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:record.roadLegDates[i]?.startLocal||record.startLocal,endLocal:record.roadLegDates[i]?.endLocal||record.endLocal,operator:record.operator||'',serviceNumber:record.serviceNumber||''}));
-    return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:points[i]?.departureLocal||'',endLocal:i===points.length-2?record.endLocal:end?.arrivalLocal||'',operator:points[i]?.operator||record.operator||'',serviceNumber:points[i]?.serviceNumber||record.serviceNumber||''}));
+    return points.slice(1).map((end,i)=>({start:{...points[i]},end:{...end},startLocal:i===0?record.startLocal:points[i]?.departureLocal||'',endLocal:i===points.length-2?record.endLocal:end?.arrivalLocal||'',...((i===0?record.startDisambiguation:points[i]?.departureDisambiguation)?{startDisambiguation:i===0?record.startDisambiguation:points[i].departureDisambiguation}:{}),...((i===points.length-2?record.endDisambiguation:end?.arrivalDisambiguation)?{endDisambiguation:i===points.length-2?record.endDisambiguation:end.arrivalDisambiguation}:{}),operator:points[i]?.operator||record.operator||'',serviceNumber:points[i]?.serviceNumber||record.serviceNumber||''}));
   }
   function transportDates(record){
     const dates=[record.startLocal,record.endLocal,...(record.legs||[]).flatMap(l=>[l.startLocal,l.endLocal]),...(record.via||[]).flatMap(p=>[p.arrivalLocal,p.departureLocal])].filter(Boolean).map(d=>d.slice(0,10)).filter(validDate).sort();
@@ -206,15 +206,70 @@
   }
   const validDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s||'') && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0,10)===s;
   const validLocal = s => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s||'') && validDate(s.slice(0,10)) && Number(s.slice(11,13))<24 && Number(s.slice(14,16))<60;
+  const timeFormatters = new Map(), resolvedTimes = new Map();
+  const endpointZone = point => point?.timezone || point?.timeZone || '';
+  function timeFormatter(zone) {
+    if (!zone) return null;
+    try {
+      if (!timeFormatters.has(zone)) {
+        const formatter = new Intl.DateTimeFormat('en-GB', {timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
+        if(timeFormatters.size>=128)timeFormatters.delete(timeFormatters.keys().next().value);
+        timeFormatters.set(zone,formatter);
+      }
+      return timeFormatters.get(zone);
+    } catch {return null;}
+  }
+  // Resolve without replacing saved wall times or borrowing the viewer's zone.
+  // Offset candidates are round-tripped, so DST gaps cannot silently drift.
+  function resolveLocalTime(local, zone, choice='') {
+    if (typeof local!=='string') return {status:'unknown',reason:'missingTime',instants:[]};
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:[zZ]|[+-]\d{2}:\d{2})$/.test(local)) {
+      const value=validLocal(local.slice(0,16))?Date.parse(local):NaN;
+      return Number.isFinite(value)?{status:'known',instant:value,instants:[value]}:{status:'unknown',reason:'invalidTime',instants:[]};
+    }
+    if (!validLocal(local)) return {status:'unknown',reason:'invalidTime',instants:[]};
+    const formatter=timeFormatter(zone);
+    if (!formatter) return {status:'unknown',reason:zone?'invalidZone':'missingZone',instants:[]};
+    const cacheKey=local+'|'+zone;
+    let instants=resolvedTimes.get(cacheKey);
+    if(!instants){
+      const wall=value=>{const p=Object.fromEntries(formatter.formatToParts(new Date(value)).map(part=>[part.type,part.value]));return `${p.year.padStart(4,'0')}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}`;};
+      const nominal=Date.parse(local+'Z'), offsets=new Set();
+      for(const hours of [-48,-24,0,24,48]){const sample=nominal+hours*3600000;offsets.add(Date.parse(wall(sample)+'Z')-sample);}
+      instants=[...offsets].map(offset=>nominal-offset).filter(value=>Number.isFinite(value)&&wall(value)===local+':00').sort((a,b)=>a-b);
+      if(resolvedTimes.size>=512)resolvedTimes.delete(resolvedTimes.keys().next().value);
+      resolvedTimes.set(cacheKey,instants);
+    }
+    if(!instants.length)return {status:'nonexistent',instants:[]};
+    if(instants.length===1)return {status:'known',instant:instants[0],instants:[...instants]};
+    if(choice==='earlier'||choice==='later')return {status:'known',instant:choice==='earlier'?instants[0]:instants.at(-1),instants:[...instants],ambiguous:true,choice};
+    return {status:'ambiguous',instants:[...instants]};
+  }
+  function validateTransportTimes(r) {
+    if(r.dateOnly)return '';
+    const departure=resolveLocalTime(r.startLocal,endpointZone(r.start),r.startDisambiguation),arrival=resolveLocalTime(r.endLocal,endpointZone(r.end),r.endDisambiguation);
+    for(const [label,result] of [['Departure',departure],['Arrival',arrival]]){
+      if(result.status==='nonexistent')return `${label} local time does not exist because the clock changes. Choose a valid local time.`;
+      if(result.status==='ambiguous')return `${label} local time occurs twice because the clock changes. Choose the earlier or later occurrence.`;
+    }
+    if(departure.status==='known'&&arrival.status==='known'&&arrival.instant<departure.instant)return 'Arrival must be after departure when the recorded time zones are taken into account.';
+    return '';
+  }
   function validateTransport(r) {
     if(!Object.hasOwn(types,r.type)) return 'Choose a transport type.';
     if(!(r.dateOnly&&r.roadTripId?validDate(r.startLocal)&&validDate(r.endLocal):validLocal(r.startLocal)&&validLocal(r.endLocal))) return 'Enter valid departure and arrival dates and local times.';
     if(!r.start?.name?.trim()||!r.end?.name?.trim()) return 'Enter both locations.';
-    // Local clocks cannot be ordered across time zones, including date-line crossings.
+    // Compare resolved instants only, never wall clocks across the Date Line.
     for(const point of [r.start,...(r.via||[]),r.end]) {
       const hasLat=point.lat!==null&&point.lat!==undefined,hasLon=point.lon!==null&&point.lon!==undefined;
       if(hasLat!==hasLon) return 'Provide both latitude and longitude, or leave both blank.';
       if(hasLat&&(!Number.isFinite(point.lat)||Math.abs(point.lat)>90||!Number.isFinite(point.lon)||Math.abs(point.lon)>180)) return 'Coordinates must be valid latitude (−90 to 90) and longitude (−180 to 180).';
+    }
+    const timeError=validateTransportTimes(r);if(timeError)return timeError;
+    const legs=r.type==='flight'?flightLegs(r):groundLegs(r);
+    for(let i=0;i<legs.length;i++){
+      if(r.type==='flight'&&r.legs?.length&&(!validLocal(legs[i].startLocal)||!validLocal(legs[i].endLocal)))return `Leg ${i+1}: Enter valid departure and arrival dates and local times.`;
+      const error=validateTransportTimes(legs[i]);if(error)return `Leg ${i+1}: ${error}`;
     }
     return '';
   }
@@ -226,6 +281,6 @@
     for(const visit of scoped(state.placeVisits,profileId))if(visit.category===category&&visit.status&&visit.status!=='visited')result.delete(visit.itemId);
     return result;
   }
-  const api={airportCity,isElapsedStay,syncAccommodationStay,removeAccommodationStay,airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#006768',bus:'#076800',boat:'#001B68',car:'#680000',train:'#685600',walk:'#535353',other:'#5C004C'}[type]||'#5C004C')};
+  const api={resolveLocalTime,validateTransportTimes,endpointZone,timeFormatter,airportCity,isElapsedStay,syncAccommodationStay,removeAccommodationStay,airportDetails,homeKind,isTravelStay,hiddenHomeRecord,travelFrequency,domesticDestinations,isDomesticHoliday,domesticFields,flightLegs,groundLegs,airportLabel,transportDates,categories,types,scoped,summary,tripForDates,memories,homeCountryCodes,transportLabel,visibleTransport,isActual,countsForPlanning,reviewPlanned,reviewTransport,isHome,dayStatus,validDate,validLocal,validateTransport,visits,routeColor:type=>({flight:'#006768',bus:'#076800',boat:'#001B68',car:'#680000',train:'#685600',walk:'#535353',other:'#5C004C'}[type]||'#5C004C')};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.HVJourney=api;
 })(typeof window!=='undefined'?window:globalThis);

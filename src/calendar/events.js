@@ -150,7 +150,8 @@ function captureCalendarAction(event) {
   if(target.closest('[data-calendar-explore-selected]')){
     event.preventDefault();event.stopPropagation();selectDate(calendarSelectionStart);return;
   }
-  if(target.closest('#prevMonth,#nextMonth,#todayBtn'))HVCalendar.clearSelection(false);
+  // Moving the viewport is not cancelling a two-click date range. The anchor
+  // remains named in the selection strip even when its month is off screen.
   const entry = target.closest('[data-calendar-entry]');
   if (entry) {
     event.preventDefault();
@@ -472,7 +473,6 @@ function boot() {
   document.addEventListener('click', captureCalendarAction, true);
   document.addEventListener('submit', saveDateEntry, true);
   $('calendarSearchInput')?.addEventListener('input',renderCalendarSearch);
-  document.addEventListener('change',event=>{if(event.target.matches('#calendarMonthJump,#calendarYearJump'))HVCalendar.clearSelection(false);},true);
   calendar.addEventListener('click', event => {
     if(event.target.closest('button,a,input,select,textarea'))return;
     const day=event.target.closest('.calendar-day');

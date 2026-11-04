@@ -72,4 +72,9 @@ document.write([
   '<script src="journey-library.js?v=journey-editors-20261004&previous=refinements-20260929&release=master-complete-20261002&performance=20261007&offline=20261006&transport=20261008&daily=20261014"><\/script>',
   '<script src="daily-agenda.js?v=daily-plans-20261014&daily=20261014"><\/script>',
   '<script src="transport-dashboard.js?v=transport-20261008&daily=20261014"><\/script>',
+  '<script src="v1-readers.js?v=20261104"><\/script>',
+  '<script src="motion-globe.js?v=20261104-motion"><\/script>',
+  '<script src="herald-motion.js?v=20261104-motion"><\/script>',
+  '<script src="v1-experience.js?v=20261104"><\/script>',
+  '<script src="motion-workspaces.js?v=20261104-motion"><\/script>',
 ].join(''));

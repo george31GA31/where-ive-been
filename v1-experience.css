@@ -1,0 +1,144 @@
+/* Herald V1: page composition and named presentation roles; schedule lanes retain their owners. */
+:root{--v1-navy:#183a45;--v1-map-land:#52717a;--v1-map-visited:#e0bc78;--v1-reading:68ch;--v1-read-progress:0}
+html[data-herald-edition=v1]{--hv-paper:#f5f2eb;--hv-surface:#fffdf8;--hv-soft:#ede9e0;--hv-line:#d9d6cc;--hv-ink:#24363b;--hv-muted:#5c696b;--hv-blue:#245e74;--hv-red:#963e42;--ui-radius:8px}
+html[data-theme=dark][data-herald-edition=v1]{--hv-paper:#111f25;--hv-surface:#192a32;--hv-soft:#223640;--hv-line:#3b4e56;--hv-ink:#f3eee3;--hv-muted:#b6c5c9;--hv-blue:#a9d8eb;--hv-red:#a43d50;--blue-soft:#213e4c}
+body .main{max-width:1536px}
+body .topbar h1{font-family:var(--hv-serif);font-weight:400;letter-spacing:-.035em;font-size:clamp(26px,3vw,36px)}
+body .page-location{font-size:11px;letter-spacing:.04em;margin-bottom:14px}
+body .panel{background:var(--hv-surface)}
+body .sidebar{background:var(--hv-paper)}
+body .primary{transition:background-color 160ms,box-shadow 160ms}
+body .primary:hover{box-shadow:0 3px 0 #0002}
+body #dashboardView .home-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:auto auto;position:relative;padding:28px 32px;gap:8px 32px;overflow:hidden;isolation:isolate;border:1px solid var(--hv-line);border-radius:8px;background:var(--hv-surface)}
+body .home-hero>div:first-child{position:relative;z-index:1;grid-column:1;align-self:end;border-left:3px solid var(--hv-red);padding-left:20px}
+body #dashboardView .home-hero h2{font:400 clamp(28px,3vw,44px)/1.1 var(--hv-serif);letter-spacing:-.035em;max-width:22ch;margin:8px 0 12px;text-wrap:balance}
+body .home-hero .eyebrow{color:var(--hv-red);font-size:10px;letter-spacing:.16em}
+body .home-hero-actions{grid-column:1;align-self:start;justify-content:flex-start;flex-wrap:wrap;display:flex;gap:8px;margin:8px 0 0 23px;position:relative;z-index:1}
+body .home-hero-actions a,body .home-hero-actions button{font-size:12px;min-height:40px}
+body .v1-geography{grid-column:2;grid-row:1/3;min-height:220px;margin:-28px -32px -28px 0;position:relative;background:var(--v1-navy);overflow:hidden;color:#e9dbbd}
+body .v1-geography>a{position:relative;display:flex;flex-direction:column;justify-content:center;width:100%;height:100%;min-height:220px;color:inherit;text-decoration:none}
+body .v1-geography svg{position:relative;display:block;width:100%;height:205px;overflow:visible;transition:transform 180ms ease;transform:translate(var(--v1-dx,0px),var(--v1-dy,0px))}
+body .v1-land{fill:var(--v1-map-land);stroke:var(--v1-navy);stroke-width:.5px}
+body .v1-land-visited{fill:var(--v1-map-visited)}
+body .v1-land-current{fill:#f7e6ac;stroke:#fff4d5;stroke-width:1.2px}
+body .v1-map-grid{position:absolute;inset:0;background-image:linear-gradient(#b9d4d00c 1px,transparent 1px),linear-gradient(90deg,#b9d4d00c 1px,transparent 1px);background-size:28px 28px;transform:rotate(-8deg) scale(1.3)}
+body .v1-map-caption{position:relative;font:600 9px/1.4 var(--hv-sans);letter-spacing:.2em;padding:0 24px 18px;display:flex;justify-content:space-between}
+body .v1-map-fallback{position:absolute;inset:25% 24px auto;font-size:14px;line-height:1.7;max-width:32ch}
+body .v1-compass{position:absolute;right:15px;top:15px;font:12px/1.4 var(--hv-serif);text-align:center;pointer-events:none}
+body .v1-atmosphere-label{position:absolute;top:14px;left:18px;font:9px var(--hv-sans);letter-spacing:.05em;color:#ecddbf}
+html[data-atmosphere=sun] .v1-map-grid{background-image:radial-gradient(ellipse at 15% 10%,#edbf5344,transparent 60%)}
+html[data-atmosphere=rain] .v1-map-grid{background-image:repeating-linear-gradient(100deg,transparent 0 28px,#bed5da25 29px,transparent 30px);background-size:100px 60px}
+html[data-atmosphere=snow] .v1-map-grid{background-image:radial-gradient(#ffffff5c 1px,transparent 2px);background-size:28px 37px}
+html[data-experience-motion=on][data-atmosphere=rain] .v1-map-grid,html[data-experience-motion=on][data-atmosphere=snow] .v1-map-grid{animation:v1-atmosphere 12s linear infinite}
+@keyframes v1-atmosphere{to{background-position:40px 120px}}
+body .v1-journey-story{margin:20px 0;border:1px solid var(--hv-line);border-radius:8px;padding:18px;background:var(--hv-paper)}
+body .v1-journey-story>summary{display:flex;justify-content:space-between;gap:16px;cursor:pointer;font:500 21px var(--hv-serif);min-height:32px;align-items:center}
+body .v1-journey-story>summary>span{font:11px var(--hv-sans);color:var(--hv-muted)}
+body .v1-story-chapters{position:relative;padding:8px 0}
+body .v1-story-meter{position:absolute;left:16px;top:20px;bottom:20px;width:1px;background:var(--hv-line);pointer-events:none}
+body .v1-story-meter::after{content:"";position:absolute;inset:0;background:var(--hv-red);transform-origin:top;transform:scaleY(var(--v1-story-progress,0))}
+body .v1-story-chapter{display:grid;grid-template-columns:32px minmax(0,1fr);gap:18px;padding:22px 0;position:relative}
+body .v1-story-number{border:1px solid var(--hv-line);border-radius:50%;width:32px;height:32px;display:grid;place-items:center;background:var(--hv-surface);font:10px var(--hv-sans);color:var(--hv-blue)}
+body .v1-story-chapter h3{font:400 29px/1.2 var(--hv-serif);margin:4px 0 14px}
+body .v1-story-chapter h3 a{color:var(--hv-ink);text-decoration:none}
+body .v1-field-note{padding:12px 16px;border-left:2px solid var(--hv-gold);background:var(--hv-surface);margin-bottom:14px;transition:box-shadow 160ms}
+body .v1-field-note:hover,body .v1-field-note:focus-within{box-shadow:3px 3px 0 var(--hv-line)}
+body .v1-field-note summary{cursor:pointer;font-size:13px;min-height:24px}
+body .v1-field-note p{white-space:pre-wrap;line-height:1.7;font-size:14px}
+html[data-experience-motion=on] dialog[open]>.dialog-card{animation:v1-reveal 160ms ease-out}
+body .v1-explore{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-block:1px solid var(--hv-line);margin:0 0 22px;gap:0}
+body .v1-explore>a{display:flex;align-items:center;gap:12px;padding:17px 14px;min-width:0;color:var(--hv-ink);text-decoration:none;border-right:1px solid var(--hv-line);transition:background 160ms}
+body .v1-explore>a:first-child{padding-left:0}body .v1-explore>a:last-child{border:0}
+body .v1-explore>a:hover{background:var(--hv-soft)}
+body .v1-explore strong{font:500 17px var(--hv-serif);display:block}
+body .v1-explore small{display:block;font-size:10px;color:var(--hv-muted);margin-top:4px}
+body .v1-explore>a>span:last-child{margin-left:auto;color:var(--hv-blue);font-size:13px}
+body .v1-index{font:11px var(--hv-sans);color:var(--hv-muted);align-self:flex-start;margin-top:3px}
+body #dashboardView .daily-agenda-panel{border:0;border-top:2px solid var(--hv-ink);border-radius:0;padding:18px 0;background:transparent}
+body .daily-panel-head h2{font-size:25px}
+body .daily-category{border-top:1px solid var(--hv-line);padding-top:12px}
+body .daily-category:first-of-type{border-top:0;padding-top:0}
+body .daily-entry{border-radius:4px;color:var(--hv-ink)}
+body .daily-entry:hover{background:var(--hv-soft)}
+body #dashboardView .memory-secondary{border-left:3px solid var(--hv-gold);background:var(--hv-surface);position:relative}
+body .v1-atlas-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start;margin-bottom:18px}
+body .v1-atlas-layout>.map-panel{margin:0;padding:18px;min-width:0}
+body .v1-atlas-layout .map-wrap{min-height:300px}
+body .v1-atlas-layout .map-wrap svg{width:100%;height:auto;min-height:300px}
+body .v1-atlas-layout>.map-country-summary{margin:0;border-top:3px solid var(--hv-blue);padding:20px}
+body .v1-atlas-index{padding:24px 20px;background:var(--hv-surface);border:1px solid var(--hv-line);border-top:3px solid var(--hv-blue);border-radius:8px}
+body .v1-atlas-index h2{font:400 30px/1.15 var(--hv-serif);letter-spacing:-.025em;margin:12px 0}
+body .v1-atlas-index>p:not(.eyebrow){font-size:13px;color:var(--hv-muted);line-height:1.7}
+body .v1-atlas-countries{max-height:260px;overflow:auto;margin:12px 0;scrollbar-width:thin}
+body .v1-atlas-countries button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;text-align:left;background:transparent;border:0;border-top:1px solid var(--hv-line);font:500 13px var(--hv-sans);color:var(--hv-ink);padding:9px 0}
+body .v1-atlas-countries button>span:last-child{margin-left:auto;color:var(--hv-blue)}
+body .v1-atlas-countries button:hover{background:var(--hv-soft)}
+body .v1-atlas-layout .map-country-summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+body .v1-atlas-layout .map-country-summary-head{flex-wrap:wrap;gap:12px}
+body .v1-atlas-layout .map-country-summary-actions{display:grid;gap:8px}
+body .v1-atlas-layout .selected-country-cue{font-size:12px;padding:8px;margin-bottom:10px}
+body .country-heading{padding-block:12px;margin:0 0 12px;min-height:0}
+body .country-heading h1{font:400 clamp(30px,4vw,46px)/1.1 var(--hv-serif);margin:4px 0;letter-spacing:-.035em}
+body .country-facts{padding:14px 0;margin:16px 0;border-block:1px solid var(--hv-line);gap:12px}
+body .country-facts>div{background:none;border:0;padding:4px 8px;min-height:0}
+body .country-facts strong{font-size:18px}
+body .v1-country-context{display:flex;justify-content:space-between;gap:16px;margin-bottom:12px;font-size:12px}
+body #countryDetails>.country-back{display:none}
+body .v1-related-journey{flex:0 0 100%;display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;padding-top:8px}
+body .v1-related-journey a{color:var(--hv-blue)}
+body #countryDetails .reference-row{flex-wrap:wrap}
+body[data-current-view=calendar] .main{padding-top:14px}
+body[data-current-view=calendar] .page-location{margin:0 0 6px;font-size:10px}
+body .calendar-toolbar{padding-block:8px;gap:8px}
+body .calendar-selection-info{padding-block:8px;min-height:0}
+body .calendar-panel{border-top:2px solid var(--hv-blue)}
+body .calendar-footnote{line-height:1.5}
+body #calendarView .calendar-toolbar{padding:8px 12px;gap:8px 12px}
+body #calendarView .calendar-toolbar-secondary{flex-basis:auto;order:2;justify-content:flex-start;margin-left:auto}
+body #calendarView .calendar-toolbar-actions:not(.calendar-toolbar-secondary){order:3;gap:8px}
+body #calendarView .calendar-toolbar :is(.calendar-filter-menu,.calendar-display-menu){position:relative}
+body #calendarView :is(.calendar-filter-menu,.calendar-display-menu)>summary{display:list-item;min-height:36px;padding:10px 6px}
+body #calendarView :is(.calendar-filter-menu,.calendar-display-menu):not([open])>:is(.calendar-filter-options,.calendar-display-options){display:none}
+body #calendarView :is(.calendar-filter-menu,.calendar-display-menu)[open]>:is(.calendar-filter-options,.calendar-display-options){display:block;position:absolute;right:0;top:100%;z-index:50;min-width:210px;padding:12px;background:var(--hv-surface);border:1px solid var(--hv-line);border-radius:8px;box-shadow:0 8px 24px #0002}
+body #calendarView .calendar-filter-menu .calendar-layer-switch{display:grid;grid-template-columns:1fr;min-width:185px;overflow:visible}
+body #calendarView .calendar-filter-menu button{min-height:44px;justify-content:flex-start}
+body #calendarView .calendar-selection-info{padding:6px 12px;min-height:30px}
+body .hv-v1-reader{width:min(760px,calc(100vw - 24px));padding:0}
+body .hv-v1-reader .dialog-card{max-height:calc(100dvh - 40px);overflow:auto;padding:24px;background:var(--hv-surface);color:var(--hv-ink)}
+body .hv-v1-reader-nav,body .hv-v1-reader-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+body .hv-v1-reader-nav>span{flex:1;font:600 10px/1.5 var(--hv-sans);letter-spacing:.08em;color:var(--hv-muted)}
+body .hv-v1-reader-nav>.secondary{min-height:36px;padding:6px 10px;font-size:12px}
+body .hv-v1-reader-actions{border-top:1px solid var(--hv-line);padding-top:16px;margin-top:16px;justify-content:flex-end}
+body .hv-v1-reader .calendar-profile-title{font-family:var(--hv-serif);font-weight:400}
+body .hv-place-search{margin:16px 0}
+body .hv-place-search .field{max-width:600px}
+body .place-pagination{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--hv-line);padding-top:12px;margin-top:16px}
+body .hv-year-explorer{margin:24px 0;padding:24px;background:var(--hv-surface);border:1px solid var(--hv-line);border-top:3px solid var(--hv-blue);border-radius:8px}
+body .hv-year-explorer .panel-head{gap:16px;align-items:center}
+body .hv-year-explorer .field{min-width:180px}
+body .hv-year-table-scroll{overflow:auto}
+body .hv-year-table{border-collapse:collapse;width:100%;font-size:14px}
+body .hv-year-table caption{text-align:left;color:var(--hv-muted);font-size:12px;padding:12px 0}
+body .hv-year-table :is(th,td){border-bottom:1px solid var(--hv-line);padding:12px 10px;text-align:left;vertical-align:middle}
+body .hv-year-table thead th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--hv-muted)}
+body .hv-year-table tbody th{font-weight:600}
+body .hv-year-records{padding:18px;margin-top:18px;background:var(--hv-paper);border-left:2px solid var(--hv-blue)}
+body .hv-year-records>button{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:space-between;width:100%;min-height:44px;border-bottom:1px solid var(--hv-line);padding:12px 0;text-align:left}
+body .hv-year-records>button small{color:var(--hv-muted)}
+body .v1-preferences{margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--hv-line)}
+body .v1-preferences .field{margin-top:16px;max-width:400px}
+body .v1-reading-progress{position:fixed;inset:0 0 auto;z-index:1000;height:2px;transform-origin:left;background:var(--hv-gold);transform:scaleX(var(--v1-read-progress));pointer-events:none}
+body .trip-photos img{transition:filter 180ms ease;filter:saturate(.7)}
+body .trip-photos img:hover,body .trip-photos img:focus{filter:saturate(1)}
+html[data-experience-motion=on] .v1-geography::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(160px circle at var(--v1-x,50%) var(--v1-y,50%),#f2dd9a18,transparent)}
+html[data-experience-motion=on] .home-hero-actions .primary{transform:translate(var(--v1-dx,0px),var(--v1-dy,0px))}
+html[data-experience-motion=on] [data-v1-reveal=visible]{animation:v1-reveal 240ms ease-out both}
+@keyframes v1-reveal{from{transform:translateY(5px)}to{transform:none}}
+@media(min-width:1000px){body .v1-atlas-layout .map-panel.map-is-fullscreen{position:fixed;inset:12px;z-index:500}}
+@media(min-width:1000px) and (max-height:750px){body #dashboardView .home-hero{padding:18px 24px;gap:4px 24px}body #dashboardView .home-hero h2{font-size:32px;margin:4px 0 6px}body .home-hero p{margin:4px 0;font-size:13px}body .v1-geography{min-height:165px;margin:-18px -24px -18px 0}body .v1-geography>a{min-height:165px}body .v1-geography svg{height:145px}body .v1-map-caption{padding-bottom:12px}body .v1-explore>a{padding-block:12px}body .v1-explore{margin-bottom:16px}}
+@media(max-width:1100px){body .v1-atlas-layout{grid-template-columns:minmax(0,1fr) 270px}body .v1-explore>a{gap:8px;padding:14px 10px}body .v1-explore small{font-size:9px}}
+@media(max-width:800px){body .v1-atlas-layout{grid-template-columns:1fr}body .v1-atlas-index{padding:18px}body .v1-atlas-countries{max-height:180px}body .v1-atlas-index h2{font-size:25px}body .v1-atlas-layout .map-wrap,body .v1-atlas-layout .map-wrap svg{min-height:240px}body .v1-explore{grid-template-columns:repeat(3,minmax(0,1fr))}body .v1-explore>a{border-bottom:1px solid var(--hv-line)}body .v1-explore>a:first-child{padding-left:10px}body .v1-explore>a:nth-child(3){border-right:0}}
+@media(max-width:650px){body #dashboardView .home-hero{grid-template-columns:minmax(0,1fr);padding:20px;gap:6px;margin-bottom:14px}body .home-hero>div:first-child{padding-left:14px}body #dashboardView .home-hero h2{font-size:30px}body .home-hero-actions{margin-left:17px;gap:6px}body .v1-geography{display:none}body .v1-explore{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:20px}body .v1-explore>a{gap:7px;padding:12px 8px}body .v1-explore strong{font-size:15px}body .v1-explore small,body .v1-index{display:none}body .v1-explore>a>span:last-child{font-size:11px}body #dashboardView .daily-agenda-panel{padding-top:14px}body .v1-atlas-layout>.map-panel{padding:12px}body .v1-atlas-layout .voyages-map-toolbar-copy strong{font-size:12px}body .v1-atlas-layout .map-country-summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}body .v1-atlas-layout .map-wrap svg{min-height:180px}body .hv-v1-reader .dialog-card{padding:18px}body .v1-related-journey{display:grid}body .country-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){body *,body *::before,body *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}body .v1-geography svg,body .home-hero-actions .primary{transform:none!important}}
+@media(max-width:650px){body .home-hero-actions{flex-direction:row;align-items:center;margin-top:6px}body .home-hero-actions :is(a,button){width:auto;flex:0 1 auto;font-size:11px;padding:8px 10px}body #dashboardView .home-hero{padding:16px}body #dashboardView .home-hero h2{font-size:28px;margin:4px 0 8px}body .home-hero p{margin:4px 0;font-size:13px}body .v1-explore{grid-template-columns:repeat(5,minmax(88px,1fr));overflow-x:auto;scrollbar-width:thin}body .v1-explore>a{border-bottom:0;white-space:nowrap}body .v1-explore>a:nth-child(3){border-right:1px solid var(--hv-line)}body .hv-year-explorer{padding:16px}body .hv-year-explorer .panel-head{display:block}body .hv-year-table{font-size:12px}body .hv-year-table :is(th,td){padding:10px 6px}body .v1-journey-story{padding:14px}body .v1-journey-story>summary{font-size:18px}}
+html[data-experience-motion=off] .v1-geography svg,html[data-experience-motion=off] .home-hero-actions .primary{transform:none}

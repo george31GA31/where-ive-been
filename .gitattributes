@@ -1,3 +1,7 @@
+# Public release hashes must describe the same bytes on Windows and Linux.
+# Binary assets remain binary; text is checked out with canonical LF endings.
+* text=auto eol=lf
+
 # Review the authored sources; these checked-in bundles keep Pages build-free.
 app-core.js linguist-generated=true
 calendar-experience.js linguist-generated=true

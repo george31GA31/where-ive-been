@@ -3,7 +3,7 @@ const {JSDOM,VirtualConsole}=require('jsdom'),fs=require('node:fs'),path=require
 const root=path.resolve(__dirname,'..'),errors=[];
 const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
 const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,''),{url:'https://george31ga31.github.io/where-ive-been/#/dashboard',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});
-const w=dom.window,c=dom.getInternalVMContext();w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.matchMedia=()=>({matches:false,addEventListener(){}});w.CSS={escape:s=>s};w.confirm=()=>true;
+const w=dom.window,c=dom.getInternalVMContext();w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});w.CSS={escape:s=>s};w.confirm=()=>true;
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
 w.fetch=async url=>{const name=String(url).split('/').at(-1).split('?')[0];if(fs.existsSync(path.join(root,'data',name)))return{ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(root,'data',name),'utf8'))};throw Error('Offline test');};
 const seed={version:2,profiles:[{id:'p',name:'Me',citizenships:[],enabledRules:['schengen']}],activeProfileId:'p',stays:[{id:'s',countryCode:'GB',countryName:'United Kingdom',start:'2026-01-01',end:'2026-01-04',status:'actual',profileId:'p'}],residences:[]};w.localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));
