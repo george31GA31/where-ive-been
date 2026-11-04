@@ -2,7 +2,7 @@
 (()=>{
   'use strict';
   const C=HVCurrency,E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),get=id=>document.getElementById(id)||window.HVPages?.get(id);
-  const specialFlags={EUR:'EU',XOF:'SN',XAF:'CM',XCD:'AG',XPF:'PF',USD:'US',GBP:'GB',ANG:'CW',XCG:'CW'};
+  const specialFlags={XOF:'SN',XAF:'CM',XCD:'AG',XPF:'PF',USD:'US',GBP:'GB',ANG:'CW',XCG:'CW'};
   const countryOverrides={...Object.fromEntries('AT BE CY DE EE ES FI FR GR HR IE IT LT LU LV MT NL PT SI SK ME XK AD MC SM VA'.split(' ').map(c=>[c,'EUR'])),...Object.fromEntries('US EC SV TL FM MH PW VG TC'.split(' ').map(c=>[c,'USD'])),...Object.fromEntries('BJ BF CI GW ML NE SN TG'.split(' ').map(c=>[c,'XOF'])),...Object.fromEntries('CM CF TD CG GQ GA'.split(' ').map(c=>[c,'XAF'])),...Object.fromEntries('AG DM GD KN LC VC AI MS'.split(' ').map(c=>[c,'XCD'])),PS:'ILS',LI:'CHF',BT:'BTN',ZW:'ZWG',CW:'XCG',SX:'XCG',PF:'XPF',NC:'XPF',WF:'XPF'};
   const catalog=HVCurrencyCatalog.filter(c=>!['XAU','XAG','XPD','XPT','XDR','XXX','XTS'].includes(c.code));
   let draft,owner,reference=null,referenceError='',request=0;
@@ -11,7 +11,9 @@
   function savePreferences(changes){ensure();let p=preferences();if(!p){p={id:uid(),profileId:state.activeProfileId,favourites:[],recent:[]};state.currencyPreferences.push(p);}Object.assign(p,changes,{updatedAt:new Date().toISOString()});persist();}
   function initialise(){ensure();if(owner!==state.activeProfileId||!draft){owner=state.activeProfileId;const p=preferences()||{};draft={from:p.from||'GBP',to:p.to||'EUR',amount:'100',mode:'convert',custom:'',gave:'400',received:'',fee:'',feeIncluded:false,date:''};reference=null;}}
   const entry=code=>catalog.find(c=>c.code===code)||{code,name:code,symbol:code};
-  const flag=code=>{const cc=specialFlags[code]||code.slice(0,2);return typeof flagHtml==='function'?flagHtml(cc,'currency-flag'):'';};
+  // EUR uses a currency-specific local symbol, never a country/visited-place entry.
+  // Every icon is decorative beside its currency label and shares the fail-closed image handler.
+  const flag=code=>{if(code==='EUR')return '<img class="flag-img currency-flag" src="assets/currency-eur.svg" alt="" aria-hidden="true" loading="lazy" decoding="async">';const cc=specialFlags[code]||code.slice(0,2),url=typeof flagUrl==='function'?flagUrl(cc):'';return url?`<img class="flag-img currency-flag" src="${E(url)}" alt="" aria-hidden="true" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:'';};
   function currencyFor(country){return countryOverrides[country]||catalog.find(c=>c.code.startsWith(country))?.code;}
   function suggestions(){const today=isoDate(new Date()),countries=HVJourney.scoped(state.stays,state.activeProfileId).filter(s=>s.status==='planned'&&s.end>=today).map(s=>s.countryCode).concat(HVJourney.scoped(state.transports,state.activeProfileId).filter(t=>t.status==='planned'&&t.endLocal?.slice(0,10)>=today).map(t=>t.end?.countryCode));return[...new Set(countries.map(currencyFor).filter(code=>catalog.some(c=>c.code===code)))].slice(0,8);}
   function picker(side){

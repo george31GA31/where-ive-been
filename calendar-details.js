@@ -4,6 +4,7 @@
   const E = value => String(value??'').replace(/[&<>"']/g,c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const collections = {country:'stays',accommodation:'accommodations',transport:'transports',note:'notes',location:'placeVisits'};
   const labels = {country:'Country visit',accommodation:'Accommodation',transport:'Transport',note:'Travel note',location:'Saved location'};
+  function entryKind(value){switch(value){case 'country':return 'country';case 'accommodation':return 'accommodation';case 'transport':return 'transport';case 'note':return 'note';case 'location':return 'location';default:return null;}}
   const localToday = () => {const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');};
   const dateFormat = new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
   const dateText = value => HVJourney.validDate(String(value||'').slice(0,10)) ? dateFormat.format(new Date(value.slice(0,10)+'T12:00:00Z')) : 'Not recorded';
@@ -30,7 +31,7 @@
       return out;
     });
   }
-  const record = (kind,id) => index()[kind]?.get(id)||null;
+  function record(value,id){switch(value){case 'country':return index().country.get(id)||null;case 'accommodation':return index().accommodation.get(id)||null;case 'transport':return index().transport.get(id)||null;case 'note':return index().note.get(id)||null;case 'location':return index().location.get(id)||null;default:return null;}}
   function range(kind,row,date) {
     if (kind==='country') return [row.start,row.end||localToday()];
     if (kind==='accommodation') return [row.checkIn||row.checkOut,row.checkOut||row.checkIn];
@@ -89,7 +90,7 @@
     const overlaps=(type,item)=>{const [a,b]=range(type,item,date);return a&&b&&a<=end&&b>=start;};
     const add=(type,item,label)=>{if(type===kind&&item.id===row.id)return;matches.push({type,item,label});};
     // Explicit note associations are authoritative. Trip/date neighbours are labelled separately.
-    if(kind==='note'&&row.relatedType&&row.relatedId){const item=ids[row.relatedType]?.get(row.relatedId);if(item)add(row.relatedType,item,'Linked record');}
+    if(kind==='note'&&row.relatedType&&row.relatedId){const type=entryKind(row.relatedType),item=record(type,row.relatedId);if(item)add(type,item,'Linked record');}
     for(const item of ids.linkedNotes.get(kind+':'+row.id)||[])add('note',item,'Linked note');
     for(const {kind:type,item} of ids.byTrip.get(row.tripId)||[]){
       if(item.status==='cancelled'||!overlaps(type,item))continue;
@@ -98,20 +99,20 @@
     }
     if(!matches.length)return '';
     const unique=[...new Map(matches.map(m=>[m.type+':'+m.item.id,m])).values()];
-    return `<section class="calendar-profile-related"><h3>Connected records</h3>${unique.map(({type,item,label})=>`<button type="button" data-calendar-entry="${type}" data-calendar-entry-id="${E(item.id)}" data-calendar-context-date="${E(date)}"><strong>${E(type==='country'?item.countryName:type==='accommodation'?item.propertyName:type==='transport'?HVJourneys.transportLabel(item):type==='note'?item.title:item.place?.name||'Location')}</strong><small>${label}</small><span aria-hidden="true">›</span></button>`).join('')}</section>`;
+    return `<section class="calendar-profile-related"><h3>Connected records</h3>${unique.map(({type,item,label})=>`<button type="button" data-calendar-entry="${E(type)}" data-calendar-entry-id="${E(item.id)}" data-calendar-context-date="${E(date)}"><strong>${E(type==='country'?item.countryName:type==='accommodation'?item.propertyName:type==='transport'?HVJourneys.transportLabel(item):type==='note'?item.title:item.place?.name||'Location')}</strong><small>${E(label)}</small><span aria-hidden="true">›</span></button>`).join('')}</section>`;
   }
   function actions(kind,row,date) {
     const edit={country:`data-calendar-edit-stay="${E(row.id)}"`,accommodation:`data-calendar-edit-accommodation="${E(row.id)}"`,transport:`data-calendar-edit-transport="${E(row.id)}"`,note:`data-day-note-edit="${E(row.id)}"`,location:`data-place-edit="${E(row.id)}"`}[kind];
     const group=HVCalendar.groupForEntry(kind,row.id) || (row.tripId?HVCalendar.journeyGroups().find(g=>g.trip?.id===row.tripId):null);
     const suggestion=group?.trip&&!row.tripId?`<p class="calendar-section-hint">Suggested trip: ${E(group.trip.name)} (dates match). This record has no trip link.</p>`:'';
-    const noteAction=kind!=='note'?`<button type="button" class="text-btn" data-calendar-related-note="${kind}" data-calendar-related-id="${E(row.id)}" data-calendar-related-date="${E(date)}">+ Linked note</button>`:'';
-    return `${suggestion}<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${kind==='country'?'visit':kind==='location'?'location':kind}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}<button type="button" class="text-btn" data-make-tentative="${kind}" data-record-id="${E(row.id)}">Make tentative</button></div>`;
+    const noteAction=kind!=='note'?`<button type="button" class="text-btn" data-calendar-related-note="${E(kind)}" data-calendar-related-id="${E(row.id)}" data-calendar-related-date="${E(date)}">+ Linked note</button>`:'';
+    return `${suggestion}<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${E(kind==='country'?'visit':kind==='location'?'location':kind)}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}<button type="button" class="text-btn" data-make-tentative="${E(kind)}" data-record-id="${E(row.id)}">Make tentative</button></div>`;
   }
-  function entry(kind,id,date,detailed=false) {
+  function entry(value,id,date,detailed=false) {
+    const kind=entryKind(value);if(!kind)return '';
     const row=record(kind,id);if(!row)return '';
-    const render={country,accommodation,transport:transportProfile,note,location}[kind];if(!render)return '';
-    const body=render(row,date);
-    return body+(detailed?((kind==='accommodation'||kind==='transport')?HVPrices.detail(row):'')+related(kind,row,date)+actions(kind,row,date):`<button type="button" class="calendar-preview-open" data-calendar-entry="${kind}" data-calendar-entry-id="${E(id)}" data-calendar-context-date="${E(date)}">Explore ${kind==='country'?'this visit':kind==='accommodation'?'this stay':kind==='transport'?'this journey':kind} <span aria-hidden="true">↗</span></button>`);
+    let body='';switch(kind){case 'country':body=country(row,date);break;case 'accommodation':body=accommodation(row);break;case 'transport':body=transportProfile(row);break;case 'note':body=note(row);break;case 'location':body=location(row);break;default:return '';}
+    return body+(detailed?((kind==='accommodation'||kind==='transport')?HVPrices.detail(row):'')+related(kind,row,date)+actions(kind,row,date):`<button type="button" class="calendar-preview-open" data-calendar-entry="${E(kind)}" data-calendar-entry-id="${E(id)}" data-calendar-context-date="${E(date)}">Explore ${E(kind==='country'?'this visit':kind==='accommodation'?'this stay':kind==='transport'?'this journey':kind)} <span aria-hidden="true">↗</span></button>`);
   }
 
   let tip=null,active=null,openTimer,closeTimer;

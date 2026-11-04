@@ -2,19 +2,21 @@
 (() => {
   'use strict';
   const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const collections={country:'stays',accommodation:'accommodations',transport:'transports',note:'notes',location:'placeVisits',saved:'savedPlaces'};
   const kinds={stays:'country',accommodations:'accommodation',transports:'transport',notes:'note',placeVisits:'location'};
+  // A deep-link value must become a fixed supported literal before lookup or markup.
+  function readerKind(value){switch(value){case 'country':return 'country';case 'accommodation':return 'accommodation';case 'transport':return 'transport';case 'note':return 'note';case 'location':return 'location';case 'saved':return 'saved';default:return null;}}
+  function collectionFor(value){switch(value){case 'country':return 'stays';case 'accommodation':return 'accommodations';case 'transport':return 'transports';case 'note':return 'notes';case 'location':return 'placeVisits';case 'saved':return 'savedPlaces';default:return null;}}
   let active=null,identity=null,pendingReturn=null;
   const scoped=key=>HVJourney.scoped(state[key]||[],state.activeProfileId).filter(r=>!r.deleted);
-  const find=(kind,id)=>scoped(collections[kind]).find(r=>r.id===id);
+  const find=(value,id)=>{const key=collectionFor(readerKind(value));return key?scoped(key).find(r=>r.id===id):null;};
   const params=()=>new URLSearchParams(location.hash.split('?')[1]||'');
   function withoutReader(hash=location.hash) {const p=new URLSearchParams(hash.split('?')[1]||'');p.delete('recordKind');p.delete('recordId');return hash.split('?')[0]+(p.size?'?'+p:'');}
-  function recordLink(kind,id,hash=withoutReader()) {const p=new URLSearchParams(hash.split('?')[1]||'');p.set('recordKind',kind);p.set('recordId',id);return hash.split('?')[0]+'?'+p;}
+  function recordLink(value,id,hash=withoutReader()) {const kind=readerKind(value);if(!kind)return withoutReader(hash);const p=new URLSearchParams(hash.split('?')[1]||'');p.set('recordKind',kind);p.set('recordId',id);return hash.split('?')[0]+'?'+p;}
   function date(kind,row){return HVCalendarDetails.range(kind,row,isoDate(new Date()))[0]||isoDate(new Date());}
   function exactPlace(place,saved) {return !!place&&(place.savedPlaceId===saved.id||!!place.id&&(place.id===saved.place?.id||(saved.sourceIds||[]).includes(place.id)));}
   function relatedSaved(row) {
     const matches=[...scoped('accommodations').filter(r=>exactPlace(r.place,row)).map(r=>({kind:'accommodation',record:r,title:r.propertyName||'Stay',dates:HVJourneyUI.range(r.checkIn,r.checkOut)})),...scoped('placeVisits').filter(r=>exactPlace(r.place,row)).map(r=>({kind:'location',record:r,title:r.place?.name||'Recorded location',dates:HVJourneyUI.range(r.date,r.endDate||r.date)}))];
-    return matches.length?`<section class="calendar-profile-related"><h3>Recorded here</h3><p class="helper">Records linked by a saved-place or source ID. Original details stay unchanged.</p>${matches.map(({kind,record,title,dates})=>`<button type="button" data-v1-read="${kind}" data-record-id="${E(record.id)}"><strong>${E(title)}</strong><small>${E(dates)}</small><span aria-hidden="true">›</span></button>`).join('')}</section>`:'<p class="helper">No travel records are linked to this saved-place ID.</p>';
+    return matches.length?`<section class="calendar-profile-related"><h3>Recorded here</h3><p class="helper">Records linked by a saved-place or source ID. Original details stay unchanged.</p>${matches.map(({kind,record,title,dates})=>`<button type="button" data-v1-read="${E(kind)}" data-record-id="${E(record.id)}"><strong>${E(title)}</strong><small>${E(dates)}</small><span aria-hidden="true">›</span></button>`).join('')}</section>`:'<p class="helper">No travel records are linked to this saved-place ID.</p>';
   }
   function body(kind,row) {
     if(kind==='saved')return `<header class="calendar-profile-head"><div class="calendar-profile-art" aria-hidden="true">◎</div><div><p class="eyebrow">Saved place</p><h2 tabindex="-1">${E(HVAddress.field(row.place,'name')||'Saved location')}</h2><p>${E(row.place?.type||'Reusable address')}</p></div></header><dl class="calendar-profile-facts"><div><dt>Address</dt><dd>${E(HVAddress.address(row.place)||'Not recorded')}</dd></div><div><dt>Country</dt><dd>${E(HVAddress.field(row.place,'countryName')||countryByCode(row.place?.countryCode)?.name||'Not recorded')}</dd></div></dl>${row.place?.notes?'<p>'+E(row.place.notes)+'</p>':''}${relatedSaved(row)}<button type="button" class="secondary" data-v1-manage-place="${E(row.id)}">Manage saved place</button>`;
@@ -42,23 +44,24 @@
     removeSurface(restore);
     if(back&&pushed&&params().has('recordKind'))history.back();else if(params().has('recordKind'))history.replaceState(history.state,'',base);
   }
-  function open(kind,id,{fromRoute=false,returnToTrip=null}={}) {
+  function open(value,id,{fromRoute=false,returnToTrip=null}={}) {
+    const kind=readerKind(value);if(!kind)return false;
     if(active&&(active.source!==state||active.profile!==state.activeProfileId))removeSurface(false);
-    if(!collections[kind])return false;const row=find(kind,id);if(!row)return false;
+    const row=find(kind,id);if(!row)return false;
     if(active?.kind===kind&&active.id===id)return true;
     const previous=active,base=previous?.base||withoutReader(),pushed=previous?.pushed||!fromRoute,opener=previous?.opener||document.activeElement,scroll=previous?.scroll||{x:scrollX,y:scrollY};
     const focusAttributes=['data-agenda-hotel','data-agenda-place','data-transport-edit','data-calendar-edit-stay','data-day-note-edit','data-v1-read','data-record-id'];
     const focusSelector=previous?.focusSelector||focusAttributes.filter(a=>opener?.hasAttribute?.(a)).map(a=>'['+a+'="'+CSS.escape(opener.getAttribute(a))+'"]');
     removeSurface(false);
     const dialog=document.createElement('dialog');dialog.className='dialog hv-v1-reader';dialog.setAttribute('aria-label',kind==='saved'?'Saved place details':'Travel record details');
-    dialog.innerHTML=`<article class="dialog-card"><nav class="hv-v1-reader-nav" aria-label="Record navigation"><span>YOUR TRAVEL RECORD</span>${kind!=='saved'?`<button type="button" class="secondary" data-v1-edit="${kind}" data-record-id="${E(row.id)}">Edit ${kind==='accommodation'?'stay':kind==='country'?'visit':kind==='location'?'location':kind}</button>`:''}<button type="button" class="text-btn" data-v1-close aria-label="Close record details">Close ×</button></nav>${body(kind,row)}</article>`;
+    dialog.innerHTML=`<article class="dialog-card"><nav class="hv-v1-reader-nav" aria-label="Record navigation"><span>YOUR TRAVEL RECORD</span>${kind!=='saved'?`<button type="button" class="secondary" data-v1-edit="${E(kind)}" data-record-id="${E(row.id)}">Edit ${E(kind==='accommodation'?'stay':kind==='country'?'visit':kind==='location'?'location':kind)}</button>`:''}<button type="button" class="text-btn" data-v1-close aria-label="Close record details">Close ×</button></nav>${body(kind,row)}</article>`;
     pendingReturn=null;document.body.append(dialog);active={kind,id,dialog,opener,focusSelector:Array.isArray(focusSelector)?focusSelector.join(''):focusSelector,scroll,source:state,profile:state.activeProfileId,base,pushed,returnToTrip};identity={source:state,profile:state.activeProfileId};
     if(!fromRoute){history[previous?'replaceState':'pushState']({...(history.state||{}),hvReader:true},'',recordLink(kind,id,base));}
     dialog.addEventListener('cancel',e=>{e.preventDefault();dismiss();});
     dialog.addEventListener('click',e=>{if(e.target.closest('[data-v1-close]'))dismiss();});
     dialog.showModal();dialog.querySelector('h2')?.focus({preventScroll:true});return true;
   }
-  function edit(kind,id) {const row=find(kind,id);if(!row)return;dismiss({back:false,restore:false});if(kind==='accommodation')HVPlaces.open({accommodationId:id});else if(kind==='transport')HVJourneys.openTransport(id);else if(kind==='country')openStayDialog(id);else if(kind==='note')HVTravelTools.openNote(row);else HVPlaces.open({recordId:id});}
+  function edit(value,id) {const kind=readerKind(value);if(!kind)return;const row=find(kind,id);if(!row)return;dismiss({back:false,restore:false});if(kind==='accommodation')HVPlaces.open({accommodationId:id});else if(kind==='transport')HVJourneys.openTransport(id);else if(kind==='country')openStayDialog(id);else if(kind==='note')HVTravelTools.openNote(row);else HVPlaces.open({recordId:id});}
   document.addEventListener('click',event=>{
     const target=event.target.closest('button,a');if(!target)return;
     let kind=target.dataset.v1Read,id=target.dataset.recordId;

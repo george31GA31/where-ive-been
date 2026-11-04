@@ -14,7 +14,7 @@
     "test:update": "node tests/v1-update-browser.cjs",
     "test:calendar": "node tests/calendar-chronology-browser.cjs && node tests/calendar-interactive-browser.cjs && node tests/calendar-range-browser.cjs && node tests/calendar-planning-browser.cjs",
     "test:v1:candidate": "node tests/v1-save-adapter-browser.cjs && node tests/v1-consolidation-browser.cjs && node tests/v1-context-browser.cjs && node tests/v1-layout-browser.cjs && node tests/v1-practical-browser.cjs && node tests/v1-airport-browser.cjs && node tests/v1-accessibility-browser.cjs && node tests/v1-contracts-browser.cjs && npm run test:v1:redesign",
-    "test:v1:redesign": "node tests/v1-connected-browser.cjs && node tests/v1-experience-browser.cjs && node tests/zoned-transport-browser.cjs && node tests/notes-sections-browser.cjs && node tests/motion-experience-browser.cjs && node tests/motion-workspaces-browser.cjs && node tests/motion-account-browser.cjs"
+    "test:v1:redesign": "node tests/v1-connected-browser.cjs && node tests/v1-experience-browser.cjs && node tests/zoned-transport-browser.cjs && node tests/notes-sections-browser.cjs && node tests/motion-experience-browser.cjs && node tests/motion-workspaces-browser.cjs && node tests/motion-account-browser.cjs && node tests/currency-icons-browser.cjs"
   },
   "overrides": {
     "follow-redirects": "1.16.2"
