@@ -5,6 +5,134 @@
   const G=HVRouteGeometry,R=HVRouteStore,cache=new Map(),pendingRoutes=new Map(),waterCache=new Map();let dialog,lastRequest=0,coastline,coastlineRequest,nextCoastlineAttempt=0;
   const FLIGHT_WEIGHT=1.5,styles={flight:{color:'#006768'},bus:{color:'#076800'},car:{color:'#680000'},walk:{color:'#535353',dashArray:'2 5'},train:{color:'#685600',dashArray:'10 3'},boat:{color:'#001B68',dashArray:'3 6'},other:{color:'#5C004C',dashArray:'3 5'}};
   const routeType=(type,record)=>G.isWater(type,record)?'boat':type;
+
+  // The chart is drawn locally in Leaflet tiles, so routes and markers keep the
+  // same Web Mercator projection, zoom, and world wrapping as the street map.
+  const CHART_SIZE=256,chartSources=new Map(),chartGrids=new Map();
+  let chartGrain,preferredBasemap='chart';
+  function chartLibraries(){
+    if(window.d3&&window.topojson)return Promise.resolve();
+    return new Promise((resolve,reject)=>{
+      const finish=error=>{clearTimeout(timer);window.removeEventListener('travel-libs-ready',check);error?reject(error):resolve();};
+      const check=()=>{if(window.d3&&window.topojson)finish();};
+      const timer=setTimeout(()=>finish(Error('Chart libraries unavailable')),8000);
+      window.addEventListener('travel-libs-ready',check);
+    });
+  }
+  function chartProjection(){return d3.geoMercator().scale(CHART_SIZE/(2*Math.PI)).translate([CHART_SIZE/2,CHART_SIZE/2]);}
+  function chartPaths(resolution){
+    if(!chartSources.has(resolution)){
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+      const geography=fetch(`data/countries-${resolution}m.json`,{signal:controller.signal}).then(response=>{
+        if(!response.ok)throw Error('Chart geography unavailable');
+        return response.json();
+      }).finally(()=>clearTimeout(timer));
+      const paths=Promise.all([chartLibraries(),geography]).then(([,world])=>{
+        const land=topojson.feature(world,world.objects.land),features=land.features||[land];
+        const polygons=features.flatMap(({geometry})=>geometry.type==='Polygon'?[geometry.coordinates]:geometry.coordinates);
+        // Use open linework for the ink and shelf strokes. Filling a polygon
+        // still clips at 180°, but that artificial closing edge isn't a coast.
+        const shores=[];
+        for(const ring of polygons.flat()){
+          let line=[ring[0]];
+          for(const point of ring.slice(1)){
+            if(Math.abs(point[0])>=179.999&&Math.abs(line[line.length-1][0])>=179.999){if(line.length>1)shores.push(line);line=[];}
+            line.push(point);
+          }
+          if(line.length>1)shores.push(line);
+        }
+        return {
+          land,
+          coast:{type:'MultiLineString',coordinates:shores},
+          borders:topojson.mesh(world,world.objects.countries,(a,b)=>a!==b)
+        };
+      });
+      chartSources.set(resolution,paths);
+      paths.catch(()=>chartSources.delete(resolution));
+    }
+    return chartSources.get(resolution);
+  }
+  function paperGrain(){
+    if(chartGrain)return chartGrain;
+    chartGrain=document.createElement('canvas');chartGrain.width=chartGrain.height=128;
+    const ink=chartGrain.getContext('2d');let seed=8271;
+    const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+    for(let i=0;i<830;i++){
+      ink.fillStyle=i%4?'rgba(82,63,37,.082)':'rgba(255,255,232,.18)';
+      ink.fillRect(Math.floor(random()*128),Math.floor(random()*128),random()<.16?2:1,random()<.12?2:1);
+    }
+    return chartGrain;
+  }
+  function drawChartTile(canvas,coords,geography){
+    const ctx=canvas.getContext('2d'),ratio=canvas.width/CHART_SIZE,scale=2**coords.z;
+    // Clip before constructing paths. At large zooms an unbounded dashed path
+    // makes the canvas trace the full world's borders for every single tile.
+    const x=coords.x*CHART_SIZE,y=coords.y*CHART_SIZE,pad=28;
+    const projection=chartProjection().clipExtent([[(x-pad)/scale,(y-pad)/scale],[(x+CHART_SIZE+pad)/scale,(y+CHART_SIZE+pad)/scale]]);
+    const path=d3.geoPath(projection).digits(6),shape=feature=>new Path2D(path(feature)||'');
+    const coast=shape(geography.coast);
+    ctx.fillStyle='#a5c0c7';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.setTransform(ratio*scale,0,0,ratio*scale,-coords.x*canvas.width,-coords.y*canvas.height);
+    ctx.lineJoin='round';
+    const stroke=(line,colour,width,dash=[])=>{
+      ctx.strokeStyle=colour;ctx.lineWidth=width/scale;ctx.setLineDash(dash.map(length=>length/scale));ctx.stroke(line);
+    };
+    const shelf=Math.min(1.5,.65+coords.z*.14);
+    stroke(coast,'#abc5ca',30*shelf);
+    stroke(coast,'#b7cdd0',20*shelf);
+    stroke(coast,'#c7d8d9',10*shelf);
+    ctx.fillStyle='#ecdfba';ctx.fill(shape(geography.land),'evenodd');
+    const step=coords.z<3?30:coords.z<7?10:5;
+    if(!chartGrids.has(step)){
+      chartGrids.set(step,d3.geoGraticule().extent([[-180,-80],[180,80]]).step([step,step]).stepMajor([step,step])());
+    }
+    stroke(shape(chartGrids.get(step)),'rgba(66,63,51,.34)',.8,[1,4]);
+    stroke(shape(geography.borders),'#756047',1.05,[4,3,1,3]);
+    stroke(coast,'#504237',coords.z<4?1:1.45);
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    ctx.fillStyle=ctx.createPattern(paperGrain(),'repeat');ctx.fillRect(0,0,CHART_SIZE,CHART_SIZE);
+  }
+  function mountBasemap(map){
+    const host=map.getContainer();host.classList.add('journey-chart-map');
+    let status,chartVisible;
+    const Chart=L.GridLayer.extend({createTile(coords,done){
+      const tile=document.createElement('canvas'),ratio=Math.min(2,window.devicePixelRatio||1);
+      tile.width=tile.height=Math.round(CHART_SIZE*ratio);
+      chartPaths(coords.z<4?'110':'50').then(paths=>{
+        if(this._map&&tile.isConnected){drawChartTile(tile,coords,paths);done(null,tile);}
+      }).catch(error=>{if(this._map&&tile.isConnected)done(error,tile);});
+      return tile;
+    }});
+    // Natural Earth is regional geography. Reuse overview tiles at close zoom
+    // instead of drawing millions of dash segments with no added street detail.
+    const chart=new Chart({maxZoom:19,maxNativeZoom:7,updateWhenIdle:true,keepBuffer:1,attribution:'<a href="https://www.naturalearthdata.com/">Natural Earth</a>'});
+    const street=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
+    const compass=L.control({position:'bottomright'});
+    compass.onAdd=()=>{
+      const dial=L.DomUtil.create('div','journey-chart-compass');dial.setAttribute('aria-hidden','true');
+      dial.innerHTML='<svg viewBox="0 0 52 52" width="52" height="52" focusable="false"><circle cx="26" cy="26" r="24"/><circle cx="26" cy="26" r="21" class="chart-dial-ticks"/><text x="26" y="13">N</text><path class="chart-needle-north" d="M26 16L21 30L26 28L31 30Z"/><path class="chart-needle-south" d="M26 40L21 26L26 28L31 26Z"/><circle cx="26" cy="28" r="1.8" class="chart-needle-pin"/></svg>';
+      return dial;
+    };
+    function select(useChart){
+      chartVisible=useChart;
+      host.classList.toggle('journey-chart-active',useChart);
+      if(useChart){street.remove();chart.addTo(map);compass.addTo(map);}else{chart.remove();compass.remove();street.addTo(map);}
+    }
+    const toggle=L.control({position:'topright'});
+    toggle.onAdd=()=>{
+      const controls=L.DomUtil.create('div','journey-chart-control');
+      const button=L.DomUtil.create('button','journey-chart-switch',controls);button.type='button';
+      status=L.DomUtil.create('div','journey-chart-status',controls);status.setAttribute('role','status');
+      const update=()=>{button.textContent=chartVisible?'Street map':'Atlas chart';status.textContent='';};
+      L.DomEvent.disableClickPropagation(controls);L.DomEvent.disableScrollPropagation(controls);
+      button.addEventListener('click',()=>{preferredBasemap=chartVisible?'street':'chart';select(!chartVisible);update();});
+      update();return controls;
+    };
+    chart.on('tileerror',()=>{status.textContent='Atlas chart unavailable. Try Street map.';});
+    street.on('tileerror',()=>{status.textContent='Street map unavailable. Try Atlas chart.';});
+    select(preferredBasemap==='chart');toggle.addTo(map);
+  }
+
   async function loadCoastline(){
     if(coastline)return coastline;
     if(!coastlineRequest){
@@ -218,11 +346,11 @@
     rows.push(...places.map(v=>({type:'location',record:v,date:v.date,place:v.place})));
     for(let i=rows.length-1;i>=0;i--){const r=rows[i],kind=r.type==='flight'?'flights':r.leg?'transport':r.type==='accommodation'?'accommodation':'locations',span={start:String(r.leg?(r.leg.startLocal||r.record.startLocal||''):(r.record.checkIn||r.record.date||r.record.start||'')).slice(0,10),end:String(r.leg?(r.leg.endLocal||r.record.endLocal||r.leg.startLocal||r.record.startLocal||''):(r.record.checkOut||r.record.endDate||r.record.end||r.record.checkIn||r.record.date||r.record.start||'')).slice(0,10)};if(!HVGlobalJourney.intersects(span,filters.range)||filters.prefs&&HVGlobalJourney.filter([{...span,kind}],filters.prefs,isoDate(new Date()),filters.range).length===0)rows.splice(i,1);}
     rows.sort((a,b)=>(a.leg?a.record.startLocal.slice(0,10):a.date).localeCompare(b.leg?b.record.startLocal.slice(0,10):b.date)||(a.record===b.record&&a.leg&&b.leg?a.index-b.index:0)||((a.leg?a.record.startLocal.slice(11):a.record.checkInTime)&&(b.leg?b.record.startLocal.slice(11):b.record.checkInTime)&&(!a.record.timeZone||!b.record.timeZone||a.record.timeZone===b.record.timeZone)?(a.leg?a.record.startLocal.slice(11):a.record.checkInTime).localeCompare(b.leg?b.record.startLocal.slice(11):b.record.checkInTime):0)||(a.record.journeyOrder??a.index??0)-(b.record.journeyOrder??b.index??0));
-    own.innerHTML=`<header class="journey-map-head"><div><p class="eyebrow">JOURNEY MAP</p><h2 id="journeyMapTitle">${E(group.title)}</h2><p>${E(HVJourneyUI.range(group.start,group.end))}</p><p class="helper" data-map-tile-status hidden role="status"></p></div><button type="button" class="secondary" data-map-close>Close ×</button></header><div class="journey-map-layout"><div class="journey-map-canvas" aria-label="Journey routes and places"></div><ol class="journey-map-stops">${rows.map((r,i)=>`<li data-map-row="${i}"><button class="journey-map-stop" type="button" data-map-stop="${i}"><span class="journey-stop-number">${i+1}</span><span><strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):HVAddress.text(r.place?.name||r.record.propertyName||'Location'))}</strong><small>${E(HVJourneyUI.date(r.date))}${r.leg?.startLocal?.slice(11)?' · '+E(r.leg.startLocal.slice(11)):''}${r.record.checkInTime?' · '+E(r.record.checkInTime):''}${r.record.checkOutTime?' → '+E(HVJourneyUI.date(r.record.checkOut)+' '+r.record.checkOutTime):''}${r.record.timeZone?' · '+E(r.record.timeZone):''}${r.leg?.endLocal?' → '+E(HVJourneyUI.date(r.leg.endLocal)+' '+r.leg.endLocal.slice(11)):''}</small>${r.leg?`<small>${E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · '))}</small>${r.type==='flight'?`<small>${E(HVJourney.airportDetails(r.leg.start,HVJourneys.airportFor))} → ${E(HVJourney.airportDetails(r.leg.end,HVJourneys.airportFor))}</small>`:''}`:''}</span></button><p class="helper" data-route-status="${i}" role="status">${r.leg?'Checking route…':'Saved location'}</p><button type="button" class="text-btn" data-map-edit="${i}">Edit ${r.leg?'transport':r.type==='accommodation'?'accommodation':r.type==='country'?'country stay':'location'}</button></li>`).join('')||'<li class="empty-state">Add transport and plotted places to see this journey on the map.</li>'}</ol></div><footer class="journey-map-footer"><div class="journey-map-key">${[['flight','Flights'],['bus','Bus / coach'],['car','Road'],['walk','Walking'],['train','Rail'],['boat','Boats'],['other','Other transport'],['accommodation','Accommodation'],['location','Locations']].map(([type,label])=>`<span><i class="key-${type}" style="--route-colour:${styles[type]?.color||'#985c4d'}"></i>${label}</span>`).join('')}</div><p>Flight arcs show connections, not actual flight tracks. Calculated routes may differ from the service taken. Water fallback routes use Natural Earth coastlines and are illustrative, not navigation. Straight connections join recorded stops when no route can be calculated. Times are local to each stop.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></footer>`;
+    own.innerHTML=`<header class="journey-map-head"><div><p class="eyebrow">JOURNEY MAP</p><h2 id="journeyMapTitle">${E(group.title)}</h2><p>${E(HVJourneyUI.range(group.start,group.end))}</p></div><button type="button" class="secondary" data-map-close>Close ×</button></header><div class="journey-map-layout"><div class="journey-map-canvas" aria-label="Journey routes and places"></div><ol class="journey-map-stops">${rows.map((r,i)=>`<li data-map-row="${i}"><button class="journey-map-stop" type="button" data-map-stop="${i}"><span class="journey-stop-number">${i+1}</span><span><strong>${E(r.leg?HVJourney.transportLabel({...r.leg,type:r.type}):HVAddress.text(r.place?.name||r.record.propertyName||'Location'))}</strong><small>${E(HVJourneyUI.date(r.date))}${r.leg?.startLocal?.slice(11)?' · '+E(r.leg.startLocal.slice(11)):''}${r.record.checkInTime?' · '+E(r.record.checkInTime):''}${r.record.checkOutTime?' → '+E(HVJourneyUI.date(r.record.checkOut)+' '+r.record.checkOutTime):''}${r.record.timeZone?' · '+E(r.record.timeZone):''}${r.leg?.endLocal?' → '+E(HVJourneyUI.date(r.leg.endLocal)+' '+r.leg.endLocal.slice(11)):''}</small>${r.leg?`<small>${E([r.leg.airline?.name,r.leg.flightNumber].filter(Boolean).join(' · '))}</small>${r.type==='flight'?`<small>${E(HVJourney.airportDetails(r.leg.start,HVJourneys.airportFor))} → ${E(HVJourney.airportDetails(r.leg.end,HVJourneys.airportFor))}</small>`:''}`:''}</span></button><p class="helper" data-route-status="${i}" role="status">${r.leg?'Checking route…':'Saved location'}</p><button type="button" class="text-btn" data-map-edit="${i}">Edit ${r.leg?'transport':r.type==='accommodation'?'accommodation':r.type==='country'?'country stay':'location'}</button></li>`).join('')||'<li class="empty-state">Add transport and plotted places to see this journey on the map.</li>'}</ol></div><footer class="journey-map-footer"><div class="journey-map-key">${[['flight','Flights'],['bus','Bus / coach'],['car','Road'],['walk','Walking'],['train','Rail'],['boat','Boats'],['other','Other transport'],['accommodation','Accommodation'],['location','Locations']].map(([type,label])=>`<span><i class="key-${type}" style="--route-colour:${styles[type]?.color||'#985c4d'}"></i>${label}</span>`).join('')}</div><p>Flight arcs show connections, not actual flight tracks. Calculated routes may differ from the service taken. Water fallback routes use Natural Earth coastlines and are illustrative, not navigation. Straight connections join recorded stops when no route can be calculated. Times are local to each stop.</p><small>© OpenStreetMap contributors · Routing by <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS / OSRM</a> · <a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Fix the map</a></small></footer>`;
     document.body.append(own);own.showModal();
     const reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const map=L.map(own.querySelector('.journey-map-canvas'),{scrollWheelZoom:true,zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([30,0],2);const unregisterMap=HVJourneyUI.registerMap(map);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).on('tileerror',()=>{const status=own.querySelector('[data-map-tile-status]');status.hidden=false;status.textContent='Map tiles are unavailable. Saved stops and route details are still shown.';}).addTo(map);
+    mountBasemap(map);
     const bounds=[],rowBounds=new Map(),markerLocations=new Set(),stopPoints=[];
     function marker(p,index,label,type){if(!G.point(p))return;const latlng=[p.lat,p.lon];bounds.push(latlng);if(!rowBounds.has(index))rowBounds.set(index,[]);rowBounds.get(index).push(latlng);
       const markerKey=[type,p.lat,p.lon,label].join('|');if(type!=='accommodation'&&markerLocations.has(markerKey))return;markerLocations.add(markerKey);
@@ -260,7 +388,7 @@
     const wake=()=>{for(const resolve of waiters)resolve();waiters.clear();};
     const controller=new AbortController(),reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const map=L.map(host,{scrollWheelZoom:true,zoomAnimation:!reduce,fadeAnimation:!reduce,markerZoomAnimation:!reduce}).setView([25,0],2);const unregisterMap=HVJourneyUI.registerMap(map);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map).on('tileerror',()=>{status.textContent='Map background unavailable. Your saved stops and routes remain available.';});
+    mountBasemap(map);
     const points=[],bounds=[],routes=[];let unavailable=0,pending=0;
     function addPoint(p,r){if(!G.point(p))return;const position=[Number(p.lat),Number(p.lon)];bounds.push(position);points.push({position,r,type:r.type,label:r.type==='flight'?HVJourney.airportLabel(p):r.type==='accommodation'?'⌂':'•',name:p.name||r.record.propertyName||'Location'});}
     const routeLines=new Map(), rowBounds=new Map();
