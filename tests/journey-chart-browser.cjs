@@ -9,7 +9,7 @@ const blankPNG=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lE
 let browser;
 async function open(width,{fail=false,theme='light'}={}){
   const page=await browser.newPage({viewport:{width,height:960},hasTouch:width<600,serviceWorkers:'block',reducedMotion:'reduce'});
-  const errors=[],requestedHosts=[];page.on('pageerror',e=>{errors.push(e.message);console.error(e.message);});
+  const errors=[],streetTileRequests=[];page.on('pageerror',e=>{errors.push(e.message);console.error(e.message);});
   await page.route('**/*',r=>{
     const url=new URL(r.request().url());
     if(url.origin===origin){
@@ -19,7 +19,7 @@ async function open(width,{fail=false,theme='light'}={}){
       if(!path.extname(file))file=path.join(file,'index.html');
       return fs.existsSync(file)?r.fulfill({path:file,contentType:types[path.extname(file)]}):r.fulfill({status:404,body:''});
     }
-    requestedHosts.push(url.hostname);
+    if(url.hostname==='tile.openstreetmap.org')streetTileRequests.push(url.href);
     if(r.request().resourceType()==='image')return r.fulfill({contentType:'image/png',body:blankPNG});
     return r.fulfill({json:{}});
   });
@@ -29,17 +29,17 @@ async function open(width,{fail=false,theme='light'}={}){
   },{seed,theme});
   await page.goto(origin+'/#/journey-map');
   await page.locator('#globalJourneyMap .journey-chart-switch').waitFor();
-  return {page,errors,requestedHosts};
+  return {page,errors,streetTileRequests};
 }
 const firstTile=host=>host.locator('canvas.leaflet-tile-loaded').first();
 (async()=>{
   browser=await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH||await binary.executablePath(),args:binary.args.filter(a=>a!=='--single-process')});
   for(const width of [1440,390]){
-    const {page,errors,requestedHosts}=await open(width,{theme:width===390?'dark':'light'}),host=page.locator('#globalJourneyMap');
+    const {page,errors,streetTileRequests}=await open(width,{theme:width===390?'dark':'light'}),host=page.locator('#globalJourneyMap');
     const zoom=width===390?3:4;
     await page.evaluate(zoom=>{HVJourneyUI.activeMap().setView([40,37],zoom,{animate:false});},zoom);
     await firstTile(host).waitFor();
-    assert.equal(requestedHosts.includes('tile.openstreetmap.org'),false,'The chart needs no remote tiles');
+    assert.equal(streetTileRequests.length,0,'The chart needs no remote tiles');
     assert.ok(await host.locator('.journey-chart-compass').isVisible());
     const coords=await page.evaluate(()=>[[38.5,34],[43,35]].map(p=>HVJourneyUI.activeMap().latLngToContainerPoint(p)));
     const screenshot=await host.screenshot();
