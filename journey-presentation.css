@@ -1,4 +1,47 @@
 /* Compact map cards and travel editors use the existing Herald tokens. */
+.journey-chart-map.journey-chart-active { background:#a5c0c7; }
+.journey-chart-map { --chart-paper:#f3e9cf; --chart-ink:#49392c; }
+.journey-chart-map .leaflet-bar {
+  border:1px solid var(--chart-ink); border-radius:2px; overflow:hidden;
+  box-shadow:2px 2px 0 #49392c38;
+}
+.journey-chart-map .leaflet-bar a,
+.journey-chart-map .journey-chart-switch {
+  color:var(--chart-ink); background:var(--chart-paper);
+}
+.journey-chart-map .leaflet-bar a:first-child { border-radius:0; }
+.journey-chart-map .leaflet-bar a:last-child { border-radius:0; }
+.journey-chart-map .leaflet-bar a + a { border-top:1px solid #49392c65; }
+.journey-chart-map .leaflet-bar a:hover,
+.journey-chart-map .journey-chart-switch:hover { background:#fff5dd; }
+.journey-chart-map .leaflet-bar a.leaflet-disabled { color:#776b59; }
+.journey-chart-map .leaflet-bar a:focus-visible,
+.journey-chart-map .journey-chart-switch:focus-visible { outline:2px solid #215360; outline-offset:-3px; }
+.journey-chart-control { text-align:right; }
+.journey-chart-map .journey-chart-switch {
+  min-height:38px; padding:5px 11px; border:1px solid var(--chart-ink); border-radius:2px;
+  box-shadow:2px 2px 0 #49392c38; cursor:pointer; font:700 .82rem Georgia,serif;
+}
+.journey-chart-status {
+  max-width:15rem; margin-top:4px; padding:4px 7px; background:var(--chart-paper);
+  color:var(--chart-ink); border:1px solid #49392c65; text-align:left;
+}
+.journey-chart-status:empty { display:none; }
+.journey-chart-compass { color:var(--chart-ink); pointer-events:none; }
+.journey-chart-compass svg { display:block; filter:drop-shadow(1px 2px 0 #49392c38); }
+.journey-chart-compass circle { fill:var(--chart-paper); stroke:currentColor; }
+.journey-chart-compass .chart-dial-ticks { fill:none; stroke-dasharray:1 3; stroke-width:.8; }
+.journey-chart-compass text { fill:currentColor; font:700 8px Georgia,serif; text-anchor:middle; }
+.journey-chart-compass path { stroke:currentColor; stroke-width:.8; }
+.journey-chart-compass .chart-needle-north { fill:#a34439; }
+.journey-chart-compass .chart-needle-south { fill:#fbf2d9; }
+.journey-chart-compass .chart-needle-pin { fill:currentColor; }
+.journey-chart-active .leaflet-control-attribution { background:#f3e9cfe8; color:var(--chart-ink); }
+.journey-chart-active .leaflet-control-attribution a { color:#245460; }
+@media (pointer:coarse) {
+  .journey-chart-map .journey-chart-switch { min-height:44px; }
+}
+
 .herald-map-popup .leaflet-popup-content-wrapper { padding:0; border:1px solid var(--hv-line); border-radius:9px; background:var(--hv-surface); color:var(--hv-ink); box-shadow:0 8px 28px #0002; }
 .herald-map-popup .leaflet-popup-tip { background:var(--hv-surface); box-shadow:none; }
 .herald-map-popup.herald-popup-below .leaflet-popup-tip-container { top:-20px; bottom:auto; }
