@@ -1,597 +1,274 @@
-/* Herald Voyages — 2026 product shell and interaction layer.
-   Travel/account persistence remains in the existing app core; this layer handles
-   branding, routing, responsive navigation and progressive-disclosure UI. */
+/* Herald's shared shell. Saved travel stays in the existing account/core model. */
 (() => {
   'use strict';
 
-  const scriptUrl = document.currentScript?.src ? new URL(document.currentScript.src) : new URL('voyages.js', location.href);
-  const rootUrl = new URL('./', scriptUrl);
-  const $ = (id) => document.getElementById(id) || window.HVPages?.get(id);
-  const q = (selector, root = document) => root.querySelector(selector);
-  const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const scriptURL = new URL(document.currentScript?.src || 'voyages.js', location.href);
+  const rootURL = new URL('./', scriptURL);
+  const routes = {calendar:'calendar', roadTrip:'trip-planner', currency:'currency', settings:'settings'};
+  const titles = {calendar:'Calendar', roadTrip:'Trip Planner', currency:'Currency Converter', settings:'Settings'};
+  const accountTitles = {login:'Sign in', register:'Create account', 'reset-password':'Reset password', profile:'Account'};
+  const plannerViews = new Set(['roadTrip', 'journeys', 'planner', 'stayPlanner']);
+  const plannerRoutes = new Set(['road-trip', 'roadTrip', 'journey-map', 'plan-a-trip', 'planner', 'travel-tools/road-trip', 'travel-tools/stay-planner']);
+  const get = id => document.getElementById(id) || window.HVPages?.get(id);
+  const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[character]));
 
-  const ROUTES = {
-    transport:'my-flights', tools:'travel-tools', notes:'travel-tools/notes', budget:'travel-tools/budget', currency:'travel-tools/currency', roadTrip:'travel-tools/road-trip', journeys:'journey-map', places:'places', dashboard: 'dashboard', map: 'map', stays: 'trips', countries: 'countries', country: 'country', calendar: 'calendar',
-    stats: 'stats', homes: 'lived-in', settings: 'settings', schengen: 'travel-tools/schengen', planner: 'plan-a-trip', stayPlanner: 'travel-tools/stay-planner', rules: 'travel-tools/entry-requirements', profiles: 'people'
-  };
-  // Existing utility bookmarks still open the same maintained tool.
-  const ROUTE_TO_VIEW = {
-    ...Object.fromEntries(Object.entries(ROUTES).map(([view, route]) => [route, view])),
-    planner: 'stayPlanner', visa: 'rules', rules: 'rules', schengen: 'schengen'
-  };
-  const VIEW_TITLES = {
-    transport:'Transport', tools:'Travel Tools', notes:'Notes & Checklist', budget:'Budget Planner', currency:'Currency Converter', roadTrip:'Road Trip Planner', journeys:'Journey Map', places:'Places', dashboard: 'Home', map: 'Atlas', stays: 'Trips', countries: 'Countries', country: 'Country details', calendar: 'Calendar',
-    stats: 'Travel statistics', homes: 'Home bases', settings: 'Preferences', schengen: 'Schengen calculator', planner: 'Personal itinerary service', stayPlanner: 'Stay planner', rules: 'Entry Requirements', profiles: 'Traveller profiles'
-  };
-  const WORKSPACES = {
-    home: { label: 'Home', icon: 'dashboard', view: 'dashboard' },
-    trips: { label: 'My travels', icon: 'calendar', view: 'calendar' },
-    atlas: { label: 'Atlas', icon: 'map', view: 'map' },
-    plan: { label: 'Plan a trip', icon: 'planner', view: 'planner' },
-    tools: { label: 'Travel Tools', icon: 'settings', view: 'tools' },
-    account: { label: 'Account', icon: 'profiles', view: 'profiles' }
-  };
-  const VIEW_WORKSPACE = {
-    transport:'trips', tools:'tools', notes:'tools', budget:'tools', currency:'tools', roadTrip:'tools', journeys:'trips', dashboard: 'home', stays: 'trips', calendar: 'trips', map: 'atlas', countries: 'atlas', country: 'atlas', places: 'atlas', stats: 'atlas',
-    planner: 'tools', stayPlanner: 'tools', rules: 'tools', schengen: 'tools', profiles: 'account', homes: 'account', settings: 'account'
-  };
-  const WORKSPACE_TABS = {
-    trips: ['calendar', 'stays', 'transport', 'journeys'],
-    atlas: ['map', 'countries', 'places', 'stats'],
-    tools: ['tools', 'planner', 'stayPlanner', 'rules', 'schengen', 'notes', 'budget', 'currency', 'roadTrip'],
-    account: ['profiles', 'homes', 'settings']
-  };
-  const ACCOUNT_TITLES = {
-    login: 'Log in', register: 'Create account', 'reset-password': 'Reset password', profile: 'My profile'
-  };
-
-  const ICONS = {
-    stats: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>',
-    homes: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/></svg>',
-    settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18M8 3v6M16 9v6M9 15v6"/></svg>',
-    dashboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>',
-    map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 5-2 8 2 5-2v14l-5 2-8-2-5 2V6Z"/><path d="M8 4v14M16 6v14"/></svg>',
-    stays: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14v12H5z"/><path d="M9 7V5h6v2M4 11h16"/></svg>',
-    countries: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21M12 3C9.5 5.6 8.2 8.6 8.2 12S9.5 18.4 12 21"/></svg>',
-    calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="1"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
-    schengen: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M6.5 5.5l11 13"/></svg>',
-    planner: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M10 5h9v9"/></svg>',
-    rules: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6V3Z"/><path d="M14 3v4h4M9 11h6M9 15h6"/></svg>',
-    profiles: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.8-4.3 3.3-6.5 7.5-6.5s6.7 2.2 7.5 6.5"/></svg>',
-    more: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>',
-    expand: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M21 16v5h-5"/></svg>',
-    close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>',
-    search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>'
-  };
-
-  function installStyles() {
-    if ($('heraldVoyagesStyles') || q('link[href*="voyages.css"]')) return;
-    const link = document.createElement('link');
-    link.id = 'heraldVoyagesStyles';
-    link.rel = 'stylesheet';
-    link.href = new URL('voyages.css?v=simplify-4', rootUrl).href;
-    document.head.append(link);
-  }
-  installStyles();
-
-  const brandAssetUrl = () => new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png?v=master-20261002' : 'assets/herald-logo-dark.png?v=master-20261002', rootUrl).href;
-
-  function replaceText(root, re, replacement) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const nodes = [];
-    while (walker.nextNode()) nodes.push(walker.currentNode);
-    nodes.forEach((node) => { node.nodeValue = node.nodeValue.replace(re, replacement); });
+  function allowedView(view) {
+    if (routes[view]) return view;
+    if (plannerViews.has(view)) return 'roadTrip';
+    if (['profiles', 'homes'].includes(view)) return 'settings';
+    return 'calendar';
   }
 
-  function activeView() {
-    return q('.view.active')?.id?.replace(/View$/, '') || 'dashboard';
+  function routeView() {
+    const route = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0].replace(/\/$/, '');
+    if (plannerRoutes.has(route)) return 'roadTrip';
+    if (route === 'travel-tools/currency') return 'currency';
+    if (['people', 'profiles', 'lived-in'].includes(route)) return 'settings';
+    return Object.keys(routes).find(view => routes[view] === route) || 'calendar';
   }
 
-  function installBranding() {
+  function updateRoute(view, replace) {
+    const suffix = routeView() === view ? location.hash.match(/[?&].*$/)?.[0] || '' : '';
+    const next = `${location.pathname}${location.search}#/${routes[view]}${suffix}`;
+    if (`${location.pathname}${location.search}${location.hash}` !== next) {
+      history[replace ? 'replaceState' : 'pushState']({heraldVoyagesView:view}, '', next);
+    }
+  }
+
+  function updateChrome(view) {
+    document.body.dataset.currentView = view;
+    if (get('pageTitle')) get('pageTitle').textContent = titles[view];
+    document.title = `${titles[view]} — Herald Voyages`;
+    for (const link of document.querySelectorAll('[data-nav-view]')) {
+      const current = link.dataset.navView === view;
+      link.classList.toggle('active', current);
+      if (current) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    }
+    get(`${view}View`)?.setAttribute('aria-label', titles[view]);
+  }
+
+  function branding() {
     document.documentElement.dataset.brand = 'herald-voyages';
-    const accountPage = document.body?.dataset?.accountPage;
-    const view = activeView();
-    document.title = accountPage
-      ? `${ACCOUNT_TITLES[accountPage] || 'Account'} — Herald Voyages`
-      : `${VIEW_TITLES[view] || 'Dashboard'} — Herald Voyages`;
-
-    let theme = q('meta[name="theme-color"]');
-    if (!theme) {
-      theme = document.createElement('meta');
-      theme.name = 'theme-color';
-      document.head.append(theme);
-    }
-    theme.content = '#8d2637';
-
-    let desc = q('meta[name="description"]');
-    if (!desc) {
-      desc = document.createElement('meta');
-      desc.name = 'description';
-      document.head.append(desc);
-    }
-    desc.content = 'Herald Voyages — your personal travel atlas for trips, countries, travel days and Schengen planning.';
-
-    qa('.brand').forEach((brand) => {
-      if(brand.tagName!=='A') {const link=document.createElement('a');link.className=brand.className;link.href=new URL('index.html#/dashboard',rootUrl).href;link.setAttribute('aria-label','Herald Voyages dashboard');link.append(...brand.childNodes);brand.replaceWith(link);brand=link;}
-      if(!document.body.dataset.accountPage)brand.addEventListener('click',e=>{e.preventDefault();navigateToView('dashboard');});
-      const strong = q('strong', brand);
-      const subtitle = q('span:not(.brand-mark)', brand);
-      const mark = q('.brand-mark', brand);
-      if (strong) strong.textContent = 'Herald Voyages';
-      if (subtitle) subtitle.textContent = 'Where you’ve been. Where you’re going.';
-      if (mark && !q('img', mark)) {
-        mark.textContent = '';
-        const img = document.createElement('img');
-        img.src = brandAssetUrl();
-        img.alt = '';
-        img.className = 'brand-logo-mark';
-        mark.append(img);
+    const description = document.querySelector('meta[name="description"]');
+    if (description) description.content = 'Herald Voyages — your travel calendar and journey planner.';
+    for (let brand of document.querySelectorAll('.brand')) {
+      if (brand.tagName !== 'A') {
+        const link = document.createElement('a');
+        link.className = brand.className;
+        link.append(...brand.childNodes);
+        brand.replaceWith(link);
+        brand = link;
       }
-    });
-
-    qa('#heraldGuestTransferPanel, #heraldRecoveryPanel').forEach((panel) => {
-      replaceText(panel, /\bHerald\b(?!\s+Voyages)/g, 'Herald Voyages');
-    });
+      brand.href = new URL('index.html#/calendar', rootURL).href;
+      brand.setAttribute('aria-label', 'Herald Voyages Calendar');
+      brand.querySelector('strong')?.replaceChildren(document.createTextNode('Herald'));
+      const subtitle = brand.querySelector('div > span');
+      subtitle?.remove();
+      const mark = brand.querySelector('.brand-mark');
+      if (mark && !mark.querySelector('img')) {
+        const image = document.createElement('img');
+        image.src = new URL(document.documentElement.dataset.theme === 'dark' ? 'assets/herald-logo-light.png' : 'assets/herald-logo-dark.png', rootURL).href;
+        image.className = 'brand-logo-mark';
+        image.alt = '';
+        mark.replaceChildren(image);
+      }
+    }
   }
 
-  const icon = (name) => `<span class="nav-icon">${ICONS[name] || ICONS.more}</span>`;
-
-  function installNavigation() {
-    const nav=q('.sidebar .nav');
-    if(!nav)return;
-    const footer=q('.sidebar-footer'),access=q('.herald-account-access');
-    const account=$('accountLink'),create=q('.sidebar-footer [data-account-guest]'),logout=q('[data-account-logout]');
-    const status=q('.sidebar [data-sync-status]'),retry=$('retrySaveBtn');
-    // Keep the existing account controls and status nodes so their sync listeners survive.
-    const accountActions=document.createElement('div');accountActions.className='herald-account-access';
-    accountActions.append(...[account,create,logout].filter(Boolean));access?.remove();
-    const statusRow=document.createElement('div');statusRow.className='page-save-status';
-    statusRow.append(...[status,retry].filter(Boolean));q('.topbar')?.append(statusRow);
+  function navigation() {
+    const nav = document.querySelector('.sidebar .nav');
+    const sidebar = document.querySelector('.sidebar');
+    if (!nav || !sidebar) return;
+    nav.id = 'heraldPrimaryNav';
     nav.replaceChildren();
-    for(const [workspace,item]of Object.entries(WORKSPACES)){
-      const views=WORKSPACE_TABS[workspace];
-      if(workspace==='plan'){const button=document.createElement('button');button.type='button';button.className='nav-item workspace-nav';button.dataset.planTrip='';button.innerHTML=icon(item.icon)+'<span>'+item.label+'</span>';nav.append(button);continue;}
-      if(!views){
-        const link=document.createElement('a');link.className='nav-item workspace-nav';link.href='#/'+ROUTES[item.view];link.dataset.navView=item.view;link.dataset.workspace=workspace;link.innerHTML=icon(item.icon)+'<span>'+item.label+'</span>';nav.append(link);continue;
-      }
-      const group=document.createElement('details');group.className='header-nav-group';
-      const summary=document.createElement('summary');summary.className='nav-item workspace-nav';summary.dataset.workspace=workspace;summary.innerHTML=icon(item.icon)+'<span>'+item.label+'</span><span class="nav-caret" aria-hidden="true"><svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m3 4 3 3 3-3"/></svg></span>';
-      const menu=document.createElement('div');menu.className='header-nav-menu';
-      if(workspace==='account')menu.append(accountActions);
-      for(const view of views){const link=document.createElement('a');link.href='#/'+ROUTES[view];link.dataset.navView=view;link.textContent=view==='transport'?'Transport':view==='tools'?'Overview':VIEW_TITLES[view];menu.append(link);}
-      group.append(summary,menu);nav.append(group);
-      group.addEventListener('toggle',()=>{if(group.open)qa('.header-nav-group[open]').forEach(other=>{if(other!==group)other.open=false;});});
+    for (const view of ['calendar', 'roadTrip', 'currency']) {
+      const link = document.createElement('a');
+      link.href = '#/' + routes[view];
+      link.className = 'nav-item';
+      link.dataset.navView = view;
+      link.textContent = titles[view];
+      nav.append(link);
     }
-    nav.addEventListener('click',event=>{if(event.target.closest('[data-plan-trip]')){event.preventDefault();event.stopPropagation();closeHeaderNavigation();window.HVTravelActions?.plan();return;}const link=event.target.closest('[data-nav-view]');if(!link)return;event.preventDefault();navigateToView(link.dataset.navView);closeHeaderNavigation();});
-    const toggle=document.createElement('button');toggle.type='button';toggle.className='header-menu-toggle secondary';toggle.setAttribute('aria-controls','heraldPrimaryNav');toggle.setAttribute('aria-expanded','false');toggle.textContent='Menu';nav.id='heraldPrimaryNav';nav.before(toggle);
-    toggle.onclick=()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));nav.classList.toggle('header-nav-open',open);};
-    const theme=$('themeToggleBtn');if(theme)footer?.append(theme);
-    document.addEventListener('click',event=>{if(!event.target.closest('.sidebar'))closeHeaderNavigation();});
-    document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;const open=q('.header-nav-group[open]');if(open){open.open=false;q('summary',open).focus();}else if(toggle.getAttribute('aria-expanded')==='true'){closeHeaderNavigation();toggle.focus();}});
-    function closeHeaderNavigation(){qa('.header-nav-group[open]').forEach(group=>group.open=false);nav.classList.remove('header-nav-open');toggle.setAttribute('aria-expanded','false');}
-    q('.sidebar')?.classList.remove('island');
+
+    const existingAccess = document.querySelector('.topbar .herald-account-access');
+    const footer = document.querySelector('.sidebar-footer');
+    const account = document.createElement('details');
+    account.className = 'simple-account-menu';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Account';
+    const menu = document.createElement('div');
+    menu.className = 'simple-account-options';
+    const controls = [get('accountLink'), footer?.querySelector('[data-account-guest]'), existingAccess?.querySelector('[data-account-logout]')];
+    for (const control of controls) if (control) menu.append(control);
+    const settingsLink = document.createElement('a');
+    settingsLink.href = '#/settings';
+    settingsLink.dataset.navView = 'settings';
+    settingsLink.textContent = 'Settings';
+    menu.append(settingsLink);
+    account.append(summary, menu);
+
+    const status = sidebar.querySelector('[data-sync-status]');
+    const retry = get('retrySaveBtn');
+    const statusRow = document.createElement('div');
+    statusRow.className = 'page-save-status';
+    for (const node of [status, retry]) if (node) statusRow.append(node);
+    document.querySelector('.topbar')?.append(statusRow);
+    const theme = get('themeToggleBtn');
+    footer?.replaceChildren(...[theme, account].filter(Boolean));
+    existingAccess?.remove();
+    sidebar.classList.remove('island');
+
+    document.addEventListener('click', event => { if (!account.contains(event.target)) account.open = false; });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && account.open) { account.open = false; summary.focus(); }
+    });
+    for (const container of [nav, menu]) container.addEventListener('click', event => {
+      const link = event.target.closest('[data-nav-view]');
+      if (!link) return;
+      event.preventDefault();
+      account.open = false;
+      window.switchView(link.dataset.navView);
+    });
   }
 
-  function openMoreSheet() {
-    const sheet = $('voyagesMoreSheet');
-    if (!sheet) return;
-    sheet.hidden = false;
-    sheet._previousFocus=document.activeElement;
-    setTimeout(()=>q('.sheet-close',sheet)?.focus(),0);
-    requestAnimationFrame(() => sheet.classList.add('open'));
-    document.body.classList.add('voyages-sheet-open');
-  }
+  function settings() {
+    const page = get('settingsView');
+    const profiles = get('profilesView');
+    const travellerDetails = page?.querySelector('[data-settings-travellers]');
+    if (travellerDetails && profiles) travellerDetails.append(...profiles.children);
+    const dataDetails = page?.querySelector('[data-settings-data]');
+    const dataPanel = get('dataTransferPanel');
+    if (dataDetails && dataPanel) dataDetails.append(dataPanel);
+    if (dataDetails && !dataPanel) {
+      const description = document.createElement('p');
+      description.className = 'helper';
+      description.textContent = 'Download all records currently loaded for this account or guest session.';
+      const exportButton = document.createElement('button');
+      exportButton.type = 'button';
+      exportButton.id = 'simpleExportData';
+      exportButton.className = 'secondary';
+      exportButton.textContent = 'Export travel data';
+      exportButton.addEventListener('click', () => exportData());
+      const accountLink = document.createElement('a');
+      accountLink.href = 'profile/';
+      accountLink.className = 'text-btn';
+      accountLink.textContent = 'Guest transfers & account sync';
+      const links = document.createElement('p');
+      links.append(accountLink);
+      dataDetails.append(description, exportButton, links);
+    }
+    get('settingsTheme')?.addEventListener('click', () => get('themeToggleBtn')?.click());
 
-  function closeMoreSheet() {
-    const sheet = $('voyagesMoreSheet');
-    if (!sheet || sheet.hidden) return;
-    sheet.classList.remove('open');
-    sheet._previousFocus?.focus();
-    document.body.classList.remove('voyages-sheet-open');
-    setTimeout(() => { if (!sheet.classList.contains('open')) sheet.hidden = true; }, 220);
-  }
-
-  function installMobileNavigation() {
-    // The same header menu serves mouse, touch and keyboard at every width.
-  }
-
-  function installTravellerSelector() {
-    const topbar=q('.topbar');
-    if(!topbar||$('globalTraveller'))return;
-    const label=document.createElement('label');label.className='global-traveller';label.innerHTML='<span>Traveller</span><select id="globalTraveller" aria-label="Selected traveller"></select>';
-    const actions=q('.topbar-actions',topbar);topbar.insertBefore(label,actions||null);
-    let signature='';
-    const refresh=()=>{const select=$('globalTraveller');if(!select)return;const next=JSON.stringify([(state.profiles||[]).map(p=>[p.id,p.name]),state.activeProfileId]);if(next===signature)return;signature=next;select.innerHTML=(state.profiles||[]).map(p=>`<option value="${escapeHtml(p.id)}" ${p.id===state.activeProfileId?'selected':''}>${escapeHtml(p.name)}</option>`).join('');label.hidden=(state.profiles||[]).length<2;};
-    label.onchange=()=>{state.activeProfileId=$('globalTraveller').value;persist();populateProfileSelects();$('visaPassport').value='';$('visaResultTitle').textContent='Choose a passport and destination';$('visaResultBody').textContent='Run a new check for the selected traveller.';lastPlannerTrip=null;$('plannerResultBody').textContent='Calculate a trip for the selected traveller.';renderAll();window.HVJourneys?.render();};
-    const current=window.renderProfiles;if(typeof current==='function')window.renderProfiles=function(){current();refresh();};
-    const currentAll=window.renderAll;window.renderAll=function(...args){const result=currentAll.apply(this,args);refresh();return result;};
+    const label = document.createElement('label');
+    label.className = 'global-traveller';
+    label.innerHTML = '<span>Traveller</span><select id="globalTraveller" aria-label="Selected traveller"></select>';
+    document.querySelector('.topbar')?.append(label);
+    let lastSignature = '';
+    const refresh = () => {
+      const signature = JSON.stringify([state.activeProfileId, (state.profiles || []).map(profile => [profile.id, profile.name])]);
+      if (signature === lastSignature) return;
+      lastSignature = signature;
+      label.hidden = (state.profiles || []).length < 2;
+      label.querySelector('select').innerHTML = (state.profiles || []).map(profile => `<option value="${escapeHTML(profile.id)}" ${profile.id === state.activeProfileId ? 'selected' : ''}>${escapeHTML(profile.name)}</option>`).join('');
+    };
+    label.addEventListener('change', () => {
+      state.activeProfileId = label.querySelector('select').value;
+      persist();
+      populateProfileSelects();
+      window.renderAll();
+      window.dispatchEvent(new CustomEvent('hv-data-changed'));
+    });
+    window.addEventListener('hv-data-changed', refresh);
+    window.addEventListener('hv-route', refresh);
+    const renderProfiles = window.renderProfiles;
+    window.renderProfiles = function(...args) { const result = renderProfiles.apply(this, args); refresh(); return result; };
     refresh();
   }
 
-  function routeFromHash() {
-    const route = location.hash.replace(/^#\/?/, '').split(/[?&]/)[0].trim();
-    if(/^country\/[A-Z]{2,3}$/i.test(route)) return 'country';
-    return ROUTE_TO_VIEW[route] || (route && ROUTES[route] ? route : null);
-  }
-
-  function setRoute(view, replace = false) {
-    const route = view==='country' ? 'country/'+(location.hash.match(/country\/([A-Z]{2,3})/i)?.[1]||'').toUpperCase() : ROUTES[view] || 'dashboard';
-    const suffix = routeFromHash() === view ? location.hash.match(/[?&].*$/)?.[0] || '' : '';
-    const target = `${location.pathname}${location.search}#/${route}${suffix}`;
-    if (`${location.pathname}${location.search}${location.hash}` === target) return;
-    history[replace ? 'replaceState' : 'pushState']({ heraldVoyagesView: view }, '', target);
-  }
-
-  function applyViewChrome(view) {
-    const pageTitle = $('pageTitle');
-    const title=view==='transport'&&window.HVTransportDashboard?window.HVTransportDashboard.title():VIEW_TITLES[view]||'Dashboard';
-    if (pageTitle) pageTitle.textContent = title;
-    document.title = `${title} — Herald Voyages`;
-    document.body.dataset.currentView = view;
-    const workspace = VIEW_WORKSPACE[view] || 'home';
-    qa('.voyages-mobile-nav [data-mobile-view]').forEach((button) => button.classList.toggle('active', VIEW_WORKSPACE[button.dataset.mobileView] === workspace || ['journeys','transport'].includes(view)&&button.dataset.mobileView==='calendar'));
-    if($(`${view}View`)) $(`${view}View`).setAttribute('aria-label', VIEW_TITLES[view] || view);
-    qa('.nav-item[data-workspace]').forEach((button) => {
-      const current = button.dataset.workspace === workspace;
-      button.classList.toggle('active', current);
-      button.setAttribute('aria-current', current ? 'page' : 'false');
-    });
-    qa('.header-nav-menu [data-nav-view]').forEach((button) => {
-      const current = button.dataset.navView === view;
-      button.classList.toggle('active', current);
-      button.setAttribute('aria-current', current ? 'page' : 'false');
-    });
-  }
-
-  function navigateToView(view, { replace = false, fromHistory = false } = {}) {
-    if (!ROUTES[view]) view = 'dashboard';
-    try {
-      if (typeof window.switchView === 'function') window.switchView(view, { replaceRoute: replace || fromHistory });
-      else q(`.nav-item[data-view="${view}"]`)?.click();
-    } catch (_) {
-      q(`.nav-item[data-view="${view}"]`)?.click();
-    }
-    applyViewChrome(view);
-    setRoute(view, replace || fromHistory);
-  }
-
-  function installRouting() {
-    if (document.body.dataset.accountPage) return;
-    const requested = routeFromHash() || 'dashboard';
-    if (requested) navigateToView(requested, { replace: true, fromHistory: true });
-    else setRoute('dashboard', true);
-    applyViewChrome(requested || activeView());
-
-    window.addEventListener('popstate', () => navigateToView(routeFromHash() || 'dashboard', { fromHistory: true }));
-    window.addEventListener('hashchange', () => navigateToView(routeFromHash() || 'dashboard', { fromHistory: true }));
-    document.addEventListener('click', (event) => {
-      const trigger = event.target.closest('.nav-item[data-view], [data-go-view]');
-      if (!trigger) return;
-      const view = trigger.dataset.view || trigger.dataset.goView;
-      if (!ROUTES[view]) return;
-      queueMicrotask(() => { applyViewChrome(view); setRoute(view); });
-    });
-  }
-
-  function polishCopy() {
-    if ($('addStayBtn')) $('addStayBtn').textContent = '+ Add travel';
-    if ($('addStayFromListBtn')) $('addStayFromListBtn').textContent = 'Plan a trip';
-    const latest = q('#dashboardView #recentStays')?.closest('.panel');
-    if (latest && q('h2', latest)) q('h2', latest).textContent = 'Upcoming travel';
-    const staysHeading = q('#staysView h2');
-    if (staysHeading) staysHeading.textContent = 'Your trips';
-  }
-
-  function installCountrySearch() {
-    const totals = $('countryTotals');
-    if (!totals || $('countrySearch')) return;
-    const panel = totals.closest('.panel');
-    if (!panel) return;
-    const toolbar = document.createElement('div');
-    toolbar.className = 'countries-toolbar';
-    toolbar.innerHTML = `<label class="countries-search" for="countrySearch">${ICONS.search}<input id="countrySearch" type="search" placeholder="Search your countries…" autocomplete="off"><span class="sr-only">Search countries</span></label><div class="countries-summary"><strong id="countriesSummaryCount">0</strong><span>places shown</span></div>`;
-    panel.insertBefore(toolbar, totals);
-    const input = $('countrySearch');
-    const apply = () => {
-      const term = input.value.trim().toLocaleLowerCase();
-      let visible = 0;
-      qa('.country-row', totals).forEach((row) => {
-        const match = !term || row.textContent.toLocaleLowerCase().includes(term);
-        row.hidden = !match;
-        if (match) visible++;
-      });
-      if ($('countriesSummaryCount')) $('countriesSummaryCount').textContent = String(visible);
-    };
-    input.addEventListener('input', apply);
-    new MutationObserver(apply).observe(totals, { childList: true, subtree: true });
-    apply();
-  }
-
-  function safeCountryName(code) {
-    try {
-      if (typeof countryByCode === 'function') return countryByCode(code)?.name || code;
-      if (typeof window.countryByCode === 'function') return window.countryByCode(code)?.name || code;
-    } catch (_) {}
-    return code;
-  }
-
-  function friendlyDate(value) {
-    if (!value) return '—';
-    try { return new Date(`${value}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); }
-    catch (_) { return value; }
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
-  }
-
-  function installMapExperience() {
-    const map = $('worldMap');
-    const panel = q('#mapView .map-panel');
-    if (!map || !panel || panel.dataset.voyagesMap) return;
-    panel.dataset.voyagesMap = '1';
-
-    const toolbar = document.createElement('div');
-    toolbar.className = 'voyages-map-toolbar';
-    toolbar.innerHTML = `<div class="voyages-map-toolbar-copy"><span>Interactive atlas</span><strong>Select a country for its travel history</strong></div><button type="button" class="map-fullscreen-btn" aria-pressed="false">${ICONS.expand}<span>Full screen</span></button>`;
-    const wrap = q('.map-wrap', panel);
-    if (wrap) panel.insertBefore(toolbar, wrap);
-
-    const accessibleCountries=()=>qa('.map-country',map).forEach(path=>{path.setAttribute('tabindex','0');path.setAttribute('role','button');path.setAttribute('aria-label',safeCountryName(path.dataset.code));});
-    new MutationObserver(accessibleCountries).observe(map,{childList:true,subtree:true});accessibleCountries();
-    map.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target.matches('.map-country')){event.preventDefault();window.HVJourneys?.openCountry(event.target.dataset.code);}});
-    const full = q('.map-fullscreen-btn', toolbar);
-    full?.addEventListener('click', () => {
-      const next = !panel.classList.contains('map-is-fullscreen');
-      panel.classList.toggle('map-is-fullscreen', next);
-      document.body.classList.toggle('map-fullscreen-open', next);
-      full.setAttribute('aria-pressed', String(next));
-      const label = q('span', full);
-      if (label) label.textContent = next ? 'Exit full screen' : 'Full screen';
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      if (panel.classList.contains('map-is-fullscreen')) full?.click();
-
-      closeMoreSheet();
-    });
-  }
-
-  function installDashboardHierarchy() {
-    const dashboard = $('dashboardView');
-    if (!dashboard || dashboard.dataset.voyagesDashboard) return;
-    dashboard.dataset.voyagesDashboard = '1';
-    const grid = q('.stats-grid', dashboard);
-    if (!grid) return;
-    qa('.stat-card', grid).forEach((card, index) => {
-      card.classList.add(`voyages-stat-${index + 1}`);
-
-    });
-  }
-
-  function installWorkspaceTabs() {
-    // Each page has one location cue; destinations live in the global grouped menu.
-    for(const [workspace,views]of Object.entries(WORKSPACE_TABS))for(const view of views){
-      const host=$(`${view}View`);if(!host)continue;
-      const cue=document.createElement('nav');cue.className='page-location';cue.setAttribute('aria-label','Page location');
-      const parent=WORKSPACES[workspace].label,title=VIEW_TITLES[view];
-      cue.innerHTML=`${parent===title?'':`${workspace==='tools'?`<a href="#/travel-tools">${parent}</a>`:`<span>${parent}</span>`}<span aria-hidden="true">/</span>`}<span aria-current="page">${title}</span>`;host.prepend(cue);
-    }
-  }
-
-  function installAccountChrome() {
-    if (!document.body.dataset.accountPage) return;
-    document.body.classList.add('voyages-account-body');
-    const page = q('.account-page');
-    if (page && !q('.account-brand-note', page)) {
-      const brand = q('.brand', page);
-      const note = document.createElement('p');
-      note.className = 'account-brand-note';
-      note.textContent = 'Private travel history, available wherever you go.';
-      brand?.insertAdjacentElement('afterend', note);
-    }
-  }
-
-  function installFooter(){
-    if(q('.herald-site-footer'))return;const host=document.body.dataset.accountPage?q('.account-page'):q('.main');if(!host)return;
-    const href=view=>document.body.dataset.accountPage?new URL('#/'+ROUTES[view],rootUrl).href:'#/'+ROUTES[view],footer=document.createElement('footer');footer.className='herald-site-footer';
-    footer.innerHTML=`<div class="herald-footer-main"><div class="herald-footer-brand"><strong>HERALD VOYAGES</strong><span>Map the journey. Keep the story.</span></div><nav class="herald-footer-links" aria-label="Herald destinations">${[['dashboard','Dashboard'],['map','Atlas'],['journeys','Journey Map'],['calendar','Calendar'],['stays','Trips'],['tools','Travel Tools']].map(([view,label])=>`<a href="${href(view)}">${label}</a>`).join('')}</nav></div><div class="herald-footer-bottom"><span>Personal travel atlas and journey journal</span><span>© ${new Date().getFullYear()} Herald Voyages</span></div>`;host.append(footer);
-  }
-
-  function watchDynamicBranding() {
-    const observer = new MutationObserver((records) => {
-      let shouldRefresh = false;
-      records.forEach((record) => record.addedNodes.forEach((node) => {
-        if (!(node instanceof Element)) return;
-        if (node.matches?.('#heraldGuestTransferPanel, #heraldRecoveryPanel') || q('#heraldGuestTransferPanel, #heraldRecoveryPanel', node)) shouldRefresh = true;
-      }));
-      if (shouldRefresh) installBranding();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  function installPageRouter() {
-    const pages=new Map(qa('main > .view').map(el=>[el.id.replace(/View$/,''),el]));
-    const host=q('.main');
-    const elements = new Map(), rendered = new Map();
-    let revision=0,forcedRevision=0;const contextRevisions=new Map();
-    const travel=['stays','trips','profiles','residences','transports','accommodations','placeVisits','manualCountryVisits','excludedCountryCodes','countryCountExcludedCodes','countryCountIncludedExtraCodes'];
-    const dependencies={dashboard:[...travel,'calendarNotes'],stats:travel,countries:travel,country:travel,calendar:['calendarPlans','stays','trips','profiles','residences','transports','accommodations','placeVisits','calendarNotes','visualLayers'],map:[...travel,'visualLayers','savedPlaces','routeData','logoData'],journeys:['stays','trips','profiles','residences','transports','accommodations','placeVisits','savedPlaces','visualLayers','routeData','logoData'],transport:['transports','transportOperators','trips','profiles','residences','routeData','logoData'],notes:['notes','checklists','trips','profiles','transports','accommodations','stays','placeVisits'],budget:['budgets','expenses','trips','profiles','transports','accommodations','currencyRates'],tools:['profiles'],schengen:['stays','profiles','residences'],profiles:['profiles','residences'],homes:['profiles','residences']};
-    HVData.observe(state);
-    const featureRevision=view=>HVData.token(state,dependencies[view]||HVData.collections)+'|'+(contextRevisions.get(view)||0);
-    const stamp=view=>[state,forcedRevision,featureRevision(view),state.activeProfileId,isoDate(new Date()),view==='calendar'?calendarCursor.getTime():'',view==='country'?location.hash:''];
-    const unchanged = view => {
-      const old = rendered.get(view), next = stamp(view);
-      return old && next.every((value, index) => value === old[index]);
-    };
-    window.HVPages={
-      get(id){const cached=elements.get(id);if(cached && [...pages.values()].some(page=>page===cached||page.contains(cached)))return cached;for(const page of pages.values()){if(page.id===id)return page;const found=page.querySelector(`[id="${CSS.escape(id)}"]`);if(found){elements.set(id,found);return found;}}return null;},
-      get revision(){return revision;},
+  function router() {
+    const pages = new Map([...document.querySelectorAll('main > .view')].map(page => [page.id.replace(/View$/, ''), page]));
+    const host = document.querySelector('.main');
+    const elements = new Map();
+    const revisions = new Map();
+    const rendered = new Map();
+    const scrollPositions = new Map();
+    let revision = 0;
+    let forcedRevision = 0;
+    let previousView = 'calendar';
+    const featureRevision = view => HVData.token(state, [...new Set([...HVData.collections, 'roadTrips'])]) + '|' + (revisions.get(view) || 0);
+    const stamp = view => [state, forcedRevision, featureRevision(view), state.activeProfileId, isoDate(new Date()), view === 'calendar' ? calendarCursor.getTime() : ''];
+    window.HVPages = {
+      get(id) {
+        const cached = elements.get(id);
+        if (cached && [...pages.values()].some(page => page === cached || page.contains(cached))) return cached;
+        for (const page of pages.values()) {
+          const element = page.id === id ? page : page.querySelector(`[id="${CSS.escape(id)}"]`);
+          if (element) { elements.set(id, element); return element; }
+        }
+        return null;
+      },
+      get revision() { return revision; },
       revisionFor:featureRevision,
-      invalidateViews(views){for(const view of views){contextRevisions.set(view,(contextRevisions.get(view)||0)+1);rendered.delete(view);}},
-      markRendered(view){rendered.set(view,stamp(view));},
       reusing:false,
-      invalidate(changed){revision++;if(!changed){forcedRevision++;rendered.clear();}},
-      mount(view){const target=pages.get(view);if(!target)return;for(const page of pages.values())if(page!==target)page.remove();host.insertBefore(target,q('.herald-site-footer',host));target.classList.add('active');}
+      invalidateViews(views) { for (const view of views) { revisions.set(view, (revisions.get(view) || 0) + 1); rendered.delete(view); } },
+      markRendered(view) { rendered.set(view, stamp(view)); },
+      invalidate(changed) { revision++; if (!changed) { forcedRevision++; rendered.clear(); } },
+      mount(view) {
+        const target = pages.get(allowedView(view));
+        if (!target) return;
+        for (const page of pages.values()) if (page !== target) page.remove();
+        host.append(target);
+        target.classList.add('active');
+      }
     };
     const save = window.persist;
-    window.persist = function(...args){const changed=HVData.observe(state,[...HVData.collections,'routeData','logoData']);window.HVPages.invalidate(changed);return save.apply(this,args);};
-    const render = window.renderAll;
-    window.renderAll = function(...args){HVData.observe(state);const result=render.apply(this,args);const view=document.body.dataset.currentView||'dashboard';if(['stats','countries'].includes(view))renderAtlas();rendered.set(view,stamp(view));return result;};
-    const previous=window.switchView,scrollPositions=new Map();
-    const pageKey=view=>view==='country'?view+location.hash.split(/[?&]/)[0]:view;
-    let previousPage=pageKey(document.body.dataset.currentView||'dashboard');
-    window.switchView=function(view,{replaceRoute=false}={}){
-      scrollPositions.set(previousPage,window.scrollY);const targetPage=pageKey(view);
-      const reuse=unchanged(view);window.HVPages.mount(view);previous(view,{render:false,scroll:false});
-      applyViewChrome(view);setRoute(view,replaceRoute);
-      if(!reuse)window.renderAll();
-      window.HVPages.reusing=!!reuse;
-      try{window.dispatchEvent(new CustomEvent('hv-route',{detail:view}));}
-      finally{window.HVPages.reusing=false;}
-      previousPage=targetPage;const top=scrollPositions.get(targetPage)||0;
-      window.scrollTo({top,behavior:'instant'});
+    window.persist = function(...args) {
+      window.HVPages.invalidate(HVData.observe(state, [...HVData.collections, 'roadTrips', 'routeData', 'logoData']));
+      return save.apply(this, args);
     };
-    window.addEventListener('hv-airports-ready',()=>window.HVPages.invalidateViews(['country','transport','places']));
-    window.addEventListener('hv-data-changed',()=>{elements.clear();rendered.clear();});
-    window.HVPages.mount(routeFromHash()||'dashboard');
+    const render = window.renderAll;
+    window.renderAll = function(...args) {
+      HVData.observe(state);
+      const result = render.apply(this, args);
+      const view = document.body.dataset.currentView || 'calendar';
+      if (view === 'settings') window.renderProfiles();
+      rendered.set(view, stamp(view));
+      return result;
+    };
+    const switchView = window.switchView;
+    window.switchView = function(requested, {replaceRoute = false} = {}) {
+      const view = allowedView(requested);
+      scrollPositions.set(previousView, window.scrollY);
+      const old = rendered.get(view);
+      const reuse = old && stamp(view).every((value, index) => value === old[index]);
+      window.HVPages.mount(view);
+      switchView(view, {render:false, scroll:false});
+      updateChrome(view);
+      updateRoute(view, replaceRoute || view !== requested);
+      if (!reuse) window.renderAll();
+      window.HVPages.reusing = !!reuse;
+      try { window.dispatchEvent(new CustomEvent('hv-route', {detail:view})); }
+      finally { window.HVPages.reusing = false; }
+      previousView = view;
+      window.scrollTo({top:scrollPositions.get(view) || 0, behavior:'instant'});
+    };
+    window.addEventListener('hv-data-changed', () => { elements.clear(); rendered.clear(); });
+    window.addEventListener('popstate', () => window.switchView(routeView(), {replaceRoute:true}));
+    window.addEventListener('hashchange', () => window.switchView(routeView(), {replaceRoute:true}));
+    window.switchView(routeView(), {replaceRoute:true});
   }
-
-  function installAtlasPages() {
-    for(const id of ['tripSearch','tripStatusFilter','tripYearFilter'])if($(id))$(id).addEventListener('input',renderStayLists);
-    const homes=$('residencePanel');if(homes)$('homesView').append(homes);
-    $('settingsTheme').onclick=()=>$('themeToggleBtn')?.click();
-    $('settingsCount').onclick=()=>$('editCountryCountBtn')?.click();
-    const exportButton=document.createElement('button');exportButton.type='button';exportButton.className='secondary';exportButton.textContent='Export travel data';exportButton.onclick=()=>exportData();
-    const exportNote=document.createElement('p');exportNote.className='helper';exportNote.textContent='Download all travellers and records currently loaded in this account or guest session. Keep the file private.';
-    $('settingsView').querySelector('.panel').append(exportNote,exportButton);
-    const privacy=document.createElement('div');privacy.innerHTML='<hr><h2>Data on this device</h2><p class="helper">Logging out keeps unsent account changes on this device so they can sync when you return. Guest history and recoverable backups also remain here. Use Account to remove pending account changes from a shared device.</p><button type="button" class="secondary" id="exportGuestData">Export guest data</button> <button type="button" class="danger-link" id="clearGuestData">Clear guest data from this device</button>';$('settingsView').querySelector('.panel').append(privacy);
-    const guestKeys=()=>localStorage.getItem('whereIveBeen.localOwner.v1')?['whereIveBeen.guest.v1']:['whereIveBeen.data.v2','whereIveBeen.stays.v1'];
-    $('exportGuestData').onclick=()=>{const data=guestKeys().map(k=>localStorage.getItem(k)).find(Boolean);if(!data){alert('No guest data is stored on this device.');return;}const blob=new Blob([data],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Herald-Voyages-guest.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
-    $('clearGuestData').onclick=()=>{if(!confirm('Clear guest history from this device? Export it first if you want to keep a copy. Account data and account recovery copies will remain.'))return;for(const key of guestKeys())localStorage.removeItem(key);location.reload();};
-
-    const dashboard=$('dashboardView');
-    const overview=document.createElement('div');overview.id='atlasOverview';overview.className='atlas-overview';
-    dashboard.prepend(overview);
-    const memory=$('travelMemoryPanel');q('.two-col',dashboard)?.after(memory);memory.classList.add('memory-secondary');
-    const calendar=$('calendarView'),calendarPanel=q('.calendar-panel',calendar),yearTools=document.createElement('div');yearTools.className='atlas-calendar-switch';
-    yearTools.innerHTML='<div class="calendar-view-switch" role="group" aria-label="Calendar view"><button type="button" data-calendar-view="month" aria-pressed="true">Month</button><button type="button" data-calendar-view="year" aria-pressed="false">Year overview</button><button type="button" data-calendar-view="agenda" aria-pressed="false">Agenda</button></div><div id="atlasYear" class="atlas-year" hidden></div>';
-    calendarPanel.before(yearTools);
-    const viewSwitch=q('.calendar-view-switch',yearTools);q('.calendar-toolbar-secondary',calendarPanel).prepend(viewSwitch);
-    const agenda=document.createElement('div');agenda.id='calendarAgenda';agenda.hidden=true;calendarPanel.append(agenda);
-    const showCalendarView=(view,remember=true)=>{if(remember)try{localStorage.setItem('herald.calendar.view.v1',view);}catch{}agenda.hidden=view!=='agenda';window.HVCalendar?.renderAgenda();$('prevMonth').setAttribute('aria-label',view==='year'?'Previous year':'Previous month');$('nextMonth').setAttribute('aria-label',view==='year'?'Next year':'Next month');$('calendar').hidden=view!=='month';calendarPanel.dataset.calendarView=view;$('atlasYear').hidden=view!=='year';qa('button[data-calendar-view]',calendar).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.calendarView===view)));renderAtlas();if(view==='month')window.HVCalendar?.renderMonth();};
-    qa('button[data-calendar-view]',calendar).forEach(button=>button.onclick=()=>showCalendarView(button.dataset.calendarView));
-    calendarPanel.append($('atlasYear'));yearTools.remove();
-    window.HVCalendarView={show:showCalendarView};
-    let preferred;try{preferred=localStorage.getItem('herald.calendar.view.v1');}catch{}showCalendarView(['agenda','month','year'].includes(preferred)?preferred:matchMedia('(max-width:649px)').matches?'agenda':'month',false);
-    const countries=$('countriesView');const directory=document.createElement('article');directory.className='panel atlas-directory';
-    directory.innerHTML=`<div class="panel-head"><div><p class="eyebrow">YOUR WORLD</p><h2>Countries and territories</h2><p class="helper">This directory includes countries and territories. Your total uses your chosen country definition. <button type="button" class="text-btn" data-open-definition>View definition</button></p></div></div><div class="atlas-directory-controls"><label class="field"><span>Find a country</span><input type="search" id="atlasCountrySearch" placeholder="Search countries" autocomplete="off"></label><label class="field"><span>Show</span><select id="atlasCountryFilter"><option value="all">All countries</option><option value="visited">Visited</option><option value="unvisited">Not yet visited</option><option value="planned">Planned</option></select></label></div><label class="field"><span>Continent</span><select id="atlasContinent"><option value="all">All continents</option>${['Europe','Asia','Africa','North America','South America','Oceania','Antarctica','Other locations'].map(x=>`<option>${x}</option>`).join('')}</select></label><div id="atlasCountryDirectory"></div>`;
-    countries.prepend(directory);$('atlasCountrySearch').oninput=renderDirectory;$('atlasCountryFilter').onchange=renderDirectory;$('atlasContinent').onchange=renderDirectory;
-    const currentDashboard=window.renderDashboard;window.renderDashboard=function(){currentDashboard();renderAtlas();};
-    renderAtlas();
-  }
-
-  function atlasRecords() {
-    const today=isoDate(new Date());
-    return [...HVJourney.summary(state,today).byCountry.values()].flatMap(country=>country.records);
-  }
-  function atlasCoverage() {
-    const universe=COUNTRIES.filter(c=>c.code!=='SEA'&&WIBCountryCount.isCounted(c.code));
-    const codes=HVJourney.summary(state,isoDate(new Date())).countries;
-    const visited=universe.filter(c=>codes.has(c.code));
-    return {universe,visited,codes,percent:universe.length?(visited.length/universe.length*100).toFixed(1):'0.0'};
-  }
-  function renderDirectory() {
-    const el=$('atlasCountryDirectory');if(!el)return;
-    const {codes}=atlasCoverage();const term=$('atlasCountrySearch').value.trim().toLocaleLowerCase(),filter=$('atlasCountryFilter').value;
-    const rows=COUNTRIES.filter(c=>c.code!=='SEA'&&c.name.toLocaleLowerCase().includes(term)&&($('atlasContinent').value==='all'||HVAtlas.region(c.code)===$('atlasContinent').value)).filter(c=>filter==='all'||filter==='visited'&&codes.has(c.code)||filter==='unvisited'&&!codes.has(c.code)||filter==='planned'&&staysForProfile().some(s=>s.countryCode===c.code&&s.status==='planned'));
-    el.innerHTML=rows.length?rows.map(c=>{
-      const days=HVJourney.summary(state,isoDate(new Date())).byCountry.get(c.code)?.days||new Set();
-      return `<a class="atlas-country country-link" href="#/country/${escapeHtml(c.code)}"><span class="atlas-country-name">${flagHtml(c.code)}<strong>${escapeHtml(c.name)}</strong></span><span>${escapeHtml(codes.has(c.code)?days.size?`${HVJourneyUI.count(days.size,'logged day')} · Visited`:'Visited · '+(HVCountryVisits.manualRows(state,isoDate(new Date())).find(r=>r.countryCode===c.code)?.year||'dates not recorded'):'Not yet visited')}</span><span aria-hidden="true">↗</span></a>`;
-    }).join(''):'<p class="empty-state">No countries match your filters.</p>';
-  }
-  function renderTravelMemory(todayDate) {
-    const panel=$('travelMemoryPanel');if(!panel)return;
-    const [currentYear,month,day]=todayDate.split('-').map(Number);
-    const memory=HVData.memo(state,'travel-memories',['stays','profiles','residences','placeVisits','accommodations','transports','trips'],todayDate+'|'+state.activeProfileId,()=>HVJourney.memories(state,todayDate));
-    const dateLabel=new Date(Date.UTC(currentYear,month-1,day)).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'});
-    panel.innerHTML=`<div class="travel-memory-mark" aria-hidden="true">↶</div><div class="travel-memory-copy"><p class="eyebrow">ON THIS DATE</p><h2>Travel memories</h2>${memory.length?`<div class="travel-memory-list">${memory.map(({year,places})=>{const when=currentYear-year;return `<p>This day ${when} ${when===1?'year':'years'} ago, you were in <strong>${escapeHtml(new Intl.ListFormat('en-GB',{style:'long',type:'conjunction'}).format(places.map(p=>p.name)))}</strong>.</p><div class="travel-memory-places">${places.map(p=>`<span>${flagHtml(p.flagCode||p.code,'flag-img flag-sm')}${escapeHtml(p.name)}</span>`).join('')}</div>`;}).join('')}</div>`:`<p class="travel-memory-empty">No travel outside your home country is recorded for ${escapeHtml(dateLabel)} in previous years.</p>`}</div>`;
-  }
-  function renderAtlas() {
-    if(!$('atlasOverview'))return;
-    const view=document.body.dataset.currentView;
-    if(view==='countries'){renderDirectory();return;}
-    if(view==='calendar'){window.HVJourneys?.render();return;}
-    if(view && !['dashboard','stats'].includes(view))return;
-    const {universe,visited,percent}=atlasCoverage(),records=atlasRecords(),todayDate=isoDate(new Date());
-    const cancelled=new Set((state.trips||[]).filter(t=>t.status==='cancelled').map(t=>t.id));
-    const eligible=r=>r.status!=='cancelled'&&!cancelled.has(r.tripId);
-    const candidates=[
-      ...HVJourney.scoped(state.trips||[],state.activeProfileId).filter(eligible).map(r=>({...r,tripId:r.id,kind:'trip'})),
-      ...staysForProfile().filter(eligible).filter(r=>HVJourney.isTravelStay(state,r)).map(r=>({...r,kind:'country'})),
-      ...HVJourney.scoped(state.accommodations||[],state.activeProfileId).filter(eligible).filter(r=>!HVJourney.hiddenHomeRecord(state,r)).map(r=>({...r,start:r.checkIn,end:r.checkOut,kind:'accommodation'})),
-      ...HVJourney.visibleTransport(state,state.activeProfileId).filter(eligible).filter(r=>!HVJourney.hiddenHomeRecord(state,r)).map(r=>({...r,start:HVJourney.transportDates(r)[0],end:HVJourney.transportDates(r).at(-1),kind:'transport'})),
-    ].filter(r=>HVJourney.validDate(r.start));
-    const current=candidates.find(r=>r.start<=todayDate&&(!r.end||r.end>=todayDate)),next=candidates.filter(r=>r.start>todayDate).sort((a,b)=>a.start.localeCompare(b.start))[0],recent=candidates.filter(r=>(r.end||r.start)<todayDate).sort((a,b)=>(b.end||b.start).localeCompare(a.end||a.start))[0],featured=current||next||recent;
-    const featureKind=featured?.tripId?'trip':featured?.kind==='country'?'country visit':featured?.kind==='accommodation'?'accommodation':'transport';
-    const featuredLabel=(current?'CURRENT ':next?'NEXT ':'MOST RECENT ')+featureKind.toUpperCase();
-    const members=featured?.tripId?candidates.filter(r=>r.tripId===featured.tripId):[featured].filter(Boolean),featuredDates=members.flatMap(r=>[r.start,r.end]).filter(HVJourney.validDate).sort();
-    const featuredName=featured&&(state.trips.find(t=>t.id===featured.tripId)?.name||featured.propertyName||(featured.kind==='transport'?HVJourneys.transportLabel(featured):countryByCode(featured.countryCode)?.name||featured.countryName));
-    const featuredHref=featured?.tripId?'#/trips?trip='+encodeURIComponent(featured.tripId):'#/calendar?kind='+encodeURIComponent(featured?.kind||'')+'&id='+encodeURIComponent(featured?.id||'');
-    $('dashboardView').classList.toggle('home-empty',!featured);
-    const regions=HVAtlas.progress(universe,new Set(visited.map(c=>c.code))),continents=new Set(records.map(s=>HVAtlas.region(s.countryCode)).filter(r=>r!=='Other locations'));
-    const today=isoDate(new Date()),year=today.slice(0,4),thisYear=new Set(records.filter(s=>s.start<=`${year}-12-31`&&(!s.end||s.end>=`${year}-01-01`)).map(s=>s.countryCode).filter(c=>c!=='SEA'));
-    $('atlasOverview').innerHTML=featured
-      ? `<section class="home-hero home-hero--trip"><div><p class="eyebrow">${escapeHtml(featuredLabel)}</p><h2>${escapeHtml(featuredName)}</h2><p>${escapeHtml(friendlyDate(featuredDates[0]))} to ${escapeHtml(friendlyDate(featuredDates.at(-1)))}</p></div><div class="home-hero-actions"><a class="primary" href="${escapeHtml(featuredHref)}">Open ${escapeHtml(featureKind)}</a><button type="button" class="secondary" data-plan-trip>Plan another trip</button><a class="text-btn" href="#/trips">All trips</a></div></section>`
-      : `<section class="home-hero home-hero--empty"><div><p class="eyebrow">TRAVEL, MADE SIMPLE</p><h2>One calm place for every journey.</h2><p>Plan what is next, log where you have been, and let Herald keep the practical details together.</p></div><div class="home-hero-actions"><button type="button" class="primary" data-plan-trip>Plan a trip</button><button type="button" class="secondary" data-add-first-trip data-trip-intent="actual">Log a past trip</button></div></section>`;
-    if(view==='dashboard'){renderTravelMemory(todayDate);window.HVDailyAgenda?.render(todayDate);}
-    $('dashboardGaps').closest('.panel').hidden=!(staysForProfile().length||(state.transports||[]).length);
-    const summary=HVJourney.summary(state,todayDate);
-    if($('recordedTripCount'))$('recordedTripCount').textContent=summary.trips.size;
-    $('schengenRemaining').closest('.stat-card').hidden=isSchengenExemptProfile()||!staysForProfile().some(s=>countsForPlanning(s)&&SCHENGEN.has(s.countryCode));
-    if(view==='dashboard')return;
-    const counts=summary.byCountry;
-    const sorted=[...counts].sort((a,b)=>b[1].days.size-a[1].days.size);const max=sorted[0]?.[1].days.size||1;
-    $('atlasStatistics').innerHTML=`<div class="atlas-stats-heading"><p class="eyebrow">YOUR TRAVEL AT A GLANCE</p><h2>${escapeHtml(visited.length?`${visited.length} ${visited.length===1?'country':'countries'} explored`:'Add your first dated trip')}</h2><p>${visited.length?`${escapeHtml(percent)}% of your selected country definition · ${escapeHtml(HVJourneyUI.count(summary.trips.size,'trip / standalone stay'))} · `:''}${escapeHtml(activeProfile().name)} · your recorded travel</p>${!visited.length?'<button type="button" class="primary" data-plan-trip>Add a dated trip</button>':''}</div>${window.HVTravelStats?.cards(state,todayDate)||''}<article class="panel"><div class="panel-head"><h2>Travel days by country</h2><span>Excludes home days · overlapping dates counted once per country</span></div>${sorted.length?sorted.map(([code,c])=>`<div class="atlas-rank"><strong>${escapeHtml(countryByCode(code)?.name||code)}</strong><div><span style="width:${escapeHtml(c.days.size/max*100)}%"></span></div><span>${escapeHtml(HVJourneyUI.count(c.days.size,'day'))} · ${escapeHtml(HVJourneyUI.count(c.trips,'stay'))}</span></div>`).join(''):'<p class="empty-state">Your travel statistics will appear after you add your first trip.</p>'}</article>`;
-    const frequency=HVJourney.travelFrequency(state,todayDate),frequencyPanel=document.createElement('article');frequencyPanel.className='panel';
-    const weekdayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    frequencyPanel.innerHTML=`<h2>Travel frequency</h2><p><strong>Most travelled weekday:</strong> ${escapeHtml(frequency.weekdays.length?frequency.weekdays.map(i=>weekdayNames[i]).join(', '):'No foreign travel recorded')}</p><p><strong>Most travelled date:</strong> ${escapeHtml(frequency.dates.length?frequency.dates.map(d=>new Date('2000-'+d+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'})).join(', ')+', spent abroad in '+frequency.yearMax+' different '+(frequency.yearMax===1?'year':'years'):'No foreign travel recorded')}</p><p class="helper">Recorded foreign travel through today. Each calendar date counts once; ties are shown together.</p>`;$('atlasStatistics').append(frequencyPanel);
-    const regionPanel=document.createElement('article');regionPanel.className='panel atlas-region-panel';regionPanel.innerHTML=`<div class="panel-head"><h2>Continents explored</h2><span>${escapeHtml(continents.size)} visited · your country definition</span></div><div class="atlas-regions">${regions.map(r=>`<div><strong>${escapeHtml(r.name)}</strong><span>${escapeHtml(r.visited)} / ${escapeHtml(r.total)} countries</span><div class="atlas-coverage-bar" style="--coverage:${escapeHtml(r.total?r.visited/r.total*100:0)}%"></div></div>`).join('')}</div><p class="helper">Russia is grouped with Europe; Turkey, Cyprus and the Caucasus with Asia. Antarctica can be recorded as a place even when excluded from your country count.</p>`;$('atlasStatistics').append(regionPanel);
-    const shared=document.createElement('details');shared.className='panel journey-accordion';const everyone=HVJourney.summary(state,today,'all');shared.innerHTML=`<summary>All travellers summary</summary><p>${escapeHtml([...everyone.countries].filter(WIBCountryCount.isCounted).length)} countries · ${escapeHtml(HVJourneyUI.count(everyone.days.size,'travel date'))} · ${escapeHtml(HVJourneyUI.count(everyone.trips.size,'trip / standalone stay'))}</p><p class="helper">Combined completed history for all travellers. Each date counts once; a date is travel if any traveller was away from their own home. Individual passport tools use the traveller selected above.</p>`;$('atlasStatistics').append(shared);
-    if(!$('atlasYear').hidden){const activeYear=typeof calendarCursor!=='undefined'?calendarCursor.getUTCFullYear():Number(year);$('atlasYear').innerHTML=Array.from({length:12},(_,m)=>{const prefix=`${activeYear}-${String(m+1).padStart(2,'0')}`,days=new Set(records.flatMap(s=>datesForStay(s)).filter(d=>d.startsWith(prefix)));return `<button type="button" class="atlas-month" data-atlas-month="${m}" data-atlas-year="${activeYear}"><strong>${new Date(activeYear,m,1).toLocaleDateString('en-GB',{month:'long'})}</strong><div class="atlas-month-dots">${Array.from({length:new Date(activeYear,m+1,0).getDate()},(_,d)=>`<i class="${days.has(`${prefix}-${String(d+1).padStart(2,'0')}`)?'travel':''}"></i>`).join('')}</div><small>${HVJourneyUI.count(days.size,'logged day')}</small></button>`}).join('');}
-    window.HVJourneys?.render();
-  }
-  document.addEventListener('click',e=>{
-    if(e.target.closest('[data-add-first-trip]')){e.preventDefault();window.HVTravelActions?.add('country',{source:'manual',status:'actual'});return;}
-    if(e.target.closest('[data-open-definition]')){$('editCountryCountBtn')?.click();return;}
-    if(e.target.closest('[data-plan-trip]')){e.preventDefault();window.HVTravelActions?.plan();return;}
-    const add=e.target.closest('[data-atlas-add]');if(add){window.HVTravelActions?.add('country');$('countryInput').value=countryByCode(add.dataset.atlasAdd)?.name||'';$('countryInput').dispatchEvent(new Event('input',{bubbles:true}));}
-    const month=e.target.closest('[data-atlas-month]');if(month){calendarCursor=new Date(Date.UTC(Number(month.dataset.atlasYear),Number(month.dataset.atlasMonth),1));renderCalendar();q('[data-calendar-view="month"]')?.click();}
-  });
 
   function boot() {
-    installBranding();
-    installAccountChrome();
-    installFooter();
-    if (!document.body.dataset.accountPage) {
-      installNavigation();
-      installTravellerSelector();
-      installMobileNavigation();
-      installRouting();
-      polishCopy();
-
-      installDashboardHierarchy();
-      installCountrySearch();
-      installMapExperience();
-      installAtlasPages();
-      window.HVJourneys?.init();
-      installWorkspaceTabs();
-      applyViewChrome(routeFromHash() || activeView());
+    branding();
+    if (document.body.dataset.accountPage) {
+      document.title = `${accountTitles[document.body.dataset.accountPage] || 'Account'} — Herald Voyages`;
+      return;
     }
-    watchDynamicBranding();
-    if (!document.body.dataset.accountPage) installPageRouter();
+    navigation();
+    settings();
+    window.HVJourneys?.init();
+    router();
   }
-
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', boot) : boot();
 })();

@@ -54,6 +54,21 @@
         return [...new Set([...maps[2].keys(),...maps[1].keys(),...maps[0].keys()])].map(id=>field(maps[0].get(id),maps[1].get(id),maps[2].get(id),path+'.'+id)).filter(row=>row!==undefined);
       }
       if (b && l && r && !Array.isArray(l) && typeof l === 'object' && typeof r === 'object') {
+        if (path.startsWith('roadTrips.') && Array.isArray(l.stops) && Array.isArray(r.stops)
+          && (l.plannerVersion === 2 || r.plannerVersion === 2)) {
+          const graphKeys = ['plannerVersion', 'stops', 'segments', 'previousSegments', 'sourceRecords'];
+          const graph = record => Object.fromEntries(graphKeys.map(key => [key, record[key]]));
+          const baseGraph = graph(b), localGraph = graph(l), remoteGraph = graph(r);
+          if (!equal(baseGraph, localGraph) && !equal(baseGraph, remoteGraph) && !equal(localGraph, remoteGraph)) {
+            const conflict = {path: path + '.plannerGraph', local: localGraph, remote: remoteGraph};
+            conflicts.push(conflict);
+            const merged = Object.fromEntries([...new Set([...Object.keys(b), ...Object.keys(l), ...Object.keys(r)])]
+              .filter(key => !graphKeys.includes(key))
+              .map(key => [key, field(b[key], l[key], r[key], path + '.' + key)])
+              .filter(([, value]) => value !== undefined));
+            return {...merged, ...copy(resolve ? resolve(conflict) : remoteGraph)};
+          }
+        }
         if (/^calendarPlans\.[^.]+\.record$/.test(path)) {
           const keys=['start','end','checkIn','checkOut','startLocal','endLocal','date','endDate','legs','via'];
           const timing=row=>Object.fromEntries(keys.filter(key=>Object.hasOwn(row,key)).map(key=>[key,row[key]]));
@@ -161,6 +176,19 @@
         if (record.autoFromPlannedId) record.autoFromPlannedId = stayIds.get(record.autoFromPlannedId) || record.autoFromPlannedId;
         if(record.linkedTransportId)record.linkedTransportId=transportIds.get(record.linkedTransportId)||record.linkedTransportId;
         if(record.notesId)record.notesId=noteIds.get(record.notesId)||record.notesId;
+        if (key === 'roadTrips' && record.plannerVersion === 2) {
+          const sourceIds = {transports:transportIds, accommodations:accommodationIds, stays:stayIds, placeVisits:locationIds, notes:noteIds};
+          const remapSource = reference => {
+            if (!reference) return;
+            reference.id = sourceIds[reference.collection]?.get(reference.id) || reference.id;
+            if (reference.profileId) reference.profileId = profileIds.get(reference.profileId) || reference.profileId;
+            if (reference.tripId) reference.tripId = tripIds.get(reference.tripId) || reference.tripId;
+          };
+          (record.sourceRecords || []).forEach(remapSource);
+          for (const segment of record.segments || []) remapSource(segment.sourceRecord);
+          for (const segment of record.previousSegments || []) remapSource(segment.sourceRecord);
+          for (const stop of record.stops || []) remapSource(stop.accommodation?.sourceRecord);
+        }
         if(record.budgetId)record.budgetId=budgetIds.get(record.budgetId)||record.budgetId;
         const references={transport:transportIds,accommodation:accommodationIds,country:stayIds,location:locationIds};
         if(record.relatedId&&references[record.relatedType])record.relatedId=references[record.relatedType].get(record.relatedId)||record.relatedId;
@@ -192,6 +220,25 @@
     return {data: result, conflicts};
   }
   function describeConflict(conflict,data={}) {
+    if (conflict.path.startsWith('roadTrips.') && conflict.path.endsWith('.plannerGraph')) {
+      const road = (data.roadTrips || []).find(row => conflict.path === 'roadTrips.' + row.id + '.plannerGraph');
+      const summarize = graph => {
+        const media = item => (Array.isArray(item.media) ? item.media : item.media ? [item.media] : [])
+          .map(image => image?.name || 'Image').join(', ');
+        const stops = (graph.stops || []).slice(0, 8).map(stop =>
+          [stop.name, stop.arrivalLocal, stop.departureLocal, stop.accommodation?.name,
+            stop.accommodation?.checkIn, stop.accommodation?.checkOut,
+            typeof stop.notes === 'string' ? stop.notes.slice(0, 120) : '', media(stop)].filter(Boolean).join(' · '));
+        const segments = (graph.segments || []).slice(0, 8).map(segment =>
+          [segment.customLabel || segment.mode, segment.departureLocal, segment.arrivalLocal,
+            segment.operator, segment.serviceNumber, typeof segment.notes === 'string' ? segment.notes.slice(0, 120) : '', media(segment)]
+            .filter(Boolean).join(' · '));
+        return [((graph.stops || []).length + ' destinations'), ...stops, ...segments,
+          ...(graph.previousSegments?.length ? [graph.previousSegments.length + ' previous connections retained'] : [])].join('\n');
+      };
+      return {title:(road?.name || 'Journey') + ' · Destinations and connections',
+        local:summarize(conflict.local), remote:summarize(conflict.remote)};
+    }
     const [collection,id,field]=conflict.path.split('.'),record=(data[collection]||[]).find?.(r=>r.id===id)||conflict.local||conflict.remote||{};
     const labels={calendarPlans:'Tentative plan',calendarTiming:'Plan dates',confirmation:'Confirmation',stays:'Stay',trips:'Trip',transports:'Transport',transportOperators:'Transport operator',operatorLogo:'Operator logo',accommodations:'Accommodation',residences:'Home period',profiles:'Traveller',placeVisits:'Place visit',savedPlaces:'Saved place',manualCountryVisits:'Manual country visit',tccVisits:'TCC destination',destinationId:'TCC destination',date:'Visit date',year:'Visit year',visitTiming:'Visit date or year',visited:'Visited',note:'Visit note',notes:'Travel note',checklists:'Checklist',budgets:'Budget',expenses:'Budget item',visaAcknowledgements:'Visa reminder',start:'Start date',end:'End date',checkIn:'Check-in',checkOut:'Check-out',propertyName:'Property',location:'Location',status:'Status',notes:'Notes',countryCode:'Country',profileId:'Traveller',tripId:'Linked trip',homeCountryCodes:'Permanent home countries',activeProfileId:'Selected traveller',countryCountExcludedCodes:'Excluded countries',countryCountIncludedExtraCodes:'Included territories'};
     const name=record.countryName||record.name||(record.start?.name?record.start.name+' to '+record.end?.name:'')||labels[collection]||'Preference';
@@ -242,7 +289,19 @@
           for(const side of ['start','end'])if(!row[side]||typeof row[side].name!=='string'||!row[side].name.trim())throw new Error('Check transport locations.');
           if(row.legs!=null){if(!Array.isArray(row.legs))throw new Error('Check flight legs.');for(const leg of row.legs)if(!leg||!local(leg.startLocal)||!local(leg.endLocal)||!leg.start?.name?.trim()||!leg.end?.name?.trim())throw new Error('Check each flight leg and its local times.');}
         }
-        if(key==='roadTrips'&&(typeof row.name!=='string'||!row.name.trim()||!Array.isArray(row.stops)||row.stops.length<2||row.stops.some(p=>typeof p?.name!=='string'||!p.name.trim())||!['idea','planned','actual'].includes(row.status)))throw new Error('Check saved road trip details.');
+        if (key === 'roadTrips') {
+          if (row.plannerVersion === 2) {
+            const planner = typeof module !== 'undefined' && module.exports
+              ? require('./trip-planner-model.js') : root.HVTripPlannerModel;
+            if (!planner) throw new Error('The journey editor is still loading. Try again.');
+            const problem = planner.validate(row);
+            if (problem) throw new Error(problem);
+          } else if (typeof row.name !== 'string' || !row.name.trim() || !Array.isArray(row.stops)
+            || row.stops.length < 2 || row.stops.some(stop => typeof stop?.name !== 'string' || !stop.name.trim())
+            || !['idea', 'planned', 'actual'].includes(row.status)) {
+            throw new Error('Check saved road trip details.');
+          }
+        }
         if(key==='currencyRates'&&(!/^[A-Z]{3}$/.test(row.from)||!/^[A-Z]{3}$/.test(row.to)||!Number.isFinite(row.rate)||row.rate<=0))throw new Error('Check saved currency rates.');
         if(key==='currencyPreferences'&&(['from','to'].some(k=>row[k]&&!/^[A-Z]{3}$/.test(row[k]))||['favourites','recent'].some(k=>row[k]!=null&&(!Array.isArray(row[k])||row[k].some(c=>typeof c!=='string'||!/^[A-Z]{3}$/.test(c))))))throw new Error('Check currency preferences.');
         if(key==='placeVisits'&&(typeof row.category!=='string'||typeof row.itemId!=='string'||(!['want','not-recorded'].includes(row.status)&&!/^\d{4}-\d{2}-\d{2}$/.test(row.date||''))))throw new Error('Check place visit details.');

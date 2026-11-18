@@ -13,9 +13,15 @@
   const notes = value => value ? `<div class="calendar-profile-notes">${window.HVTravelTools?.noteBody(value)||'<p>'+E(value)+'</p>'}</div>` : '';
 
   function index() {
-    return HVData.memo(state,'calendar-entry-index',[...Object.values(collections),'trips'],state.activeProfileId,() => {
+    return HVData.memo(state,'calendar-entry-index',[...Object.values(collections),'trips','roadTrips'],state.activeProfileId,() => {
       const out={};
       for (const [kind,key] of Object.entries(collections)) out[kind]=new Map(HVJourney.scoped(Array.isArray(state[key])?state[key]:[],state.activeProfileId).map(record => [record.id,record]));
+      const planned = window.HVTripPlannerModel?.calendarEntries(state, state.activeProfileId);
+      if (planned) {
+        for (const [kind, key] of [['transport','transports'],['accommodation','accommodations'],['location','places'],['note','notes']]) {
+          for (const row of planned[key]) out[kind].set(row.id, row);
+        }
+      }
       out.trip=new Map(HVJourney.scoped(state.trips||[],state.activeProfileId).map(trip => [trip.id,trip]));
       out.byTrip=new Map();out.linkedNotes=new Map();
       for(const kind of ['country','accommodation','transport','location'])for(const item of out[kind].values()){
@@ -43,7 +49,7 @@
   }
   function tripLine(row) {
     const trip=index().trip.get(row.tripId);
-    return trip ? `<button type="button" class="calendar-profile-trip text-btn" data-calendar-open-journey="trip:${E(trip.id)}">${E(trip.name||'Linked trip')} <span aria-hidden="true">↗</span></button>` : '';
+    return trip ? `<button type="button" class="calendar-profile-trip text-btn" data-planner-open-trip="${E(trip.id)}">${E(trip.name||'Journey')} <span aria-hidden="true">↗</span></button>` : '';
   }
   function accommodation(row) {
     const nights=countDays(row.checkIn,row.checkOut),logo=window.HVAccommodationLogos?HVData.memo(state,'calendar-preview-logo',['accommodations','savedPlaces','logoData'],row.id,()=>HVAccommodationLogos.forRecord(state,row)):null;
@@ -56,7 +62,7 @@
     const end=row.end||localToday(),days=countDays(row.start,end),current=localToday();
     const phase=row.status==='cancelled' ? 'Cancelled visit' : row.start>current ? 'Upcoming visit' : !row.end||row.end>=current ? 'Ongoing visit' : 'Past visit';
     return heading('country',row.countryName||row.countryCode,phase,flagHtml(row.domesticDestination||row.countryCode,'calendar-profile-flag'))+
-      `<dl class="calendar-profile-facts">${fact(row.status==='cancelled'?'Scheduled arrival':row.start>current?'Arriving':'Entered',dateText(row.start))}${fact(!row.end?'Through today':row.status==='cancelled'?'Scheduled departure':row.end<current?'Left':'Leaving',dateText(end))}${fact('Visit length',days===null?null:(days+1)+' '+(days===0?'day':'days'))}${fact('City or area',row.location)}${fact('Selected day',dateText(date))}${fact('Status',row.status==='planned'?'Planned record':row.status==='cancelled'?'Cancelled':null)}</dl>${SCHENGEN.has(row.countryCode)?`<p class="calendar-profile-rule">Schengen Area${row.schengenExempt?' · this record is marked exempt':''} <a href="#/schengen">Open existing calculator →</a></p>`:''}${window.HVVisaNotices?.detailLink(row)||''}${tripLine(row)}${notes(row.notes)}`;
+      `<dl class="calendar-profile-facts">${fact(row.status==='cancelled'?'Scheduled arrival':row.start>current?'Arriving':'Entered',dateText(row.start))}${fact(!row.end?'Through today':row.status==='cancelled'?'Scheduled departure':row.end<current?'Left':'Leaving',dateText(end))}${fact('Visit length',days===null?null:(days+1)+' '+(days===0?'day':'days'))}${fact('City or area',row.location)}${fact('Selected day',dateText(date))}${fact('Status',row.status==='planned'?'Planned record':row.status==='cancelled'?'Cancelled':null)}</dl>${tripLine(row)}${notes(row.notes)}`;
   }
   // Existing trip and map consumers retain their established compact transport view.
   function legs(t){return t.type==='flight'?HVJourney.flightLegs(t):HVJourney.groundLegs(t);}
@@ -106,7 +112,10 @@
     const group=HVCalendar.groupForEntry(kind,row.id) || (row.tripId?HVCalendar.journeyGroups().find(g=>g.trip?.id===row.tripId):null);
     const suggestion=group?.trip&&!row.tripId?`<p class="calendar-section-hint">Suggested trip: ${E(group.trip.name)} (dates match). This record has no trip link.</p>`:'';
     const noteAction=kind!=='note'?`<button type="button" class="text-btn" data-calendar-related-note="${E(kind)}" data-calendar-related-id="${E(row.id)}" data-calendar-related-date="${E(date)}">+ Linked note</button>`:'';
-    return `${suggestion}<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${E(kind==='country'?'visit':kind==='location'?'location':kind)}</button>${group?`<button type="button" class="text-btn" data-journey-map="${E(group.key)}">View journey on map ↗</button>`:kind==='location'?'<a class="text-btn" href="#/journey-map">Journey Map ↗</a>':''}${kind==='country'&&row.countryCode!=='SEA'?`<a class="text-btn" href="#/country/${E(row.countryCode)}">Country history ↗</a>`:''}${noteAction}<button type="button" class="text-btn" data-make-tentative="${E(kind)}" data-record-id="${E(row.id)}">Make tentative</button></div>`;
+    const plannerAction = ['transport','accommodation'].includes(kind)
+      ? `<button type="button" class="text-btn" data-planner-record-kind="${kind}" data-planner-record-id="${E(row.id)}">View in Trip Planner ↗</button>`
+      : group?.trip ? `<button type="button" class="text-btn" data-planner-open-trip="${E(group.trip.id)}">View in Trip Planner ↗</button>` : '';
+    return `${suggestion}<div class="calendar-profile-actions"><button type="button" class="secondary compact" ${edit}>Edit ${E(kind==='country'?'visit':kind==='location'?'location':kind)}</button>${plannerAction}${noteAction}<button type="button" class="text-btn" data-make-tentative="${E(kind)}" data-record-id="${E(row.id)}">Make tentative</button></div>`;
   }
   function entry(value,id,date,detailed=false) {
     const kind=entryKind(value);if(!kind)return '';

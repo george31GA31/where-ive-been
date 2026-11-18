@@ -1,0 +1,67 @@
+/* Existing-record entry points must honor current source and traveller ownership. */
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const {chromium} = require('playwright');
+const binary = require('@sparticuz/chromium');
+const M = require('../trip-planner-model.js');
+const root = path.resolve(__dirname, '..'), origin = 'https://herald.test';
+const contentTypes = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml','.webp':'image/webp'};
+const source = {id:'reassigned-transport',profileId:'q',tripId:'current-trip',type:'bus',status:'planned',start:{name:'Current origin',lat:10,lon:20},end:{name:'Current destination',lat:11,lon:21},startLocal:'2026-12-01T09:00',endLocal:'2026-12-01T12:00'};
+const stale = M.reconcile({id:'stale-graph',plannerVersion:2,profileId:'p',tripId:'old-trip',name:'Wrong former traveller',status:'planned',stops:[{id:'a',name:'Old origin',lat:1,lon:2},{id:'b',name:'Old destination',lat:2,lon:3}],segments:[],sourceRecords:[{collection:'transports',id:source.id,profileId:'p',tripId:'old-trip'}]});
+const wrongTrip = {...structuredClone(stale),id:'wrong-trip-graph',profileId:'q',tripId:'current-trip',name:'Wrong former trip',sourceRecords:[{collection:'transports',id:source.id,profileId:'q',tripId:'old-trip'}]};
+const collision = {...structuredClone(stale),id:'existing:transport:reassigned-transport'};
+const seed = {version:2,activeProfileId:'q',profiles:[{id:'p',name:'Former traveller',citizenships:[],enabledRules:[]},{id:'q',name:'Current traveller',citizenships:[],enabledRules:[]}],trips:[{id:'current-trip',profileId:'q',name:'Current trip'}],transports:[source],roadTrips:[stale,wrongTrip,collision],stays:[],accommodations:[],notes:[],savedPlaces:[],placeVisits:[],residences:[]};
+let browser;
+(async () => {
+  browser = await chromium.launch({executablePath:process.env.HV_CHROMIUM_PATH || await binary.executablePath(),args:binary.args.filter(arg=>arg!=='--single-process'),headless:true});
+  const page = await browser.newPage({viewport:{width:1440,height:950},serviceWorkers:'block',reducedMotion:'reduce'}), errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('dialog',dialog=>dialog.accept());
+  await page.route('**/*',route=>{
+    const url=new URL(route.request().url());
+    if(url.origin!==origin)return route.abort();
+    let file=path.resolve(root,'.'+decodeURIComponent(url.pathname));
+    if(!file.startsWith(root+path.sep)&&file!==root)return route.fulfill({status:403,body:''});
+    if(!path.extname(file))file=path.join(file,'index.html');
+    return fs.existsSync(file)?route.fulfill({path:file,contentType:contentTypes[path.extname(file)]}):route.fulfill({status:404,body:''});
+  });
+  await page.addInitScript(seed=>localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed)),seed);
+  await page.goto(origin);
+  await page.waitForFunction(()=>window.HVCalendar?.ready&&window.HVTripPlanner&&!document.querySelector('.app-shell').inert);
+  const before=await page.evaluate(()=>JSON.stringify([state.transports,state.trips]));
+  assert.equal(await page.evaluate(()=>HVTripPlanner.openExisting({transportId:'reassigned-transport'})),true);
+  assert.equal(await page.locator('#plannerName').inputValue(),'Current origin → Current destination');
+  assert.equal(await page.locator('#plannerStop0').inputValue(),'Current origin');
+  let draft=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('herald.tripPlanner.draft.v2.guest.q')).draft);
+  assert.notEqual(draft.id,'existing:transport:reassigned-transport','A new owner cannot overwrite a prior conversion with the same legacy source ID');
+  assert.deepEqual(draft.sourceRecords,[{collection:'transports',id:source.id,tripId:'current-trip',profileId:'q'}]);
+  await page.evaluate(()=>HVTripPlanner.create());
+  assert.equal(await page.evaluate(()=>HVTripPlanner.openExisting({tripId:'current-trip'})),true);
+  assert.equal(await page.locator('#plannerName').inputValue(),'Current trip');
+  draft=await page.evaluate(()=>JSON.parse(sessionStorage.getItem('herald.tripPlanner.draft.v2.guest.q')).draft);
+  assert.equal(draft.id,'existing:trip:current-trip','A stale graph with the same trip ID cannot claim reassigned source records');
+  await page.evaluate(()=>{
+    HVTripPlanner.create();
+    const current=HVTripPlannerModel.fromExisting(state,{transportId:'reassigned-transport'});
+    current.id='valid-current-graph';
+    current.name='Current canonical journey';
+    state.roadTrips.push(current);
+  });
+  assert.equal(await page.evaluate(()=>HVTripPlanner.openExisting({transportId:'reassigned-transport'})),true);
+  assert.equal(await page.locator('#plannerName').inputValue(),'Current canonical journey');
+  assert.equal(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('herald.tripPlanner.draft.v2.guest.q')).dirty),false,'An exact visible owner reopens its existing saved graph');
+  await page.evaluate(()=>{
+    HVTripPlanner.create();
+    state.roadTrips=state.roadTrips.filter(record=>record.id!=='valid-current-graph');
+    HVTripPlanner.openExisting({transportId:'reassigned-transport'});
+  });
+  await page.locator('[data-detail-done]').click();
+  await page.locator('#plannerSave').click();
+  assert.equal(await page.locator('#plannerSaveStatus').innerText(),'Saved','The reassigned source can save a separate authoritative graph');
+  assert.deepEqual(await page.evaluate(()=>state.roadTrips.find(record=>record.id==='existing:transport:reassigned-transport')),collision);
+  assert.equal(await page.evaluate(()=>JSON.stringify([state.transports,state.trips])),before);
+  assert.deepEqual(errors,[]);
+  console.log('Planner source ownership passed: stale traveller/trip graphs are rejected, exact visible ownership reopens the canonical graph, and original records remain intact.');
+})().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{await browser?.close();});

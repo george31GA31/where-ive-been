@@ -1,59 +1,111 @@
-/* Run with NODE_PATH pointing at a jsdom installation. No real account/network calls. */
-const {JSDOM,VirtualConsole}=require('jsdom'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),assert=require('node:assert/strict');
-const root=path.resolve(__dirname,'..'),errors=[];
-const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
-const dom=new JSDOM(fs.readFileSync(path.join(root,'index.html'),'utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,''),{url:'https://george31ga31.github.io/where-ive-been/#/dashboard',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc});
-const w=dom.window,c=dom.getInternalVMContext();w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});w.CSS={escape:s=>s};w.confirm=()=>true;
-w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
-w.fetch=async url=>{const name=String(url).split('/').at(-1).split('?')[0];if(fs.existsSync(path.join(root,'data',name)))return{ok:true,json:async()=>JSON.parse(fs.readFileSync(path.join(root,'data',name),'utf8'))};throw Error('Offline test');};
-const seed={version:2,profiles:[{id:'p',name:'Me',citizenships:[],enabledRules:['schengen']}],activeProfileId:'p',stays:[{id:'s',countryCode:'GB',countryName:'United Kingdom',start:'2026-01-01',end:'2026-01-04',status:'actual',profileId:'p'}],residences:[]};w.localStorage.setItem('whereIveBeen.data.v2',JSON.stringify(seed));
-const scripts=['account-model.js','account-sync.js',...Array.from(fs.readFileSync(path.join(root,'app.js'),'utf8').matchAll(/src="([^"?]+)(?:\?[^" ]*)?"/g),m=>m[1])];
-for(const file of scripts){Object.defineProperty(w.document,'currentScript',{configurable:true,value:{src:new URL(file,w.location.href).href}});vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),c,{filename:file});}
-const tick=()=>new Promise(r=>setTimeout(r,30));const run=s=>vm.runInContext(s,c);
-(async()=>{
- await tick();assert.equal(errors.length,0,errors.map(e=>e.stack).join('\n'));
- assert.equal(w.document.querySelectorAll('main>.view').length,1);assert.equal(w.document.body.dataset.currentView,'dashboard');
- w.location.hash='/country/GB';await tick();assert.equal(w.document.body.dataset.currentView,'country');assert.match(w.document.querySelector('#countryDetails').textContent,/Ben Nevis/);assert.equal(w.document.querySelectorAll('main>.view').length,1);
- const place=w.document.querySelector('[data-place-id]');place.value='visited';place.dispatchEvent(new w.Event('change',{bubbles:true}));assert.equal(run('state.placeVisits.length'),1);assert.equal(run('state.stays.length'),1);
- w.location.hash='/countries';await tick();assert.equal(w.document.querySelectorAll('#countriesView>.journey-accordion').length,2);assert.ok(w.document.querySelector('a[href="#/country/GB"]'));
- w.location.hash='/lived-in';await tick();const home=w.document.querySelector('[data-home-country="GB"]');home.click();assert.equal(run('travelDaySet().size'),0);assert.equal(run('state.stays[0].start'),'2026-01-01');
- w.location.hash='/calendar';await tick();
- run("calendarCursor=new Date(Date.UTC(2026,0,1));renderCalendar()");
- assert.ok(w.document.querySelector('[data-calendar-date-select]'));
- w.document.querySelector('[data-calendar-view="year"]').click();
- assert.ok(w.document.querySelector('.atlas-month-dots .home'));
- w.document.querySelector('[data-calendar-view="month"]').click();
- w.document.querySelector('#addTransportBtn').click();const f=w.document.querySelector('#transportForm');f._legs=[{start:{name:'London',lat:51.47,lon:-.45},end:{name:'New York',lat:40.64,lon:-73.78},flightNumber:'TEST1',startLocal:'2026-01-02T09:00',endLocal:'2026-01-02T07:00'}];f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));assert.equal(run('state.transports.length'),1);assert.equal(run('state.stays.length'),1);assert.equal(run('state.transports[0].endLocal'),'2026-01-02T07:00');
- assert.equal(w.document.querySelector('[data-calendar-layer="transport"]').getAttribute('aria-pressed'),'true');assert.ok(w.document.querySelector('.calendar-day-transport'));assert.ok(w.document.querySelector('.calendar-transport-cue'));w.document.querySelector('.calendar-day-transport').click();assert.equal(w.document.querySelector('#calendarJourneyDetail').hidden,false);w.document.querySelector('#calendarJourneyDetail [data-calendar-edit-transport]').click();assert.equal(w.document.querySelector('#transportDialog').open,true);assert.equal(run('calendarSelectionStart'),null);
- f.elements.bookingReference.value='private-test';f.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));assert.equal(run('state.transports[0].bookingReference'),'private-test');
- w.location.hash='/map';await tick();assert.equal(w.document.querySelector('[data-layer="transport"]'),null);assert.notEqual(w.getComputedStyle(w.document.querySelector('#timelineBars')).display,'none');const date=w.document.querySelector('#timelineManualDate');date.value='2026-01-02';date.dispatchEvent(new w.Event('change'));assert.equal(run('timelineDate'),'2026-01-02');
- w.document.querySelector('#timelineSlider').value=0;w.document.querySelector('#timelineSlider').dispatchEvent(new w.Event('input'));assert.equal(date.value,'2026-01-01');
- w.d3=await import(process.env.HV_D3_MODULE||require.resolve('d3'));
- w.topojson={};global.navigator=w.navigator;await run('worldFeatures=[{type:"Feature",id:826,properties:{name:"United Kingdom"},geometry:{type:"Polygon",coordinates:[[[-8,50],[-8,59],[2,59],[2,50],[-8,50]]]}}];worldLoading=false;renderWorldMap()');
- w.setTimelineDate('2026-01-02');assert.equal(w.document.querySelector('.transport-routes'),null);
- const pathEl=w.document.querySelector('.map-country');assert.ok(pathEl);pathEl.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));await tick();assert.equal(w.location.hash,'#/map');assert.equal(w.document.querySelector('#mapCountrySummary').hidden,false);assert.match(w.document.querySelector('#mapCountrySummary').textContent,/United Kingdom/);assert.equal(w.document.querySelector('#voyagesCountryDrawer'),null);
- w.location.hash='/stats';await tick();assert.ok(w.document.querySelector('#placeAchievements'));assert.match(w.document.querySelector('#placeAchievements').textContent,/251/);
- w.location.hash='/calendar';await tick();w.document.querySelector('[data-calendar-edit-transport]').click();w.document.querySelector('#transportDelete').click();assert.equal(run('state.transports.length'),0);assert.equal(run('state.stays.length'),1);assert.equal(JSON.parse(w.localStorage.getItem('whereIveBeen.data.v2')).placeVisits.length,1);
- w.location.hash='/map';await tick();
- const mapPath=w.document.querySelector('.map-country');mapPath.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
- assert.equal(w.location.hash,'#/map');assert.equal(w.document.querySelector('#mapCountrySummary').hidden,false);
- w.document.querySelector('[data-clear-map-country]').click();assert.equal(w.document.querySelector('#mapCountrySummary').hidden,true);
- assert.equal(w.document.querySelector('#mapCountrySelect').value,'');
- w.location.hash='/calendar';await tick();assert.ok(w.document.querySelector('[data-calendar-view="agenda"]'));assert.ok(w.document.querySelector('#calendarAgenda'));assert.equal(w.document.querySelector('#calendar').hidden,false);assert.equal(w.document.querySelector('.calendar-toolbar').closest('[hidden]'),null);
- run("state.profiles.push({id:'other',name:'Other traveller',citizenships:[],enabledRules:['schengen']});state.stays.push({id:'other-stay',profileId:'other',countryCode:'US',countryName:'United States',start:'2026-01-01',end:'2026-01-02',status:'actual'});renderAll()");
- const traveller=w.document.querySelector('#globalTraveller');traveller.value='other';traveller.dispatchEvent(new w.Event('change',{bubbles:true}));
- assert.equal(run('staysForProfile().length'),1);assert.equal(run('travelDaySet().size'),2);
- w.location.hash='/dashboard';await tick();assert.equal(run('els.countriesLogged.textContent'),'1');
- w.location.hash='/trips';await tick();assert.match(w.document.querySelector('#allStays').textContent,/United States/);assert.doesNotMatch(w.document.querySelector('#allStays').textContent,/United Kingdom/);
- const search=w.document.querySelector('#tripSearch');search.value='not a destination';search.dispatchEvent(new w.Event('input',{bubbles:true}));assert.equal(w.document.querySelectorAll('.trip-group').length,0);search.value='';search.dispatchEvent(new w.Event('input',{bubbles:true}));
- run("state.trips=[{id:'group',profileId:'other',name:'<img src=x onerror=alert(1)>'}];state.stays.find(s=>s.id==='other-stay').tripId='group';renderStayLists()");
- assert.match(w.document.querySelector('.trip-group h3').textContent,/<img/);assert.equal(w.document.querySelector('.trip-group h3 img'),null);
- w.document.querySelector('[data-edit-trip="group"]').click();
- const tripForm=w.document.querySelector('dialog[aria-label="Edit trip"] form');tripForm.elements.name.value='Shared Alps';tripForm.querySelector('input[name="stay"][value="s"]').checked=true;
- tripForm.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));assert.equal(run("state.trips.find(t=>t.id==='group').name"),'Shared Alps');assert.equal(run("state.stays.find(s=>s.id==='s').tripId"),'group');assert.equal(run("state.trips.find(t=>t.id==='group').profileIds.includes('p')"),true);
- run("state.activeProfileId='p';populateProfileSelects()");w.HVPages.get('addTransportBtn').click();assert.ok([...w.document.querySelector('#transportForm').elements.tripId.options].some(o=>o.value==='group'),'Shared trip remains available to another traveller when linking transport');w.document.querySelector('[data-close-transport]').click();run("state.activeProfileId='other';populateProfileSelects()");
- assert.equal(run("firstOverstay('2026-01-01',120,'other',[{countryCode:'FR',start:'2026-01-01',end:'2026-04-20',status:'planned'}]).date"),'2026-04-01');
- w.location.hash='/calendar';await tick();w.document.querySelector('#addStayBtn').click();w.document.querySelector('[data-add-kind=trip]').click();let journeyForm=w.document.querySelector('#tripPlannerDialog form');journeyForm.elements.start.value='2027-03-01';journeyForm.elements.end.value='2027-03-05';journeyForm.elements.status.value='planned';w.document.querySelector('[data-planner-next]').click();journeyForm=w.document.querySelector('#tripPlannerDialog form');journeyForm.elements.tripName.value='Accommodation test';journeyForm.elements.tripNotes.value='Kept with the trip';journeyForm.querySelector('[data-planner-stop] input[name="countryName"]').value='France';journeyForm.querySelector('[data-planner-stop] input[name="location"]').value='Paris';w.document.querySelector('[data-planner-next]').click();w.document.querySelector('[data-planner-next]').click();w.document.querySelector('[data-planner-add-accommodation]').click();journeyForm=w.document.querySelector('#tripPlannerDialog form');journeyForm.querySelector('[data-planner-accommodation] input[name="propertyName"]').value='Hotel Test';journeyForm.querySelector('[data-planner-accommodation] input[name="location"]').value='Paris';journeyForm.querySelector('[data-planner-accommodation] input[name="checkIn"]').value='2027-03-01';journeyForm.querySelector('[data-planner-accommodation] input[name="checkOut"]').value='2027-03-05';w.document.querySelector('[data-planner-next]').click();journeyForm=w.document.querySelector('#tripPlannerDialog form');journeyForm.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();assert.equal(run("state.trips.some(t=>t.name==='Accommodation test')"),true);assert.equal(run("state.stays.some(s=>s.tripId===state.trips.find(t=>t.name==='Accommodation test').id&&s.location==='Paris')"),true);assert.equal(run("state.accommodations.some(a=>a.tripId===state.trips.find(t=>t.name==='Accommodation test').id&&a.propertyName==='Hotel Test')"),true);run("els.profileId.value='other';deleteProfile()");assert.equal(run("state.accommodations.find(a=>a.propertyName==='Hotel Test').profileId"),null,'Accommodation remains when its traveller is removed');
- for(const route of ['dashboard','map','countries','calendar','trips','stats','lived-in','settings','schengen','visa','people']){w.location.hash='/'+route;await tick();run('renderAll()');assert.equal(w.document.querySelectorAll('main>.view').length,1);}
- assert.equal(errors.length,0,errors.map(e=>e.stack).join('\n'));console.log('UI smoke passed: routes, detached pages, imported facts, visits, home days, timeline, transport CRUD and persistence.');w.close();
-})().catch(e=>{console.error(e);w.close();process.exitCode=1;});
+/* DOM-only smoke of the simplified shell and shared editors using fictional data. */
+'use strict';
+const {JSDOM, VirtualConsole} = require('jsdom');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const {randomUUID} = require('node:crypto');
+const assert = require('node:assert/strict');
+const root = path.resolve(__dirname, '..');
+const errors = [];
+const virtualConsole = new VirtualConsole();
+virtualConsole.on('jsdomError', error => errors.push(error));
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// outside-only leaves markup scripts inert; the explicit fixture list runs below.
+const dom = new JSDOM(html, {
+  url:'https://herald.test/', runScripts:'outside-only', pretendToBeVisual:true, virtualConsole
+});
+const window = dom.window;
+const context = dom.getInternalVMContext();
+window.scrollTo = () => {};
+window.HTMLElement.prototype.scrollIntoView = () => {};
+window.matchMedia = () => ({matches:false, addEventListener() {}, removeEventListener() {}});
+window.CSS = {escape:value => String(value)};
+window.confirm = () => true;
+window.crypto.randomUUID = randomUUID;
+window.HTMLDialogElement.prototype.showModal = function() { this.open = true; };
+window.HTMLDialogElement.prototype.close = function() { this.open = false; this.dispatchEvent(new window.Event('close')); };
+window.fetch = async value => {
+  const url = new URL(String(value), window.location.href);
+  const file = path.resolve(root, '.' + decodeURIComponent(url.pathname));
+  if (url.origin === window.location.origin && file.startsWith(root + path.sep) && fs.existsSync(file)) {
+    return {ok:true, json:async () => JSON.parse(fs.readFileSync(file, 'utf8'))};
+  }
+  throw Error('External network is disabled for this DOM fixture');
+};
+const seed = {
+  version:2, activeProfileId:'p',
+  profiles:[{id:'p',name:'Test traveller',citizenships:[],enabledRules:[],homeCountryCodes:[]}],
+  trips:[{id:'legacy-trip',profileId:'p',name:'Keep historical grouping',custom:{retain:true}}],
+  stays:[{id:'stay',profileId:'p',tripId:'legacy-trip',countryCode:'FR',countryName:'France',start:'2026-01-01',end:'2026-01-04',status:'actual'}],
+  accommodations:[{id:'hotel',profileId:'p',tripId:'legacy-trip',propertyName:'Original hotel',location:'Paris',checkIn:'2026-01-01',checkOut:'2026-01-04',notes:'Preserve the booking'}],
+  transports:[{id:'train',profileId:'p',type:'train',startLocal:'2026-01-01T09:00',endLocal:'2026-01-01T10:00',start:{name:'Original station',lat:48,lon:2},end:{name:'Next station',lat:49,lon:3},custom:{retain:true}}],
+  roadTrips:[{id:'old-road',profileId:'p',name:'Original road journey',stops:[{name:'Paris',lat:48,lon:2},{name:'Lyon',lat:46,lon:5}],custom:{retain:true}}],
+  notes:[], residences:[]
+};
+window.localStorage.setItem('whereIveBeen.data.v2', JSON.stringify(seed));
+const bootstrap = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+const scripts = ['account-model.js', 'account-sync.js', ...[...bootstrap.matchAll(/src="([^"?]+)(?:\?[^" ]*)?"/g)].map(match => match[1])];
+for (const file of scripts) {
+  Object.defineProperty(window.document, 'currentScript', {configurable:true,value:{src:new URL(file, window.location.href).href}});
+  vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, {filename:file});
+}
+const run = code => vm.runInContext(code, context);
+const settle = () => new Promise(resolve => setTimeout(resolve, 30));
+
+(async () => {
+  await settle();
+  assert.deepEqual(errors, [], errors.map(error => error.stack).join('\n'));
+  assert.equal(window.document.body.dataset.currentView, 'calendar');
+  assert.equal(window.location.hash, '#/calendar');
+  assert.equal(window.document.querySelectorAll('main > .view').length, 1);
+  assert.deepEqual([...window.document.querySelectorAll('#heraldPrimaryNav a')].map(link => link.textContent), ['Calendar', 'Trip Planner', 'Currency Converter']);
+  assert.equal(window.document.querySelector('#dashboardView'), null);
+  assert.equal(window.document.querySelector('.header-nav-group'), null);
+  assert.ok(window.document.querySelector('#accountLink'));
+  assert.ok(window.document.querySelector('#transportDialog'));
+  assert.deepEqual(JSON.parse(run('JSON.stringify(state.trips)')), seed.trips);
+  assert.equal(run("state.roadTrips[0].custom.retain"), true);
+  const before = run('JSON.stringify({stays:state.stays,transports:state.transports,accommodations:state.accommodations,trips:state.trips,roadTrips:state.roadTrips})');
+  const stored = window.localStorage.getItem('whereIveBeen.data.v2');
+
+  run("HVJourneys.openTransport('train')");
+  const transport = window.document.querySelector('#transportDialog');
+  assert.equal(transport.open, true);
+  window.document.querySelector('#transportForm').elements.bookingReference.value = 'Unsaved draft';
+  transport.querySelector('[data-close-transport]').click();
+  assert.equal(transport.open, false);
+  run("HVPlaces.open({accommodationId:'hotel'})");
+  const accommodation = window.document.querySelector('.place-search-dialog[open]');
+  assert.ok(accommodation);
+  accommodation.querySelector('[name=placeName]').value = 'Unsaved replacement';
+  accommodation.querySelector('[data-place-close]').click();
+  assert.equal(run('JSON.stringify({stays:state.stays,transports:state.transports,accommodations:state.accommodations,trips:state.trips,roadTrips:state.roadTrips})'), before);
+  assert.equal(window.localStorage.getItem('whereIveBeen.data.v2'), stored);
+
+  window.location.hash = '#/settings';
+  await settle();
+  assert.equal(window.document.body.dataset.currentView, 'settings');
+  assert.ok(window.document.querySelector('#addProfileBtn'));
+  assert.ok(window.document.querySelector('#simpleExportData'));
+  assert.equal(window.document.querySelector('#accountLink').getAttribute('href'), 'login/');
+  window.document.querySelector('#addProfileBtn').click();
+  assert.equal(window.document.querySelector('#profileDialog').open, true);
+  window.document.querySelector('#cancelProfileDialog').click();
+
+  window.document.querySelector('[data-nav-view=currency]').click();
+  assert.equal(window.location.hash, '#/currency');
+  assert.ok(window.document.querySelector('.currency-select'));
+  window.location.hash = '#/countries';
+  await settle();
+  assert.equal(window.location.hash, '#/calendar');
+  assert.equal(window.document.querySelectorAll('main > .view').length, 1);
+  assert.equal(window.HVPages.get('mapView').id, 'mapView');
+  run("HVSimpleCalendar.showDate('2026-01-02', 'day')");
+  assert.equal(window.document.querySelectorAll('#simpleCalendarDates > section').length, 1);
+  assert.match(window.document.querySelector('#simpleCalendarDates').textContent, /Original hotel/);
+  window.document.querySelector('[data-simple-calendar-view=month]').click();
+  assert.equal(window.document.querySelector('#calendar').hidden, false);
+  assert.deepEqual(errors, [], errors.map(error => error.stack).join('\n'));
+  process.stdout.write('DOM smoke passed for Calendar-first navigation, Settings, retained records and canceled transport/accommodation edits.\n');
+})().catch(error => { process.stderr.write(error.stack + '\n'); process.exitCode = 1; }).finally(() => window.close());

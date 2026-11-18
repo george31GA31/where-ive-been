@@ -1,0 +1,249 @@
+/* The three workspaces share a restrained, compact shell at every width. */
+:root {
+  --shell-header-height:64px;
+  --shell-gutter:clamp(14px, 2.6vw, 40px);
+  --ui-radius:7px;
+}
+body:not([data-account-page]) {
+  background:var(--hv-paper);
+  color:var(--hv-ink);
+  padding:0;
+}
+body:not([data-account-page]) .app-shell { display:block; }
+body:not([data-account-page]) .sidebar {
+  height:var(--shell-header-height);
+  min-height:var(--shell-header-height);
+  display:flex;
+  align-items:center;
+  gap:22px;
+  padding:0 var(--shell-gutter);
+  background:var(--hv-surface);
+  border-bottom:1px solid var(--hv-line);
+  border-radius:0;
+  box-shadow:none;
+}
+body:not([data-account-page]) .sidebar .brand {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:auto;
+  min-width:126px;
+  flex:0 0 auto;
+  color:var(--hv-ink);
+  text-decoration:none;
+}
+body:not([data-account-page]) .sidebar .brand-mark {
+  width:58px;
+  height:38px;
+  flex:0 0 58px;
+  margin:0;
+  overflow:hidden;
+}
+body:not([data-account-page]) .sidebar .brand-logo-mark {
+  width:58px;
+  height:38px;
+  object-fit:contain;
+  transform:none;
+}
+body:not([data-account-page]) .sidebar .brand>div:last-child { display:block; }
+body:not([data-account-page]) .sidebar .brand strong {
+  display:block;
+  font:650 19px/1.2 var(--hv-sans);
+  letter-spacing:-.05em;
+}
+body:not([data-account-page]) .sidebar .nav {
+  position:static;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  flex:1 1 auto;
+  width:auto;
+  max-height:none;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  overflow:visible;
+}
+body:not([data-account-page]) .sidebar .nav-item {
+  display:flex;
+  width:auto;
+  min-height:44px;
+  padding:10px 14px;
+  border:0;
+  border-bottom:2px solid transparent;
+  border-radius:0;
+  font:600 13px/1.3 var(--hv-sans);
+  letter-spacing:0;
+  color:var(--hv-muted);
+  background:transparent;
+  white-space:nowrap;
+}
+body:not([data-account-page]) .sidebar .nav-item.active {
+  color:var(--hv-red);
+  border-bottom-color:currentColor;
+  background:transparent;
+}
+body:not([data-account-page]) .sidebar .nav-item:hover { color:var(--hv-ink); background:var(--hv-soft); }
+body:not([data-account-page]) .sidebar .nav-item:not(.active):hover { border-bottom-color:transparent; }
+body:not([data-account-page]) .sidebar-footer {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  min-width:0;
+  flex:0 0 auto;
+  width:auto;
+  margin:0;
+  padding:0;
+  border:0;
+}
+body:not([data-account-page]) .sidebar-footer #themeToggleBtn {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:44px;
+  min-height:44px;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+}
+.simple-account-menu { position:relative; }
+.simple-account-menu>summary {
+  display:flex;
+  align-items:center;
+  min-height:44px;
+  padding:8px 10px;
+  list-style:none;
+  cursor:pointer;
+  font:600 13px/1.3 var(--hv-sans);
+}
+.simple-account-menu>summary::-webkit-details-marker { display:none; }
+.simple-account-menu>summary::after { content:'⌄'; margin-left:6px; color:var(--hv-muted); }
+.simple-account-options {
+  position:absolute;
+  top:calc(100% + 6px);
+  right:0;
+  display:flex;
+  flex-direction:column;
+  width:208px;
+  padding:6px;
+  border:1px solid var(--hv-line);
+  border-radius:8px;
+  box-shadow:0 12px 28px #00000014;
+  background:var(--hv-surface);
+  z-index:100;
+}
+.simple-account-menu:not([open])>.simple-account-options { display:none; }
+body .simple-account-options :is(a,button) {
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  width:100%;
+  min-height:44px;
+  padding:10px;
+  border:0;
+  border-radius:4px;
+  margin:0;
+  background:transparent;
+  color:var(--hv-ink);
+  font:500 14px/1.3 var(--hv-sans);
+  text-decoration:none;
+}
+body .simple-account-options :is(a,button):hover { background:var(--hv-soft); }
+body .simple-account-options :is(a,button)[hidden] { display:none; }
+body:not([data-account-page]) .main {
+  max-width:1680px;
+  width:100%;
+  min-height:calc(100dvh - var(--shell-header-height));
+  margin:0 auto;
+  padding:12px var(--shell-gutter) 24px;
+}
+body:not([data-account-page]) .topbar {
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px 18px;
+  padding:0;
+  margin:0 0 10px;
+  min-height:22px;
+  background:transparent;
+}
+body:not([data-account-page]) .topbar>div:first-child,
+body:not([data-account-page]) .topbar-actions,
+body:not([data-account-page]) .topbar #addStayBtn {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+}
+body:not([data-account-page]) .topbar #addStayBtn { display:none; }
+body:not([data-account-page]) .topbar .page-save-status {
+  flex:1 1 240px;
+  order:0;
+  font:400 11px/1.4 var(--hv-sans);
+  color:var(--hv-muted);
+}
+body:not([data-account-page]) .page-save-status p { margin:0; }
+body:not([data-account-page]) .topbar .global-traveller {
+  order:1;
+  flex:0 1 auto;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin:0;
+  font-size:12px;
+}
+body:not([data-account-page]) .global-traveller select { min-height:34px; padding:4px 7px; max-width:180px; }
+body:not([data-account-page]) .topbar .global-traveller[hidden] { display:none; }
+body:not([data-account-page]) :is(.page-location,.herald-site-footer,.header-menu-toggle,.voyages-mobile-nav,.v1-reading-progress) { display:none; }
+#calendarView > details.journey-accordion,
+#calendarView #calendarTransportLibrary,
+#calendarView #addTransportBtn { display:none; }
+body[data-current-view=roadTrip] .main { max-width:none; }
+body[data-current-view=currency] #currencyView { max-width:1160px; margin:0 auto; }
+.simple-settings { max-width:880px; margin:12px auto 36px; }
+.simple-setting-section { padding:22px 0; border-bottom:1px solid var(--hv-line); }
+.simple-setting-section>h2 { font:600 20px/1.4 var(--hv-sans); margin:0 0 14px; }
+.simple-setting-section>summary { min-height:44px; padding:10px 0; font:600 18px/1.4 var(--hv-sans); cursor:pointer; }
+.simple-setting-section>.profiles-layout { margin-top:16px; }
+.simple-settings .panel { border:0; border-radius:0; padding:14px 0; box-shadow:none; background:transparent; }
+.simple-settings .panel-copy { max-width:66ch; }
+@media (max-width:760px) {
+  :root { --shell-header-height:108px; }
+  body:not([data-account-page]) .sidebar {
+    height:auto;
+    min-height:108px;
+    flex-wrap:wrap;
+    gap:0;
+    padding-top:5px;
+    padding-bottom:0;
+  }
+  body:not([data-account-page]) .sidebar .brand { flex:1 1 auto; min-width:130px; }
+  body:not([data-account-page]) .sidebar-footer { order:1; }
+  body:not([data-account-page]) .sidebar .nav {
+    order:2;
+    flex:1 0 100%;
+    justify-content:space-between;
+    padding-top:2px;
+    gap:0;
+  }
+  body:not([data-account-page]) .sidebar .nav-item { justify-content:center; padding:9px 8px; font-size:12px; min-height:48px; }
+  body:not([data-account-page]) .main { padding-top:9px; }
+  body:not([data-account-page]) .topbar { gap:6px 12px; margin-bottom:8px; }
+  body:not([data-account-page]) .topbar .page-save-status { flex-basis:170px; font-size:10px; }
+  body:not([data-account-page]) .topbar .global-traveller { flex-basis:130px; justify-content:flex-end; }
+  body:not([data-account-page]) .global-traveller>span { display:none; }
+}
+@media (prefers-reduced-motion:reduce) {
+  body .sidebar :is(a,button,summary) { transition:none; }
+}

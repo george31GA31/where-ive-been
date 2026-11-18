@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#8d2637" />
-  <meta name="description" content="Herald Voyages — your personal atlas of countries, journeys and travel days." />
-  <title>Dashboard — Herald Voyages</title>
+  <meta name="description" content="Herald Voyages — your travel calendar and journey planner." />
+  <title>Calendar — Herald Voyages</title>
   <link rel="stylesheet" href="styles.css?v=slaps-flags-1" />
   <link rel="stylesheet" href="accounts.css?v=offline-20261006" />
 <link rel="icon" type="image/png" href="assets/herald-favicon.png?v=master-20261002"><link rel="shortcut icon" href="favicon.ico?v=master-20261002"><link rel="apple-touch-icon" href="assets/herald-favicon.png?v=master-20261002">
@@ -21,8 +21,11 @@
   <link rel="stylesheet" href="v1-experience.css?v=20261104">
   <link rel="stylesheet" href="herald-motion.css?v=20261104-motion">
   <link rel="stylesheet" href="motion-workspaces.css?v=20261104-motion">
+  <link rel="stylesheet" href="trip-planner.css?v=20261118">
+  <link rel="stylesheet" href="simple-shell.css?v=20261118">
+  <link rel="stylesheet" href="simple-calendar.css?v=20261118">
 </head>
-<body data-current-view="dashboard">
+<body data-current-view="calendar">
   <div id="accountLoadError" class="account-load-error" role="alert" hidden>Could not load your account. Your existing data is safe. <button id="retryAccountLoadBtn" class="secondary">Retry connection</button> <a href="profile/">Account settings</a></div>
   <div class="app-shell">
     <aside class="sidebar">
@@ -32,15 +35,9 @@
       </div>
 
       <nav class="nav" aria-label="Primary navigation">
-        <button class="nav-item active" data-view="dashboard"><span>⌂</span>Dashboard</button>
-        <button class="nav-item" data-view="calendar"><span>▦</span>Calendar</button>
-        <button class="nav-item" data-view="map"><span>◉</span>Map & timeline</button>
-        <button class="nav-item" data-view="countries"><span>◎</span>Countries</button>
-        <button class="nav-item" data-view="schengen"><span>◌</span>Schengen</button>
-        <button class="nav-item" data-view="planner"><span>↗</span>Plan a Trip</button>
-        <button class="nav-item" data-view="tools"><span>⌕</span>Travel Tools</button>
-        <button class="nav-item" data-view="stays"><span>≡</span>All stays</button>
-        <button class="nav-item" data-view="profiles"><span>♙</span>Profiles & data</button>
+        <button class="nav-item active" data-view="calendar">Calendar</button>
+        <button class="nav-item" data-view="roadTrip">Trip Planner</button>
+        <button class="nav-item" data-view="currency">Currency Converter</button>
       </nav>
 
       <div class="sidebar-footer">
@@ -54,7 +51,7 @@
     <main class="main">
       <header class="topbar">
         <div>
-          <h1 id="pageTitle">Home</h1>
+          <h1 id="pageTitle">Calendar</h1>
         </div>
         <nav class="herald-account-access" aria-label="Your account">
           <a class="text-btn" data-account-guest href="login/">Sign in</a>
@@ -65,7 +62,7 @@
         <button class="primary" id="addStayBtn">+ Add travel</button>
       </header>
 
-      <section id="dashboardView" class="view active" aria-label="Home">
+      <section id="dashboardView" class="view" aria-label="Home">
         <div class="atlas-masthead">
           <div class="atlas-masthead-copy"><p class="eyebrow">YOUR PERSONAL ATLAS</p><h2>Where you’ve been.<br><em>Where you’re going.</em></h2><a href="#/trips" class="atlas-text-link">Explore your journeys <span aria-hidden="true">↗</span></a></div>
           <div class="atlas-masthead-art"><img src="assets/herald-logo-dark.png" alt="Herald trumpet travel mark" width="1672" height="941"><span>HERALD VOYAGES</span></div>
@@ -129,12 +126,12 @@
       <section id="notesView" class="view" aria-label="Notes and Checklist"><div id="notesChecklistTool"></div></section>
       <section id="budgetView" class="view" aria-label="Budget Planner"><div id="budgetPlannerTool"></div></section>
       <section id="currencyView" class="view" aria-label="Currency Converter"><div id="currencyConverterTool"></div></section>
-      <section id="roadTripView" class="view" aria-label="Road Trip Planner"><div id="roadTripPlannerTool"></div></section>
+      <section id="roadTripView" class="view" aria-label="Trip Planner"><div id="roadTripPlannerTool"></div></section>
       <section id="statsView" class="view" aria-label="Statistics"><div id="atlasStatistics"></div></section>
       <section id="homesView" class="view" aria-label="Lived In"></section>
       <section id="placesView" class="view"><article class="panel"><div class="panel-head"><div><h2>Your places</h2><p class="helper">Find saved addresses, dated locations, places you visited and your wish list. Saving an address does not mark it visited.</p></div><button class="secondary" type="button" data-manage-places>Save or manage locations</button></div><p><a class="text-btn" href="#/countries">Browse reference places →</a> · <a class="text-btn" href="#/journey-map">Journey Map →</a></p><div id="personalPlaces"></div></article></section>
-      <section id="settingsView" class="view" aria-label="Settings"><article class="panel"><p class="eyebrow">MAKE IT YOURS</p><h2>Appearance & preferences</h2><p class="panel-copy">Choose the appearance of your atlas. Your choice is remembered on this device.</p><button id="settingsTheme" class="secondary" type="button">Switch appearance</button><hr><h2>Your country count</h2><p class="panel-copy">Choose which countries and territories contribute to your personal total.</p><button id="settingsCount" class="secondary" type="button">Edit country definition</button><hr><h2>Account & data</h2><p class="panel-copy">Manage sign-in, exports and guest-data transfers in your profile.</p><a class="secondary" href="profile/">My account &amp; sync</a></article></section>
-      <section id="calendarView" class="view" aria-label="Trip calendar">
+      <section id="settingsView" class="view" aria-label="Settings"><div class="simple-settings"><section class="simple-setting-section"><h2>Appearance</h2><button id="settingsTheme" class="secondary" type="button">Switch light / dark theme</button></section><section class="simple-setting-section"><h2>Account &amp; sync</h2><a class="secondary" href="profile/">Manage account</a></section><details class="simple-setting-section" data-settings-travellers><summary>Travellers &amp; home history</summary></details><details class="simple-setting-section" data-settings-data><summary>Backups &amp; data transfer</summary></details></div></section>
+      <section id="calendarView" class="view active" aria-label="Trip calendar">
         <div class="calendar-experience">
 
 
@@ -162,6 +159,7 @@
 
       <section id="mapView" class="view">
         <article class="panel map-panel">
+          <div class="voyages-map-toolbar" hidden></div>
           <div class="panel-head"><div><p class="eyebrow">WORLD MAP</p><h2>Countries visited</h2></div><div class="map-legend"><span><i class="legend-dot visited-dot"></i>Visited</span><span><i class="legend-dot planned-dot"></i>Planned</span></div></div>
           <div class="map-wrap"><svg id="worldMap" viewBox="0 0 1000 500" role="img" aria-label="World map showing countries visited"></svg><div id="mapFallback" class="map-fallback hidden">The interactive map needs an internet connection the first time it loads. Everything else still works offline.</div></div>
           <div id="mapSelectionSummary" class="map-selection-summary">Drag the timeline below to see your travel history at any point.</div>
@@ -333,7 +331,5 @@
   <script src="account-size.js?v=save-parity-20261014&daily=20261014"></script>
   <script src="account-sync.js?v=account-storage-recovery-20261006&platform=herald-complete-20261005&tools=currency-road-20261005&performance=20261007&offline=20261006&cleanup=20261007&daily=20261014"></script>
   <script src="app.js?planning=20261020&calendar=20261018&trackers=20261006&v=rail-network-20261005&platform=herald-complete-20261005&tools=currency-road-20261005-2&refinements=map-planner-20261006&performance=20261007&offline=20261006&cleanup=20261007&transport=20261008&daily=20261014"></script>
-<script src="trip-planning-config.js?v=20261015"></script>
-<script src="trip-planning.js?v=20261015"></script>
 </body>
 </html>
