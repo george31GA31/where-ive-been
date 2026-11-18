@@ -10,7 +10,8 @@ const root = path.resolve(__dirname, '..');
 const errors = [];
 const virtualConsole = new VirtualConsole();
 virtualConsole.on('jsdomError', error => errors.push(error));
-const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8').replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+// outside-only leaves markup scripts inert; the explicit fixture list runs below.
 const dom = new JSDOM(html, {
   url:'https://herald.test/', runScripts:'outside-only', pretendToBeVisual:true, virtualConsole
 });

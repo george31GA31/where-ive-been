@@ -30,7 +30,12 @@
     }
     for (const row of day.places || []) rows.push({kind: 'location', row, title: row.place?.name || row.location || 'Destination', detail: row.notes || row.place?.city || '', priority: 2});
     for (const row of day.notes || []) rows.push({kind: 'note', row, title: row.title || 'Note', detail: row.body || '', priority: 2});
-    return rows.sort((a, b) => a.priority - b.priority || String(a.time || '99:99').localeCompare(String(b.time || '99:99')) || a.title.localeCompare(b.title));
+    // Untimed destinations and ongoing stays provide the day's context. Timed
+    // arrivals, departures and hotel changes share one chronological sequence.
+    return rows.sort((a, b) => {
+      if (!!a.time !== !!b.time) return a.time ? 1 : -1;
+      return String(a.time || '').localeCompare(String(b.time || '')) || a.priority - b.priority || a.title.localeCompare(b.title);
+    });
   }
   const helpers = {isDate, viewRange, shiftAnchor, dayEntries};
   if (typeof module !== 'undefined' && module.exports) {module.exports = helpers; return;}
@@ -61,7 +66,7 @@
     const keys = {country:'countries', accommodation:'accommodation', transport:'transport', location:'locations', note:'notes'};
     const rows = dayEntries(day).filter(entry => get('calendarView')?.querySelector(`[data-calendar-layer="${keys[entry.kind]}"]`)?.getAttribute('aria-pressed') !== 'false');
     const current = day.date === today();
-    return `<section class="simple-calendar-day${current ? ' is-today' : ''}" aria-label="${escapeHTML(formatDate(day.date, {weekday: 'long', day: 'numeric', month: 'long'}))}"><header><button type="button" class="simple-calendar-date-heading" data-simple-day="${day.date}" aria-label="Open ${escapeHTML(formatDate(day.date, {weekday: 'long', day: 'numeric', month: 'long'}))}"><span>${escapeHTML(formatDate(day.date, {weekday: 'short'}))}</span><strong>${escapeHTML(formatDate(day.date, {day: 'numeric', month: view === 'day' ? 'long' : 'short'}))}</strong>${current ? '<small>Today</small>' : ''}</button><button type="button" class="simple-calendar-add" data-simple-add="${day.date}" aria-label="Add an entry on ${escapeHTML(formatDate(day.date, {day: 'numeric', month: 'long'}))}">+</button></header>${rows.length ? `<ul>${rows.map(entry => entryHTML(entry, day.date)).join('')}</ul>` : '<p class="simple-calendar-empty">No entries</p>'}</section>`;
+    return `<section class="simple-calendar-day${current ? ' is-today' : ''}" aria-label="${escapeHTML(formatDate(day.date, {weekday: 'long', day: 'numeric', month: 'long'}))}"><header><button type="button" class="simple-calendar-date-heading" data-simple-day="${day.date}" aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown" aria-label="Open ${escapeHTML(formatDate(day.date, {weekday: 'long', day: 'numeric', month: 'long'}))}"><span>${escapeHTML(formatDate(day.date, {weekday: 'short'}))}</span><strong>${escapeHTML(formatDate(day.date, {day: 'numeric', month: view === 'day' ? 'long' : 'short'}))}</strong>${current ? '<small>Today</small>' : ''}</button><button type="button" class="simple-calendar-add" data-simple-add="${day.date}" aria-label="Add an entry on ${escapeHTML(formatDate(day.date, {day: 'numeric', month: 'long'}))}">+</button></header>${rows.length ? `<ul>${rows.map(entry => entryHTML(entry, day.date)).join('')}</ul>` : '<p class="simple-calendar-empty">No entries</p>'}</section>`;
   }
 
   function syncChrome() {
@@ -127,6 +132,23 @@
     return root.HVTripPlannerModel?.findEntry?.(state, id);
   }
 
+  function focusDate(date) {
+    get('simpleCalendarDates')?.querySelector(`[data-simple-day="${date}"]`)?.focus({preventScroll:true});
+  }
+
+  function navigateDate(event) {
+    if (view === 'month' || document.body.dataset.currentView !== 'calendar' || event.altKey || event.ctrlKey || event.metaKey) return;
+    const heading = event.target instanceof Element ? event.target.closest('[data-simple-day]') : null;
+    const offset = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-7, ArrowDown:7}[event.key];
+    if (!heading || !offset) return;
+    const date = nextDate(heading.dataset.simpleDay, offset);
+    if (!isDate(date)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!get('simpleCalendarDates').querySelector(`[data-simple-day="${date}"]`)) setView(view, date);
+    focusDate(date);
+  }
+
   function openEntry(kind, id, date) {
     const planner = plannerEntry(id);
     if (planner) {root.HVTripPlanner?.open(planner.plannerId, {stopId: planner.stopId || planner.plannerStopId, segmentId: planner.segmentId || planner.plannerSegmentId}); return;}
@@ -175,7 +197,7 @@
     if (modeButton || add || day) {
       event.preventDefault(); event.stopImmediatePropagation();
       if (modeButton) setView(modeButton.dataset.simpleCalendarView);
-      if (day) setView('day', day.dataset.simpleDay);
+      if (day) {setView('day', day.dataset.simpleDay); focusDate(day.dataset.simpleDay);}
       if (add) addEntry(add.dataset.simpleAdd, add);
       return;
     }
@@ -221,6 +243,7 @@
   }
 
   root.addEventListener('click', captureClick, true);
+  root.addEventListener('keydown', navigateDate, true);
   root.addEventListener('hv-calendar-rendered', () => {
     if (!ready) boot();
     else {

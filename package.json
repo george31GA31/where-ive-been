@@ -8,7 +8,7 @@
     "test": "node --test tests/*.test.cjs",
     "test:dom": "node tests/ui-smoke.cjs",
     "test:visual": "node tests/visual-parity-browser.cjs",
-    "test:browser": "node tests/simple-calendar-browser.cjs && node tests/trip-planner-browser.cjs && node tests/planner-sync-browser.cjs && node tests/planner-ownership-browser.cjs && node tests/v1-save-adapter-browser.cjs && node tests/offline-shell-delivery-browser.cjs",
+    "test:browser": "node tests/simple-calendar-browser.cjs && node tests/trip-planner-browser.cjs && node tests/planner-sync-browser.cjs && node tests/planner-ownership-browser.cjs && node tests/planner-async-browser.cjs && node tests/v1-save-adapter-browser.cjs && node tests/offline-shell-delivery-browser.cjs",
     "test:performance": "node tests/simplified-performance-browser.cjs",
     "test:v1": "node tests/v1-release-browser.cjs",
     "test:update": "node tests/v1-update-browser.cjs",

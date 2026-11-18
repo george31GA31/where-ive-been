@@ -58,9 +58,23 @@ async function openPage(width) {
     await dates.waitFor();
     assert.equal(await dates.locator(':scope > section').count(), 7);
     assert.equal(await dates.locator('[data-simple-entry-id=hotel]').count(), 3, 'Check-in, occupied dates and checkout stay visible');
+    const firstDay = dates.locator('section').filter({has:page.locator('[data-simple-day="2026-12-01"]')});
+    assert.deepEqual(await firstDay.locator('[data-simple-entry-id]').evaluateAll(buttons=>buttons.map(button=>button.dataset.simpleEntryId)), ['note','planner:plan:segment:bus-leg','hotel'], 'Timed transport precedes a later hotel check-in');
     assert.match(await page.locator('#calendarTitle').innerText(), /30 Nov.*6 Dec 2026/);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Calendar controls fit the viewport');
     await page.screenshot({path:path.join(output, 'week-' + width + '.png')});
+    await dates.locator('[data-simple-day="2026-12-01"]').focus();
+    await page.keyboard.press('ArrowLeft');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.simpleDay), '2026-11-30');
+    await page.keyboard.press('ArrowLeft');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.simpleDay), '2026-11-29', 'Arrow keys can cross the visible week');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(()=>HVSimpleCalendar.view), 'day');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.simpleDay), '2026-11-29', 'Opening Day keeps focus on its date');
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.evaluate(()=>HVSimpleCalendar.date), '2026-11-30');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.simpleDay), '2026-11-30');
+    await page.evaluate(() => HVSimpleCalendar.showDate('2026-12-01', 'week'));
     await page.locator('#nextMonth').click();
     assert.equal(await page.evaluate(() => HVSimpleCalendar.date), '2026-12-08');
     await page.locator('#simpleCalendarJump').fill('2027-01-01');
@@ -79,7 +93,10 @@ async function openPage(width) {
     assert.equal(await page.locator('.travel-note-form [name=category]').inputValue(), 'Activity');
     await page.locator('.travel-note-form [data-close]').first().click();
 
-    await dates.locator('[data-simple-entry-id="planner:plan:segment:bus-leg"]').click();
+    await dates.locator('[data-simple-entry-id=note]').focus();
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.simpleEntryId), 'planner:plan:segment:bus-leg', 'Tab follows the displayed chronological order');
+    await page.keyboard.press('Enter');
     await page.waitForFunction(() => document.body.dataset.currentView === 'roadTrip');
     assert.equal(await page.locator('#plannerName').inputValue(), 'Costa Rica connection');
     assert.equal(await page.locator('.planner-segment.is-selected').getAttribute('data-segment-id'), 'bus-leg');

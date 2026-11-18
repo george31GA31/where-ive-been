@@ -14,11 +14,18 @@
   let dirty = false, mapAction, drawnPoints = [], dragging, mobileMap = false;
   let saveMessage = '', searchFilter = 'other', remoteChanged = false;
   let viewStale = false;
+  let draftEpoch = 0;
+  const imageRequests = new Map();
 
   function scope() {
     return (window.HVAccountState?.userId || 'guest') + '.' + state.activeProfileId;
   }
-  function draftKey() { return 'herald.tripPlanner.draft.v2.' + scope(); }
+  function draftKey() { return 'herald.tripPlanner.draft.v2.' + (owner || scope()); }
+  const imageKey = selection => JSON.stringify([selection?.stopId || null, selection?.segmentId || null]);
+  function invalidateImageRequests() {
+    draftEpoch++;
+    imageRequests.clear();
+  }
   function newJourney() {
     return M.normalize({
       id: newId(), plannerVersion: 2, name: '', status: 'planned',
@@ -62,6 +69,8 @@
   }
   function initialise() {
     if (owner === scope() && draft) return;
+    if (draft) { readDetails(); remember(); }
+    invalidateImageRequests();
     cleanup();
     owner = scope();
     draft = newJourney();
@@ -537,6 +546,7 @@
     if (dirty && draft.id === id) {
       selected = selection;
     } else {
+      invalidateImageRequests();
       draft = M.normalize(record);
       baseline = record.updatedAt || '';
       dirty = false;
@@ -581,6 +591,7 @@
     get('plannerDetails')?.replaceChildren();
     mapAction = null;
     drawnPoints = [];
+    invalidateImageRequests();
     draft = existing;
     baseline = null;
     dirty = true;
@@ -613,6 +624,7 @@
     get('plannerDetails')?.replaceChildren();
     mapAction = null;
     drawnPoints = [];
+    invalidateImageRequests();
     draft = newJourney();
     const start = context.start || context.startDate;
     const end = context.end || context.endDate || start;
@@ -632,22 +644,27 @@
   async function upload(file) {
     if (!file) return;
     readDetails();
-    const identity = {scope:scope(), journey:draft.id, selection:copy(selected)};
     if (!['image/jpeg','image/png','image/webp','image/gif'].includes(file.type)) return message('Choose a JPEG, PNG, WebP or GIF image.', true);
     if (file.size > 20*1024*1024) return message('Choose an image smaller than 20 MB.', true);
+    const identity = {scope:scope(), journey:draft.id, selection:copy(selected), epoch:draftEpoch};
+    const key = imageKey(identity.selection), token = Symbol();
+    imageRequests.set(key, token);
+    const current = () => identity.epoch === draftEpoch && identity.scope === scope()
+      && identity.journey === draft?.id && imageRequests.get(key) === token;
     let source;
     try {
       source = URL.createObjectURL(file);
       const image = new Image();
       image.src = source;
       await image.decode();
+      if (!current()) return;
       const ratio = Math.min(1,960/Math.max(image.naturalWidth,image.naturalHeight));
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1,Math.round(image.naturalWidth*ratio));
       canvas.height = Math.max(1,Math.round(image.naturalHeight*ratio));
       canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);
       const src = canvas.toDataURL('image/webp',.76);
-      if (identity.scope !== scope() || identity.journey !== draft.id) return;
+      readDetails();
       const item = identity.selection?.stopId ? draft.stops.find(row => row.id === identity.selection.stopId)
         : draft.segments.find(row => row.id === identity.selection?.segmentId);
       if (!item) return;
@@ -661,8 +678,11 @@
       changed();
       itinerary();
       renderDetails();
-    } catch { message('This image could not be read. Try another file.', true); }
-    finally { if (source) URL.revokeObjectURL(source); }
+    } catch { if (current()) message('This image could not be read. Try another file.', true); }
+    finally {
+      if (imageRequests.get(key) === token) imageRequests.delete(key);
+      if (source) URL.revokeObjectURL(source);
+    }
   }
   function viewCalendar() {
     readDetails();
@@ -701,6 +721,7 @@
       draft = M.reconcile(draft);
       changed();
       itinerary();
+      renderDetails();
       drawMap();
       return;
     }
@@ -757,6 +778,8 @@
       renderDetails();
     }
     if (button.hasAttribute('data-remove-media')) {
+      readDetails();
+      imageRequests.delete(imageKey(selected));
       const item = draft.stops.find(row => row.id === selected?.stopId) || draft.segments.find(row => row.id === selected?.segmentId);
       delete item.media;
       changed();
@@ -863,6 +886,7 @@
       draft = M.reconcile(draft);
       changed();
       itinerary();
+      renderDetails();
       drawMap();
     };
     savedJourneys();
@@ -894,6 +918,9 @@
   window.addEventListener('hv-data-changed', () => {
     viewStale = true;
     if (owner !== scope()) {
+      readDetails();
+      remember();
+      invalidateImageRequests();
       cleanup();
       selected = null;
       get('plannerDetails')?.replaceChildren();
@@ -904,6 +931,7 @@
     const record = (state.roadTrips || []).find(row => row.id === draft?.id);
     if (record && (record.updatedAt || '') !== baseline) {
       if (!dirty) {
+        invalidateImageRequests();
         get('plannerDetails')?.replaceChildren();
         draft = M.normalize(record);
         baseline = record.updatedAt || '';
