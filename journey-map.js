@@ -9,7 +9,7 @@
   // The chart is drawn locally in Leaflet tiles, so routes and markers keep the
   // same Web Mercator projection, zoom, and world wrapping as the street map.
   const CHART_SIZE=256,chartSources=new Map(),chartGrids=new Map();
-  let chartGrain,preferredBasemap='chart';
+  let chartGrain,preferredBasemap='chart',basemapChosen=false;
   function chartLibraries(){
     if(window.d3&&window.topojson)return Promise.resolve();
     return new Promise((resolve,reject)=>{
@@ -92,15 +92,15 @@
     ctx.setTransform(ratio,0,0,ratio,0,0);
     ctx.fillStyle=ctx.createPattern(paperGrain(),'repeat');ctx.fillRect(0,0,CHART_SIZE,CHART_SIZE);
   }
-  function mountBasemap(map){
+  function mountBasemap(map, options={}){
     const host=map.getContainer();host.classList.add('journey-chart-map');
     let status,chartVisible;
     const Chart=L.GridLayer.extend({createTile(coords,done){
       const tile=document.createElement('canvas'),ratio=Math.min(2,window.devicePixelRatio||1);
       tile.width=tile.height=Math.round(CHART_SIZE*ratio);
       chartPaths(coords.z<4?'110':'50').then(paths=>{
-        if(this._map&&tile.isConnected){drawChartTile(tile,coords,paths);done(null,tile);}
-      }).catch(error=>{if(this._map&&tile.isConnected)done(error,tile);});
+        if(this._map){drawChartTile(tile,coords,paths);done(null,tile);}
+      }).catch(error=>{if(this._map)done(error,tile);});
       return tile;
     }});
     // Natural Earth is regional geography. Reuse overview tiles at close zoom
@@ -125,12 +125,12 @@
       status=L.DomUtil.create('div','journey-chart-status',controls);status.setAttribute('role','status');
       const update=()=>{button.textContent=chartVisible?'Street map':'Atlas chart';status.textContent='';};
       L.DomEvent.disableClickPropagation(controls);L.DomEvent.disableScrollPropagation(controls);
-      button.addEventListener('click',()=>{preferredBasemap=chartVisible?'street':'chart';select(!chartVisible);update();});
+      button.addEventListener('click',()=>{basemapChosen=true;preferredBasemap=chartVisible?'street':'chart';select(!chartVisible);update();});
       update();return controls;
     };
     chart.on('tileerror',()=>{status.textContent='Atlas chart unavailable. Try Street map.';});
     street.on('tileerror',()=>{status.textContent='Street map unavailable. Try Atlas chart.';});
-    select(preferredBasemap==='chart');toggle.addTo(map);
+    select((basemapChosen?preferredBasemap:options.defaultStyle||'chart')==='chart');toggle.addTo(map);
   }
 
   async function loadCoastline(){
@@ -430,4 +430,5 @@
   }
 
   window.HVJourneyMap={open,mountGlobal,waterFallback,route};
+  window.HVJourneyMap.mountBasemap = mountBasemap;
 })();
