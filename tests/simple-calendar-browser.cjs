@@ -92,6 +92,9 @@ async function openPage(width) {
     await page.locator('.travel-note-form').waitFor();
     assert.equal(await page.locator('.travel-note-form [name=category]').inputValue(), 'Activity');
     await page.locator('.travel-note-form [data-close]').first().click();
+    // Native close is queued. Its handler removes the form and restores focus,
+    // so wait for that lifecycle before starting a new keyboard interaction.
+    await page.locator('.travel-note-form').waitFor({state:'detached'});
 
     await dates.locator('[data-simple-entry-id=note]').focus();
     await page.keyboard.press('Tab');
